@@ -3,6 +3,9 @@
   "plugins": ["react", "oxc"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    // Fetch-effect patterns legitimately reset loading/error state when
+    // dependencies change. We're okay paying the extra render here.
+    "react/set-state-in-effect": "off"
   }
 }

@@ -1,0 +1,69 @@
+/* Page-level visual blocks.
+ *
+ * These are full-bleed sections / marketing pieces that have more
+ * than one style property worth extracting. Inline one-offs (single
+ * value like `maxWidth: 480`) stay inline — moving them costs more
+ * than it saves.
+ *
+ * Variables come from index.css.
+ */
+
+/* ----- HomePage ----- */
+
+/* Hero gradient banner. Cool slate → crimson ramp that matches the
+ * approved marketing palette (variables come from index.css). */
+.scms-hero {
+  background: linear-gradient(
+    135deg,
+    var(--scms-on-surface) 0%,
+    #1a2433 60%,
+    var(--scms-red) 100%
+  );
+  color: #fff;
+}
+
+/* Small accent inside hero headlines. */
+.scms-hero-accent {
+  color: var(--scms-red-container);
+}
+
+/* Eyebrow / tag chip sitting on top of the hero. */
+.scms-hero-eyebrow {
+  letter-spacing: 1px;
+}
+
+/* Glass card used for the hero side illustration. */
+.scms-hero-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  max-width: 360px;
+}
+
+/* Full-bleed dark band used as the closing CTA. */
+.scms-cta-band {
+  background: var(--scms-on-surface);
+  color: #fff;
+}
+
+/* Highlight ring on the PLUS card on the homepage. */
+.scms-plan-highlight {
+  border-width: 2px !important;
+}
+
+/* ----- Auth / form pages ----- */
+
+/* Standard width for the centered auth card wrapper. */
+.scms-auth-wrap {
+  max-width: 480px;
+}
+
+/* Wider wrapper for change-password (more fields). */
+.scms-auth-wrap-wide {
+  max-width: 560px;
+}
+
+/* 404 page wrapper. */
+.scms-404-wrap {
+  max-width: 540px;
+}

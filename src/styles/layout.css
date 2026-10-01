@@ -1,0 +1,54 @@
+/* Layout chrome — shared across PublicShell and AppShell.
+ *
+ * Variables live in index.css. Anything here is for header/sidebar/
+ * footer specific styling only.
+ */
+
+/* Sidebar width token so we don't repeat literal `240` in components. */
+:root {
+  --scms-sidebar-w: 240px;
+}
+
+/* Brand wordmark uses the SCMS red token so a single theme change
+ * propagates here. */
+.scms-brand {
+  color: var(--scms-red);
+}
+
+/* Avatar bubble in the public header account menu. */
+.scms-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--scms-red);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Reserve space in the public header while auth is bootstrapping,
+ * so the nav doesn't jump when we resolve the session. */
+.scms-header-placeholder {
+  display: inline-block;
+  min-width: 120px;
+  visibility: hidden;
+}
+
+/* Tighten the footer line — handoff §1 "minimal". */
+footer small {
+  letter-spacing: 0.2px;
+}
+
+/* Reduce default link underline noise for navs. */
+.navbar a {
+  text-decoration: none;
+}
+
+/* AppShell sidebar (desktop). Mobile sidebar uses Bootstrap Offcanvas
+ * and doesn't need any extra styling. */
+.scms-sidebar {
+  width: var(--scms-sidebar-w);
+}
