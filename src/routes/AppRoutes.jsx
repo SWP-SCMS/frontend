@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ROLES } from '../constants';
 import ProtectedRoute from './ProtectedRoute';
+import GuestRoute from './GuestRoute';
 import RoleRoute from './RoleRoute';
 import LoadingScreen from '../components/common/LoadingScreen';
 import AppShell from '../components/layout/AppShell';
@@ -48,8 +49,18 @@ export default function AppRoutes() {
     <Routes>
       {/* ---------- Public ---------- */}
       <Route path="/" element={withSuspense(<HomePage />)} />
-      <Route path="/login" element={withSuspense(<LoginPage />)} />
-      <Route path="/register" element={withSuspense(<RegisterPage />)} />
+      <Route
+        path="/login"
+        element={
+          <GuestRoute>{withSuspense(<LoginPage />)}</GuestRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <GuestRoute>{withSuspense(<RegisterPage />)}</GuestRoute>
+        }
+      />
       <Route path="/offers" element={withSuspense(<OfferListPage />)} />
       <Route
         path="/offers/:offerId"
