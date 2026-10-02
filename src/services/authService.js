@@ -4,6 +4,7 @@
 
 import axios from 'axios';
 import { API_BASE_URL } from '../constants';
+import api from './api';
 
 // Use a dedicated Axios instance for /auth/* so we can attach metadata
 // flags that the shared interceptor uses to avoid recursion.
@@ -56,6 +57,9 @@ export async function registerRequest(payload) {
 
 // POST /api/v1/auth/change-password
 // Expected: 204 No Content.
+// BR-ACC-24: đổi mật khẩu cần người dùng đã đăng nhập, nên phải gửi kèm
+// Bearer token. Dùng `api` (tự gắn token + tự refresh khi 401) thay vì
+// `authApi` (không gắn token).
 export async function changePasswordRequest({ currentPassword, newPassword }) {
-  await authApi.post('/auth/change-password', { currentPassword, newPassword });
+  await api.post('/auth/change-password', { currentPassword, newPassword });
 }
