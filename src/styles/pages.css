@@ -86,42 +86,46 @@
   background-position: center;
 }
 
-.scms-login-brand {
-  position: absolute;
-  top: 1.5rem;
-  left: 1.5rem;
+/* Logo dùng chung cho trang chủ và trang đăng nhập (BrandLogo.jsx). */
+.scms-brandlogo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   text-decoration: none;
-  color: #fff;
+  color: #e2e2e8;
 }
 
-.scms-login-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+.scms-brandlogo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f172a, #1e1b1b);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 18px rgba(220, 38, 38, 0.45);
+  background: #333539;
+  color: #dc2626;
 }
 
-.scms-login-brand-name {
-  font-weight: 800;
-  font-style: italic;
-  font-size: 1.4rem;
+.scms-brandlogo-name {
+  display: block;
+  font-weight: 600;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   line-height: 1.1;
 }
 
-.scms-login-brand-sub {
+.scms-brandlogo-sub {
   font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  color: #cbd5e1;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(230, 189, 184, 0.7);
+}
+
+/* Trang đăng nhập đặt logo ở góc trên trái. */
+.scms-login-brand {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
 }
 
 .scms-login-card {
@@ -235,3 +239,302 @@
 .scms-login-footer a:hover {
   text-decoration: underline;
 }
+
+/* ----- Register page (US02): dùng lại .scms-login-*, chỉ thêm phần riêng ----- */
+
+.scms-register-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.scms-register-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fca5a5;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+.scms-register-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #dc2626;
+}
+
+/* Ô ngày: icon lịch của trình duyệt hiện màu sáng trên nền tối. */
+.scms-register-date {
+  color-scheme: dark;
+}
+
+/* ----- Homepage (dark theme) ----- */
+
+.scms-home {
+  --h-bg: #111317;
+  --h-bg-deep: #0c0e12;
+  --h-card: #1e2024;
+  --h-card-hi: #282a2e;
+  --h-text: #e2e2e8;
+  --h-muted: #e6bdb8b3;
+  --h-red: #dc2626;
+  --h-red-soft: #ffb4ab;
+  background: var(--h-bg);
+  color: var(--h-text);
+  min-height: 100vh;
+}
+
+.scms-home-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .scms-home-wrap { padding: 0 2.5rem; }
+}
+
+.scms-home-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 72px;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(17, 19, 23, 0.85);
+  backdrop-filter: blur(20px);
+}
+
+/* Logo nhỏ ở footer. */
+.scms-home-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #333539;
+  color: var(--h-red);
+}
+
+.scms-home-logo-sm { width: 32px; height: 32px; }
+
+.scms-home-nav { gap: 1rem; }
+
+.scms-home-nav a {
+  padding: 0.25rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--h-muted);
+}
+
+.scms-home-nav a:hover { color: var(--h-text); }
+.scms-home-nav a.active { color: var(--h-text); background: var(--h-card-hi); }
+
+.scms-home-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+.scms-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1.25rem;
+  border: 0;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.scms-home-btn-lg { padding: 0.85rem 1.5rem; }
+
+.scms-home-btn-primary {
+  background: var(--h-red);
+  color: #fff6f5;
+  box-shadow: 0 4px 24px rgba(220, 38, 38, 0.28);
+}
+.scms-home-btn-primary:hover { background: #a40217; color: #fff; }
+
+.scms-home-btn-ghost { background: var(--h-card-hi); color: var(--h-text); }
+.scms-home-btn-ghost:hover { background: #37393e; color: var(--h-text); }
+
+.scms-home-link-muted {
+  padding: 0.85rem 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--h-muted);
+}
+.scms-home-link-muted:hover { color: var(--h-text); }
+
+.scms-home main { padding-top: 72px; }
+
+.scms-home-hero {
+  position: relative;
+  padding: 2.5rem 0 4rem;
+  background:
+    radial-gradient(ellipse 720px 420px at 50% -10%, rgba(220, 38, 38, 0.2), transparent),
+    var(--h-bg-deep);
+}
+
+.scms-home-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 999px;
+  background: var(--h-card-hi);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scms-home-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--h-red);
+}
+
+.scms-home-h1 {
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.scms-home-accent { color: var(--h-red); }
+.scms-home-accent-soft { color: var(--h-red-soft); }
+.scms-home-muted { color: var(--h-muted); line-height: 1.6; }
+
+.scms-home-section { padding: 4rem 0; background: var(--h-bg); }
+.scms-home-section-dark { background: var(--h-bg-deep); }
+
+.scms-home-eyebrow {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--h-red);
+}
+
+.scms-home-h2 {
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.5rem;
+}
+
+.scms-home-h3 { font-size: 1.25rem; font-weight: 500; margin: 1rem 0 0.5rem; }
+
+.scms-home-card {
+  padding: 2.5rem;
+  border-radius: 0.75rem;
+  background: var(--h-card);
+  transition: background 0.15s;
+}
+.scms-home-card:hover { background: var(--h-card-hi); }
+
+.scms-home-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--h-bg-deep);
+  color: var(--h-red);
+}
+
+.scms-home-note {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-top: 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--h-red-soft);
+}
+
+.scms-home-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem;
+  border-radius: 0.75rem;
+  background: #1a1c20;
+}
+
+.scms-home-plan-hl { background: var(--h-card); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); }
+
+.scms-home-plan-badge {
+  position: absolute;
+  top: -12px;
+  right: 1.5rem;
+  padding: 0.25rem 1rem;
+  border-radius: 999px;
+  background: var(--h-red);
+  color: #fff6f5;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.scms-home-tag {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #333539;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--h-muted);
+}
+
+.scms-home-plan-hl .scms-home-tag { background: rgba(220, 38, 38, 0.2); color: var(--h-red-soft); }
+
+.scms-home-price { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.025em; }
+.scms-home-check { color: var(--h-red-soft); flex-shrink: 0; }
+.scms-home-plan-hl .scms-home-check { color: var(--h-red); }
+
+.scms-home-space {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 380px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: var(--h-card);
+  background-size: cover;
+  background-position: center;
+}
+
+.scms-home-space-text {
+  width: 100%;
+  padding: 2.5rem;
+  background: linear-gradient(to top, rgba(12, 14, 18, 0.95), rgba(12, 14, 18, 0.4) 70%, transparent);
+}
+
+.scms-home-footer { padding: 4rem 0 2rem; background: var(--h-bg-deep); }
