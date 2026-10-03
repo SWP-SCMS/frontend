@@ -11,6 +11,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { ROLES } from '../../../constants';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import BrandLogo from '../../../components/common/BrandLogo';
 
 const ROLE_HOME = {
   [ROLES.MEMBER]: '/member/dashboard',
@@ -64,21 +65,7 @@ export default function LoginPage() {
 
   return (
     <div className="scms-login-page">
-      <Link to="/" className="scms-login-brand">
-        <span className="scms-login-logo" aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" {...iconProps} stroke="#fff">
-            <path d="M6.5 6.5l11 11" stroke="#f87171" />
-            <path d="m3 10 7-7" />
-            <path d="m14 21 7-7" />
-            <path d="m2 6 4-4" />
-            <path d="m18 22 4-4" />
-          </svg>
-        </span>
-        <span>
-          <span className="scms-login-brand-name d-block">SMSC</span>
-          <span className="scms-login-brand-sub">SPORT CENTER</span>
-        </span>
-      </Link>
+      <BrandLogo className="scms-login-brand" />
 
       <div className="scms-login-card">
         <h1 className="h5 fw-bold mb-1">Đăng nhập tài khoản</h1>
