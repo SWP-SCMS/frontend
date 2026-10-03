@@ -7,6 +7,7 @@ export default function BrandLogo({ className = '' }) {
   return (
     <Link to="/" className={`scms-brandlogo ${className}`.trim()}>
       <span className="scms-brandlogo-icon" aria-hidden="true">
+        <svg
           width="22"
           height="22"
           viewBox="0 0 24 24"
