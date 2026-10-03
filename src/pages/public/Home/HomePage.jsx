@@ -101,7 +101,7 @@ export default function HomePage() {
       .then((data) => {
         if (!cancelled) setOffers(data);
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
     };
@@ -246,9 +246,8 @@ export default function HomePage() {
                 return (
                   <div key={plan.code} className="col-lg-6">
                     <div
-                      className={`scms-home-plan h-100 ${
-                        plan.highlight ? 'scms-home-plan-hl' : ''
-                      }`}
+                      className={`scms-home-plan h-100 ${plan.highlight ? 'scms-home-plan-hl' : ''
+                        }`}
                     >
                       {plan.badge ? (
                         <span className="scms-home-plan-badge">{plan.badge}</span>
@@ -280,9 +279,8 @@ export default function HomePage() {
                       </div>
                       <Link
                         to="/login"
-                        className={`scms-home-btn scms-home-btn-lg w-100 mt-4 ${
-                          plan.highlight ? 'scms-home-btn-primary' : 'scms-home-btn-ghost'
-                        }`}
+                        className={`scms-home-btn scms-home-btn-lg w-100 mt-4 ${plan.highlight ? 'scms-home-btn-primary' : 'scms-home-btn-ghost'
+                          }`}
                       >
                         {plan.cta}
                       </Link>
