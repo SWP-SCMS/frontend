@@ -13,12 +13,10 @@
 /* Hero gradient banner. Cool slate → crimson ramp that matches the
  * approved marketing palette (variables come from index.css). */
 .scms-hero {
-  background: linear-gradient(
-    135deg,
-    var(--scms-on-surface) 0%,
-    #1a2433 60%,
-    var(--scms-red) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--scms-on-surface) 0%,
+      #1a2433 60%,
+      var(--scms-red) 100%);
   color: #fff;
 }
 
@@ -90,6 +88,11 @@
   position: absolute;
   top: 1.5rem;
   left: 1.5rem;
+}
+
+/* Logo dùng chung cho trang chủ và trang đăng nhập (BrandLogo.jsx). */
+.scms-brandlogo {
+
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -97,31 +100,31 @@
   color: #fff;
 }
 
-.scms-login-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+
+.scms-brandlogo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f172a, #1e1b1b);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 18px rgba(220, 38, 38, 0.45);
+  background: #333539;
+  color: #dc2626;
 }
 
-.scms-login-brand-name {
-  font-weight: 800;
-  font-style: italic;
-  font-size: 1.4rem;
+.scms-brandlogo-name {
+  display: block;
+  font-weight: 600;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
   line-height: 1.1;
 }
 
-.scms-login-brand-sub {
+.scms-brandlogo-sub {
   font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  color: #cbd5e1;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(230, 189, 184, 0.7);
 }
 
 .scms-login-card {
@@ -236,6 +239,44 @@
   text-decoration: underline;
 }
 
+
+/* ----- Register page (US02): dùng lại .scms-login-*, chỉ thêm phần riêng ----- */
+
+.scms-register-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.scms-register-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fca5a5;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+.scms-register-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #dc2626;
+}
+
+/* Ô ngày: icon lịch của trình duyệt hiện màu sáng trên nền tối. */
+.scms-register-date {
+  color-scheme: dark;
+}
+
+
 /* ----- Homepage (dark theme) ----- */
 
 .scms-home {
@@ -259,7 +300,9 @@
 }
 
 @media (min-width: 768px) {
-  .scms-home-wrap { padding: 0 2.5rem; }
+  .scms-home-wrap {
+    padding: 0 2.5rem;
+  }
 }
 
 .scms-home-header {
@@ -278,14 +321,8 @@
   backdrop-filter: blur(20px);
 }
 
-.scms-home-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  text-decoration: none;
-  color: var(--h-text);
-}
 
+/* Logo nhỏ ở footer. */
 .scms-home-logo {
   width: 40px;
   height: 40px;
@@ -297,23 +334,16 @@
   color: var(--h-red);
 }
 
-.scms-home-logo-sm { width: 32px; height: 32px; }
-
-.scms-home-brand-name {
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  line-height: 1.1;
+.scms-home-logo-sm {
+  width: 32px;
+  height: 32px;
 }
 
-.scms-home-brand-sub {
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--h-muted);
-}
 
-.scms-home-nav { gap: 1rem; }
+
+.scms-home-nav {
+  gap: 1rem;
+}
 
 .scms-home-nav a {
   padding: 0.25rem 1rem;
@@ -324,10 +354,20 @@
   color: var(--h-muted);
 }
 
-.scms-home-nav a:hover { color: var(--h-text); }
-.scms-home-nav a.active { color: var(--h-text); background: var(--h-card-hi); }
+.scms-home-nav a:hover {
+  color: var(--h-text);
+}
 
-.scms-home-actions { display: flex; align-items: center; gap: 0.75rem; }
+.scms-home-nav a.active {
+  color: var(--h-text);
+  background: var(--h-card-hi);
+}
+
+.scms-home-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 
 .scms-home-btn {
   display: inline-flex;
@@ -343,17 +383,30 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.scms-home-btn-lg { padding: 0.85rem 1.5rem; }
+.scms-home-btn-lg {
+  padding: 0.85rem 1.5rem;
+}
 
 .scms-home-btn-primary {
   background: var(--h-red);
   color: #fff6f5;
   box-shadow: 0 4px 24px rgba(220, 38, 38, 0.28);
 }
-.scms-home-btn-primary:hover { background: #a40217; color: #fff; }
 
-.scms-home-btn-ghost { background: var(--h-card-hi); color: var(--h-text); }
-.scms-home-btn-ghost:hover { background: #37393e; color: var(--h-text); }
+.scms-home-btn-primary:hover {
+  background: #a40217;
+  color: #fff;
+}
+
+.scms-home-btn-ghost {
+  background: var(--h-card-hi);
+  color: var(--h-text);
+}
+
+.scms-home-btn-ghost:hover {
+  background: #37393e;
+  color: var(--h-text);
+}
 
 .scms-home-link-muted {
   padding: 0.85rem 1.5rem;
@@ -362,9 +415,14 @@
   text-decoration: none;
   color: var(--h-muted);
 }
-.scms-home-link-muted:hover { color: var(--h-text); }
 
-.scms-home main { padding-top: 72px; }
+.scms-home-link-muted:hover {
+  color: var(--h-text);
+}
+
+.scms-home main {
+  padding-top: 72px;
+}
 
 .scms-home-hero {
   position: relative;
@@ -403,12 +461,27 @@
   margin: 0;
 }
 
-.scms-home-accent { color: var(--h-red); }
-.scms-home-accent-soft { color: var(--h-red-soft); }
-.scms-home-muted { color: var(--h-muted); line-height: 1.6; }
+.scms-home-accent {
+  color: var(--h-red);
+}
 
-.scms-home-section { padding: 4rem 0; background: var(--h-bg); }
-.scms-home-section-dark { background: var(--h-bg-deep); }
+.scms-home-accent-soft {
+  color: var(--h-red-soft);
+}
+
+.scms-home-muted {
+  color: var(--h-muted);
+  line-height: 1.6;
+}
+
+.scms-home-section {
+  padding: 4rem 0;
+  background: var(--h-bg);
+}
+
+.scms-home-section-dark {
+  background: var(--h-bg-deep);
+}
 
 .scms-home-eyebrow {
   display: block;
@@ -427,7 +500,11 @@
   margin: 0 0 0.5rem;
 }
 
-.scms-home-h3 { font-size: 1.25rem; font-weight: 500; margin: 1rem 0 0.5rem; }
+.scms-home-h3 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 1rem 0 0.5rem;
+}
 
 .scms-home-card {
   padding: 2.5rem;
@@ -435,7 +512,10 @@
   background: var(--h-card);
   transition: background 0.15s;
 }
-.scms-home-card:hover { background: var(--h-card-hi); }
+
+.scms-home-card:hover {
+  background: var(--h-card-hi);
+}
 
 .scms-home-icon-box {
   width: 48px;
@@ -468,7 +548,10 @@
   background: #1a1c20;
 }
 
-.scms-home-plan-hl { background: var(--h-card); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); }
+.scms-home-plan-hl {
+  background: var(--h-card);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
 
 .scms-home-plan-badge {
   position: absolute;
@@ -494,11 +577,25 @@
   color: var(--h-muted);
 }
 
-.scms-home-plan-hl .scms-home-tag { background: rgba(220, 38, 38, 0.2); color: var(--h-red-soft); }
+.scms-home-plan-hl .scms-home-tag {
+  background: rgba(220, 38, 38, 0.2);
+  color: var(--h-red-soft);
+}
 
-.scms-home-price { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.025em; }
-.scms-home-check { color: var(--h-red-soft); flex-shrink: 0; }
-.scms-home-plan-hl .scms-home-check { color: var(--h-red); }
+.scms-home-price {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.scms-home-check {
+  color: var(--h-red-soft);
+  flex-shrink: 0;
+}
+
+.scms-home-plan-hl .scms-home-check {
+  color: var(--h-red);
+}
 
 .scms-home-space {
   position: relative;
@@ -518,4 +615,7 @@
   background: linear-gradient(to top, rgba(12, 14, 18, 0.95), rgba(12, 14, 18, 0.4) 70%, transparent);
 }
 
-.scms-home-footer { padding: 4rem 0 2rem; background: var(--h-bg-deep); }
+.scms-home-footer {
+  padding: 4rem 0 2rem;
+  background: var(--h-bg-deep);
+}

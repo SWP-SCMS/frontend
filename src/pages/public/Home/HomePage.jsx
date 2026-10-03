@@ -18,6 +18,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { listActiveOffers } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
+import BrandLogo from '../../../components/common/BrandLogo';
 import {
   HOMEPAGE_COPY,
   FEATURES,
@@ -100,7 +101,7 @@ export default function HomePage() {
       .then((data) => {
         if (!cancelled) setOffers(data);
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
     };
@@ -120,15 +121,7 @@ export default function HomePage() {
     <div className="scms-home">
       {/* Header */}
       <header className="scms-home-header">
-        <Link to="/" className="scms-home-brand">
-          <span className="scms-home-logo" aria-hidden="true">
-            <Icon name="dumbbell" size={22} />
-          </span>
-          <span>
-            <span className="scms-home-brand-name d-block">SCMS</span>
-            <span className="scms-home-brand-sub">Sports Center</span>
-          </span>
-        </Link>
+        <BrandLogo />
 
         <nav className="scms-home-nav d-none d-md-flex">
           <Link to="/" className="active">Trang chủ</Link>
@@ -253,9 +246,8 @@ export default function HomePage() {
                 return (
                   <div key={plan.code} className="col-lg-6">
                     <div
-                      className={`scms-home-plan h-100 ${
-                        plan.highlight ? 'scms-home-plan-hl' : ''
-                      }`}
+                      className={`scms-home-plan h-100 ${plan.highlight ? 'scms-home-plan-hl' : ''
+                        }`}
                     >
                       {plan.badge ? (
                         <span className="scms-home-plan-badge">{plan.badge}</span>
@@ -287,9 +279,8 @@ export default function HomePage() {
                       </div>
                       <Link
                         to="/login"
-                        className={`scms-home-btn scms-home-btn-lg w-100 mt-4 ${
-                          plan.highlight ? 'scms-home-btn-primary' : 'scms-home-btn-ghost'
-                        }`}
+                        className={`scms-home-btn scms-home-btn-lg w-100 mt-4 ${plan.highlight ? 'scms-home-btn-primary' : 'scms-home-btn-ghost'
+                          }`}
                       >
                         {plan.cta}
                       </Link>

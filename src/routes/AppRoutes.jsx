@@ -9,6 +9,7 @@ import GuestRoute from './GuestRoute';
 import RoleRoute from './RoleRoute';
 import LoadingScreen from '../components/common/LoadingScreen';
 import AppShell from '../components/layout/AppShell';
+import MemberLayout from '../components/layout/MemberLayout';
 
 // Public pages
 const HomePage = lazy(() => import('../pages/public/Home/HomePage'));
@@ -85,9 +86,9 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
-              <AppShell>
+              <MemberLayout>
                 <MemberDashboardPage />
-              </AppShell>
+              </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
         }
@@ -97,9 +98,9 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
-              <AppShell>
+              <MemberLayout>
                 <MemberProfilePage />
-              </AppShell>
+              </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
         }
@@ -109,9 +110,9 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
-              <AppShell>
+              <MemberLayout>
                 <MemberChangePasswordPage />
-              </AppShell>
+              </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
         }
