@@ -5,9 +5,11 @@
 //   - Invalid login returns a generic credential error.
 //   - On success, AuthContext stores the profile; we navigate to the
 //     intended destination (state.from) or role-based home.
+//   - `?changed=1` means "đổi mật khẩu thành công, phiên cũ đã kết thúc" —
+//     báo người dùng trước khi họ điền form. Xem MemberChangePasswordPage.
 
 import { useState } from 'react';
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { ROLES } from '../../../constants';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -34,6 +36,7 @@ const iconProps = {
 export default function LoginPage() {
   const { login, isAuthenticated, role, isReady } = useAuth();
   const location = useLocation();
+  const [params, setParams] = useSearchParams();
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -41,6 +44,16 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [loginResolved, setLoginResolved] = useState(false);
+
+  // Đổi mật khẩu xong: BE đã kết thúc phiên nên người dùng bị đưa về đây
+  // kèm `?changed=1`. Hiện thông báo thành công rồi xoá param — nếu giữ lại
+  // thì F5 sẽ báo lại lần nữa, gây hiểu nhầm là vừa đổi xong.
+  const passwordChanged = params.get('changed') === '1';
+
+  function dismissPasswordChangedNotice() {
+    params.delete('changed');
+    setParams(params, { replace: true });
+  }
 
   // When login() resolves successfully, send the user to the role-aware
   // home via a declarative <Navigate> on the next render. This is more
@@ -102,6 +115,30 @@ export default function LoginPage() {
           title="Đăng nhập thất bại"
           onClose={() => setError(null)}
         />
+
+        {passwordChanged ? (
+          <div className="scms-login-notice" role="status">
+            <span className="scms-login-notice-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" {...iconProps}>
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
+            <span>
+              Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.
+            </span>
+            <button
+              type="button"
+              className="scms-login-notice-close"
+              onClick={dismissPasswordChangedNotice}
+              aria-label="Đóng thông báo"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" {...iconProps}>
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-3">

@@ -68,7 +68,7 @@ export default function MemberChangePasswordPage() {
       // send the user back to login. We do NOT try to keep them logged
       // in here, per BR decision.
       await terminateSession();
-      navigate('/login?reset=1', { replace: true });
+      navigate('/login?changed=1', { replace: true });
     } catch (err) {
       setError(err);
     } finally {
