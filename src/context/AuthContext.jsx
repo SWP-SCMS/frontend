@@ -23,14 +23,16 @@ import {
   registerUnauthorizedHandler,
   clearUnauthorizedHandler,
   setAccessToken,
+  getAccessTokenPayload,
 } from '../services/api';
 import {
   loginRequest,
   logoutRequest,
   refreshSession,
 } from '../services/authService';
-import { getMyProfile } from '../services/memberService';
+import { getMyProfile, buildProfileFromToken } from '../services/memberService';
 import { AuthContext } from './AuthContextObject';
+import { ROLES } from '../constants';
 
 // One-time bootstrap flag so we don't fire /members/me/profile on every
 // component remount.
@@ -79,10 +81,20 @@ export function AuthProvider({ children }) {
         const token = await refreshSession();
         if (!token) return null;
         setAccessToken(token);
+        // /members/me/profile is a Member-only endpoint (BE restricts it to
+        // hasRole("MEMBER")). For staff roles (MANAGER/RECEPTIONIST/COACH)
+        // we build a minimal profile straight from the JWT claims — no
+        // round-trip needed.
+        const payload = getAccessTokenPayload();
+        if (payload?.role && payload.role !== ROLES.MEMBER) {
+          return buildProfileFromToken(payload);
+        }
         try {
           return await getMyProfile();
         } catch {
-          return null;
+          // Profile fetch failed — fall back to claims so we don't trap the
+          // session in a perpetual loading state.
+          return buildProfileFromToken(payload);
         }
       })();
 
@@ -113,14 +125,27 @@ export function AuthProvider({ children }) {
       }
       setAccessToken(token);
 
-      // The login response includes role + fullName. We still fetch the
-      // full profile to keep a single source of truth for the UI.
-      const profile = await getMyProfile().catch(() => ({
-        accountId: result.accountId,
-        role: result.role,
-        fullName: result.fullName,
-        memberId: result.memberId ?? null,
-      }));
+      // Build profile directly from login response — no JWT decode needed.
+      // getMyProfile() is a MEMBER-only endpoint; Manager/Receptionist/Coach
+      // accounts have no member record so they must use the response body.
+      let profile;
+      if (result.role && result.role !== ROLES.MEMBER) {
+        // Staff roles: build from the reliable login response body.
+        profile = {
+          accountId: result.accountId,
+          role: result.role,
+          fullName: result.fullName ?? '',
+          memberId: result.memberId ?? null,
+        };
+      } else {
+        // Members: hit the full profile endpoint; fall back to response body.
+        profile = await getMyProfile().catch(() => ({
+          accountId: result.accountId,
+          role: result.role,
+          fullName: result.fullName,
+          memberId: result.memberId ?? null,
+        }));
+      }
 
       setUser(profile);
       setStatus('authenticated');

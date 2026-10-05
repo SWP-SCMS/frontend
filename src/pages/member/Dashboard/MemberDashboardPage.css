@@ -462,6 +462,60 @@
   color: #64748b;
 }
 
+/* Bộ chọn mức giá / thời hạn khi một plan có nhiều offer ACTIVE. */
+.scms-md-plan-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0.2rem;
+}
+
+.scms-md-plan-variant {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.scms-md-plan-variant:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.scms-md-plan-variant.on {
+  border-color: #dc2626;
+  background: #fef2f2;
+  box-shadow: inset 0 0 0 1px #dc2626;
+}
+
+.scms-md-plan-variant:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.scms-md-plan-variant-days {
+  font-size: 0.7rem;
+  color: #475569;
+}
+
+.scms-md-plan-variant.on .scms-md-plan-variant-days {
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.scms-md-plan-variant-price {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
 .scms-md-plan-price {
   margin-top: 0.25rem;
   display: flex;

@@ -5,6 +5,9 @@ import api from './api';
 
 // GET /api/v1/membership-offers?planCode=BASIC|PLUS
 // planCode is optional; backend returns [] when nothing matches.
+// NOTE: the backend allows this endpoint for MEMBER *or* RECEPTIONIST
+// (us12 contract), so Receptionist pages reuse this function rather than
+// declaring a duplicate in receptionistService.js.
 export async function listActiveOffers({ planCode } = {}) {
   const { data } = await api.get('/membership-offers', {
     params: planCode ? { planCode } : undefined,

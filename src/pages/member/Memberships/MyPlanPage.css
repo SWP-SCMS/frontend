@@ -1,0 +1,349 @@
+/* Gói tập của tôi (Hội viên). Tiền tố .scms-my- để không đụng .scms-mp- của
+ * MemberProfilePage hay .scms-mh- của lịch sử gói tập.
+ * Nền trang (sáng) do MemberLayout cung cấp. */
+
+.scms-my-plan {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ----- Tiêu đề ----- */
+
+.scms-my-plan-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.scms-my-plan-crumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.scms-my-plan-crumb strong {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.scms-my-plan-crumb-sep {
+  color: #cbd5e1;
+}
+
+.scms-my-plan-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.scms-my-plan-sub {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.scms-my-plan-reload {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #475569;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.scms-my-plan-reload:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.scms-my-plan-reload:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* ----- Đang tải ----- */
+
+.scms-my-plan-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* ----- Rỗng ----- */
+
+.scms-my-plan-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 1rem;
+}
+
+.scms-my-plan-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 0.5rem;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.scms-my-plan-empty h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.scms-my-plan-empty p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.scms-my-plan-empty-cta {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: #dc2626;
+  border-radius: 0.5rem;
+  transition: background 0.15s ease;
+}
+
+.scms-my-plan-empty-cta:hover {
+  background: #b91c1c;
+  color: #fff;
+}
+
+/* ----- Thẻ gói ----- */
+
+.scms-my-plan-card {
+  padding: 2rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.scms-my-plan-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.scms-my-plan-kicker {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #dc2626;
+  margin-bottom: 0.375rem;
+}
+
+.scms-my-plan-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.scms-my-plan-tag {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.scms-my-plan-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.scms-my-plan-status.on {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.scms-my-plan-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.scms-my-plan-status.on .scms-my-plan-status-dot {
+  background: #10b981;
+}
+
+/* ----- Tiến độ ----- */
+
+.scms-my-plan-progress {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.scms-my-plan-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.625rem;
+}
+
+.scms-my-plan-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.scms-my-plan-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #dc2626, #f97316);
+  transition: width 0.3s ease;
+}
+
+.scms-my-plan-progress-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* ----- Chi tiết ----- */
+
+.scms-my-dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin: 0;
+  padding: 1.5rem 0;
+}
+
+.scms-my-dl-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.scms-my-dl-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.scms-my-dl-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+/* ----- Nút ----- */
+
+.scms-my-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.scms-my-plan-btn {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: #dc2626;
+  border: 1px solid #dc2626;
+  border-radius: 0.5rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.scms-my-plan-btn:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
+.scms-my-plan-btn.ghost {
+  color: #475569;
+  background: #fff;
+  border-color: #cbd5e1;
+}
+
+.scms-my-plan-btn.ghost:hover {
+  color: #0f172a;
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* ----- Màn hình hẹp ----- */
+
+@media (max-width: 768px) {
+  .scms-my-dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .scms-my-plan-actions .scms-my-plan-btn {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .scms-my-dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

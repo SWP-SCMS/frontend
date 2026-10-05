@@ -16,6 +16,13 @@ export default function RoleRoute({ allow, children }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  // After login the user object is set, but React state updates may not
+  // have flushed by the time we render this route. Showing `/` for a
+  // logged-in user with no role would be wrong — show a splash instead.
+  if (!role) {
+    return null;
+  }
+
   const allowed = Array.isArray(allow) ? allow : [allow];
   if (!allowed.includes(role)) {
     // Authenticated but wrong role -> send to a role-appropriate home.

@@ -10,7 +10,7 @@
 // Thanh toán chuyển khoản (US18) chưa làm ở FE: sau khi tạo đơn, trang chỉ
 // hiển thị đơn đang chờ thanh toán.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../../context/useAuth';
@@ -133,10 +133,22 @@ function problemMessage(err, fallback) {
   return err?.response?.data?.detail || extractErrorMessage(err, fallback);
 }
 
-// BE đã sắp xếp theo planCode rồi durationDays tăng dần, nên offer đầu tiên
-// của một plan là offer có thời hạn ngắn nhất.
-function pickOffer(offers, planCode) {
-  return offers.find((o) => o.planCode === planCode) || null;
+// Gom offer theo planCode, giữ nguyên thứ tự BE trả về.
+//
+// BE có thể trả N offer cho CÙNG một planCode (mỗi offer là một mức giá /
+// thời hạn khác nhau). Trước đây hàm này chỉ lấy offer ĐẦU TIÊN của mỗi
+// plan nên các offer còn lại của cùng plan đó không bao giờ hiện ra ở
+// Dashboard, dù chúng đang bán thật — đó là lý do "chỉ mua được 2 gói".
+//
+// Thứ tự BE trả về là planCode rồi durationDays tăng dần, nên offers[0] là
+// mức thời hạn ngắn nhất và được dùng làm mặc định chọn.
+function groupOffersByPlan(offers) {
+  const groups = {};
+  offers.forEach((offer) => {
+    if (!groups[offer.planCode]) groups[offer.planCode] = [];
+    groups[offer.planCode].push(offer);
+  });
+  return groups;
 }
 
 // BR-ACC-09: mục tiêu thể chất, liên hệ khẩn cấp là trường tùy chọn của Profile.
@@ -173,8 +185,19 @@ function Step({ state, label, title, text, here }) {
   );
 }
 
-function PlanCard({ config, offer, blockedReason, busy, onChoose }) {
+function PlanCard({ config, offers, blockedReason, busyOfferId, onChoose }) {
   const { hot, tag, chip, buttonText } = config;
+
+  // Plan này chỉ có 1 mức giá -> giữ nguyên layout cũ, không cần bộ chọn.
+  const list = offers || [];
+  const hasVariants = list.length > 1;
+  // Không dùng useState cho lựa chọn hiện tại: danh sách offer tới sau, nên
+  // hook sẽ đổi số lần gọi giữa các render (vi phạm rules-of-hooks) và
+  // state cũ còn sót lại khi BE đổi danh sách. Thay vào đó lưu offerId
+  // của phiên bản đang bấm và fallback về offers[0] khi không còn hợp lệ.
+  const [pickedOfferId, setPickedOfferId] = useState(null);
+  const offer = list.find((o) => o.offerId === pickedOfferId) || list[0];
+  const busy = Boolean(offer) && busyOfferId === offer.offerId;
 
   // Chưa có offer ACTIVE nào cho plan này.
   if (!offer) {
@@ -223,6 +246,34 @@ function PlanCard({ config, offer, blockedReason, busy, onChoose }) {
         <div className="scms-md-plan-name">
           {offer.planDisplayName || offer.planCode}
         </div>
+
+        {hasVariants ? (
+          <div className="scms-md-plan-variants" role="radiogroup"
+            aria-label={`Chọn mức giá gói ${config.planCode}`}>
+            {list.map((item) => {
+              const active = item.offerId === offer.offerId;
+              return (
+                <button
+                  key={item.offerId}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  className={`scms-md-plan-variant${active ? ' on' : ''}`}
+                  onClick={() => setPickedOfferId(item.offerId)}
+                  disabled={Boolean(blockedReason)}
+                >
+                  <span className="scms-md-plan-variant-days">
+                    {item.durationDays} ngày
+                  </span>
+                  <span className="scms-md-plan-variant-price">
+                    {formatPrice(item.priceAmount, item.currencyCode)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
         <div className="scms-md-plan-offer">{offer.name}</div>
         <div className="scms-md-plan-price">
           <strong>{formatPrice(offer.priceAmount, offer.currencyCode)}</strong>
@@ -350,6 +401,7 @@ export default function MemberDashboardPage() {
 
   const fullName = user?.fullName || 'hội viên';
   const missing = missingProfileFields(user);
+  const groupedOffers = groupOffersByPlan(offers);
 
   // Huy hiệu trạng thái ở góc phải tiêu đề.
   let badgeText = 'Đang tải...';
@@ -531,19 +583,16 @@ export default function MemberDashboardPage() {
               </div>
             ) : (
               <div className="scms-md-plans">
-                {PLAN_CARDS.map((config) => {
-                  const offer = pickOffer(offers, config.planCode);
-                  return (
-                    <PlanCard
-                      key={config.planCode}
-                      config={config}
-                      offer={offer}
-                      blockedReason={blockedReason}
-                      busy={offer != null && orderingId === offer.offerId}
-                      onChoose={handleChoose}
-                    />
-                  );
-                })}
+                {PLAN_CARDS.map((config) => (
+                  <PlanCard
+                    key={config.planCode}
+                    config={config}
+                    offers={groupedOffers[config.planCode] || []}
+                    blockedReason={blockedReason}
+                    busyOfferId={orderingId}
+                    onChoose={handleChoose}
+                  />
+                ))}
               </div>
             )}
 

@@ -1,0 +1,148 @@
+/* Printable receipt.
+ *
+ * The on-screen version is a Bootstrap Card so it looks native in the app;
+ * for print we strip every decoration and let the content run full width,
+ * because a receipt that prints with rounded grey borders looks like a
+ * screenshot rather than a document the customer keeps.
+ *
+ * `display: none` on the shell and toolbar under print means the customer
+ * gets the receipt alone — no sidebar, no buttons, no "Dữ liệu chỉ mang
+ * tính chất tham khảo" footer.
+ */
+
+.receipt-print-area {
+  max-width: 720px;
+}
+
+.receipt-sheet {
+  background: #fff;
+}
+
+/* Two-column label/value rows, aligned on a shared baseline grid so long
+ * values wrap under the value column instead of colliding with the label. */
+.receipt-row {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed var(--bs-border-color);
+}
+
+.receipt-row:last-child {
+  border-bottom: 0;
+}
+
+.receipt-label {
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+}
+
+.receipt-value {
+  font-size: 0.9375rem;
+  word-break: break-word;
+}
+
+.receipt-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bs-danger);
+}
+
+.receipt-issued-by {
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
+}
+
+/* Inline receipt shown on the cash-payment screen right after collecting
+ * money. It reuses the sheet styling so what the receptionist sees on
+ * screen and what comes out of the printer are the same document. */
+.receipt-preview {
+  max-width: 460px;
+  border-color: var(--bs-border-color) !important;
+}
+
+.receipt-preview .table > :not(caption) > * > * {
+  background: transparent;
+  border-bottom-color: var(--bs-border-color);
+  padding: 0.3rem 0;
+}
+
+.receipt-preview .table > tbody > tr.border-top > * {
+  border-top: 1px dashed var(--bs-border-color);
+}
+
+/* The signature line is the part staff actually use: the customer signs to
+ * confirm they received the goods and the amount. */
+.receipt-signature {
+  margin-top: 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.receipt-signature > div {
+  flex: 1;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
+}
+
+.receipt-signature-line {
+  margin-top: 0.4rem;
+  border-top: 1px solid var(--bs-border-color);
+  padding-top: 0.3rem;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+    size: A4;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  /* Hide the app chrome so the customer gets the receipt alone. These are the
+     real class names from AppShell: the <Navbar>, the <aside class=
+     "scms-sidebar">, the mobile Offcanvas and the site <footer>. The receipt
+     page marks its own toolbar with .no-print. */
+  .scms-sidebar,
+  .navbar,
+  .offcanvas,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  .flex-grow-1,
+  main,
+  .container-fluid,
+  .row,
+  .col {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: auto !important;
+  }
+
+  .receipt-print-area {
+    max-width: none;
+  }
+
+  .receipt-sheet {
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Keep the receipt intact across page breaks. */
+  .receipt-signature {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+}
