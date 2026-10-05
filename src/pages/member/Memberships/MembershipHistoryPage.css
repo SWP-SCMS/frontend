@@ -1,0 +1,286 @@
+/* Lịch sử gói tập Hội viên (US21). Tiền tố .scms-mh- để không đụng class khác.
+ * Nền trang (sáng) do MemberLayout cung cấp. */
+
+.scms-mh {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ----- Tiêu đề ----- */
+
+.scms-mh-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.scms-mh-crumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.scms-mh-crumb strong {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.scms-mh-crumb-sep {
+  color: #cbd5e1;
+}
+
+.scms-mh-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.scms-mh-sub {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.scms-mh-reload {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #475569;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.scms-mh-reload:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.scms-mh-reload:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* ----- Đang tải ----- */
+
+.scms-mh-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* ----- Rỗng ----- */
+
+.scms-mh-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 1rem;
+}
+
+.scms-mh-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 0.5rem;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.scms-mh-empty h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.scms-mh-empty p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.scms-mh-empty-cta {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: #dc2626;
+  border-radius: 0.5rem;
+  transition: background 0.15s ease;
+}
+
+.scms-mh-empty-cta:hover {
+  background: #b91c1c;
+  color: #fff;
+}
+
+/* ----- Bảng ----- */
+
+.scms-mh-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.scms-mh-tablewrap {
+  overflow-x: auto;
+}
+
+.scms-mh-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.scms-mh-table thead th {
+  padding: 0.875rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.scms-mh-table tbody td {
+  padding: 1rem 1.5rem;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.scms-mh-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.scms-mh-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.scms-mh-plan {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.scms-mh-plancode {
+  margin-top: 0.125rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.scms-mh-days {
+  color: #94a3b8;
+}
+
+.scms-mh-period {
+  white-space: nowrap;
+}
+
+.scms-mh-price {
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+/* ----- Trạng thái ----- */
+
+.scms-mh-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.scms-mh-status.on {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+/* ----- Màn hình hẹp ----- */
+
+@media (max-width: 768px) {
+  .scms-mh-table thead {
+    display: none;
+  }
+
+  .scms-mh-table,
+  .scms-mh-table tbody,
+  .scms-mh-table tr,
+  .scms-mh-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .scms-mh-table tbody tr {
+    padding: 1rem 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .scms-mh-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .scms-mh-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 1.25rem;
+    border-bottom: none;
+  }
+
+  .scms-mh-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+  }
+
+  .scms-mh-table tbody td:first-child {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .scms-mh-table tbody td:first-child::before {
+    display: none;
+  }
+}

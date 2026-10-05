@@ -91,10 +91,10 @@ function Icon({ name, size = 18 }) {
 // Mục menu bên trái. `to: null` nghĩa là chưa có trang -> làm mờ.
 const SIDEBAR_ITEMS = [
   { to: '/member/dashboard', label: 'Trang tổng quan', icon: 'dashboard' },
+  { to: '/member/plan', label: 'Gói tập của tôi', icon: 'dumbbell' },
+  { to: '/member/memberships', label: 'Lịch sử thanh toán', icon: 'receipt' },
   { to: '/member/profile', label: 'Hồ sơ cá nhân', icon: 'profile', end: true },
-  { to: null, label: 'Gói tập của tôi', icon: 'dumbbell' },
   { to: null, label: 'Lịch tập & Check-in', icon: 'calendar' },
-  { to: null, label: 'Lịch sử thanh toán', icon: 'receipt' },
 ];
 
 // Mục menu trên header.

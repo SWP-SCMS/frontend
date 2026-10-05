@@ -13,7 +13,7 @@
 //   - Gói tập (menu)                           -> /offers
 //   - Khám phá các gói tập                     -> cuộn xuống bảng giá
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { listActiveOffers } from '../../../services/membershipService';
@@ -94,6 +94,23 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
 
+  // Role-aware "Trang cá nhân" target. Member has its own dashboard at
+  // /member/dashboard; other roles stay on their role-scoped home.
+  const personalHomePath = useMemo(() => {
+    switch (user?.role) {
+      case 'MEMBER':
+        return '/member/dashboard';
+      case 'MANAGER':
+        return '/manager/dashboard';
+      case 'RECEPTIONIST':
+        return '/reception';
+      case 'COACH':
+        return '/coach';
+      default:
+        return '/login';
+    }
+  }, [user?.role]);
+
   // Không tải được Offer thì vẫn hiện giá mặc định, không báo lỗi cho khách.
   useEffect(() => {
     let cancelled = false;
@@ -134,7 +151,10 @@ export default function HomePage() {
               <span className="d-none d-md-inline small text-secondary">
                 {user?.fullName || 'Tài khoản'}
               </span>
-              <Link to="/member/dashboard" className="scms-home-btn scms-home-btn-ghost">
+              <Link
+                to={personalHomePath}
+                className="scms-home-btn scms-home-btn-ghost"
+              >
                 Trang cá nhân
               </Link>
               <button
@@ -157,6 +177,38 @@ export default function HomePage() {
           )}
         </div>
       </header>
+
+      {isReady && isAuthenticated && user?.role === 'MANAGER' && (
+        <aside className="scms-home-manager-bar" aria-label="Manager Dashboard">
+          <div className="scms-home-manager-bar-icon" aria-hidden="true">
+            <Icon name="dumbbell" size={26} />
+          </div>
+          <div className="scms-home-manager-bar-body">
+            <span className="scms-home-manager-bar-eyebrow">Khu vực quản lý</span>
+            <h2 className="scms-home-manager-bar-title">Manager Dashboard</h2>
+            <p className="scms-home-manager-bar-sub">
+              Xin chào{user?.fullName ? `, ${user.fullName}` : ''}. Đây là khu vực dành riêng
+              cho tài khoản quản lý. Truy cập dashboard để xem nhân viên, hội viên và các
+              báo cáo vận hành.
+            </p>
+          </div>
+          <div className="scms-home-manager-bar-actions">
+            <Link
+              to="/manager/dashboard"
+              className="scms-home-btn scms-home-btn-primary"
+            >
+              Mở Dashboard <Icon name="arrowRight" size={16} />
+            </Link>
+            <button
+              type="button"
+              className="scms-home-btn scms-home-btn-ghost"
+              onClick={handleLogout}
+            >
+              Đăng xuất
+            </button>
+          </div>
+        </aside>
+      )}
 
       <main>
         {/* Hero */}

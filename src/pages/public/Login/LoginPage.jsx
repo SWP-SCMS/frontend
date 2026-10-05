@@ -7,7 +7,7 @@
 //     intended destination (state.from) or role-based home.
 
 import { useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { ROLES } from '../../../constants';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -17,7 +17,9 @@ const ROLE_HOME = {
   [ROLES.MEMBER]: '/member/dashboard',
   [ROLES.RECEPTIONIST]: '/reception',
   [ROLES.COACH]: '/coach',
-  [ROLES.MANAGER]: '/manager',
+  // Manager goes straight to the dashboard so they don't land on a
+  // bare redirect at "/manager" before bouncing again.
+  [ROLES.MANAGER]: '/manager/dashboard',
 };
 
 // Icon SVG nhỏ, vẽ trực tiếp để không phải cài thư viện icon.
@@ -31,7 +33,6 @@ const iconProps = {
 
 export default function LoginPage() {
   const { login, isAuthenticated, role, isReady } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const [identifier, setIdentifier] = useState('');
@@ -39,14 +40,35 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [loginResolved, setLoginResolved] = useState(false);
 
-  if (isReady && isAuthenticated) {
+  // When login() resolves successfully, send the user to the role-aware
+  // home via a declarative <Navigate> on the next render. This is more
+  // reliable than imperative navigate() inside an async handler because
+  // it ties the redirect to the same state update that flips isReady +
+  // isAuthenticated + role.
+  if (loginResolved && isReady && isAuthenticated && role) {
     const fallback = ROLE_HOME[role] || '/';
     const target = location.state?.from?.pathname || fallback;
     return <Navigate to={target} replace />;
   }
 
-  // BR-AUTH-01: đăng nhập bằng email hoặc SĐT + mật khẩu (BE tự phân biệt).
+  // While we wait for the first auth bootstrap to settle, render nothing
+  // (we already know the user is authenticated, so we shouldn't show the
+  // form briefly — but we also can't navigate yet because `role` is null).
+  if (isReady && isAuthenticated && !role) {
+    return null;
+  }
+
+  // If the user is already authenticated with a role but landed on /login
+  // directly (e.g. via URL paste), still send them away.
+  if (loginResolved === false && isReady && isAuthenticated && role) {
+    const fallback = ROLE_HOME[role] || '/';
+    const target = location.state?.from?.pathname || fallback;
+    return <Navigate to={target} replace />;
+  }
+
+  // BR-AUTH-01: đăng nhập bằng email OR SĐT + mật khẩu (BE tự phân biệt).
   // BR-AUTH-04: hiển thị lỗi chung do BE trả về, FE không đoán sai ở trường nào.
   async function handleSubmit(e) {
     e.preventDefault();
@@ -54,8 +76,10 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const profile = await login({ identifier: identifier.trim(), password });
-      const target = location.state?.from?.pathname || ROLE_HOME[profile?.role] || '/';
-      navigate(target, { replace: true });
+      // Trigger a re-render so the `isAuthenticated` guard below sends us
+      // to the role-aware home. We deliberately don't call navigate()
+      // here — the guard handles it deterministically on the next render.
+      setLoginResolved(true);
     } catch (err) {
       setError(err);
     } finally {

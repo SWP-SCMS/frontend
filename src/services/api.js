@@ -25,14 +25,38 @@ const api = axios.create({
 // In-memory access token reference. The provider (AuthContext) calls
 // `setAccessToken()` on login and `setAccessToken(null)` on logout.
 let accessToken = null;
+let accessTokenPayload = null; // Decoded JWT payload — small role data for bootstrap.
 let onUnauthorized = null; // () => void, registered by AuthContext
 
 export function setAccessToken(token) {
   accessToken = token || null;
+  accessTokenPayload = decodeJwtPayload(accessToken);
 }
 
 export function getAccessToken() {
   return accessToken;
+}
+
+// Returns the decoded JWT payload of the current access token, or null if
+// no token is set / the token is malformed. Used by AuthContext.bootstrap
+// to seed a minimal profile for non-MEMBER roles (which can't call
+// /members/me/profile).
+export function getAccessTokenPayload() {
+  return accessTokenPayload;
+}
+
+function decodeJwtPayload(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    const json = atob(padded);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
 }
 
 export function registerUnauthorizedHandler(handler) {

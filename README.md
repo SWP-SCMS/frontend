@@ -41,7 +41,7 @@ src/
 ├── pages/
 │   ├── public/                  # Home, Login, Register, Offers, NotFound
 │   ├── member/                  # Dashboard, Profile, ChangePassword
-│   ├── receptionist/            # Phase 4
+│   ├── receptionist/            # Tra cứu HV, đăng ký HV, tạo đơn gói tập, gói tập
 │   ├── coach/                   # Phase 6
 │   └── manager/                 # Phase 5
 ├── services/                    # api, auth, member, membership, payment, …
