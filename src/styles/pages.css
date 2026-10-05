@@ -145,6 +145,58 @@
   margin-bottom: 1.25rem;
 }
 
+/* Thông báo sau khi đổi mật khẩu. Nền đăng nhập là tối nên dùng tông xanh
+ * sáng tương phản thay vì alert-success mặc định của Bootstrap. */
+.scms-login-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 0.875rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #bbf7d0;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 0.625rem;
+}
+
+.scms-login-notice-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  color: #34d399;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.scms-login-notice > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.scms-login-notice-close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: #6ee7b7;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  transition: background 0.15s ease;
+}
+
+.scms-login-notice-close:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
 .scms-login-label {
   display: block;
   color: #e2e8f0;
