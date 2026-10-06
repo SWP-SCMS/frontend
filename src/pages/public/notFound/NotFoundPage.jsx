@@ -2,7 +2,7 @@
 
 import { Link } from 'react-router-dom';
 import { Button, Container } from 'react-bootstrap';
-import PublicShell from '../../components/layout/PublicShell';
+import PublicShell from '../../../components/layout/PublicShell';
 
 export default function NotFoundPage() {
   return (
