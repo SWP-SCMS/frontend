@@ -27,6 +27,8 @@ import {
   FOOTER_INFO,
 } from '../../../content/homeContent';
 
+import './HomePage.css';
+
 const iconProps = {
   fill: 'none',
   stroke: 'currentColor',

@@ -1,0 +1,36 @@
+/* Logo dùng chung cho trang chủ và trang đăng nhập (BrandLogo.jsx). */
+.scms-brandlogo {
+
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: #fff;
+}
+
+
+.scms-brandlogo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #333539;
+  color: #dc2626;
+}
+
+.scms-brandlogo-name {
+  display: block;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.scms-brandlogo-sub {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(230, 189, 184, 0.7);
+}
