@@ -24,7 +24,6 @@ import {
   Alert,
   Button,
   ButtonGroup,
-  Card,
   Col,
   Form,
   InputGroup,
@@ -66,13 +65,6 @@ const EMPTY_QUEUE = {
   totalElements: 0,
   totalPages: 0,
 };
-
-function readNumberParam(params, name, fallback) {
-  const raw = params.get(name);
-  if (raw === null || raw === '') return fallback;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : fallback;
-}
 
 // A payment can only be moved to FAILED once its window has lapsed
 // (BR-PAY-17). `expiresAt` null means the BE has no window, which the

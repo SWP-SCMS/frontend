@@ -6,7 +6,7 @@
 // and surfaces a 4xx with a clear message.
 
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import {
@@ -19,7 +19,6 @@ import { formatDate } from '../../../utils';
 
 export default function StaffAccountDetailPage() {
   const { accountId } = useParams();
-  const navigate = useNavigate();
 
   const [account, setAccount] = useState(null);
   const [loading, setLoading] = useState(true);

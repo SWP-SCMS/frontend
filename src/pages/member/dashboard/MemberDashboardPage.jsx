@@ -10,7 +10,7 @@
 // Thanh toán chuyển khoản (US18) chưa làm ở FE: sau khi tạo đơn, trang chỉ
 // hiển thị đơn đang chờ thanh toán.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../../context/useAuth';

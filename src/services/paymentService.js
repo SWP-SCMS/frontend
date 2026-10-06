@@ -16,9 +16,3 @@ export async function continueMyPayment() {
   const { data } = await api.post('/members/me/payments/continue');
   return data;
 }
-
-// TODO: Receptionist Bank Transfer assist endpoint
-// POST /api/v1/reception/members/{memberId}/payments/continue
-//
-// TODO: Receptionist cash confirmation endpoint (separate flow, see handoff §8.6)
-// POST /api/v1/reception/members/{memberId}/membership-orders/cash

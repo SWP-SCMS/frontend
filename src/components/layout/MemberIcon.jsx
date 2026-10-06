@@ -46,12 +46,6 @@ const ICONS = {
       <path d="M14 2v6h6M16 13H8M16 17H8" />
     </>
   ),
-  lock: (
-    <>
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </>
-  ),
   user: (
     <>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
