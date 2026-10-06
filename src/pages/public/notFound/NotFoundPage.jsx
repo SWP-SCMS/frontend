@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { Button, Container } from 'react-bootstrap';
 import PublicShell from '../../../components/layout/PublicShell';
 
+import './NotFoundPage.css';
+
 export default function NotFoundPage() {
   return (
     <PublicShell>

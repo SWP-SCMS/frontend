@@ -15,6 +15,9 @@ import { ROLES } from '../../../constants';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import BrandLogo from '../../../components/common/BrandLogo';
 
+import './LoginPage.css';
+import '../auth/shared-auth.css';
+
 const ROLE_HOME = {
   [ROLES.MEMBER]: '/member/dashboard',
   [ROLES.RECEPTIONIST]: '/reception',

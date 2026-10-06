@@ -1,7 +1,9 @@
 // Logo SCMS dùng chung cho trang chủ và trang đăng nhập.
-// Muốn đổi logo thì chỉ sửa file này (và khối .scms-brandlogo trong pages.css).
+// Muốn đổi logo thì chỉ sửa file này (và khối .scms-brandlogo trong BrandLogo.css).
 
 import { Link } from 'react-router-dom';
+
+import './BrandLogo.css';
 
 export default function BrandLogo({ className = '' }) {
   return (

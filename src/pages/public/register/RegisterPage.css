@@ -1,0 +1,35 @@
+/* ----- Register page (US02): dùng lại .scms-login-*, chỉ thêm phần riêng ----- */
+
+.scms-register-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.scms-register-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fca5a5;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+.scms-register-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #dc2626;
+}
+
+/* Ô ngày: icon lịch của trình duyệt hiện màu sáng trên nền tối. */
+.scms-register-date {
+  color-scheme: dark;
+}

@@ -19,6 +19,8 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 import { changePasswordRequest } from '../../../services/authService';
 import { useAuth } from '../../../context/useAuth';
 
+import './MemberChangePasswordPage.css';
+
 const initial = {
   currentPassword: '',
   newPassword: '',

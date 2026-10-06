@@ -19,6 +19,9 @@ import BrandLogo from '../../../components/common/BrandLogo';
 import { registerRequest } from '../../../services/authService';
 import { isValidPhone, normalizePhone } from '../../../utils';
 
+import './RegisterPage.css';
+import '../auth/shared-auth.css';
+
 const initialForm = {
   fullName: '',
   phone: '',
