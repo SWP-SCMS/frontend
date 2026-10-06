@@ -1,19 +1,11 @@
 // Cấu hình điều hướng dùng chung cho khu vực Hội viên và staff shell.
 // Tách ra từ AppShell.jsx và MemberLayout.jsx (Phase 3).
 //
-// Lưu ý:
-//   - Giữ nguyên toàn bộ label / url / thứ tự / cờ `end` từ file gốc.
-//   - Bao gồm cả mục [ROLES.MEMBER] trong APP_SHELL_NAV_ITEMS (hiện đang
-//     "chết" vì route /member không dùng AppShell nữa — Phase 3 vẫn giữ
-//     theo yêu cầu "không xoá code chết trong Phase 3").
+// Lưu ý: giữ nguyên toàn bộ label / url / thứ tự / cờ `end` từ file gốc.
 
 import { ROLES } from '../../constants';
 
 export const APP_SHELL_NAV_ITEMS = {
-  [ROLES.MEMBER]: [
-    { to: '/member/dashboard', label: 'Tổng quan' },
-    { to: '/member/profile', label: 'Hồ sơ' },
-  ],
   [ROLES.RECEPTIONIST]: [
     { to: '/reception/dashboard', label: 'Tổng quan' },
     { to: '/reception/members', label: 'Tra cứu hội viên' },

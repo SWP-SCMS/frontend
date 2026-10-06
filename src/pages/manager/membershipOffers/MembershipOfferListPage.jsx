@@ -30,7 +30,7 @@ import {
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import { listMembershipOffersAdmin } from '../../../services/membershipOfferAdminService';
-import { formatDate, formatPrice } from '../../../utils';
+import { formatPrice } from '../../../utils';
 
 const PLAN_FILTERS = [
   { value: '', label: 'Tất cả' },

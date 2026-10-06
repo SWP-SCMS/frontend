@@ -1,8 +1,3 @@
-/* Standard width for the centered auth card wrapper. */
-.scms-auth-wrap {
-  max-width: 480px;
-}
-
 /* ----- Login page (US01) — full-screen dark theme ----- */
 
 .scms-login-page {

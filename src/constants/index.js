@@ -27,21 +27,9 @@ export const ACCOUNT_STATUS = Object.freeze({
   SUSPENDED: 'SUSPENDED',
 });
 
-export const MEMBERSHIP_STATUS = Object.freeze({
-  ACTIVE: 'ACTIVE',
-  EXPIRED: 'EXPIRED',
-});
-
 export const MEMBERSHIP_PLAN = Object.freeze({
   BASIC: 'BASIC',
   PLUS: 'PLUS',
-});
-
-// Storage keys for non-secret client preferences. We deliberately do NOT
-// persist auth tokens here (see AuthContext notes).
-export const STORAGE_KEYS = Object.freeze({
-  LANGUAGE: 'scms.language',
-  THEME: 'scms.theme',
 });
 
 // API base URL. Vite replaces import.meta.env.* at build time. We expose a

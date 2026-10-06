@@ -91,7 +91,7 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const profile = await login({ identifier: identifier.trim(), password });
+      await login({ identifier: identifier.trim(), password });
       // Trigger a re-render so the `isAuthenticated` guard below sends us
       // to the role-aware home. We deliberately don't call navigate()
       // here — the guard handles it deterministically on the next render.
