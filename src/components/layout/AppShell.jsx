@@ -8,53 +8,15 @@ import { Container, Navbar, Nav, Offcanvas, Button, Dropdown } from 'react-boots
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import { ROLES } from '../../constants';
-
-const NAV_ITEMS = {
-  [ROLES.MEMBER]: [
-    { to: '/member/dashboard', label: 'Tổng quan' },
-    { to: '/member/profile', label: 'Hồ sơ' },
-  ],
-  [ROLES.RECEPTIONIST]: [
-    { to: '/reception/dashboard', label: 'Tổng quan' },
-    { to: '/reception/members', label: 'Tra cứu hội viên' },
-    { to: '/reception/members/new', label: 'Đăng ký hội viên' },
-    { to: '/reception/orders/new', label: 'Tạo đơn gói tập' },
-    { to: '/reception/membership-offers', label: 'Gói tập' },
-    { to: '/reception/payments/reconcile', label: 'Đối soát' },
-    { to: '/reception/payments/cash', label: 'Thu tiền mặt' },
-  ],
-  [ROLES.COACH]: [{ to: '/coach', label: 'HLV' }],
-  [ROLES.MANAGER]: [
-    { to: '/manager/dashboard', label: 'Tổng quan' },
-    { to: '/manager/staff-accounts', label: 'Nhân viên & QL' },
-    { to: '/manager/membership-offers', label: 'Gói tập' },
-    { to: '/manager/members', label: 'Hội viên' },
-    { to: '/manager/reports', label: 'Báo cáo' },
-    { to: '/manager/payments/reconcile', label: 'Đối soát' },
-  ],
-};
-
-// Role-specific entry on the user dropdown menu. Manager/Staff get a
-// "Dashboard" link; Member keeps the profile + change-password entries.
-const USER_MENU = {
-  [ROLES.MANAGER]: [
-    { to: '/manager/dashboard', label: 'Trang tổng quan' },
-  ],
-  [ROLES.RECEPTIONIST]: [
-    { to: '/reception/dashboard', label: 'Trang tổng quan' },
-  ],
-  [ROLES.COACH]: [
-    { to: '/coach', label: 'Trang tổng quan' },
-  ],
-};
+import { APP_SHELL_NAV_ITEMS, APP_SHELL_USER_MENU } from './navConfig';
 
 export default function AppShell({ children }) {
   const { user, role, isAuthenticated, logout } = useAuth();
   const [showSidebar, setShowSidebar] = useState(false);
   const navigate = useNavigate();
 
-  const items = role ? NAV_ITEMS[role] || [] : [];
-  const userMenuItems = role ? USER_MENU[role] || [] : [];
+  const items = role ? APP_SHELL_NAV_ITEMS[role] || [] : [];
+  const userMenuItems = role ? APP_SHELL_USER_MENU[role] || [] : [];
 
   async function handleLogout() {
     await logout();

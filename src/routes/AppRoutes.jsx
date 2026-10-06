@@ -186,9 +186,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
-              <AppShell>
-                <Navigate to="/member/dashboard" replace />
-              </AppShell>
+              <Navigate to="/member/dashboard" replace />
             </RoleRoute>
           </ProtectedRoute>
         }
