@@ -20,7 +20,7 @@ import {
 import { ACCOUNT_STATUS, ROLE_LABELS, ROLES } from '../../../constants';
 import { formatDate, formatDateTime, formatPrice } from '../../../utils';
 import { paymentMethodLabel } from '../../../utils/receiptPdf';
-import '../../receptionist/Payments/ReceiptPage.css';
+import '../../receptionist/payments/ReceiptPage.css';
 
 const STATUS_LABELS = {
   [ACCOUNT_STATUS.ACTIVE]: 'Đang hoạt động',

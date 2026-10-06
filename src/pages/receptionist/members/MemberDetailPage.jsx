@@ -39,7 +39,7 @@ import {
 import { ACCOUNT_STATUS } from '../../../constants';
 import { formatDateTime, formatPrice, isValidPhone, normalizePhone } from '../../../utils';
 import { paymentMethodLabel } from '../../../utils/receiptPdf';
-import '../Payments/ReceiptPage.css';
+import '../payments/ReceiptPage.css';
 
 const STATUS_BADGE = {
   [ACCOUNT_STATUS.ACTIVE]: 'bg-success-subtle text-success-emphasis',
