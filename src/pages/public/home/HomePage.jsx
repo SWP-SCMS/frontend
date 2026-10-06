@@ -25,7 +25,7 @@ import {
   PLAN_OVERVIEW,
   SPACES,
   FOOTER_INFO,
-} from '../../../content/home';
+} from '../../../content/homeContent';
 
 const iconProps = {
   fill: 'none',

@@ -12,27 +12,27 @@ import AppShell from '../components/layout/AppShell';
 import MemberLayout from '../components/layout/MemberLayout';
 
 // Public pages
-const HomePage = lazy(() => import('../pages/public/Home/HomePage'));
-const LoginPage = lazy(() => import('../pages/public/Login/LoginPage'));
-const RegisterPage = lazy(() => import('../pages/public/Register/RegisterPage'));
-const OfferListPage = lazy(() => import('../pages/public/Offers/OfferListPage'));
-const OfferDetailPage = lazy(() => import('../pages/public/Offers/OfferDetailPage'));
-const NotFoundPage = lazy(() => import('../pages/public/NotFoundPage'));
+const HomePage = lazy(() => import('../pages/public/home/HomePage'));
+const LoginPage = lazy(() => import('../pages/public/login/LoginPage'));
+const RegisterPage = lazy(() => import('../pages/public/register/RegisterPage'));
+const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
+const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
+const NotFoundPage = lazy(() => import('../pages/public/notFound/NotFoundPage'));
 
 // Member-only
 const MemberDashboardPage = lazy(
-  () => import('../pages/member/Dashboard/MemberDashboardPage'),
+  () => import('../pages/member/dashboard/MemberDashboardPage'),
 );
 const MemberProfilePage = lazy(
-  () => import('../pages/member/Profile/MemberProfilePage'),
+  () => import('../pages/member/profile/MemberProfilePage'),
 );
 const MemberChangePasswordPage = lazy(
-  () => import('../pages/member/Profile/MemberChangePasswordPage'),
+  () => import('../pages/member/profile/MemberChangePasswordPage'),
 );
 const MembershipHistoryPage = lazy(
-  () => import('../pages/member/Memberships/MembershipHistoryPage'),
+  () => import('../pages/member/memberships/MembershipHistoryPage'),
 );
-const MyPlanPage = lazy(() => import('../pages/member/Memberships/MyPlanPage'));
+const MyPlanPage = lazy(() => import('../pages/member/memberships/MyPlanPage'));
 
 // Placeholders for phases that don't have full UI yet — kept as stubs so
 // navigation doesn't 404 during development of later phases.
@@ -47,99 +47,99 @@ function ComingSoon({ feature }) {
 
 // Manager – Dashboard
 const ManagerDashboardPage = lazy(
-  () => import('../pages/manager/Dashboard/ManagerDashboardPage'),
+  () => import('../pages/manager/dashboard/ManagerDashboardPage'),
 );
 
 // Receptionist – Dashboard
 const ReceptionistDashboardPage = lazy(
-  () => import('../pages/receptionist/Dashboard/ReceptionistDashboardPage'),
+  () => import('../pages/receptionist/dashboard/ReceptionistDashboardPage'),
 );
 
 // Receptionist – Member search & profile (US11)
 const ReceptionistMemberListPage = lazy(
-  () => import('../pages/receptionist/Members/MemberListPage'),
+  () => import('../pages/receptionist/members/MemberListPage'),
 );
 const ReceptionistMemberDetailPage = lazy(
-  () => import('../pages/receptionist/Members/MemberDetailPage'),
+  () => import('../pages/receptionist/members/MemberDetailPage'),
 );
 
 // Receptionist – Create a Member (US15)
 const ReceptionistMemberCreatePage = lazy(
-  () => import('../pages/receptionist/Members/MemberCreatePage'),
+  () => import('../pages/receptionist/members/MemberCreatePage'),
 );
 
 // Receptionist – Membership Offer browsing (US12)
 const ReceptionistMembershipOfferListPage = lazy(
-  () => import('../pages/receptionist/MembershipOffers/MembershipOfferListPage'),
+  () => import('../pages/receptionist/membershipOffers/MembershipOfferListPage'),
 );
 
 // Receptionist – Bank-transfer Membership Order (US16)
 const ReceptionistMembershipOrderCreatePage = lazy(
-  () => import('../pages/receptionist/Orders/MembershipOrderCreatePage'),
+  () => import('../pages/receptionist/orders/MembershipOrderCreatePage'),
 );
 
 // Manager – Staff/Manager account management (US05-08)
 const StaffAccountListPage = lazy(
-  () => import('../pages/manager/StaffAccounts/StaffAccountListPage'),
+  () => import('../pages/manager/staffAccounts/StaffAccountListPage'),
 );
 const StaffAccountCreatePage = lazy(
-  () => import('../pages/manager/StaffAccounts/StaffAccountCreatePage'),
+  () => import('../pages/manager/staffAccounts/StaffAccountCreatePage'),
 );
 const StaffAccountDetailPage = lazy(
-  () => import('../pages/manager/StaffAccounts/StaffAccountDetailPage'),
+  () => import('../pages/manager/staffAccounts/StaffAccountDetailPage'),
 );
 const StaffAccountEditPage = lazy(
-  () => import('../pages/manager/StaffAccounts/StaffAccountEditPage'),
+  () => import('../pages/manager/staffAccounts/StaffAccountEditPage'),
 );
 
 // Manager – Membership Offer management (US08)
 const MembershipOfferListPage = lazy(
-  () => import('../pages/manager/MembershipOffers/MembershipOfferListPage'),
+  () => import('../pages/manager/membershipOffers/MembershipOfferListPage'),
 );
 const MembershipOfferCreatePage = lazy(
   () =>
     import(
-      '../pages/manager/MembershipOffers/MembershipOfferCreatePage'
+      '../pages/manager/membershipOffers/MembershipOfferCreatePage'
     ),
 );
 const MembershipOfferDetailPage = lazy(
   () =>
     import(
-      '../pages/manager/MembershipOffers/MembershipOfferDetailPage'
+      '../pages/manager/membershipOffers/MembershipOfferDetailPage'
     ),
 );
 const MembershipOfferEditPage = lazy(
   () =>
     import(
-      '../pages/manager/MembershipOffers/MembershipOfferEditPage'
+      '../pages/manager/membershipOffers/MembershipOfferEditPage'
     ),
 );
 
 // Manager – Revenue / Membership report (US22)
 const RevenueReportPage = lazy(
-  () => import('../pages/manager/Reports/RevenueReportPage'),
+  () => import('../pages/manager/reports/RevenueReportPage'),
 );
 
 // Manager – Member account management (US06)
 const MemberAccountListPage = lazy(
-  () => import('../pages/manager/Members/MemberAccountListPage'),
+  () => import('../pages/manager/members/MemberAccountListPage'),
 );
 const MemberAccountDetailPage = lazy(
-  () => import('../pages/manager/Members/MemberAccountDetailPage'),
+  () => import('../pages/manager/members/MemberAccountDetailPage'),
 );
 const MemberAccountEditPage = lazy(
-  () => import('../pages/manager/Members/MemberAccountEditPage'),
+  () => import('../pages/manager/members/MemberAccountEditPage'),
 );
 
 // Receptionist / Manager – Manual Payment Reconciliation (US19)
 // Shared by both roles: the backend authorises `/payments/**` with
 // hasAnyRole("MANAGER", "RECEPTIONIST").
 const PaymentReconciliationPage = lazy(
-  () => import('../pages/receptionist/Payments/PaymentReconciliationPage'),
+  () => import('../pages/receptionist/payments/PaymentReconciliationPage'),
 );
 
 const CashPaymentPage = lazy(
-  () => import('../pages/receptionist/Payments/CashPaymentPage'),
+  () => import('../pages/receptionist/payments/CashPaymentPage'),
 );
 
 // Printable receipt (US20 follow-up). The backend authorises
@@ -150,7 +150,7 @@ const CashPaymentPage = lazy(
 // The page explains a 403 rather than showing a bare error, because the
 // remaining causes need different responses.
 const ReceiptPage = lazy(
-  () => import('../pages/receptionist/Payments/ReceiptPage'),
+  () => import('../pages/receptionist/payments/ReceiptPage'),
 );
 
 function withSuspense(node) {
