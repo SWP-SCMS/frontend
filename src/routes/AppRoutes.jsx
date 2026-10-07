@@ -1,7 +1,7 @@
 // Centralized route table. Keeping routes here makes it easy to grep for
 // "where is /login wired up" and to enforce the role-route pairing.
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { ROLES } from '../constants';
 import ProtectedRoute from './ProtectedRoute';
@@ -9,7 +9,9 @@ import GuestRoute from './GuestRoute';
 import RoleRoute from './RoleRoute';
 import LoadingScreen from '../components/common/LoadingScreen';
 import AppShell from '../components/layout/AppShell';
+import StaffLayout from '../components/layout/StaffLayout';
 import MemberLayout from '../components/layout/MemberLayout';
+import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfig';
 
 // Public pages
 const HomePage = lazy(() => import('../pages/public/home/HomePage'));
@@ -252,120 +254,36 @@ export default function AppRoutes() {
         }
       />
 
-      {/* ---------- Receptionist ---------- */}
+      {/* ---------- Receptionist ----------
+       * Persistent dark shell across the entire Receptionist area.
+       * The <StaffLayout> is mounted once by the parent route, and every
+       * child route renders its page through the parent's <Outlet />. */}
       <Route
         path="/reception"
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <Navigate to="/reception/dashboard" replace />
-              </AppShell>
+              <StaffLayout
+                sidebarLabel={STAFF_LABELS[ROLES.RECEPTIONIST].sidebarLabel}
+                sidebarItems={APP_SHELL_NAV_ITEMS[ROLES.RECEPTIONIST]}
+                roleLabel={STAFF_LABELS[ROLES.RECEPTIONIST].roleLabel}
+              >
+                <Outlet />
+              </StaffLayout>
             </RoleRoute>
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/reception/dashboard"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <ReceptionistDashboardPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reception/members"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <ReceptionistMemberListPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reception/members/new"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <ReceptionistMemberCreatePage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reception/members/:memberId"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <ReceptionistMemberDetailPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reception/membership-offers"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <ReceptionistMembershipOfferListPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reception/orders/new"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <ReceptionistMembershipOrderCreatePage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/reception/payments/reconcile"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <PaymentReconciliationPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* US20 – cash payment at the front desk. RECEPTIONIST only: the
-          backend guards the endpoint with ensure(actor, RECEPTIONIST),
-          so a Manager would get 403. */}
-      <Route
-        path="/reception/payments/cash"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.RECEPTIONIST}>
-              <AppShell>
-                <CashPaymentPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route index element={<Navigate to="/reception/dashboard" replace />} />
+        <Route path="dashboard" element={withSuspense(<ReceptionistDashboardPage />)} />
+        <Route path="members" element={withSuspense(<ReceptionistMemberListPage />)} />
+        <Route path="members/new" element={withSuspense(<ReceptionistMemberCreatePage />)} />
+        <Route path="members/:memberId" element={withSuspense(<ReceptionistMemberDetailPage />)} />
+        <Route path="membership-offers" element={withSuspense(<ReceptionistMembershipOfferListPage />)} />
+        <Route path="orders/new" element={withSuspense(<ReceptionistMembershipOrderCreatePage />)} />
+        <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
+        <Route path="payments/cash" element={withSuspense(<CashPaymentPage />)} />
+      </Route>
 
       {/* Receipt view/print. Deliberately allows RECEPTIONIST *and* MANAGER:
           since backend commit 4012273 a receptionist may read any receipt,
@@ -399,188 +317,42 @@ export default function AppRoutes() {
         }
       />
 
-      {/* ---------- Manager ---------- */}
+      {/* ---------- Manager ----------
+       * Persistent dark shell across the entire Manager area.
+       * The <StaffLayout> is mounted once by the parent route, and every
+       * child route renders its page through the parent's <Outlet />. */}
       <Route
         path="/manager"
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <Navigate to="/manager/dashboard" replace />
-              </AppShell>
+              <StaffLayout
+                sidebarLabel={STAFF_LABELS[ROLES.MANAGER].sidebarLabel}
+                sidebarItems={APP_SHELL_NAV_ITEMS[ROLES.MANAGER]}
+                roleLabel={STAFF_LABELS[ROLES.MANAGER].roleLabel}
+              >
+                <Outlet />
+              </StaffLayout>
             </RoleRoute>
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/manager/dashboard"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <ManagerDashboardPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/staff-accounts"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <StaffAccountListPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/staff-accounts/new"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <StaffAccountCreatePage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/staff-accounts/:accountId"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <StaffAccountDetailPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/staff-accounts/:accountId/edit"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <StaffAccountEditPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/membership-offers"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <MembershipOfferListPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/membership-offers/new"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <MembershipOfferCreatePage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/membership-offers/:offerId"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <MembershipOfferDetailPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/membership-offers/:offerId/edit"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <MembershipOfferEditPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/members"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <MemberAccountListPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/members/:accountId"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <MemberAccountDetailPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/members/:accountId/edit"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <MemberAccountEditPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/reports"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <RevenueReportPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/manager/payments/reconcile"
-        element={
-          <ProtectedRoute>
-            <RoleRoute allow={ROLES.MANAGER}>
-              <AppShell>
-                <PaymentReconciliationPage />
-              </AppShell>
-            </RoleRoute>
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route index element={<Navigate to="/manager/dashboard" replace />} />
+        <Route path="dashboard" element={withSuspense(<ManagerDashboardPage />)} />
+        <Route path="staff-accounts" element={withSuspense(<StaffAccountListPage />)} />
+        <Route path="staff-accounts/new" element={withSuspense(<StaffAccountCreatePage />)} />
+        <Route path="staff-accounts/:accountId" element={withSuspense(<StaffAccountDetailPage />)} />
+        <Route path="staff-accounts/:accountId/edit" element={withSuspense(<StaffAccountEditPage />)} />
+        <Route path="membership-offers" element={withSuspense(<MembershipOfferListPage />)} />
+        <Route path="membership-offers/new" element={withSuspense(<MembershipOfferCreatePage />)} />
+        <Route path="membership-offers/:offerId" element={withSuspense(<MembershipOfferDetailPage />)} />
+        <Route path="membership-offers/:offerId/edit" element={withSuspense(<MembershipOfferEditPage />)} />
+        <Route path="members" element={withSuspense(<MemberAccountListPage />)} />
+        <Route path="members/:accountId" element={withSuspense(<MemberAccountDetailPage />)} />
+        <Route path="members/:accountId/edit" element={withSuspense(<MemberAccountEditPage />)} />
+        <Route path="reports" element={withSuspense(<RevenueReportPage />)} />
+        <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
+      </Route>
 
       {/* ---------- Catch-all ---------- */}
       <Route path="*" element={withSuspense(<NotFoundPage />)} />
