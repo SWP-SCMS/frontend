@@ -57,3 +57,19 @@ export const MEMBER_TOP_ITEMS = [
   { to: null, label: 'Lịch tập' },
   { to: null, label: 'Thông báo' },
 ];
+
+// Nhãn khu vực + role chip cho khu vực staff. Bổ sung cho phase
+// staff-area layout unification. Additive only — không đụng 4 export ở trên.
+// APP_SHELL_NAV_ITEMS vẫn giữ nguyên (không thêm trường icon, không sửa
+// label/url/thứ tự/cờ end) vì StaffSidebar chọn icon theo URL
+// qua helper iconForRoute nội bộ.
+export const STAFF_LABELS = {
+  [ROLES.MANAGER]: {
+    sidebarLabel: 'Khu vực Quản lý',
+    roleLabel: 'Quản lý',
+  },
+  [ROLES.RECEPTIONIST]: {
+    sidebarLabel: 'Khu vực Lễ tân',
+    roleLabel: 'Lễ tân',
+  },
+};
