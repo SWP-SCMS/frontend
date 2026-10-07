@@ -20,6 +20,7 @@ export const APP_SHELL_NAV_ITEMS = {
     { to: '/manager/dashboard', label: 'Tổng quan' },
     { to: '/manager/staff-accounts', label: 'Nhân viên & QL' },
     { to: '/manager/membership-offers', label: 'Gói tập' },
+    { to: '/manager/disciplines', label: 'Bộ môn' },
     { to: '/manager/members', label: 'Hội viên' },
     { to: '/manager/reports', label: 'Báo cáo' },
     { to: '/manager/payments/reconcile', label: 'Đối soát' },
