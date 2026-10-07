@@ -88,6 +88,13 @@ const ICONS = {
       <path d="M8 7h8M8 17h8" />
     </>
   ),
+  class: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M9 4v16M15 4v16" />
+    </>
+  ),
   user: (
     <>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
