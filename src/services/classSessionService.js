@@ -1,8 +1,9 @@
-// Manager-scoped Class Session API (US27 + US28).
+// Manager-scoped Class Session API (US27 + US28 + US29).
 //
 // Endpoints (bearer-auth, MANAGER-only — backend enforces BR-SEC-04):
-//   POST /api/v1/manager/class-sessions              createSingleSession  (US27)
-//   GET  /api/v1/manager/class-sessions              listManagerSessions (US28)
+//   POST /api/v1/manager/class-sessions              createSingleSession       (US27)
+//   GET  /api/v1/manager/class-sessions              listManagerSessions      (US28)
+//   GET  /api/v1/manager/class-sessions/{id}         getManagerSessionDetail  (US29)
 //
 // Notes:
 //   - The list endpoint returns a ClassSessionPageResponse:
@@ -64,5 +65,23 @@ export async function listManagerSessions(params = {}) {
   const { data } = await api.get('/manager/class-sessions', {
     params: cleaned,
   });
+  return data;
+}
+
+// GET /api/v1/manager/class-sessions/{id} (US29)
+//
+// Path param:
+//   id  UUID string from the route /manager/class-sessions/:sessionId
+//
+// Returns: ClassSessionDetailResponse — labels are server-resolved
+// (className, disciplineName, coachName, roomName), so the FE does not
+// need to call listClasses / listRooms / searchStaffAccounts. The FE
+// also does not render bookedCount because the verified detail DTO
+// does not include it.
+export async function getManagerSessionDetail(id) {
+  if (!id) throw new Error('id is required');
+  const { data } = await api.get(
+    `/manager/class-sessions/${encodeURIComponent(id)}`,
+  );
   return data;
 }
