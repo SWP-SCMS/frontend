@@ -180,6 +180,11 @@ const RecurringScheduleCreatePage = lazy(
   () => import('../pages/manager/recurringSchedules/RecurringScheduleCreatePage'),
 );
 
+// Manager – Single Class Session Creation (US27)
+const SingleSessionCreatePage = lazy(
+  () => import('../pages/manager/classSessions/SingleSessionCreatePage'),
+);
+
 // Receptionist / Manager – Manual Payment Reconciliation (US19)
 // Shared by both roles: the backend authorises `/payments/**` with
 // hasAnyRole("MANAGER", "RECEPTIONIST").
@@ -412,6 +417,10 @@ export default function AppRoutes() {
         <Route
           path="classes/:classId/recurring-schedules/new"
           element={withSuspense(<RecurringScheduleCreatePage />)}
+        />
+        <Route
+          path="classes/:classId/sessions/new"
+          element={withSuspense(<SingleSessionCreatePage />)}
         />
         <Route path="reports" element={withSuspense(<RevenueReportPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
