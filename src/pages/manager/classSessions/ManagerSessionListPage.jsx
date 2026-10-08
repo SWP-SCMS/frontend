@@ -21,7 +21,7 @@
 // in-memory maps built once per page load.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Button,
   ButtonGroup,
@@ -288,6 +288,7 @@ function groupByLocalDay(sessions) {
 // ----- The page -----
 export default function ManagerSessionListPage() {
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
 
   // Read URL state. Default to Calendar so that visiting
   // /manager/class-sessions with no `view` param lands on Calendar;
@@ -302,6 +303,11 @@ export default function ManagerSessionListPage() {
   const toYmd = readStringParam(params, 'to');
   const listPage = readIntParam(params, 'page') ?? 0;
   const calYmd = readStringParam(params, 'week') || getLocalTodayIsoDate();
+
+  // Exact current Session-browsing URL (path + search). Passed into
+  // detail-page Links as location state so the detail back-link can
+  // restore the same view/filter/page state.
+  const sessionBrowserFrom = location.pathname + location.search;
 
   // ----- Supporting lookups (Class / Room / Coach) -----
   const [classes, setClasses] = useState([]);
@@ -905,6 +911,7 @@ export default function ManagerSessionListPage() {
           onNext={() => setListPage(page + 1)}
           totalFiltersActive={totalFiltersActive}
           onClearFilters={clearAllFilters}
+          sessionBrowserFrom={sessionBrowserFrom}
         />
       ) : null}
 
@@ -928,6 +935,7 @@ export default function ManagerSessionListPage() {
           onPrev={() => shiftCalendarWeek(-1)}
           onNext={() => shiftCalendarWeek(1)}
           onToday={gotoCurrentWeek}
+          sessionBrowserFrom={sessionBrowserFrom}
         />
       ) : null}
     </div>
@@ -953,6 +961,7 @@ function ListView({
   onNext,
   totalFiltersActive,
   onClearFilters,
+  sessionBrowserFrom,
 }) {
   const hasSessions = (sessions || []).length > 0;
   const safePage = Math.max(0, page | 0);
@@ -1027,7 +1036,19 @@ function ListView({
                 <td>
                   {formatGymTime(s.startTime)} – {formatGymTime(s.endTime)}
                 </td>
-                <td>{className}</td>
+                <td>
+                  <Link
+                    to={`/manager/class-sessions/${s.id}`}
+                    state={
+                      sessionBrowserFrom
+                        ? { from: sessionBrowserFrom }
+                        : undefined
+                    }
+                    className="text-reset text-decoration-none fw-semibold"
+                  >
+                    {className}
+                  </Link>
+                </td>
                 <td>{coachName}</td>
                 <td>{roomName}</td>
                 <td>{typeof s.capacity === 'number' ? s.capacity : '—'}</td>
@@ -1111,6 +1132,7 @@ function CalendarView({
   onPrev,
   onNext,
   onToday,
+  sessionBrowserFrom,
 }) {
   const days = useMemo(() => {
     if (!weekRange) return [];
@@ -1291,10 +1313,15 @@ function CalendarView({
                             ? (roomNameById.get(s.roomId) || '—')
                             : '—';
                         return (
-                          <div
+                          <Link
                             key={s.id}
-                            className="msl-cal-session"
-                            role="article"
+                            to={`/manager/class-sessions/${s.id}`}
+                            state={
+                              sessionBrowserFrom
+                                ? { from: sessionBrowserFrom }
+                                : undefined
+                            }
+                            className="msl-cal-session text-reset text-decoration-none"
                           >
                             <div className="msl-cal-session-time">
                               {formatGymTime(s.startTime)} –{' '}
@@ -1313,7 +1340,7 @@ function CalendarView({
                                 {statusLabel[status] || status}
                               </span>
                             </div>
-                          </div>
+                          </Link>
                         );
                       })
                     )}
