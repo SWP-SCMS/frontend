@@ -33,6 +33,8 @@ function iconForRoute(to) {
   if (to.startsWith('/manager/disciplines')) return 'discipline';
   // Class management (Manager only — US24)
   if (to.startsWith('/manager/classes')) return 'class';
+  // Room management (Manager only — US25)
+  if (to.startsWith('/manager/rooms')) return 'room';
   // Order creation (Receptionist only)
   if (to === '/reception/orders/new') return 'order-new';
   // Membership offers (both Manager and Receptionist)

@@ -95,6 +95,14 @@ const ICONS = {
       <path d="M9 4v16M15 4v16" />
     </>
   ),
+  room: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M9 3v18" />
+      <path d="M3 9h18" />
+      <circle cx="6" cy="6" r="0.5" fill="currentColor" stroke="none" />
+    </>
+  ),
   user: (
     <>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
