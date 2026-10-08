@@ -21,13 +21,25 @@
 //   400 with "at least one field is required" -> defense-in-depth
 //   404 CLASS_NOT_FOUND             -> back link + ErrorAlert
 //   409 CLASS_NAME_CONFLICT         -> name field + generic
+//
+// Migration note (RHF + Zod):
+//   - disciplineId is intentionally NOT in classEditSchema; it stays
+//     read-only display and is never sent.
+//   - validateClient(patch) preserved; Zod validates the form, not
+//     the PATCH payload.
+//   - PAGE-LOCAL backend codes (CLASS_*, VALIDATION_ERROR +
+//     "at least one field is required") stay page-local.
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getClass, updateClass } from '../../../services/sportClassService';
+import { applyServerErrors } from '../../../utils/serverErrors';
 
 const TYPE_OPTIONS = [
   { value: 'GROUP', label: 'Nhóm' },
@@ -40,14 +52,22 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'INACTIVE — đã ngưng hoạt động.' },
 ];
 
-const emptyForm = {
-  name: '',
-  classType: '',
-  description: '',
-  status: 'ACTIVE',
-};
-
-const emptyErrors = {};
+// Page-local edit schema. disciplineId is intentionally NOT in the
+// schema — it is immutable and never sent.
+const classEditSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập tên lớp.')
+    .max(150, 'Tên lớp đã quá dài (tối đa 150 ký tự).'),
+  classType: z.enum(['GROUP', 'YOGA', 'PT_1_1'], {
+    message: 'Loại lớp không hợp lệ.',
+  }),
+  description: z.string(),
+  status: z.enum(['ACTIVE', 'INACTIVE'], {
+    message: 'Trạng thái không hợp lệ.',
+  }),
+});
 
 function classToForm(c) {
   return {
@@ -58,167 +78,168 @@ function classToForm(c) {
   };
 }
 
-function pickFieldErrors(err) {
-  const data = err?.response?.data;
-  if (data && data.errors && typeof data.errors === 'object') {
-    return data.errors;
+function hasFieldMessage(fieldErrors, field) {
+  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
+  const list = fieldErrors[field];
+  if (Array.isArray(list)) {
+    return list.some((m) => typeof m === 'string' && m.trim());
   }
-  return {};
+  return typeof list === 'string' && list.trim().length > 0;
 }
 
 export default function ClassEditPage() {
   const { classId } = useParams();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState(emptyForm);
-  const [original, setOriginal] = useState(emptyForm);
+  const [original, setOriginal] = useState(null);
   const [disciplineDisplay, setDisciplineDisplay] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
-  const [errors, setErrors] = useState(emptyErrors);
-  // 'no-changes' | 'saved' | null
+  const [serverError, setServerError] = useState(null);
   const [saved, setSaved] = useState(null);
+  const [formLevelError, setFormLevelError] = useState(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(classEditSchema),
+    defaultValues: {
+      name: '',
+      classType: '',
+      description: '',
+      status: 'ACTIVE',
+    },
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     setSaved(null);
+    setFormLevelError(null);
     try {
       const data = await getClass(classId);
       const next = classToForm(data);
-      setForm(next);
       setOriginal(next);
       setDisciplineDisplay(
         data
           ? { id: data.disciplineId, name: data.disciplineName }
           : null,
       );
+      reset(next);
     } catch (err) {
       setLoadError(err);
     } finally {
       setLoading(false);
     }
-  }, [classId]);
+  }, [classId, reset]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-    if (errors[field]) {
-      setErrors((e) => {
-        const next = { ...e };
-        delete next[field];
-        return next;
-      });
-    }
-    setSaved(null);
-  }
-
-  function buildPatch() {
+  function buildPatch(data) {
     const patch = {};
-    if (form.name.trim() !== (original.name || '').trim()) {
-      patch.name = form.name.trim();
+    if (data.name.trim() !== (original?.name || '').trim()) {
+      patch.name = data.name.trim();
     }
     if (
-      form.description.trim() !== (original.description || '').trim()
+      data.description.trim() !== (original?.description || '').trim()
     ) {
       // Send empty string to signal "clear". BE normalizes blank -> null.
-      patch.description = form.description.trim();
+      patch.description = data.description.trim();
     }
-    if (form.classType !== original.classType) {
-      patch.classType = form.classType;
+    if (data.classType !== original?.classType) {
+      patch.classType = data.classType;
     }
-    if (form.status !== original.status) {
-      patch.status = form.status;
+    if (data.status !== original?.status) {
+      patch.status = data.status;
     }
     // disciplineId is intentionally never included.
     return patch;
   }
 
-  function validateClient(patch) {
-    const next = {};
-    if ('name' in patch) {
-      if (!patch.name) {
-        next.name = 'Vui lòng nhập tên lớp.';
-      } else if (patch.name.length > 150) {
-        next.name = 'Tên lớp không được vượt quá 150 ký tự.';
-      }
-    }
-    if ('classType' in patch) {
-      if (!TYPE_OPTIONS.some((o) => o.value === patch.classType)) {
-        next.classType = 'Loại lớp không hợp lệ.';
-      }
-    }
-    if ('status' in patch) {
-      if (!STATUS_OPTIONS.some((o) => o.value === patch.status)) {
-        next.status = 'Trạng thái không hợp lệ.';
-      }
-    }
-    return next;
-  }
+  // validateClient(patch) is intentionally REMOVED. The Wave 2 gate
+  // review concluded it was a byte-for-byte duplicate of the rules
+  // already enforced by the page-local Zod schema on the form state.
+  // PATCH-only validation (validate-only-patched-keys) is not needed
+  // because every patched key's value comes from the form state, which
+  // has already passed Zod parsing. The patch diff itself is the
+  // PATCH-allowlist guard, not a re-validation pass.
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function onSubmit(data) {
     setSaved(null);
-    const patch = buildPatch();
+    setFormLevelError(null);
+    setServerError(null);
+    const patch = buildPatch(data);
     if (Object.keys(patch).length === 0) {
       setSaved('no-changes');
-      setSubmitError(null);
-      setErrors(emptyErrors);
       return;
     }
-    const validationErrors = validateClient(patch);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setSubmitError(null);
-      return;
-    }
-    setErrors(emptyErrors);
-    setSubmitError(null);
-    setSaving(true);
     try {
       await updateClass(classId, patch);
       setSaved('saved');
       navigate(`/manager/classes/${classId}`, { replace: true });
     } catch (err) {
-      const fieldErrors = pickFieldErrors(err);
+      const fieldErrors = err?.response?.data?.errors;
       const code = err?.response?.data?.code;
       const message =
         err?.response?.data?.detail || err?.response?.data?.message;
       if (code === 'CLASS_NOT_FOUND') {
-        // The class no longer exists at save time. Surface this as a
-        // save failure (title "Không lưu được thay đổi") so the
-        // manager sees a consistent save-error context, and keep
-        // the form on screen so they can copy values out before
-        // navigating back. The initial getClass() failure still uses
-        // the load-error block with title "Không tải được lớp".
-        if (!fieldErrors.name) {
-          fieldErrors.name =
-            'Lớp học không còn tồn tại. Vui lòng quay lại danh sách.';
+        // The class no longer exists at save time. Surface as a save
+        // failure (title "Không lưu được thay đổi") so the manager
+        // sees a consistent save-error context, and keep the form on
+        // screen so they can copy values out before navigating back.
+        // Both inline (name) and global (ErrorAlert) signals are
+        // intentionally preserved — the page-local CLASS_NOT_FOUND
+        // contract requires both, per the Wave 2 plan.
+        if (!hasFieldMessage(fieldErrors, 'name')) {
+          setError('name', {
+            type: 'server',
+            message:
+              'Lớp học không còn tồn tại. Vui lòng quay lại danh sách.',
+          });
         }
-        setErrors(fieldErrors);
-        setSubmitError(err);
+        setServerError(err);
         return;
       }
-      if (code === 'CLASS_NAME_CONFLICT' && !fieldErrors.name) {
-        fieldErrors.name = 'Tên lớp đã tồn tại trong bộ môn đã chọn.';
+      // Whether the shared helper produced at least one inline error.
+      // Gates the global ErrorAlert below.
+      let sharedHandled = false;
+      if (
+        code === 'CLASS_NAME_CONFLICT' &&
+        !hasFieldMessage(fieldErrors, 'name')
+      ) {
+        setError('name', {
+          type: 'server',
+          message: 'Tên lớp đã tồn tại trong bộ môn đã chọn.',
+        });
       }
       if (
         code === 'VALIDATION_ERROR' &&
         /at least one field is required/i.test(message || '')
       ) {
-        // FE should have caught this — show a friendly message.
-        setErrors({ form: 'Vui lòng cập nhật ít nhất một trường.' });
-      } else {
-        setErrors(fieldErrors);
+        setFormLevelError('Vui lòng cập nhật ít nhất một trường.');
+      } else if (fieldErrors && typeof fieldErrors === 'object') {
+        // Shared helper: per-field errors restricted to the rendered
+        // editable fields. disciplineId is intentionally NOT in the
+        // allowlist because it is immutable and never sent.
+        sharedHandled = applyServerErrors(err, setError, {
+          fields: ['name', 'classType', 'description', 'status'],
+        });
       }
-      setSubmitError(err);
-    } finally {
-      setSaving(false);
+      // Global ErrorAlert is the shared-helper path's fallback: only
+      // raised when the helper did NOT handle the error. Page-local
+      // mappings (CLASS_NAME_CONFLICT, "at least one field") are
+      // independent and are preserved as-is. CLASS_NOT_FOUND above
+      // already returned with its own (intentional) both-inline-and-
+      // global behavior.
+      if (!sharedHandled) {
+        setServerError(err);
+      }
     }
   }
 
@@ -264,17 +285,20 @@ export default function ClassEditPage() {
       </p>
 
       <ErrorAlert
-        error={submitError}
+        error={serverError}
         title="Không lưu được thay đổi"
-        onClose={() => setSubmitError(null)}
+        onClose={() => setServerError(null)}
       />
       {saved === 'no-changes' ? (
         <div className="alert alert-warning py-2 mb-3">
           Không có thay đổi để lưu.
         </div>
       ) : null}
+      {formLevelError ? (
+        <div className="alert alert-warning py-2 mb-3">{formLevelError}</div>
+      ) : null}
 
-      <Form onSubmit={handleSubmit} noValidate>
+      <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Card className="border-0 shadow-sm mb-3">
           <Card.Body>
             <h2 className="h6 text-uppercase text-muted mb-2">Bộ môn hiện tại</h2>
@@ -299,14 +323,12 @@ export default function ClassEditPage() {
         <Form.Group controlId="edit-name">
           <Form.Label>Tên lớp *</Form.Label>
           <Form.Control
-            value={form.name}
-            onChange={(e) => update('name', e.target.value)}
+            {...register('name')}
             maxLength={150}
-            required
             isInvalid={Boolean(errors.name)}
           />
           <Form.Control.Feedback type="invalid">
-            {errors.name || 'Vui lòng nhập tên lớp.'}
+            {errors.name?.message}
           </Form.Control.Feedback>
         </Form.Group>
 
@@ -315,9 +337,7 @@ export default function ClassEditPage() {
             <Form.Group controlId="edit-classType">
               <Form.Label>Loại lớp *</Form.Label>
               <Form.Select
-                value={form.classType}
-                onChange={(e) => update('classType', e.target.value)}
-                required
+                {...register('classType')}
                 isInvalid={Boolean(errors.classType)}
               >
                 {TYPE_OPTIONS.map((o) => (
@@ -327,7 +347,7 @@ export default function ClassEditPage() {
                 ))}
               </Form.Select>
               <Form.Control.Feedback type="invalid">
-                {errors.classType || 'Vui lòng chọn loại lớp.'}
+                {errors.classType?.message}
               </Form.Control.Feedback>
             </Form.Group>
           </Col>
@@ -335,9 +355,7 @@ export default function ClassEditPage() {
             <Form.Group controlId="edit-status">
               <Form.Label>Trạng thái *</Form.Label>
               <Form.Select
-                value={form.status}
-                onChange={(e) => update('status', e.target.value)}
-                required
+                {...register('status')}
                 isInvalid={Boolean(errors.status)}
               >
                 {STATUS_OPTIONS.map((o) => (
@@ -351,7 +369,7 @@ export default function ClassEditPage() {
                 là thao tác có thể đảo ngược, không phải xoá.
               </Form.Text>
               <Form.Control.Feedback type="invalid">
-                {errors.status || 'Trạng thái không hợp lệ.'}
+                {errors.status?.message}
               </Form.Control.Feedback>
             </Form.Group>
           </Col>
@@ -362,8 +380,7 @@ export default function ClassEditPage() {
           <Form.Control
             as="textarea"
             rows={4}
-            value={form.description}
-            onChange={(e) => update('description', e.target.value)}
+            {...register('description')}
           />
           <Form.Text className="text-muted">
             Không bắt buộc. Để trống nếu lớp không cần mô tả.
@@ -371,8 +388,8 @@ export default function ClassEditPage() {
         </Form.Group>
 
         <div className="mt-4 d-flex gap-2">
-          <Button type="submit" variant="danger" disabled={saving}>
-            {saving ? (
+          <Button type="submit" variant="danger" disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Spinner size="sm" animation="border" className="me-2" />
                 Đang lưu…
@@ -385,11 +402,11 @@ export default function ClassEditPage() {
             type="button"
             variant="outline-secondary"
             onClick={() => {
-              setForm(original);
-              setErrors(emptyErrors);
+              if (original) reset(original);
               setSaved(null);
+              setFormLevelError(null);
             }}
-            disabled={saving}
+            disabled={isSubmitting}
           >
             Huỷ
           </Button>
@@ -397,7 +414,7 @@ export default function ClassEditPage() {
             type="button"
             variant="link"
             onClick={() => navigate(`/manager/classes/${classId}`)}
-            disabled={saving}
+            disabled={isSubmitting}
           >
             Quay lại chi tiết
           </Button>

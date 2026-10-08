@@ -13,9 +13,19 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { createStaffAccount } from '../../../services/staffAccountService';
-import { isValidPhone, normalizePhone } from '../../../utils';
+import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  fullNameSchema,
+  emailSchema,
+  phoneCreateSchema,
+  birthDateSchema,
+} from '../../../schemas/fragments';
 import { ROLE_LABELS, ROLES } from '../../../constants';
 
 const ROLE_OPTIONS = [
@@ -24,68 +34,67 @@ const ROLE_OPTIONS = [
   { value: ROLES.MANAGER, label: ROLE_LABELS[ROLES.MANAGER] },
 ];
 
-const emptyForm = {
-  fullName: '',
-  phone: '',
-  email: '',
-  birthDate: '',
-  role: '',
-};
+// Page-local schema composes the shared fragments + role enum.
+const staffCreateSchema = z.object({
+  fullName: fullNameSchema,
+  phone: phoneCreateSchema,
+  email: emailSchema,
+  birthDate: birthDateSchema,
+  role: z.enum(
+    [ROLES.COACH, ROLES.RECEPTIONIST, ROLES.MANAGER],
+    { message: 'Vui lòng chọn vai trò.' },
+  ),
+});
 
 export default function StaffAccountCreatePage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState(emptyForm);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [serverError, setServerError] = useState(null);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(staffCreateSchema),
+    defaultValues: {
+      fullName: '',
+      phone: '',
+      email: '',
+      birthDate: '',
+      role: '',
+    },
+  });
 
-  function validate() {
-    if (!form.fullName.trim()) return 'Vui lòng nhập họ và tên.';
-    if (form.fullName.trim().length > 200) {
-      return 'Họ và tên không được vượt quá 200 ký tự.';
-    }
-    if (!isValidPhone(form.phone)) {
-      return 'Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng 0.';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      return 'Email không hợp lệ.';
-    }
-    if (!form.birthDate) return 'Vui lòng nhập ngày sinh.';
-    if (form.birthDate > new Date().toISOString().slice(0, 10)) {
-      return 'Ngày sinh không được là ngày trong tương lai.';
-    }
-    if (!form.role) return 'Vui lòng chọn vai trò.';
-    if (!ROLE_OPTIONS.some((o) => o.value === form.role)) {
-      return 'Vai trò không hợp lệ.';
-    }
-    return null;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      setError({ message: validationError });
-      return;
-    }
-    setError(null);
-    setSubmitting(true);
+  async function onSubmit(data) {
+    setServerError(null);
     try {
+      // Preserve existing payload normalization:
+      //   - fullName trimmed (handled by the schema's .trim())
+      //   - phone canonical 10-digit form (handled by phoneCreateSchema's transform)
+      //   - email trimmed (schema) and lowercased here (matches the source's
+      //     form.email.trim().toLowerCase())
+      //   - birthDate as yyyy-MM-dd string
       const created = await createStaffAccount({
-        fullName: form.fullName.trim(),
-        phone: normalizePhone(form.phone),
-        email: form.email.trim().toLowerCase(),
-        birthDate: form.birthDate,
-        role: form.role,
+        fullName: data.fullName,
+        phone: data.phone,
+        email: data.email.toLowerCase(),
+        birthDate: data.birthDate,
+        role: data.role,
       });
       navigate(`/manager/staff-accounts/${created.accountId}`, { replace: true });
     } catch (err) {
-      setError(err);
-    } finally {
-      setSubmitting(false);
+      // Shared helper: data.errors + EMAIL/PHONE uniqueness.
+      // Allowlist MUST match the fields this page renders / registers.
+      const handled = applyServerErrors(err, setError, {
+        fields: ['fullName', 'phone', 'email', 'birthDate', 'role'],
+      });
+      // Finalization rule: if the shared helper already rendered the
+      // failure inline (handled === true), do NOT also raise the global
+      // ErrorAlert — the inline message is the only signal.
+      if (!handled) {
+        setServerError(err);
+      }
     }
   }
 
@@ -106,34 +115,38 @@ export default function StaffAccountCreatePage() {
       </p>
 
       <ErrorAlert
-        error={error}
+        error={serverError}
         title="Không tạo được tài khoản"
-        onClose={() => setError(null)}
+        onClose={() => setServerError(null)}
       />
 
-      <Form onSubmit={handleSubmit} noValidate>
+      <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Row className="g-3">
           <Col md={6}>
             <Form.Group controlId="create-fullName">
               <Form.Label>Họ và tên *</Form.Label>
               <Form.Control
-                value={form.fullName}
-                onChange={(e) => update('fullName', e.target.value)}
+                {...register('fullName')}
                 maxLength={200}
-                required
+                isInvalid={Boolean(errors.fullName)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.fullName?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col md={6}>
             <Form.Group controlId="create-phone">
               <Form.Label>Số điện thoại *</Form.Label>
               <Form.Control
-                value={form.phone}
-                onChange={(e) => update('phone', e.target.value)}
+                {...register('phone')}
                 inputMode="numeric"
                 placeholder="VD: 0901234567"
-                required
+                isInvalid={Boolean(errors.phone)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.phone?.message}
+              </Form.Control.Feedback>
               <Form.Text className="text-muted">
                 Cũng được dùng làm mật khẩu mặc định của tài khoản.
               </Form.Text>
@@ -147,11 +160,13 @@ export default function StaffAccountCreatePage() {
               <Form.Label>Email *</Form.Label>
               <Form.Control
                 type="email"
-                value={form.email}
-                onChange={(e) => update('email', e.target.value)}
+                {...register('email')}
                 maxLength={320}
-                required
+                isInvalid={Boolean(errors.email)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.email?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col md={6}>
@@ -159,11 +174,13 @@ export default function StaffAccountCreatePage() {
               <Form.Label>Ngày sinh *</Form.Label>
               <Form.Control
                 type="date"
-                value={form.birthDate}
-                onChange={(e) => update('birthDate', e.target.value)}
+                {...register('birthDate')}
                 max={new Date().toISOString().slice(0, 10)}
-                required
+                isInvalid={Boolean(errors.birthDate)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.birthDate?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
         </Row>
@@ -171,9 +188,8 @@ export default function StaffAccountCreatePage() {
         <Form.Group className="mt-3" controlId="create-role">
           <Form.Label>Vai trò *</Form.Label>
           <Form.Select
-            value={form.role}
-            onChange={(e) => update('role', e.target.value)}
-            required
+            {...register('role')}
+            isInvalid={Boolean(errors.role)}
           >
             <option value="">— Chọn vai trò —</option>
             {ROLE_OPTIONS.map((o) => (
@@ -182,6 +198,9 @@ export default function StaffAccountCreatePage() {
               </option>
             ))}
           </Form.Select>
+          <Form.Control.Feedback type="invalid">
+            {errors.role?.message}
+          </Form.Control.Feedback>
           <Form.Text className="text-muted">
             Vai trò sẽ không thể thay đổi. Để đổi vai trò, hãy chuyển tài khoản sang
             INACTIVE và tạo tài khoản mới.
@@ -189,8 +208,8 @@ export default function StaffAccountCreatePage() {
         </Form.Group>
 
         <div className="mt-4 d-flex gap-2">
-          <Button type="submit" variant="danger" disabled={submitting}>
-            {submitting ? (
+          <Button type="submit" variant="danger" disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Spinner size="sm" animation="border" className="me-2" />
                 Đang tạo…
@@ -203,7 +222,7 @@ export default function StaffAccountCreatePage() {
             type="button"
             variant="outline-secondary"
             onClick={() => navigate('/manager/staff-accounts')}
-            disabled={submitting}
+            disabled={isSubmitting}
           >
             Huỷ
           </Button>

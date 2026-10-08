@@ -8,10 +8,20 @@
 //
 // PATCH semantics are "omitted = unchanged". We therefore send only the
 // keys that actually changed vs. the original fetched value.
+//
+// Migration note (RHF + Zod):
+//   - Same migration pattern as StaffAccountEditPage. See that file
+//     for the contract explanation; the schemas and buildPatch() logic
+//     are byte-faithful copies of the pre-migration source.
+//   - blank phone is allowed by the schema and the form state;
+//     buildPatch() omits the phone key from PATCH when blank.
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import {
@@ -21,133 +31,135 @@ import {
 import { ROLE_LABELS, ROLES } from '../../../constants';
 import {
   formatDate,
-  isValidPhone,
   normalizePhone,
 } from '../../../utils';
+import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  fullNameSchema,
+  emailSchema,
+  phoneEditOptionalSchema,
+  birthDateSchema,
+} from '../../../schemas/fragments';
 
-const emptyForm = {
-  fullName: '',
-  phone: '',
-  email: '',
-  birthDate: '',
-};
+const memberEditSchema = z.object({
+  fullName: fullNameSchema,
+  phone: phoneEditOptionalSchema,
+  email: emailSchema,
+  birthDate: birthDateSchema,
+});
+
+function accountToForm(data) {
+  return {
+    fullName: data?.fullName || '',
+    phone: data?.phone || '',
+    email: data?.email || '',
+    birthDate: data?.birthDate || '',
+  };
+}
 
 export default function MemberAccountEditPage() {
   const { accountId } = useParams();
   const navigate = useNavigate();
 
   const [account, setAccount] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [original, setOriginal] = useState(emptyForm);
+  const [original, setOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [serverError, setServerError] = useState(null);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [savedNoChange, setSavedNoChange] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(memberEditSchema),
+    defaultValues: {
+      fullName: '',
+      phone: '',
+      email: '',
+      birthDate: '',
+    },
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setServerError(null);
+    setSavedSuccess(false);
+    setSavedNoChange(false);
     try {
       const data = await getMemberAccount(accountId);
-      const next = {
-        fullName: data?.fullName || '',
-        phone: data?.phone || '',
-        email: data?.email || '',
-        birthDate: data?.birthDate || '',
-      };
+      const next = accountToForm(data);
       setAccount(data);
-      setForm(next);
       setOriginal(next);
+      reset(next);
     } catch (err) {
-      setError(err);
+      setServerError(err);
     } finally {
       setLoading(false);
     }
-  }, [accountId]);
+  }, [accountId, reset]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-    setSuccess(false);
-  }
-
-  function reset() {
-    setForm(original);
-    setSuccess(false);
-    setError(null);
-  }
-
-  function buildPatch() {
+  function buildPatch(data) {
     const patch = {};
-    if (form.fullName.trim() !== (original.fullName || '')) {
-      patch.fullName = form.fullName.trim();
+    if (data.fullName.trim() !== (original?.fullName || '')) {
+      patch.fullName = data.fullName.trim();
     }
-    const normalizedNewPhone = form.phone ? normalizePhone(form.phone) : null;
-    const normalizedOldPhone = original.phone ? normalizePhone(original.phone) : null;
-    if (form.phone && normalizedNewPhone !== normalizedOldPhone) {
+    const normalizedNewPhone = data.phone ? normalizePhone(data.phone) : null;
+    const normalizedOldPhone = original?.phone
+      ? normalizePhone(original.phone)
+      : null;
+    if (data.phone && normalizedNewPhone !== normalizedOldPhone) {
       patch.phone = normalizedNewPhone;
     }
-    if (form.email.trim().toLowerCase() !== (original.email || '').toLowerCase()) {
-      patch.email = form.email.trim().toLowerCase();
+    if (
+      data.email.trim().toLowerCase() !==
+      (original?.email || '').toLowerCase()
+    ) {
+      patch.email = data.email.trim().toLowerCase();
     }
-    if (form.birthDate !== (original.birthDate || '')) {
-      patch.birthDate = form.birthDate;
+    if (data.birthDate !== (original?.birthDate || '')) {
+      patch.birthDate = data.birthDate;
     }
     return patch;
   }
 
-  function validate() {
-    if (!form.fullName.trim()) return 'Vui lòng nhập họ và tên.';
-    if (form.fullName.trim().length > 200) {
-      return 'Họ và tên không được vượt quá 200 ký tự.';
-    }
-    if (form.phone && !isValidPhone(form.phone)) {
-      return 'Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng 0.';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      return 'Email không hợp lệ.';
-    }
-    if (!form.birthDate) return 'Vui lòng nhập ngày sinh.';
-    if (form.birthDate > new Date().toISOString().slice(0, 10)) {
-      return 'Ngày sinh không được là ngày trong tương lai.';
-    }
-    return null;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      setError({ message: validationError });
-      return;
-    }
-    const patch = buildPatch();
+  async function onSubmit(data) {
+    setServerError(null);
+    setSavedSuccess(false);
+    setSavedNoChange(false);
+    const patch = buildPatch(data);
     if (Object.keys(patch).length === 0) {
-      setSuccess(true);
-      setError(null);
+      setSavedNoChange(true);
       return;
     }
-    setError(null);
-    setSaving(true);
     try {
       const updated = await updateMemberAccount(accountId, patch);
-      const next = {
-        fullName: updated?.fullName || '',
-        phone: updated?.phone || '',
-        email: updated?.email || '',
-        birthDate: updated?.birthDate || '',
-      };
+      const next = accountToForm(updated);
       setAccount(updated);
-      setForm(next);
       setOriginal(next);
-      setSuccess(true);
+      reset(next);
+      setSavedSuccess(true);
     } catch (err) {
-      setError(err);
-    } finally {
-      setSaving(false);
+      // Shared helper: data.errors[field] + EMAIL/PHONE uniqueness.
+      // Allowlist MUST match the fields this page renders / registers.
+      // role / status / accountId / createdAt are display-only and
+      // intentionally NOT in the allowlist.
+      const handled = applyServerErrors(err, setError, {
+        fields: ['fullName', 'phone', 'email', 'birthDate'],
+      });
+      // Finalization rule: if the shared helper already rendered the
+      // failure inline (handled === true), do NOT also raise the global
+      // ErrorAlert — the inline message is the only signal.
+      if (!handled) {
+        setServerError(err);
+      }
     }
   }
 
@@ -159,7 +171,7 @@ export default function MemberAccountEditPage() {
     );
   }
 
-  if (error && !account) {
+  if (serverError && !account) {
     return (
       <div>
         <Link to="/manager/members" className="small text-decoration-none">
@@ -167,7 +179,7 @@ export default function MemberAccountEditPage() {
         </Link>
         <ErrorAlert
           className="mt-3"
-          error={error}
+          error={serverError}
           title="Không tải được hội viên"
         />
       </div>
@@ -192,36 +204,48 @@ export default function MemberAccountEditPage() {
       </p>
 
       <ErrorAlert
-        error={error}
+        error={serverError}
         title="Không lưu được thay đổi"
-        onClose={() => setError(null)}
+        onClose={() => setServerError(null)}
       />
-      {success ? (
+      {savedSuccess ? (
         <div className="alert alert-success py-2">Đã lưu thay đổi.</div>
       ) : null}
+      {savedNoChange ? (
+        <div className="alert alert-warning py-2 mb-3">
+          Không có thay đổi để lưu.
+        </div>
+      ) : null}
 
-      <Form onSubmit={handleSubmit} noValidate>
+      <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Row className="g-3">
           <Col md={6}>
             <Form.Group controlId="edit-fullName">
               <Form.Label>Họ và tên *</Form.Label>
               <Form.Control
-                value={form.fullName}
-                onChange={(e) => update('fullName', e.target.value)}
+                {...register('fullName')}
                 maxLength={200}
-                required
+                isInvalid={Boolean(errors.fullName)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.fullName?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col md={6}>
             <Form.Group controlId="edit-phone">
-              <Form.Label>Số điện thoại *</Form.Label>
+              <Form.Label>Số điện thoại</Form.Label>
               <Form.Control
-                value={form.phone}
-                onChange={(e) => update('phone', e.target.value)}
+                {...register('phone')}
                 inputMode="numeric"
-                required
+                isInvalid={Boolean(errors.phone)}
               />
+              <Form.Text className="text-muted">
+                Để trống nếu không muốn thay đổi số điện thoại.
+              </Form.Text>
+              <Form.Control.Feedback type="invalid">
+                {errors.phone?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
         </Row>
@@ -232,11 +256,13 @@ export default function MemberAccountEditPage() {
               <Form.Label>Email *</Form.Label>
               <Form.Control
                 type="email"
-                value={form.email}
-                onChange={(e) => update('email', e.target.value)}
+                {...register('email')}
                 maxLength={320}
-                required
+                isInvalid={Boolean(errors.email)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.email?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col md={6}>
@@ -244,11 +270,13 @@ export default function MemberAccountEditPage() {
               <Form.Label>Ngày sinh *</Form.Label>
               <Form.Control
                 type="date"
-                value={form.birthDate}
-                onChange={(e) => update('birthDate', e.target.value)}
+                {...register('birthDate')}
                 max={new Date().toISOString().slice(0, 10)}
-                required
+                isInvalid={Boolean(errors.birthDate)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.birthDate?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
         </Row>
@@ -277,8 +305,8 @@ export default function MemberAccountEditPage() {
         </fieldset>
 
         <div className="mt-4 d-flex gap-2">
-          <Button type="submit" variant="danger" disabled={saving}>
-            {saving ? (
+          <Button type="submit" variant="danger" disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Spinner size="sm" animation="border" className="me-2" />
                 Đang lưu…
@@ -290,8 +318,13 @@ export default function MemberAccountEditPage() {
           <Button
             type="button"
             variant="outline-secondary"
-            onClick={reset}
-            disabled={saving}
+            onClick={() => {
+              if (original) reset(original);
+              setServerError(null);
+              setSavedSuccess(false);
+              setSavedNoChange(false);
+            }}
+            disabled={isSubmitting}
           >
             Huỷ
           </Button>
@@ -299,7 +332,7 @@ export default function MemberAccountEditPage() {
             type="button"
             variant="link"
             onClick={() => navigate(`/manager/members/${account.accountId}`)}
-            disabled={saving}
+            disabled={isSubmitting}
           >
             Quay lại chi tiết
           </Button>

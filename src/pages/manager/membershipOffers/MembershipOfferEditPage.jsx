@@ -4,19 +4,36 @@
 // the list endpoint (MembershipOfferResponse is what we have available)
 // and PATCH back the user-edited fields.
 //
-// MembershipOfferResponse does NOT include `status`, so when editing we
-// default to ACTIVE on the form. Once the backend exposes status on the
-// response, we should prefill from there instead.
+// KNOWN ISSUE (out of scope for this migration):
+//   MembershipOfferResponse does NOT include `status`, so when editing
+//   we default to ACTIVE on the form. Once the backend exposes status
+//   on the response, we should prefill from there instead. This
+//   migration preserves the current effective behavior; the fix is
+//   an API-contract change that is explicitly deferred.
+//
+// Migration note (RHF + Zod):
+//   - separate page-local edit schema (membershipOfferEditSchema);
+//     do not blindly reuse the create schema because the edit page
+//     submits the full set of fields on save (per current build
+//     behavior) and we want consistent validation.
+//   - preserve async load via reset(...).
+//   - preserve original values for any future PATCH-diff logic (we
+//     currently send the full form payload, matching pre-migration
+//     behavior).
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import {
   listMembershipOffersAdmin,
   updateMembershipOffer,
 } from '../../../services/membershipOfferAdminService';
+import { applyServerErrors } from '../../../utils/serverErrors';
 import { formatPrice } from '../../../utils';
 
 const PLAN_OPTIONS = [
@@ -29,14 +46,43 @@ const STATUS_OPTIONS = [
   { value: 'INACTIVE', label: 'INACTIVE' },
 ];
 
-const emptyForm = {
-  planCode: '',
-  name: '',
-  description: '',
-  priceAmount: '',
-  durationDays: '',
-  status: 'ACTIVE',
-};
+// Page-local edit schema — same field set as Create. The wire payload
+// mirrors Create's (no diff vs original at the FE).
+const membershipOfferEditSchema = z.object({
+  planCode: z.enum(['BASIC', 'PLUS'], {
+    message: 'Vui lòng chọn loại gói tập.',
+  }),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập tên gói tập.')
+    .max(200, 'Tên gói tập không được vượt quá 200 ký tự.'),
+  description: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập mô tả gói tập.'),
+  priceAmount: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập giá gói tập.')
+    .regex(/^\d+$/, 'Giá gói tập phải là số nguyên dương (VND).')
+    .refine(
+      (s) => Number(s) > 0,
+      'Giá gói tập phải lớn hơn 0.',
+    ),
+  durationDays: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập thời hạn gói tập.')
+    .regex(/^\d+$/, 'Thời hạn gói tập phải là số nguyên dương.')
+    .refine(
+      (s) => Number(s) > 0,
+      'Thời hạn gói tập phải lớn hơn 0 ngày.',
+    ),
+  status: z.enum(['ACTIVE', 'INACTIVE'], {
+    message: 'Vui lòng chọn trạng thái.',
+  }),
+});
 
 function offerToForm(o) {
   return {
@@ -48,12 +94,13 @@ function offerToForm(o) {
       o.priceAmount == null
         ? ''
         : typeof o.priceAmount === 'string'
-          ? o.priceAmount
-          : String(o.priceAmount),
+        ? o.priceAmount
+        : String(o.priceAmount),
     durationDays:
       o.durationDays == null ? '' : String(o.durationDays),
     // Backend response doesn't include status. Default to ACTIVE so the
     // manager can intentionally flip it via the dropdown if needed.
+    // This is the documented known issue (out of scope).
     status: o.status || 'ACTIVE',
   };
 }
@@ -62,11 +109,28 @@ export default function MembershipOfferEditPage() {
   const { offerId } = useParams();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
+  const [serverError, setServerError] = useState(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(membershipOfferEditSchema),
+    defaultValues: {
+      planCode: '',
+      name: '',
+      description: '',
+      priceAmount: '',
+      durationDays: '',
+      status: 'ACTIVE',
+    },
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,82 +145,61 @@ export default function MembershipOfferEditPage() {
           ),
         );
       } else {
-        setForm(offerToForm(found));
+        reset(offerToForm(found));
       }
     } catch (err) {
       setLoadError(err);
     } finally {
       setLoading(false);
     }
-  }, [offerId]);
+  }, [offerId, reset]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
-
-  function validate() {
-    if (!form.planCode) return 'Vui lòng chọn loại gói tập.';
-    if (!PLAN_OPTIONS.some((o) => o.value === form.planCode)) {
-      return 'Loại gói tập không hợp lệ.';
-    }
-    const name = form.name.trim();
-    if (!name) return 'Vui lòng nhập tên gói tập.';
-    if (name.length > 200) return 'Tên gói tập không được vượt quá 200 ký tự.';
-    if (!form.description.trim()) return 'Vui lòng nhập mô tả gói tập.';
-
-    const priceStr = String(form.priceAmount).trim();
-    if (!priceStr) return 'Vui lòng nhập giá gói tập.';
-    if (!/^\d+$/.test(priceStr)) {
-      return 'Giá gói tập phải là số nguyên dương (VND).';
-    }
-    if (Number(form.priceAmount) <= 0) return 'Giá gói tập phải lớn hơn 0.';
-
-    const daysStr = String(form.durationDays).trim();
-    if (!daysStr) return 'Vui lòng nhập thời hạn gói tập.';
-    if (!/^\d+$/.test(daysStr)) {
-      return 'Thời hạn gói tập phải là số nguyên dương.';
-    }
-    if (Number(form.durationDays) <= 0) {
-      return 'Thời hạn gói tập phải lớn hơn 0 ngày.';
-    }
-
-    if (!form.status) return 'Vui lòng chọn trạng thái.';
-    if (!STATUS_OPTIONS.some((o) => o.value === form.status)) {
-      return 'Trạng thái không hợp lệ.';
-    }
-
-    return null;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      setSubmitError({ message: validationError });
-      return;
-    }
-    setSubmitError(null);
-    setSubmitting(true);
+  async function onSubmit(data) {
+    setServerError(null);
     try {
       await updateMembershipOffer(offerId, {
-        planCode: form.planCode,
-        name: form.name.trim(),
-        description: form.description.trim(),
-        priceAmount: form.priceAmount,
-        durationDays: Number(form.durationDays),
-        status: form.status,
+        planCode: data.planCode,
+        name: data.name.trim(),
+        description: data.description.trim(),
+        priceAmount: data.priceAmount,
+        durationDays: Number(data.durationDays),
+        status: data.status,
       });
       navigate(`/manager/membership-offers/${offerId}`, { replace: true });
     } catch (err) {
-      setSubmitError(err);
-    } finally {
-      setSubmitting(false);
+      // Shared helper: data.errors[field].
+      // Allowlist MUST match the fields this page renders / registers.
+      const handled = applyServerErrors(err, setError, {
+        fields: [
+          'planCode',
+          'name',
+          'description',
+          'priceAmount',
+          'durationDays',
+          'status',
+        ],
+      });
+      if (!handled) {
+        setServerError(err);
+      }
     }
   }
+
+  // Live preview of the price using the same helper the detail page uses.
+  // useWatch (not watch) is used here to avoid the
+  // `react(incompatible-library)` lint warning that RHF's plain watch()
+  // produces when its return value is passed to other components. Both
+  // APIs subscribe to the same field; the value is identical for this
+  // read-only preview use. The hook MUST run unconditionally (before
+  // any early returns) so React's rules-of-hooks hold.
+  const priceAmountValue = useWatch({ control, name: 'priceAmount' });
+  const previewPrice = /^\d+$/.test(String(priceAmountValue || '').trim())
+    ? formatPrice(priceAmountValue, 'VND')
+    : '—';
 
   if (loading) {
     return (
@@ -184,9 +227,9 @@ export default function MembershipOfferEditPage() {
     );
   }
 
-  const previewPrice = /^\d+$/.test(String(form.priceAmount).trim())
-    ? formatPrice(form.priceAmount, 'VND')
-    : '—';
+  // Live preview computed above (before any early returns) so the
+  // React hook order is stable across renders. The variables
+  // `priceAmountValue` and `previewPrice` are referenced below.
 
   return (
     <div>
@@ -204,20 +247,19 @@ export default function MembershipOfferEditPage() {
       </p>
 
       <ErrorAlert
-        error={submitError}
+        error={serverError}
         title="Không cập nhật được gói tập"
-        onClose={() => setSubmitError(null)}
+        onClose={() => setServerError(null)}
       />
 
-      <Form onSubmit={handleSubmit} noValidate>
+      <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Row className="g-3">
           <Col md={6}>
             <Form.Group controlId="edit-planCode">
               <Form.Label>Loại gói tập *</Form.Label>
               <Form.Select
-                value={form.planCode}
-                onChange={(e) => update('planCode', e.target.value)}
-                required
+                {...register('planCode')}
+                isInvalid={Boolean(errors.planCode)}
               >
                 {PLAN_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -225,15 +267,17 @@ export default function MembershipOfferEditPage() {
                   </option>
                 ))}
               </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {errors.planCode?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col md={6}>
             <Form.Group controlId="edit-status">
               <Form.Label>Trạng thái *</Form.Label>
               <Form.Select
-                value={form.status}
-                onChange={(e) => update('status', e.target.value)}
-                required
+                {...register('status')}
+                isInvalid={Boolean(errors.status)}
               >
                 {STATUS_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -241,6 +285,9 @@ export default function MembershipOfferEditPage() {
                   </option>
                 ))}
               </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {errors.status?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
         </Row>
@@ -248,11 +295,13 @@ export default function MembershipOfferEditPage() {
         <Form.Group className="mt-3" controlId="edit-name">
           <Form.Label>Tên gói tập *</Form.Label>
           <Form.Control
-            value={form.name}
-            onChange={(e) => update('name', e.target.value)}
+            {...register('name')}
             maxLength={200}
-            required
+            isInvalid={Boolean(errors.name)}
           />
+          <Form.Control.Feedback type="invalid">
+            {errors.name?.message}
+          </Form.Control.Feedback>
         </Form.Group>
 
         <Form.Group className="mt-3" controlId="edit-description">
@@ -260,10 +309,12 @@ export default function MembershipOfferEditPage() {
           <Form.Control
             as="textarea"
             rows={4}
-            value={form.description}
-            onChange={(e) => update('description', e.target.value)}
-            required
+            {...register('description')}
+            isInvalid={Boolean(errors.description)}
           />
+          <Form.Control.Feedback type="invalid">
+            {errors.description?.message}
+          </Form.Control.Feedback>
         </Form.Group>
 
         <Row className="g-3 mt-1">
@@ -274,13 +325,15 @@ export default function MembershipOfferEditPage() {
                 type="number"
                 min="1"
                 step="1"
-                value={form.priceAmount}
-                onChange={(e) => update('priceAmount', e.target.value)}
-                required
+                {...register('priceAmount')}
+                isInvalid={Boolean(errors.priceAmount)}
               />
               <Form.Text className="text-muted">
                 Xem trước: <strong>{previewPrice}</strong>
               </Form.Text>
+              <Form.Control.Feedback type="invalid">
+                {errors.priceAmount?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col md={6}>
@@ -290,17 +343,19 @@ export default function MembershipOfferEditPage() {
                 type="number"
                 min="1"
                 step="1"
-                value={form.durationDays}
-                onChange={(e) => update('durationDays', e.target.value)}
-                required
+                {...register('durationDays')}
+                isInvalid={Boolean(errors.durationDays)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.durationDays?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
         </Row>
 
         <div className="mt-4 d-flex gap-2">
-          <Button type="submit" variant="danger" disabled={submitting}>
-            {submitting ? (
+          <Button type="submit" variant="danger" disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Spinner size="sm" animation="border" className="me-2" />
                 Đang lưu…
@@ -313,7 +368,7 @@ export default function MembershipOfferEditPage() {
             type="button"
             variant="outline-secondary"
             onClick={() => navigate(`/manager/membership-offers/${offerId}`)}
-            disabled={submitting}
+            disabled={isSubmitting}
           >
             Huỷ
           </Button>

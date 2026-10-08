@@ -10,84 +10,84 @@
 //
 // We map the duplicate-name 409 to the inline `name` field error so the
 // manager can immediately see which field is at fault, and also surface the
-// generic ErrorAlert.
+// generic ErrorAlert. The 409 mapping is kept PAGE-LOCAL; the shared
+// serverErrors helper only handles EMAIL/PHONE uniqueness.
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Form, Spinner } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { createDiscipline } from '../../../services/disciplineService';
+import { applyServerErrors } from '../../../utils/serverErrors';
 
-const emptyForm = {
-  name: '',
-  description: '',
-};
-
-const emptyErrors = {};
-
-function pickFieldErrors(err) {
-  const data = err?.response?.data;
-  if (data && data.errors && typeof data.errors === 'object') {
-    return data.errors;
-  }
-  return {};
-}
+// Page-local schema. Status is intentionally absent — the backend assigns
+// ACTIVE automatically; including the key here would invite accidental
+// sending.
+const disciplineCreateSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập tên bộ môn.')
+    .max(150, 'Tên bộ môn đã quá dài (tối đa 150 ký tự).'),
+  description: z.string(),
+});
 
 export default function DisciplineCreatePage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState(emptyForm);
-  const [errors, setErrors] = useState(emptyErrors);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [serverError, setServerError] = useState(null);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-    if (errors[field]) {
-      setErrors((e) => {
-        const next = { ...e };
-        delete next[field];
-        return next;
-      });
-    }
-  }
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(disciplineCreateSchema),
+    defaultValues: { name: '', description: '' },
+  });
 
-  function validate() {
-    const next = {};
-    if (!form.name.trim()) {
-      next.name = 'Vui lòng nhập tên bộ môn.';
-    } else if (form.name.trim().length > 150) {
-      next.name = 'Tên bộ môn không được vượt quá 150 ký tự.';
-    }
-    return next;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setError(null);
-      return;
-    }
-    setErrors(emptyErrors);
-    setError(null);
-    setSubmitting(true);
+  async function onSubmit(data) {
+    setServerError(null);
     try {
       const created = await createDiscipline({
-        name: form.name.trim(),
-        description: form.description.trim(),
+        name: data.name.trim(),
+        description: data.description.trim(),
       });
       navigate(`/manager/disciplines/${created.id}`, { replace: true });
     } catch (err) {
-      const fieldErrors = pickFieldErrors(err);
+      // Shared helper: data.errors[field] (Spring ProblemDetail).
+      // Allowlist MUST match the fields this page renders / registers.
+      // EMAIL_ALREADY_EXISTS / PHONE_ALREADY_EXISTS do not apply here
+      // but we still pass the full list so a stray per-field error from
+      // a future backend change does not silently suppress ErrorAlert.
+      const handled = applyServerErrors(err, setError, {
+        fields: ['name', 'description'],
+      });
+
+      // PAGE-LOCAL: DISCIPLINE_NAME_CONFLICT.
       const code = err?.response?.data?.code;
-      if (code === 'DISCIPLINE_NAME_CONFLICT' && !fieldErrors.name) {
-        fieldErrors.name = 'Tên bộ môn đã tồn tại.';
+      if (code === 'DISCIPLINE_NAME_CONFLICT') {
+        // Only set if RHF has not already populated the name error
+        // through data.errors, so we don't double-show.
+        if (!errors.name) {
+          setError('name', {
+            type: 'server',
+            message: 'Tên bộ môn đã tồn tại.',
+          });
+        }
       }
-      setErrors(fieldErrors);
-      setError(err);
-    } finally {
-      setSubmitting(false);
+
+      // Global ErrorAlert is the shared-helper path's fallback: only
+      // raised when the helper did NOT handle the error. The page-local
+      // DISCIPLINE_NAME_CONFLICT mapping above is independent and is
+      // preserved as-is.
+      if (!handled) {
+        setServerError(err);
+      }
     }
   }
 
@@ -106,24 +106,22 @@ export default function DisciplineCreatePage() {
       </p>
 
       <ErrorAlert
-        error={error}
+        error={serverError}
         title="Không tạo được bộ môn"
-        onClose={() => setError(null)}
+        onClose={() => setServerError(null)}
       />
 
-      <Form onSubmit={handleSubmit} noValidate>
+      <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Form.Group controlId="create-name">
           <Form.Label>Tên bộ môn *</Form.Label>
           <Form.Control
-            value={form.name}
-            onChange={(e) => update('name', e.target.value)}
+            {...register('name')}
             maxLength={150}
             placeholder="VD: Yoga"
-            required
             isInvalid={Boolean(errors.name)}
           />
           <Form.Control.Feedback type="invalid">
-            {errors.name || 'Vui lòng nhập tên bộ môn.'}
+            {errors.name?.message}
           </Form.Control.Feedback>
         </Form.Group>
 
@@ -132,8 +130,7 @@ export default function DisciplineCreatePage() {
           <Form.Control
             as="textarea"
             rows={4}
-            value={form.description}
-            onChange={(e) => update('description', e.target.value)}
+            {...register('description')}
             placeholder="Mô tả ngắn về bộ môn…"
           />
           <Form.Text className="text-muted">
@@ -142,8 +139,8 @@ export default function DisciplineCreatePage() {
         </Form.Group>
 
         <div className="mt-4 d-flex gap-2">
-          <Button type="submit" variant="danger" disabled={submitting}>
-            {submitting ? (
+          <Button type="submit" variant="danger" disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Spinner size="sm" animation="border" className="me-2" />
                 Đang tạo…
@@ -156,7 +153,7 @@ export default function DisciplineCreatePage() {
             type="button"
             variant="outline-secondary"
             onClick={() => navigate('/manager/disciplines')}
-            disabled={submitting}
+            disabled={isSubmitting}
           >
             Huỷ
           </Button>

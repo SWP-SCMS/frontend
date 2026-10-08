@@ -13,29 +13,99 @@
 // Các trường BE chưa hỗ trợ (giới tính, địa chỉ, mối quan hệ, khung giờ liên
 // hệ, ghi chú chấn thương, chỉ số InBody, tải ảnh từ máy, ngày gia nhập) được
 // giữ lại trên giao diện ở dạng làm mờ, ghi "Sắp ra mắt".
+//
+// Migration note (RHF + Zod):
+//   - profileImageUrl http(s) regex is intentionally PAGE-LOCAL. It is NOT
+//     promoted to a shared fragment and is NOT applied to F05 / F06.
+//   - phone is required and uses normalizePhone. F04's contract differs
+//     from the optional blank-phone edit semantics of F08 / F09; the
+//     phoneEditOptionalSchema is NOT used here.
+//   - PATCH uses a buildPatch() diff against `original`; unchanged fields
+//     are OMITTED (preserved exactly from the pre-migration source).
+//   - RHF owns editable form values. `original` is kept as a separate
+//     useState for the diff. Async loaded data enters via reset(...).
+//   - Local `Field` is a plain wrapper (no forwardRef): every RHF
+//     `register()` call is spread directly onto the child <input> /
+//     <textarea>, so the ref reaches the real control without any
+//     wrapper forwarding. The wrapper itself just renders the label
+//     and the children.
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Spinner } from 'react-bootstrap';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import { getMyProfile, updateMyProfile } from '../../../services/memberService';
 import { useAuth } from '../../../context/useAuth';
-import { extractErrorMessage, isValidPhone, normalizePhone } from '../../../utils';
+import { extractErrorMessage, normalizePhone } from '../../../utils';
+import { applyServerErrors } from '../../../utils/serverErrors';
+import { emailSchema, birthDateSchema } from '../../../schemas/fragments';
+
 import './MemberProfilePage.css';
 
-const emptyForm = {
-  fullName: '',
-  phone: '',
-  email: '',
-  birthDate: '',
-  profileImageUrl: '',
-  fitnessGoal: '',
-  emergencyContactName: '',
-  emergencyContactPhone: '',
-};
+// Page-local schema. Reuses shared fragments where semantics match
+// (email, birthDate) and keeps page-local rules where they differ:
+//   - fullName: 1..200, trim (BR-VAL-ACC-09)
+//   - phone: required, normalized 10-digit (F04's contract is REQUIRED;
+//     this differs from F08/F09's optional-blank semantics and is
+//     therefore NOT shared with phoneEditOptionalSchema)
+//   - profileImageUrl: optional, when present must be http(s)://...
+//     (BR-ACC-11 — page-local by intent, NOT shared with F05 / F06)
+//   - fitnessGoal: optional, free text
+//   - emergencyContactName / emergencyContactPhone: optional, must
+//     be both present or both empty (BR-ACC-09 pairing rule).
+const optionalHttpUrl = z
+  .string()
+  .refine(
+    (s) => s === '' || /^https?:\/\/\S+$/i.test(s),
+    'Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://.',
+  );
 
-// Các mục tiêu chọn nhanh: bấm sẽ điền chữ vào ô "Mục tiêu tập luyện".
+const memberProfileSchema = z
+  .object({
+    fullName: z
+      .string()
+      .trim()
+      .min(1, 'Vui lòng nhập họ tên.')
+      .max(200, 'Họ tên không được vượt quá 200 ký tự.'),
+    phone: z
+      .string()
+      .trim()
+      .refine(
+        (s) => normalizePhone(s) != null,
+        'Số điện thoại phải đúng 10 chữ số và bắt đầu bằng 0.',
+      )
+      .transform((s) => normalizePhone(s)),
+    email: emailSchema,
+    birthDate: birthDateSchema,
+    profileImageUrl: optionalHttpUrl,
+    fitnessGoal: z.string(),
+    emergencyContactName: z.string(),
+    emergencyContactPhone: z.string(),
+  })
+  .superRefine((d, ctx) => {
+    const ecName = (d.emergencyContactName || '').trim();
+    const ecPhone = (d.emergencyContactPhone || '').trim();
+    if ((ecName === '') !== (ecPhone === '')) {
+      ctx.addIssue({
+        path: ['emergencyContactPhone'],
+        code: 'custom',
+        message:
+          'Liên hệ khẩn cấp phải nhập cả họ tên và số điện thoại.',
+      });
+    } else if (ecPhone !== '' && normalizePhone(ecPhone) == null) {
+      ctx.addIssue({
+        path: ['emergencyContactPhone'],
+        code: 'custom',
+        message: 'Số điện thoại liên hệ khẩn cấp không hợp lệ.',
+      });
+    }
+  });
+
 const GOAL_PRESETS = [
   'Tăng cơ - Giảm mỡ',
   'Cải thiện sức bền Cardio',
@@ -43,7 +113,7 @@ const GOAL_PRESETS = [
   'Rèn luyện thói quen vận động',
 ];
 
-// ----- Icon SVG vẽ trực tiếp (không cài thư viện icon) -----
+// ----- Icon SVG vẽ trực tiếp (không cài thương hiệun icon) -----
 
 const iconProps = {
   fill: 'none',
@@ -136,8 +206,6 @@ function Icon({ name, size = 18 }) {
   );
 }
 
-// ----- Hàm hỗ trợ -----
-
 // BE trả lỗi dạng ProblemDetail: câu giải thích nằm ở `detail`. Với lỗi 400
 // (VALIDATION_ERROR), chi tiết từng trường nằm trong `errors`.
 function problemMessage(err, fallback) {
@@ -163,7 +231,11 @@ function toForm(data) {
   };
 }
 
-// Một ô nhập: nhãn + ô. `soon` = chưa có API -> làm mờ, ghi "Sắp ra mắt".
+// Field — local label-wrapper. Plain component (no forwardRef). Every
+// RHF `register()` call in this file is spread directly onto the child
+// <input> / <textarea>, so the `ref` reaches the real DOM control
+// without any wrapper forwarding. The wrapper just renders the label,
+// the required-star, the "Sắp ra mắt" badge, and the children.
 function Field({ id, label, required, soon, wide, children }) {
   return (
     <div
@@ -206,14 +278,50 @@ export default function MemberProfilePage() {
   const { activeMembership, hasActiveMembership, loading: membershipLoading } =
     useMemberArea();
 
-  const [form, setForm] = useState(emptyForm);
-  const [original, setOriginal] = useState(emptyForm);
+  const [original, setOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  const [serverError, setServerError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [showImageInput, setShowImageInput] = useState(false);
   const [imageBroken, setImageBroken] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    control,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(memberProfileSchema),
+    defaultValues: {
+      fullName: '',
+      phone: '',
+      email: '',
+      birthDate: '',
+      profileImageUrl: '',
+      fitnessGoal: '',
+      emergencyContactName: '',
+      emergencyContactPhone: '',
+    },
+  });
+
+  // `profileImageUrl` is rendered both as the avatar image src and as
+  // the value of a hidden text input inside the avatar card. The
+  // pre-migration source wrote it into `form.profileImageUrl` from
+  // there. We keep the same UX: when the toggle is opened, the user
+  // types into a regular text input registered with RHF.
+  // useWatch (not watch) is used to avoid the
+  // `react(incompatible-library)` lint warning that RHF's plain
+  // watch() produces. useWatch MUST be called unconditionally and
+  // before any early returns so React's rules-of-hooks hold.
+  const profileImageUrlValue = useWatch({
+    control,
+    name: 'profileImageUrl',
+  }) || '';
+  const fullNameValue = useWatch({ control, name: 'fullName' }) || '';
+  const fitnessGoalValue = useWatch({ control, name: 'fitnessGoal' }) || '';
 
   useEffect(() => {
     let cancelled = false;
@@ -221,11 +329,11 @@ export default function MemberProfilePage() {
       .then((data) => {
         if (cancelled) return;
         const next = toForm(data);
-        setForm(next);
         setOriginal(next);
+        reset(next);
       })
       .catch((err) => {
-        if (!cancelled) setError(err);
+        if (!cancelled) setServerError(err);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -233,113 +341,101 @@ export default function MemberProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reset]);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-    setSuccess(false);
-  }
-
-  function resetForm() {
-    setForm(original);
-    setSuccess(false);
-    setError(null);
-    setShowImageInput(false);
-    setImageBroken(false);
-  }
-
-  // Chỉ gửi những trường đã đổi so với dữ liệu BE (original).
-  function buildPatch() {
+  // buildPatch — diff against `original`. Preserved byte-for-byte from
+  // the pre-migration source. RHF owns the form values; this function
+  // builds the wire payload from the parsed `data` argument and the
+  // `original` snapshot kept in state.
+  function buildPatch(data) {
     const patch = {};
 
-    const fullName = form.fullName.trim();
-    if (fullName !== original.fullName) patch.fullName = fullName;
+    const fullName = (data.fullName || '').trim();
+    if (fullName !== (original?.fullName || '')) patch.fullName = fullName;
 
-    const phone = normalizePhone(form.phone);
-    if (phone !== original.phone) patch.phone = phone;
+    const phone = normalizePhone(data.phone || '');
+    if (phone !== (original?.phone || '')) patch.phone = phone;
 
-    const email = form.email.trim().toLowerCase();
-    if (email !== original.email) patch.email = email;
+    const email = (data.email || '').trim().toLowerCase();
+    if (email !== (original?.email || '').toLowerCase()) {
+      patch.email = email;
+    }
 
-    if (form.birthDate !== original.birthDate) patch.birthDate = form.birthDate;
+    if (data.birthDate !== (original?.birthDate || '')) {
+      patch.birthDate = data.birthDate;
+    }
 
     // Trường tùy chọn: chuỗi rỗng -> gửi null để xóa giá trị.
-    const image = form.profileImageUrl.trim();
-    if (image !== original.profileImageUrl) patch.profileImageUrl = image || null;
+    const image = (data.profileImageUrl || '').trim();
+    if (image !== (original?.profileImageUrl || '')) {
+      patch.profileImageUrl = image || null;
+    }
 
-    const goal = form.fitnessGoal.trim();
-    if (goal !== original.fitnessGoal) patch.fitnessGoal = goal || null;
+    const goal = (data.fitnessGoal || '').trim();
+    if (goal !== (original?.fitnessGoal || '')) {
+      patch.fitnessGoal = goal || null;
+    }
 
-    const ecName = form.emergencyContactName.trim();
-    if (ecName !== original.emergencyContactName) {
+    const ecName = (data.emergencyContactName || '').trim();
+    if (ecName !== (original?.emergencyContactName || '')) {
       patch.emergencyContactName = ecName || null;
     }
-    const ecPhone = form.emergencyContactPhone.trim();
+    const ecPhone = (data.emergencyContactPhone || '').trim();
     const ecPhoneNorm = ecPhone ? normalizePhone(ecPhone) : '';
-    if (ecPhoneNorm !== original.emergencyContactPhone) {
+    if (ecPhoneNorm !== (original?.emergencyContactPhone || '')) {
       patch.emergencyContactPhone = ecPhoneNorm || null;
     }
     return patch;
   }
 
-  function validate() {
-    // BR-VAL-ACC-09: họ tên, SĐT, email, ngày sinh không được để trống.
-    if (!form.fullName.trim()) return 'Vui lòng nhập họ tên.';
-    // BR-VAL-ACC-06: SĐT và email phải đúng định dạng.
-    if (!isValidPhone(form.phone))
-      return 'Số điện thoại phải đúng 10 chữ số và bắt đầu bằng 0.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-      return 'Email không hợp lệ.';
-    // BR-VAL-ACC-06: ngày sinh không được ở tương lai.
-    if (!form.birthDate) return 'Vui lòng nhập ngày sinh.';
-    if (form.birthDate > new Date().toISOString().slice(0, 10))
-      return 'Ngày sinh không được ở tương lai.';
-
-    // BR-ACC-09: liên hệ khẩn cấp là tùy chọn, nhưng tên và SĐT đi cùng nhau.
-    const ecName = form.emergencyContactName.trim();
-    const ecPhone = form.emergencyContactPhone.trim();
-    if ((ecName && !ecPhone) || (!ecName && ecPhone))
-      return 'Liên hệ khẩn cấp phải nhập cả họ tên và số điện thoại.';
-    if (ecPhone && !isValidPhone(ecPhone))
-      return 'Số điện thoại liên hệ khẩn cấp không hợp lệ.';
-
-    // Ảnh hồ sơ là URL (BR-ACC-11), chưa hỗ trợ tải file.
-    const image = form.profileImageUrl.trim();
-    if (image && !/^https?:\/\/\S+$/i.test(image))
-      return 'Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://.';
-    return null;
+  function resetForm() {
+    if (original) reset(original);
+    setSuccess(false);
+    setServerError(null);
+    setShowImageInput(false);
+    setImageBroken(false);
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function onSubmit(data) {
     setSuccess(false);
-    const validationError = validate();
-    if (validationError) {
-      setError({ message: validationError });
-      return;
-    }
-    const patch = buildPatch();
+    setServerError(null);
+    const patch = buildPatch(data);
     if (Object.keys(patch).length === 0) {
-      setError(null);
       setSuccess(true);
       return;
     }
-    setError(null);
-    setSaving(true);
     try {
       const updated = await updateMyProfile(patch);
       // Đồng bộ AuthContext để tên ở header và Dashboard cập nhật theo.
       setUser({ ...(user || {}), ...(updated || {}) });
       const next = toForm(updated);
-      setForm(next);
       setOriginal(next);
+      reset(next);
       setShowImageInput(false);
       setSuccess(true);
     } catch (err) {
-      // Luôn hiển thị lỗi BE trả về (vd: SĐT/email đã được dùng).
-      setError({ message: problemMessage(err, 'Không lưu được hồ sơ.') });
-    } finally {
-      setSaving(false);
+      // Shared helper for per-field errors. Allowlist matches the
+      // editable fields this page renders. EMAIL_ALREADY_EXISTS /
+      // PHONE_ALREADY_EXISTS codes map inline when their fields are
+      // allowed. Unknown / non-field failures surface in the global
+      // ErrorAlert via the !handled branch below.
+      const handled = applyServerErrors(err, setError, {
+        fields: [
+          'fullName',
+          'phone',
+          'email',
+          'birthDate',
+          'profileImageUrl',
+          'fitnessGoal',
+          'emergencyContactName',
+          'emergencyContactPhone',
+        ],
+      });
+      if (!handled) {
+        // Page-local global error rendering (preserves the original
+        // ErrorAlert behavior, which displays BE-provided detail).
+        setServerError({ message: problemMessage(err, 'Không lưu được hồ sơ.') });
+      }
     }
   }
 
@@ -352,10 +448,10 @@ export default function MemberProfilePage() {
   }
 
   // Chữ cái đầu của tên, dùng khi chưa có ảnh.
-  const initial = (form.fullName.trim().split(/\s+/).pop() || '?')
+  const initial = (fullNameValue.trim().split(/\s+/).pop() || '?')
     .charAt(0)
     .toUpperCase();
-  const showImage = form.profileImageUrl.trim() && !imageBroken;
+  const showImage = profileImageUrlValue.trim() && !imageBroken;
 
   const planCode =
     activeMembership?.plan_code_snapshot || activeMembership?.planCode || '';
@@ -364,7 +460,7 @@ export default function MemberProfilePage() {
   else if (hasActiveMembership) tierText = `Gói ${planCode}`.trim();
 
   return (
-    <form className="scms-mp" onSubmit={handleSubmit} noValidate>
+    <form className="scms-mp" onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="scms-mp-top">
         <div>
           <div className="scms-mp-crumb">
@@ -410,8 +506,8 @@ export default function MemberProfilePage() {
               <div className="scms-mp-avatar">
                 {showImage ? (
                   <img
-                    src={form.profileImageUrl.trim()}
-                    alt={`Ảnh đại diện ${form.fullName}`}
+                    src={profileImageUrlValue.trim()}
+                    alt={`Ảnh đại diện ${fullNameValue}`}
                     onError={() => setImageBroken(true)}
                   />
                 ) : (
@@ -419,7 +515,7 @@ export default function MemberProfilePage() {
                 )}
               </div>
               <div>
-                <div className="scms-mp-avatar-name">{form.fullName || '—'}</div>
+                <div className="scms-mp-avatar-name">{fullNameValue || '—'}</div>
                 <div className={`scms-mp-avatar-sub${hasActiveMembership ? ' on' : ''}`}>
                   {hasActiveMembership
                     ? `Hội viên • ${tierText}`
@@ -440,18 +536,22 @@ export default function MemberProfilePage() {
                 <div style={{ width: '100%' }}>
                   <input
                     className="scms-mp-input"
-                    value={form.profileImageUrl}
-                    onChange={(e) => {
-                      update('profileImageUrl', e.target.value);
-                      setImageBroken(false);
-                    }}
+                    {...register('profileImageUrl')}
+                    onInput={() => setImageBroken(false)}
                     placeholder="Dán đường dẫn ảnh (https://...)"
                     aria-label="Đường dẫn ảnh đại diện"
+                    aria-invalid={Boolean(errors.profileImageUrl)}
                   />
-                  <div className="scms-mp-hint" style={{ marginTop: 6 }}>
-                    Bấm &quot;Lưu thay đổi hồ sơ&quot; để lưu ảnh. Tải ảnh trực
-                    tiếp từ máy: <strong>Sắp ra mắt</strong>.
-                  </div>
+                  {errors.profileImageUrl ? (
+                    <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                      {errors.profileImageUrl.message}
+                    </div>
+                  ) : (
+                    <div className="scms-mp-hint" style={{ marginTop: 6 }}>
+                      Bấm &quot;Lưu thay đổi hồ sơ&quot; để lưu ảnh. Tải ảnh trực
+                      tiếp từ máy: <strong>Sắp ra mắt</strong>.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <span className="scms-mp-hint">
@@ -536,9 +636,9 @@ export default function MemberProfilePage() {
         {/* ===== Cột phải: các mục thông tin ===== */}
         <div className="scms-mp-col">
           <ErrorAlert
-            error={error}
+            error={serverError}
             title="Không lưu được hồ sơ"
-            onClose={() => setError(null)}
+            onClose={() => setServerError(null)}
           />
           {success ? (
             <Alert
@@ -564,44 +664,64 @@ export default function MemberProfilePage() {
                 <input
                   id="mp-fullName"
                   className="scms-mp-input"
-                  value={form.fullName}
-                  onChange={(e) => update('fullName', e.target.value)}
+                  {...register('fullName')}
                   placeholder="Nhập họ và tên..."
                   autoComplete="name"
+                  aria-invalid={Boolean(errors.fullName)}
                 />
+                {errors.fullName ? (
+                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                    {errors.fullName.message}
+                  </div>
+                ) : null}
               </Field>
               <Field id="mp-phone" label="Số điện thoại" required>
                 <input
                   id="mp-phone"
                   className="scms-mp-input"
                   type="tel"
-                  value={form.phone}
-                  onChange={(e) => update('phone', e.target.value)}
+                  {...register('phone')}
                   placeholder="09xxxxxxxx"
                   inputMode="numeric"
                   autoComplete="tel"
+                  aria-invalid={Boolean(errors.phone)}
                 />
+                {errors.phone ? (
+                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                    {errors.phone.message}
+                  </div>
+                ) : null}
               </Field>
               <Field id="mp-email" label="Địa chỉ Email" required>
                 <input
                   id="mp-email"
                   className="scms-mp-input"
                   type="email"
-                  value={form.email}
-                  onChange={(e) => update('email', e.target.value)}
+                  {...register('email')}
                   placeholder="ten@mien.vn"
                   autoComplete="email"
+                  aria-invalid={Boolean(errors.email)}
                 />
+                {errors.email ? (
+                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                    {errors.email.message}
+                  </div>
+                ) : null}
               </Field>
               <Field id="mp-birthDate" label="Ngày sinh" required>
                 <input
                   id="mp-birthDate"
                   className="scms-mp-input"
                   type="date"
-                  value={form.birthDate}
-                  onChange={(e) => update('birthDate', e.target.value)}
+                  {...register('birthDate')}
                   autoComplete="bday"
+                  aria-invalid={Boolean(errors.birthDate)}
                 />
+                {errors.birthDate ? (
+                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                    {errors.birthDate.message}
+                  </div>
+                ) : null}
               </Field>
               <Field id="mp-gender" label="Giới tính" soon>
                 <div className="scms-mp-radios">
@@ -648,13 +768,13 @@ export default function MemberProfilePage() {
               </label>
               <div className="scms-mp-chips" style={{ marginBottom: 12 }}>
                 {GOAL_PRESETS.map((goal) => {
-                  const active = form.fitnessGoal.trim() === goal;
+                  const active = (fitnessGoalValue || '').trim() === goal;
                   return (
                     <button
                       key={goal}
                       type="button"
                       className={`scms-mp-goal${active ? ' active' : ''}`}
-                      onClick={() => update('fitnessGoal', goal)}
+                      onClick={() => setValue('fitnessGoal', goal, { shouldValidate: true })}
                     >
                       {active ? <Icon name="check" size={14} /> : null}
                       {goal}
@@ -666,10 +786,15 @@ export default function MemberProfilePage() {
                 id="mp-goal"
                 className="scms-mp-input"
                 rows={3}
-                value={form.fitnessGoal}
-                onChange={(e) => update('fitnessGoal', e.target.value)}
+                {...register('fitnessGoal')}
                 placeholder="Chọn nhanh ở trên hoặc tự viết mục tiêu của bạn..."
+                aria-invalid={Boolean(errors.fitnessGoal)}
               />
+              {errors.fitnessGoal ? (
+                <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                  {errors.fitnessGoal.message}
+                </div>
+              ) : null}
             </div>
             <Field id="mp-injury" label="Ghi chú thể chất & Tiền sử chấn thương" soon>
               <textarea
@@ -690,10 +815,15 @@ export default function MemberProfilePage() {
                 <input
                   id="mp-ecName"
                   className="scms-mp-input"
-                  value={form.emergencyContactName}
-                  onChange={(e) => update('emergencyContactName', e.target.value)}
+                  {...register('emergencyContactName')}
                   placeholder="Họ và tên người thân..."
+                  aria-invalid={Boolean(errors.emergencyContactName)}
                 />
+                {errors.emergencyContactName ? (
+                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                    {errors.emergencyContactName.message}
+                  </div>
+                ) : null}
               </Field>
               <Field id="mp-ecRelation" label="Mối quan hệ" soon>
                 <select id="mp-ecRelation" className="scms-mp-input" disabled>
@@ -705,13 +835,16 @@ export default function MemberProfilePage() {
                   id="mp-ecPhone"
                   className="scms-mp-input"
                   type="tel"
-                  value={form.emergencyContactPhone}
-                  onChange={(e) =>
-                    update('emergencyContactPhone', e.target.value)
-                  }
+                  {...register('emergencyContactPhone')}
                   placeholder="09xxxxxxxx"
                   inputMode="numeric"
+                  aria-invalid={Boolean(errors.emergencyContactPhone)}
                 />
+                {errors.emergencyContactPhone ? (
+                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                    {errors.emergencyContactPhone.message}
+                  </div>
+                ) : null}
               </Field>
               <Field id="mp-ecTime" label="Ghi chú khung giờ liên hệ" soon>
                 <input
@@ -729,13 +862,13 @@ export default function MemberProfilePage() {
               type="button"
               className="scms-mp-btn-cancel"
               onClick={resetForm}
-              disabled={saving}
+              disabled={isSubmitting}
             >
               Hủy bỏ
             </button>
-            <button type="submit" className="scms-mp-btn-save" disabled={saving}>
+            <button type="submit" className="scms-mp-btn-save" disabled={isSubmitting}>
               <Icon name="save" />
-              {saving ? 'Đang lưu...' : 'Lưu thay đổi hồ sơ'}
+              {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi hồ sơ'}
             </button>
           </div>
         </div>

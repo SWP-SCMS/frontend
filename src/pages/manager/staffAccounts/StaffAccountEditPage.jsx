@@ -6,10 +6,25 @@
 //
 // The PATCH semantics are "omitted = unchanged". We therefore send only
 // the keys that actually changed vs. the original fetched value.
+//
+// Migration note (RHF + Zod):
+//   - blank phone is intentionally allowed by the schema and the form
+//     state. buildPatch() still omits the phone key from the PATCH when
+//     blank — preserved exactly as before the migration.
+//   - RHF owns input UX + error display. The existing buildPatch()
+//     remains the source of truth for the wire payload.
+//   - backend EMAIL_ALREADY_EXISTS / PHONE_ALREADY_EXISTS / per-field
+//     data.errors are mapped through the shared serverErrors helper.
+//   - The status / role are display-only (read-only text), NOT registered
+//     inputs — they are not in the schema and never sent.
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import {
   getStaffAccount,
@@ -18,133 +33,141 @@ import {
 import { ROLE_LABELS } from '../../../constants';
 import {
   formatDate,
-  isValidPhone,
   normalizePhone,
 } from '../../../utils';
+import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  fullNameSchema,
+  emailSchema,
+  phoneEditOptionalSchema,
+  birthDateSchema,
+} from '../../../schemas/fragments';
 
-const emptyForm = {
-  fullName: '',
-  phone: '',
-  email: '',
-  birthDate: '',
-};
+// Page-local edit schema. phone uses phoneEditOptionalSchema so that
+// blank stays blank and never becomes a "required" error.
+const staffEditSchema = z.object({
+  fullName: fullNameSchema,
+  phone: phoneEditOptionalSchema,
+  email: emailSchema,
+  birthDate: birthDateSchema,
+});
+
+function accountToForm(data) {
+  return {
+    fullName: data?.fullName || '',
+    phone: data?.phone || '',
+    email: data?.email || '',
+    birthDate: data?.birthDate || '',
+  };
+}
 
 export default function StaffAccountEditPage() {
   const { accountId } = useParams();
   const navigate = useNavigate();
 
   const [account, setAccount] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [original, setOriginal] = useState(emptyForm);
+  const [original, setOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [serverError, setServerError] = useState(null);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [savedNoChange, setSavedNoChange] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(staffEditSchema),
+    defaultValues: {
+      fullName: '',
+      phone: '',
+      email: '',
+      birthDate: '',
+    },
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setServerError(null);
+    setSavedSuccess(false);
+    setSavedNoChange(false);
     try {
       const data = await getStaffAccount(accountId);
-      const next = {
-        fullName: data?.fullName || '',
-        phone: data?.phone || '',
-        email: data?.email || '',
-        birthDate: data?.birthDate || '',
-      };
+      const next = accountToForm(data);
       setAccount(data);
-      setForm(next);
       setOriginal(next);
+      reset(next);
     } catch (err) {
-      setError(err);
+      setServerError(err);
     } finally {
       setLoading(false);
     }
-  }, [accountId]);
+  }, [accountId, reset]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-    setSuccess(false);
-  }
-
-  function reset() {
-    setForm(original);
-    setSuccess(false);
-    setError(null);
-  }
-
-  function buildPatch() {
+  function buildPatch(data) {
+    // data comes from RHF after a successful Zod parse.
     const patch = {};
-    if (form.fullName.trim() !== (original.fullName || '')) {
-      patch.fullName = form.fullName.trim();
+    if (data.fullName.trim() !== (original?.fullName || '')) {
+      patch.fullName = data.fullName.trim();
     }
-    const normalizedNewPhone = form.phone ? normalizePhone(form.phone) : null;
-    const normalizedOldPhone = original.phone ? normalizePhone(original.phone) : null;
-    if (form.phone && normalizedNewPhone !== normalizedOldPhone) {
+    const normalizedNewPhone = data.phone ? normalizePhone(data.phone) : null;
+    const normalizedOldPhone = original?.phone
+      ? normalizePhone(original.phone)
+      : null;
+    // blank phone -> OMIT key from PATCH (do not update). This branch
+    // is preserved exactly as the pre-migration source had it.
+    if (data.phone && normalizedNewPhone !== normalizedOldPhone) {
       patch.phone = normalizedNewPhone;
     }
-    if (form.email.trim().toLowerCase() !== (original.email || '').toLowerCase()) {
-      patch.email = form.email.trim().toLowerCase();
+    if (
+      data.email.trim().toLowerCase() !==
+      (original?.email || '').toLowerCase()
+    ) {
+      patch.email = data.email.trim().toLowerCase();
     }
-    if (form.birthDate !== (original.birthDate || '')) {
-      patch.birthDate = form.birthDate;
+    if (data.birthDate !== (original?.birthDate || '')) {
+      patch.birthDate = data.birthDate;
     }
     return patch;
   }
 
-  function validate() {
-    if (!form.fullName.trim()) return 'Vui lòng nhập họ và tên.';
-    if (form.fullName.trim().length > 200) {
-      return 'Họ và tên không được vượt quá 200 ký tự.';
-    }
-    if (form.phone && !isValidPhone(form.phone)) {
-      return 'Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng 0.';
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      return 'Email không hợp lệ.';
-    }
-    if (!form.birthDate) return 'Vui lòng nhập ngày sinh.';
-    if (form.birthDate > new Date().toISOString().slice(0, 10)) {
-      return 'Ngày sinh không được là ngày trong tương lai.';
-    }
-    return null;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      setError({ message: validationError });
-      return;
-    }
-    const patch = buildPatch();
+  async function onSubmit(data) {
+    setServerError(null);
+    setSavedSuccess(false);
+    setSavedNoChange(false);
+    const patch = buildPatch(data);
     if (Object.keys(patch).length === 0) {
-      setSuccess(true);
-      setError(null);
+      setSavedNoChange(true);
       return;
     }
-    setError(null);
-    setSaving(true);
     try {
       const updated = await updateStaffAccount(accountId, patch);
-      const next = {
-        fullName: updated?.fullName || '',
-        phone: updated?.phone || '',
-        email: updated?.email || '',
-        birthDate: updated?.birthDate || '',
-      };
+      const next = accountToForm(updated);
       setAccount(updated);
-      setForm(next);
       setOriginal(next);
-      setSuccess(true);
+      reset(next);
+      setSavedSuccess(true);
     } catch (err) {
-      setError(err);
-    } finally {
-      setSaving(false);
+      // Shared helper: data.errors[field] + EMAIL/PHONE uniqueness.
+      // Allowlist MUST match the fields this page renders / registers.
+      // role / status / accountId / createdAt are display-only and
+      // intentionally NOT in the allowlist — any per-field error for
+      // them from a future backend change must NOT be swallowed.
+      const handled = applyServerErrors(err, setError, {
+        fields: ['fullName', 'phone', 'email', 'birthDate'],
+      });
+      // Finalization rule: if the shared helper already rendered the
+      // failure inline (handled === true), do NOT also raise the global
+      // ErrorAlert — the inline message is the only signal.
+      if (!handled) {
+        setServerError(err);
+      }
     }
   }
 
@@ -156,7 +179,7 @@ export default function StaffAccountEditPage() {
     );
   }
 
-  if (error && !account) {
+  if (serverError && !account) {
     return (
       <div>
         <Link
@@ -167,7 +190,7 @@ export default function StaffAccountEditPage() {
         </Link>
         <ErrorAlert
           className="mt-3"
-          error={error}
+          error={serverError}
           title="Không tải được tài khoản"
         />
       </div>
@@ -203,36 +226,48 @@ export default function StaffAccountEditPage() {
       ) : null}
 
       <ErrorAlert
-        error={error}
+        error={serverError}
         title="Không lưu được thay đổi"
-        onClose={() => setError(null)}
+        onClose={() => setServerError(null)}
       />
-      {success ? (
+      {savedSuccess ? (
         <div className="alert alert-success py-2">Đã lưu thay đổi.</div>
       ) : null}
+      {savedNoChange ? (
+        <div className="alert alert-warning py-2 mb-3">
+          Không có thay đổi để lưu.
+        </div>
+      ) : null}
 
-      <Form onSubmit={handleSubmit} noValidate>
+      <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Row className="g-3">
           <Col md={6}>
             <Form.Group controlId="edit-fullName">
               <Form.Label>Họ và tên *</Form.Label>
               <Form.Control
-                value={form.fullName}
-                onChange={(e) => update('fullName', e.target.value)}
+                {...register('fullName')}
                 maxLength={200}
-                required
+                isInvalid={Boolean(errors.fullName)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.fullName?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col md={6}>
             <Form.Group controlId="edit-phone">
-              <Form.Label>Số điện thoại *</Form.Label>
+              <Form.Label>Số điện thoại</Form.Label>
               <Form.Control
-                value={form.phone}
-                onChange={(e) => update('phone', e.target.value)}
+                {...register('phone')}
                 inputMode="numeric"
-                required
+                isInvalid={Boolean(errors.phone)}
               />
+              <Form.Text className="text-muted">
+                Để trống nếu không muốn thay đổi số điện thoại.
+              </Form.Text>
+              <Form.Control.Feedback type="invalid">
+                {errors.phone?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
         </Row>
@@ -243,11 +278,13 @@ export default function StaffAccountEditPage() {
               <Form.Label>Email *</Form.Label>
               <Form.Control
                 type="email"
-                value={form.email}
-                onChange={(e) => update('email', e.target.value)}
+                {...register('email')}
                 maxLength={320}
-                required
+                isInvalid={Boolean(errors.email)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.email?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
           <Col md={6}>
@@ -255,11 +292,13 @@ export default function StaffAccountEditPage() {
               <Form.Label>Ngày sinh *</Form.Label>
               <Form.Control
                 type="date"
-                value={form.birthDate}
-                onChange={(e) => update('birthDate', e.target.value)}
+                {...register('birthDate')}
                 max={new Date().toISOString().slice(0, 10)}
-                required
+                isInvalid={Boolean(errors.birthDate)}
               />
+              <Form.Control.Feedback type="invalid">
+                {errors.birthDate?.message}
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
         </Row>
@@ -288,8 +327,8 @@ export default function StaffAccountEditPage() {
         </fieldset>
 
         <div className="mt-4 d-flex gap-2">
-          <Button type="submit" variant="danger" disabled={saving}>
-            {saving ? (
+          <Button type="submit" variant="danger" disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Spinner size="sm" animation="border" className="me-2" />
                 Đang lưu…
@@ -301,8 +340,13 @@ export default function StaffAccountEditPage() {
           <Button
             type="button"
             variant="outline-secondary"
-            onClick={reset}
-            disabled={saving}
+            onClick={() => {
+              if (original) reset(original);
+              setServerError(null);
+              setSavedSuccess(false);
+              setSavedNoChange(false);
+            }}
+            disabled={isSubmitting}
           >
             Huỷ
           </Button>
@@ -310,7 +354,7 @@ export default function StaffAccountEditPage() {
             type="button"
             variant="link"
             onClick={() => navigate(`/manager/staff-accounts/${account.accountId}`)}
-            disabled={saving}
+            disabled={isSubmitting}
           >
             Quay lại chi tiết
           </Button>
