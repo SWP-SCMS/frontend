@@ -23,6 +23,7 @@ export const APP_SHELL_NAV_ITEMS = {
     { to: '/manager/disciplines', label: 'Bộ môn' },
     { to: '/manager/classes', label: 'Lớp học' },
     { to: '/manager/rooms', label: 'Phòng tập' },
+    { to: '/manager/class-sessions', label: 'Buổi tập' },
     { to: '/manager/members', label: 'Hội viên' },
     { to: '/manager/reports', label: 'Báo cáo' },
     { to: '/manager/payments/reconcile', label: 'Đối soát' },

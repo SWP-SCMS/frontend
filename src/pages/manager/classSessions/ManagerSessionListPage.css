@@ -1,0 +1,153 @@
+/* Manager Session List / Calendar (US28).
+ * Page-local styles only. Do NOT add Session-specific styles here
+ * that are reused elsewhere.
+ */
+
+/* ----- Calendar (weekly timetable) ----- */
+
+/* Desktop-first: the timetable is a single bordered grid of 7 columns.
+   On narrow viewports we allow horizontal scroll instead of collapsing
+   into unrelated cards. */
+.msl-cal-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.msl-cal-table {
+  /* Use a fixed minimum width on small screens (scroll) but fluid on desktop. */
+  min-width: 720px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.375rem;
+  background: #fff;
+  overflow: hidden;
+}
+
+.msl-cal-head {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  background: #f8f9fa;
+}
+
+.msl-cal-head-cell {
+  padding: 0.5rem 0.5rem 0.6rem;
+  text-align: center;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  min-width: 0;
+}
+
+.msl-cal-head-cell:last-child {
+  border-right: none;
+}
+
+.msl-cal-weekday {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #495057;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.msl-cal-daymonth {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #212529;
+  margin-top: 0.15rem;
+  line-height: 1.1;
+}
+
+.msl-cal-body {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  /* Reasonable minimum height so the weekly table still looks like a
+     timetable even when most days are empty. */
+  min-height: 360px;
+}
+
+.msl-cal-cell {
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  background: #fff;
+}
+
+.msl-cal-cell:last-child {
+  border-right: none;
+}
+
+.msl-cal-empty {
+  margin: auto 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #adb5bd;
+  /* Subtle hint, not card-like. */
+  padding: 0.25rem 0;
+}
+
+/* Subtle highlight for today's column / header. */
+.msl-cal-head-cell.msl-cal-today {
+  background: rgba(220, 53, 69, 0.06);
+}
+
+.msl-cal-cell.msl-cal-today {
+  background: rgba(220, 53, 69, 0.03);
+}
+
+.msl-cal-head-cell.msl-cal-today .msl-cal-weekday {
+  color: #b02a37;
+}
+
+/* Stronger highlight for the user-selected day in the picker. */
+.msl-cal-head-cell.msl-cal-selected {
+  background: rgba(220, 53, 69, 0.18);
+}
+
+.msl-cal-cell.msl-cal-selected {
+  background: rgba(220, 53, 69, 0.07);
+}
+
+.msl-cal-head-cell.msl-cal-selected .msl-cal-weekday,
+.msl-cal-head-cell.msl-cal-selected .msl-cal-daymonth {
+  color: #842029;
+}
+
+.msl-cal-session {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.msl-cal-session-time {
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.15;
+}
+
+.msl-cal-session-class {
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.15;
+  /* Allow long Class names to break onto a second line. */
+  word-break: break-word;
+}
+
+.msl-cal-session-meta {
+  font-size: 0.8rem;
+  color: #6c757d;
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.msl-cal-session-status {
+  margin-top: 0.2rem;
+}
