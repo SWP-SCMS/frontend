@@ -1,27 +1,24 @@
-// Manager-scoped Single Class Session API (US27).
+// Manager-scoped Class Session API (US27 + US28).
 //
-// Endpoint (bearer-auth, MANAGER-only — backend enforces BR-SEC-04):
-//   POST /api/v1/manager/class-sessions              createSingleSession
+// Endpoints (bearer-auth, MANAGER-only — backend enforces BR-SEC-04):
+//   POST /api/v1/manager/class-sessions              createSingleSession  (US27)
+//   GET  /api/v1/manager/class-sessions              listManagerSessions (US28)
 //
 // Notes:
-//   - The BE creates exactly one ClassSession row inside a single
-//     @Transactional method (ClassSessionService.create). There is
-//     no recurring-schedule link; the FE MUST NOT send a
-//     recurringScheduleId field — the BE always sets it to null for
-//     sessions created by this endpoint.
-//   - The request body carries the full ISO-8601 Instant values
-//     for startTime / endTime (BE compares them against
-//     Asia/Ho_Chi_Minh via RecurringScheduleService.GYM_ZONE).
-//     The FE converts the manager's local Asia/Ho_Chi_Minh
-//     date + HH:mm selection into an Instant before submitting.
-//   - The FE does NOT pre-compute occurrences; it sends one request
-//     and renders the BE's response.
-//   - There is no list / detail / update / delete endpoint for
-//     single sessions in US27. The FE is creation-only here.
+//   - The list endpoint returns a ClassSessionPageResponse:
+//       { content, page, size, totalElements, totalPages }
+//     where each item is a ClassSessionResponse:
+//       { id, classId, coachId, roomId, startTime, endTime,
+//         capacity, status }
+//   - The wire contains ONLY IDs for Class / Coach / Room (verified
+//     from the BE's ClassSessionResponse.from() factory). Names are
+//     resolved client-side via listClasses / listRooms /
+//     searchStaffAccounts.
+//   - US28 is read-only. There is no Session detail page in US28.
 
 import api from './api';
 
-// POST /api/v1/manager/class-sessions
+// POST /api/v1/manager/class-sessions (US27 — unchanged)
 //
 // Expected payload (server-enforced):
 //   {
@@ -37,5 +34,35 @@ import api from './api';
 //   { id, classId, coachId, roomId, startTime, endTime, capacity, status }
 export async function createSingleSession(payload) {
   const { data } = await api.post('/manager/class-sessions', payload);
+  return data;
+}
+
+// GET /api/v1/manager/class-sessions (US28)
+//
+// Accepted query params (all optional):
+//   from, to              ISO-8601 Instant strings (UTC, e.g. "...Z")
+//                         BE filters: endTime > from AND startTime < to
+//                         (open interval [from, to) over the Session interval).
+//   classId, coachId, roomId   UUID strings (exact match)
+//   status                ClassSessionStatus wire value
+//                         ('SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED')
+//   page                  int (default 0 server-side)
+//   size                  int (default 20 server-side; BE caps 1..100)
+//
+// Returns: ClassSessionPageResponse
+//   { content: ClassSessionResponse[], page, size, totalElements, totalPages }
+export async function listManagerSessions(params = {}) {
+  const cleaned = {};
+  if (params.from) cleaned.from = params.from;
+  if (params.to) cleaned.to = params.to;
+  if (params.classId) cleaned.classId = params.classId;
+  if (params.coachId) cleaned.coachId = params.coachId;
+  if (params.roomId) cleaned.roomId = params.roomId;
+  if (params.status) cleaned.status = params.status;
+  if (params.page != null) cleaned.page = params.page;
+  if (params.size != null) cleaned.size = params.size;
+  const { data } = await api.get('/manager/class-sessions', {
+    params: cleaned,
+  });
   return data;
 }
