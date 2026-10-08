@@ -175,6 +175,11 @@ const RoomEditPage = lazy(
   () => import('../pages/manager/rooms/RoomEditPage'),
 );
 
+// Manager – Recurring Schedule Creation (US26)
+const RecurringScheduleCreatePage = lazy(
+  () => import('../pages/manager/recurringSchedules/RecurringScheduleCreatePage'),
+);
+
 // Receptionist / Manager – Manual Payment Reconciliation (US19)
 // Shared by both roles: the backend authorises `/payments/**` with
 // hasAnyRole("MANAGER", "RECEPTIONIST").
@@ -404,6 +409,10 @@ export default function AppRoutes() {
         <Route path="rooms/new" element={withSuspense(<RoomCreatePage />)} />
         <Route path="rooms/:roomId" element={withSuspense(<RoomDetailPage />)} />
         <Route path="rooms/:roomId/edit" element={withSuspense(<RoomEditPage />)} />
+        <Route
+          path="classes/:classId/recurring-schedules/new"
+          element={withSuspense(<RecurringScheduleCreatePage />)}
+        />
         <Route path="reports" element={withSuspense(<RevenueReportPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
       </Route>
