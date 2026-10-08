@@ -17,27 +17,43 @@
 //   404 DISCIPLINE_NOT_FOUND        -> back link + ErrorAlert
 //   409 DISCIPLINE_NAME_CONFLICT    -> name field + generic
 //   400 with empty body / empty-patch-> "Vui lòng cập nhật ít nhất một trường."
+//
+// Migration note (RHF + Zod):
+//   - Zod validates the form state, not the PATCH payload. The
+//     validateClient(patch) helper (kept in onSubmit) validates only
+//     patched keys — semantics preserved exactly as before.
+//   - PAGE-LOCAL backend codes (DISCIPLINE_*, VALIDATION_ERROR +
+//     "at least one field is required") stay page-local.
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getDiscipline, updateDiscipline } from '../../../services/disciplineService';
+import { applyServerErrors } from '../../../utils/serverErrors';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE — đang hoạt động.' },
   { value: 'INACTIVE', label: 'INACTIVE — đã ngưng hoạt động.' },
 ];
 
-const emptyForm = {
-  name: '',
-  description: '',
-  status: 'ACTIVE',
-};
-
-const emptyOriginal = emptyForm;
-const emptyErrors = {};
+// Page-local edit schema. status is editable here (unlike Create).
+// buildPatch() builds the PATCH body; this schema validates the form.
+const disciplineEditSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng nhập tên bộ môn.')
+    .max(150, 'Tên bộ môn đã quá dài (tối đa 150 ký tự).'),
+  description: z.string(),
+  status: z.enum(['ACTIVE', 'INACTIVE'], {
+    message: 'Trạng thái không hợp lệ.',
+  }),
+});
 
 function disciplineToForm(d) {
   return {
@@ -47,142 +63,145 @@ function disciplineToForm(d) {
   };
 }
 
-function pickFieldErrors(err) {
-  const data = err?.response?.data;
-  if (data && data.errors && typeof data.errors === 'object') {
-    return data.errors;
+function hasFieldMessage(fieldErrors, field) {
+  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
+  const list = fieldErrors[field];
+  if (Array.isArray(list)) {
+    return list.some((m) => typeof m === 'string' && m.trim());
   }
-  return {};
+  return typeof list === 'string' && list.trim().length > 0;
 }
 
 export default function DisciplineEditPage() {
   const { disciplineId } = useParams();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState(emptyForm);
-  const [original, setOriginal] = useState(emptyOriginal);
+  const [original, setOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
-  const [errors, setErrors] = useState(emptyErrors);
+  const [serverError, setServerError] = useState(null);
   // 'no-changes' | 'saved' | null
   const [saved, setSaved] = useState(null);
+  // Form-level (non-field) error for the friendly "at least one field" hint.
+  const [formLevelError, setFormLevelError] = useState(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(disciplineEditSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      status: 'ACTIVE',
+    },
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     setSaved(null);
+    setFormLevelError(null);
     try {
       const data = await getDiscipline(disciplineId);
       const next = disciplineToForm(data);
-      setForm(next);
       setOriginal(next);
+      reset(next);
     } catch (err) {
       setLoadError(err);
     } finally {
       setLoading(false);
     }
-  }, [disciplineId]);
+  }, [disciplineId, reset]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-    if (errors[field]) {
-      setErrors((e) => {
-        const next = { ...e };
-        delete next[field];
-        return next;
-      });
-    }
-    setSaved(null);
-  }
-
-  function buildPatch() {
+  function buildPatch(data) {
     const patch = {};
-    if (form.name.trim() !== (original.name || '').trim()) {
-      patch.name = form.name.trim();
+    if (data.name.trim() !== (original?.name || '').trim()) {
+      patch.name = data.name.trim();
     }
     if (
-      form.description.trim() !== (original.description || '').trim()
+      data.description.trim() !== (original?.description || '').trim()
     ) {
       // Send empty string to signal "clear". BE normalizes blank -> null.
-      patch.description = form.description.trim();
+      patch.description = data.description.trim();
     }
-    if (form.status !== original.status) {
-      patch.status = form.status;
+    if (data.status !== original?.status) {
+      patch.status = data.status;
     }
     return patch;
   }
 
-  function validateClient(patch) {
-    const next = {};
-    if ('name' in patch) {
-      if (!patch.name) {
-        next.name = 'Vui lòng nhập tên bộ môn.';
-      } else if (patch.name.length > 150) {
-        next.name = 'Tên bộ môn không được vượt quá 150 ký tự.';
-      }
-    }
-    if ('status' in patch) {
-      if (!STATUS_OPTIONS.some((o) => o.value === patch.status)) {
-        next.status = 'Trạng thái không hợp lệ.';
-      }
-    }
-    return next;
-  }
+  // validateClient(patch) is intentionally REMOVED. The Wave 2 gate
+  // review concluded it was a byte-for-byte duplicate of the rules
+  // already enforced by the page-local Zod schema on the form state.
+  // PATCH-only validation (validate-only-patched-keys) is not needed
+  // because every patched key's value comes from the form state, which
+  // has already passed Zod parsing. The patch diff itself is the
+  // PATCH-allowlist guard, not a re-validation pass.
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function onSubmit(data) {
     setSaved(null);
-    const patch = buildPatch();
+    setFormLevelError(null);
+    setServerError(null);
+    const patch = buildPatch(data);
     if (Object.keys(patch).length === 0) {
       setSaved('no-changes');
-      setSubmitError(null);
-      setErrors(emptyErrors);
       return;
     }
-    const validationErrors = validateClient(patch);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setSubmitError(null);
-      return;
-    }
-    setErrors(emptyErrors);
-    setSubmitError(null);
-    setSaving(true);
     try {
       await updateDiscipline(disciplineId, patch);
       setSaved('saved');
       navigate(`/manager/disciplines/${disciplineId}`, { replace: true });
     } catch (err) {
-      const fieldErrors = pickFieldErrors(err);
+      const fieldErrors = err?.response?.data?.errors;
       const code = err?.response?.data?.code;
       const message =
         err?.response?.data?.detail || err?.response?.data?.message;
       if (code === 'DISCIPLINE_NOT_FOUND') {
         setLoadError(err);
-        setSaving(false);
         return;
       }
-      if (code === 'DISCIPLINE_NAME_CONFLICT' && !fieldErrors.name) {
-        fieldErrors.name = 'Tên bộ môn đã tồn tại.';
+      // Whether the shared helper produced at least one inline error.
+      // Gates the global ErrorAlert below.
+      let sharedHandled = false;
+      // PAGE-LOCAL: DISCIPLINE_NAME_CONFLICT.
+      if (
+        code === 'DISCIPLINE_NAME_CONFLICT' &&
+        !hasFieldMessage(fieldErrors, 'name')
+      ) {
+        setError('name', {
+          type: 'server',
+          message: 'Tên bộ môn đã tồn tại.',
+        });
       }
       if (
         code === 'VALIDATION_ERROR' &&
         /at least one field is required/i.test(message || '')
       ) {
         // FE should have caught this — show a friendly message.
-        setErrors({ form: 'Vui lòng cập nhật ít nhất một trường.' });
-      } else {
-        setErrors(fieldErrors);
+        setFormLevelError('Vui lòng cập nhật ít nhất một trường.');
+      } else if (fieldErrors && typeof fieldErrors === 'object') {
+        // Shared helper: per-field errors restricted to the rendered
+        // editable fields. Anything else falls through to ErrorAlert.
+        sharedHandled = applyServerErrors(err, setError, {
+          fields: ['name', 'description', 'status'],
+        });
       }
-      setSubmitError(err);
-    } finally {
-      setSaving(false);
+      // Global ErrorAlert is the shared-helper path's fallback: only
+      // raised when the helper did NOT handle the error. Page-local
+      // mappings (DISCIPLINE_NAME_CONFLICT, "at least one field",
+      // DISCIPLINE_NOT_FOUND via setLoadError) are independent and
+      // are preserved as-is.
+      if (!sharedHandled) {
+        setServerError(err);
+      }
     }
   }
 
@@ -228,28 +247,29 @@ export default function DisciplineEditPage() {
       </p>
 
       <ErrorAlert
-        error={submitError}
+        error={serverError}
         title="Không lưu được thay đổi"
-        onClose={() => setSubmitError(null)}
+        onClose={() => setServerError(null)}
       />
       {saved === 'no-changes' ? (
         <div className="alert alert-warning py-2 mb-3">
           Không có thay đổi để lưu.
         </div>
       ) : null}
+      {formLevelError ? (
+        <div className="alert alert-warning py-2 mb-3">{formLevelError}</div>
+      ) : null}
 
-      <Form onSubmit={handleSubmit} noValidate>
+      <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Form.Group controlId="edit-name">
           <Form.Label>Tên bộ môn *</Form.Label>
           <Form.Control
-            value={form.name}
-            onChange={(e) => update('name', e.target.value)}
+            {...register('name')}
             maxLength={150}
-            required
             isInvalid={Boolean(errors.name)}
           />
           <Form.Control.Feedback type="invalid">
-            {errors.name || 'Vui lòng nhập tên bộ môn.'}
+            {errors.name?.message}
           </Form.Control.Feedback>
         </Form.Group>
 
@@ -258,8 +278,7 @@ export default function DisciplineEditPage() {
           <Form.Control
             as="textarea"
             rows={4}
-            value={form.description}
-            onChange={(e) => update('description', e.target.value)}
+            {...register('description')}
           />
           <Form.Text className="text-muted">
             Không bắt buộc. Để trống nếu bộ môn không cần mô tả.
@@ -271,9 +290,7 @@ export default function DisciplineEditPage() {
             <Form.Group controlId="edit-status">
               <Form.Label>Trạng thái *</Form.Label>
               <Form.Select
-                value={form.status}
-                onChange={(e) => update('status', e.target.value)}
-                required
+                {...register('status')}
                 isInvalid={Boolean(errors.status)}
               >
                 {STATUS_OPTIONS.map((o) => (
@@ -288,15 +305,15 @@ export default function DisciplineEditPage() {
                 INACTIVE — đã ngưng hoạt động.
               </Form.Text>
               <Form.Control.Feedback type="invalid">
-                {errors.status || 'Trạng thái không hợp lệ.'}
+                {errors.status?.message}
               </Form.Control.Feedback>
             </Form.Group>
           </Col>
         </Row>
 
         <div className="mt-4 d-flex gap-2">
-          <Button type="submit" variant="danger" disabled={saving}>
-            {saving ? (
+          <Button type="submit" variant="danger" disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Spinner size="sm" animation="border" className="me-2" />
                 Đang lưu…
@@ -309,11 +326,11 @@ export default function DisciplineEditPage() {
             type="button"
             variant="outline-secondary"
             onClick={() => {
-              setForm(original);
-              setErrors(emptyErrors);
+              if (original) reset(original);
               setSaved(null);
+              setFormLevelError(null);
             }}
-            disabled={saving}
+            disabled={isSubmitting}
           >
             Huỷ
           </Button>
@@ -321,7 +338,7 @@ export default function DisciplineEditPage() {
             type="button"
             variant="link"
             onClick={() => navigate(`/manager/disciplines/${disciplineId}`)}
-            disabled={saving}
+            disabled={isSubmitting}
           >
             Quay lại chi tiết
           </Button>

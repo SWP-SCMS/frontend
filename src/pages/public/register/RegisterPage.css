@@ -33,3 +33,10 @@
 .scms-register-date {
   color-scheme: dark;
 }
+
+/* Inline field error — dùng khi một trường đăng ký fail Zod/RHF. */
+.scms-login-fielderror {
+  color: #fca5a5;
+  font-size: 0.8rem;
+  margin-top: 0.35rem;
+}

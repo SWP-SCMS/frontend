@@ -13,6 +13,17 @@
 //   - 409 EMAIL_ALREADY_EXISTS / PHONE_ALREADY_EXISTS /
 //     ACCOUNT_IDENTIFIER_ALREADY_EXISTS for a concurrent create.
 //   - additionalProperties: false — we must not send role/status/accountId.
+//
+// Native browser note:
+//   - The profileImageUrl input is declared <Form.Control type="url"> and
+//     the surrounding <Form> intentionally does NOT use noValidate, so
+//     the browser still runs the native URL-format check on this field
+//     when it is non-empty. This migration preserves that behavior:
+//     (1) the new <Form> keeps no noValidate flag, and (2) profileImageUrl
+//     is registered through the input as type="url", so the user sees
+//     the same browser tooltip if they enter something obviously bad.
+//     We do NOT add a Zod regex here — only F04 enforces a URL regex at
+//     validation time.
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -25,100 +36,140 @@ import {
   Row,
   Spinner,
 } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { createReceptionMember } from '../../../services/receptionistService';
-import { normalizePhone } from '../../../utils';
+import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  fullNameSchema,
+  emailSchema,
+  phoneCreateSchema,
+  birthDateSchema,
+} from '../../../schemas/fragments';
 
-const EMPTY_FORM = {
-  fullName: '',
-  phone: '',
-  email: '',
-  birthDate: '',
-  profileImageUrl: '',
-};
+// Page-local schema: shared fragments + optional profileImageUrl.
+// No URL-regex check is added here on purpose — see the file header.
+const memberCreateSchema = z.object({
+  fullName: fullNameSchema,
+  phone: phoneCreateSchema,
+  email: emailSchema,
+  birthDate: birthDateSchema,
+  profileImageUrl: z.string(),
+});
 
 export default function MemberCreatePage() {
   const navigate = useNavigate();
-
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [serverError, setServerError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [created, setCreated] = useState(null);
 
-  function handleChange(field) {
-    return (e) => {
-      const { value } = e.target;
-      setForm((prev) => ({ ...prev, [field]: value }));
-    };
+  const {
+    register,
+    handleSubmit,
+    setError,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(memberCreateSchema),
+    defaultValues: {
+      fullName: '',
+      phone: '',
+      email: '',
+      birthDate: '',
+      profileImageUrl: '',
+    },
+  });
+
+  function startAnother() {
+    setCreated(null);
+    setServerError(null);
+    setNotice(null);
+    reset({
+      fullName: '',
+      phone: '',
+      email: '',
+      birthDate: '',
+      profileImageUrl: '',
+    });
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError(null);
+  function resetForm() {
+    setServerError(null);
+    reset({
+      fullName: '',
+      phone: '',
+      email: '',
+      birthDate: '',
+      profileImageUrl: '',
+    });
+  }
+
+  async function onSubmit(data) {
+    setServerError(null);
     setNotice(null);
 
-    const fullName = form.fullName.trim();
-    const phone = normalizePhone(form.phone);
-    const email = form.email.trim();
-    const birthDate = form.birthDate;
-
-    if (!fullName) {
-      setError(new Error('Họ và tên không được để trống.'));
-      return;
-    }
-    if (!phone) {
-      setError(new Error('Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.'));
-      return;
-    }
-    if (!email) {
-      setError(new Error('Email không được để trống.'));
-      return;
-    }
-    if (!birthDate) {
-      setError(new Error('Ngày sinh không được để trống.'));
-      return;
-    }
-    if (birthDate > new Date().toISOString().slice(0, 10)) {
-      setError(new Error('Ngày sinh không được nằm trong tương lai.'));
-      return;
+    const payload = {
+      fullName: data.fullName,
+      phone: data.phone,
+      email: data.email,
+      birthDate: data.birthDate,
+    };
+    const imageUrl = data.profileImageUrl.trim();
+    if (imageUrl) {
+      payload.profileImageUrl = imageUrl;
     }
 
-    const payload = { fullName, phone, email, birthDate };
-    if (form.profileImageUrl.trim()) {
-      payload.profileImageUrl = form.profileImageUrl.trim();
-    }
-
-    setSubmitting(true);
     try {
       const member = await createReceptionMember(payload);
       setCreated(member);
-      setForm(EMPTY_FORM);
+      reset({
+        fullName: '',
+        phone: '',
+        email: '',
+        birthDate: '',
+        profileImageUrl: '',
+      });
     } catch (err) {
-      setError(err);
+      // Shared helper: data.errors + EMAIL/PHONE uniqueness.
+      // Allowlist MUST match the fields this page renders / registers.
+      const handled = applyServerErrors(err, setError, {
+        fields: ['fullName', 'phone', 'email', 'birthDate', 'profileImageUrl'],
+      });
+
       const code = err?.response?.data?.code;
+      // ACCOUNT_IDENTIFIER_ALREADY_EXISTS has no specific field clue from
+      // the backend; surface it as a page-level operator warning
+      // (`setNotice` renders a separate <Alert variant="warning">,
+      // NOT the global ErrorAlert). This is the explicit page-local
+      // banner preserved from the pre-migration source — it MUST stay
+      // unconditional so the operator sees the same workflow regardless
+      // of whether EMAIL/PHONE uniqueness was already mapped inline.
       if (
         code === 'EMAIL_ALREADY_EXISTS' ||
         code === 'PHONE_ALREADY_EXISTS' ||
         code === 'ACCOUNT_IDENTIFIER_ALREADY_EXISTS'
       ) {
+        const alreadyEmail = Boolean(errors.email);
+        const alreadyPhone = Boolean(errors.phone);
         setNotice(
-          code === 'EMAIL_ALREADY_EXISTS'
+          code === 'EMAIL_ALREADY_EXISTS' && !alreadyEmail
             ? 'Email này đã được một tài khoản khác sử dụng. Vui lòng nhập email khác.'
-            : code === 'PHONE_ALREADY_EXISTS'
+            : code === 'PHONE_ALREADY_EXISTS' && !alreadyPhone
               ? 'Số điện thoại này đã được một tài khoản khác sử dụng. Vui lòng nhập số khác.'
               : 'Email hoặc số điện thoại vừa được dùng cho một tài khoản khác. Vui lòng kiểm tra lại.',
         );
       }
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
-  function startAnother() {
-    setCreated(null);
-    setForm(EMPTY_FORM);
+      // Global ErrorAlert is the shared-helper path's fallback: only
+      // raised when the helper did NOT handle the error. The page-local
+      // `setNotice` banner above is independent and is preserved.
+      if (!handled) {
+        setServerError(err);
+      }
+    }
   }
 
   if (created) {
@@ -172,12 +223,15 @@ export default function MemberCreatePage() {
       ) : null}
 
       <ErrorAlert
-        error={error}
+        error={serverError}
         title="Không tạo được hội viên"
-        onClose={error?.response ? () => setError(null) : undefined}
+        onClose={error?.response ? () => setServerError(null) : undefined}
       />
 
-      <Form onSubmit={handleSubmit}>
+      {/* Note: no noValidate here on purpose — the profileImageUrl input
+          relies on the browser's native URL-format tooltip when non-empty.
+          The RHF layer never re-validates that field with a stricter regex. */}
+      <Form onSubmit={handleSubmit(onSubmit)}>
         <Row className="g-3">
           <Col lg={7}>
             <Card className="border-0 shadow-sm">
@@ -185,11 +239,13 @@ export default function MemberCreatePage() {
                 <Form.Group className="mb-3">
                   <Form.Label className="small text-muted mb-1">Họ và tên *</Form.Label>
                   <Form.Control
-                    value={form.fullName}
-                    onChange={handleChange('fullName')}
+                    {...register('fullName')}
                     maxLength={200}
-                    required
+                    isInvalid={Boolean(errors.fullName)}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.fullName?.message}
+                  </Form.Control.Feedback>
                 </Form.Group>
 
                 <Row className="g-3">
@@ -197,11 +253,13 @@ export default function MemberCreatePage() {
                     <Form.Group className="mb-3">
                       <Form.Label className="small text-muted mb-1">Số điện thoại *</Form.Label>
                       <Form.Control
-                        value={form.phone}
-                        onChange={handleChange('phone')}
+                        {...register('phone')}
                         inputMode="numeric"
-                        required
+                        isInvalid={Boolean(errors.phone)}
                       />
+                      <Form.Control.Feedback type="invalid">
+                        {errors.phone?.message}
+                      </Form.Control.Feedback>
                       <Form.Text className="text-muted">
                         Dùng làm định danh đăng nhập và nguồn sinh mật khẩu khởi tạo.
                       </Form.Text>
@@ -212,11 +270,13 @@ export default function MemberCreatePage() {
                       <Form.Label className="small text-muted mb-1">Email *</Form.Label>
                       <Form.Control
                         type="email"
-                        value={form.email}
-                        onChange={handleChange('email')}
+                        {...register('email')}
                         maxLength={320}
-                        required
+                        isInvalid={Boolean(errors.email)}
                       />
+                      <Form.Control.Feedback type="invalid">
+                        {errors.email?.message}
+                      </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
                   <Col sm={6}>
@@ -224,19 +284,24 @@ export default function MemberCreatePage() {
                       <Form.Label className="small text-muted mb-1">Ngày sinh *</Form.Label>
                       <Form.Control
                         type="date"
-                        value={form.birthDate}
-                        onChange={handleChange('birthDate')}
-                        required
+                        {...register('birthDate')}
+                        max={new Date().toISOString().slice(0, 10)}
+                        isInvalid={Boolean(errors.birthDate)}
                       />
+                      <Form.Control.Feedback type="invalid">
+                        {errors.birthDate?.message}
+                      </Form.Control.Feedback>
                     </Form.Group>
                   </Col>
                   <Col sm={6}>
                     <Form.Group className="mb-3">
                       <Form.Label className="small text-muted mb-1">Ảnh đại diện</Form.Label>
+                      {/* type="url" stays: the user-visible browser tooltip
+                          on malformed URLs is the existing UX. RHF's
+                          register() does not enforce a regex here. */}
                       <Form.Control
                         type="url"
-                        value={form.profileImageUrl}
-                        onChange={handleChange('profileImageUrl')}
+                        {...register('profileImageUrl')}
                         placeholder="Không bắt buộc"
                       />
                     </Form.Group>
@@ -244,17 +309,14 @@ export default function MemberCreatePage() {
                 </Row>
 
                 <div className="d-flex gap-2">
-                  <Button type="submit" variant="danger" disabled={submitting}>
-                    {submitting ? <Spinner animation="border" size="sm" /> : 'Tạo hội viên'}
+                  <Button type="submit" variant="danger" disabled={isSubmitting}>
+                    {isSubmitting ? <Spinner animation="border" size="sm" /> : 'Tạo hội viên'}
                   </Button>
                   <Button
                     type="button"
                     variant="outline-secondary"
-                    onClick={() => {
-                      setForm(EMPTY_FORM);
-                      setError(null);
-                    }}
-                    disabled={submitting}
+                    onClick={resetForm}
+                    disabled={isSubmitting}
                   >
                     Xoá form
                   </Button>
