@@ -1,9 +1,11 @@
-// Manager-scoped Class Session API (US27 + US28 + US29).
+// Manager-scoped Class Session API (US27 + US28 + US29 + US30).
 //
 // Endpoints (bearer-auth, MANAGER-only — backend enforces BR-SEC-04):
 //   POST /api/v1/manager/class-sessions              createSingleSession       (US27)
 //   GET  /api/v1/manager/class-sessions              listManagerSessions      (US28)
 //   GET  /api/v1/manager/class-sessions/{id}         getManagerSessionDetail  (US29)
+//   PATCH /api/v1/manager/class-sessions/{id}/assignment
+//                                                      updateSessionAssignment  (US30)
 //
 // Notes:
 //   - The list endpoint returns a ClassSessionPageResponse:
@@ -82,6 +84,36 @@ export async function getManagerSessionDetail(id) {
   if (!id) throw new Error('id is required');
   const { data } = await api.get(
     `/manager/class-sessions/${encodeURIComponent(id)}`,
+  );
+  return data;
+}
+
+// PATCH /api/v1/manager/class-sessions/{id}/assignment (US30)
+//
+// Path param:
+//   id  UUID string from the route /manager/class-sessions/:sessionId/assignment/edit
+//
+// Expected payload (verified, server-enforced — partial PATCH is
+// supported, omit an unchanged key):
+//   {
+//     coachId?,   // UUID — optional, omit to keep current
+//     roomId?,    // UUID — optional, omit to keep current
+//   }
+// At least one of coachId / roomId MUST be present (the BE returns
+// 400 VALIDATION_ERROR with errors.request otherwise). The FE never
+// sends an empty body — the page-level no-change guard short-circuits
+// before this service is called.
+//
+// Success status: 200 OK
+// Returns: ClassSessionDetailResponse — same shape US29 consumes.
+export async function updateSessionAssignment(sessionId, patch) {
+  if (!sessionId) throw new Error('sessionId is required');
+  if (!patch || typeof patch !== 'object') {
+    throw new Error('patch object is required');
+  }
+  const { data } = await api.patch(
+    `/manager/class-sessions/${encodeURIComponent(sessionId)}/assignment`,
+    patch,
   );
   return data;
 }
