@@ -161,6 +161,20 @@ const ClassEditPage = lazy(
   () => import('../pages/manager/classes/ClassEditPage'),
 );
 
+// Manager – Room management (US25)
+const RoomListPage = lazy(
+  () => import('../pages/manager/rooms/RoomListPage'),
+);
+const RoomCreatePage = lazy(
+  () => import('../pages/manager/rooms/RoomCreatePage'),
+);
+const RoomDetailPage = lazy(
+  () => import('../pages/manager/rooms/RoomDetailPage'),
+);
+const RoomEditPage = lazy(
+  () => import('../pages/manager/rooms/RoomEditPage'),
+);
+
 // Receptionist / Manager – Manual Payment Reconciliation (US19)
 // Shared by both roles: the backend authorises `/payments/**` with
 // hasAnyRole("MANAGER", "RECEPTIONIST").
@@ -386,6 +400,10 @@ export default function AppRoutes() {
         <Route path="classes/new" element={withSuspense(<ClassCreatePage />)} />
         <Route path="classes/:classId" element={withSuspense(<ClassDetailPage />)} />
         <Route path="classes/:classId/edit" element={withSuspense(<ClassEditPage />)} />
+        <Route path="rooms" element={withSuspense(<RoomListPage />)} />
+        <Route path="rooms/new" element={withSuspense(<RoomCreatePage />)} />
+        <Route path="rooms/:roomId" element={withSuspense(<RoomDetailPage />)} />
+        <Route path="rooms/:roomId/edit" element={withSuspense(<RoomEditPage />)} />
         <Route path="reports" element={withSuspense(<RevenueReportPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
       </Route>
