@@ -96,6 +96,14 @@ export default function ClassDetailPage() {
         <div className="d-flex gap-2 flex-wrap">
           <Button
             as={Link}
+            to={`/manager/classes/${classData.id}/sessions/new`}
+            variant="danger"
+            disabled={classData.status !== 'ACTIVE'}
+          >
+            Tạo buổi tập
+          </Button>
+          <Button
+            as={Link}
             to={`/manager/classes/${classData.id}/recurring-schedules/new`}
             variant="danger"
             disabled={classData.status !== 'ACTIVE'}
