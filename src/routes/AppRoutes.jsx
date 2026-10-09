@@ -195,6 +195,11 @@ const SessionDetailPage = lazy(
   () => import('../pages/manager/classSessions/SessionDetailPage'),
 );
 
+// Manager – Update Session Coach / Room (US30)
+const SessionAssignmentEditPage = lazy(
+  () => import('../pages/manager/classSessions/SessionAssignmentEditPage'),
+);
+
 // Receptionist / Manager – Manual Payment Reconciliation (US19)
 // Shared by both roles: the backend authorises `/payments/**` with
 // hasAnyRole("MANAGER", "RECEPTIONIST").
@@ -434,6 +439,10 @@ export default function AppRoutes() {
         />
         <Route path="class-sessions" element={withSuspense(<ManagerSessionListPage />)} />
         <Route path="class-sessions/:sessionId" element={withSuspense(<SessionDetailPage />)} />
+        <Route
+          path="class-sessions/:sessionId/assignment/edit"
+          element={withSuspense(<SessionAssignmentEditPage />)}
+        />
         <Route path="reports" element={withSuspense(<RevenueReportPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
       </Route>

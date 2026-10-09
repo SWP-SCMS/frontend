@@ -16,8 +16,8 @@
 // US29 is read-only.
 
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
-import { Card, Col, Row, Spinner } from 'react-bootstrap';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getManagerSessionDetail } from '../../../services/classSessionService';
@@ -87,14 +87,64 @@ function resolveBackTarget(state) {
   return '/manager/class-sessions';
 }
 
+// US30 — one-time success flag surfaced by the Assignment Edit page
+// after a successful PATCH. Stripped from the URL state on mount so
+// refresh / back / forward do not replay the same toast.
+function readAssignmentUpdatedFlag(state) {
+  return Boolean(state && state.assignmentUpdated === true);
+}
+
+// US30 — determine whether the current detail page is eligible for
+// the "Cập nhật HLV / Phòng" action. Mirrors BR-SES-06:
+//   * Session must be SCHEDULED, AND
+//   * canUpdateAssignment must not be explicitly false.
+// The server is authoritative; this is a UX gate only.
+function canEditAssignment(session) {
+  if (!session) return false;
+  if (session.status !== 'SCHEDULED') return false;
+  if (session.canUpdateAssignment === false) return false;
+  return true;
+}
+
 export default function SessionDetailPage() {
   const { sessionId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const backTarget = resolveBackTarget(location.state);
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // US30 — render a one-time success Alert when the Assignment Edit
+  // page redirected here with `state.assignmentUpdated === true`.
+  // The flag is consumed (and stripped from the history state) on
+  // mount so that refresh / back / forward do not replay the same
+  // success message.
+  const [assignmentUpdated] = useState(() =>
+    readAssignmentUpdatedFlag(location.state),
+  );
+
+  useEffect(() => {
+    if (!assignmentUpdated) return undefined;
+    // Build the next history state with the flag removed. We keep
+    // every other safe key (notably `from`) intact so the existing
+    // back-link behavior is unchanged.
+    const next = { ...(location.state || {}) };
+    delete next.assignmentUpdated;
+    const hasAnything = Object.keys(next).length > 0;
+    navigate(location.pathname + location.search, {
+      replace: true,
+      state: hasAnything ? next : null,
+    });
+    // Intentionally no `setTimeout`. Cleanup runs once; the flag
+    // also stays in local state so the Alert renders for the rest
+    // of this mount.
+    return undefined;
+    // location.state is captured intentionally at mount; further
+    // mutations to it would only be the strip-effect itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -147,6 +197,12 @@ export default function SessionDetailPage() {
         ← Quay lại Buổi tập
       </Link>
 
+      {assignmentUpdated ? (
+        <Alert variant="success" className="mt-3 mb-0 py-2">
+          Cập nhật thành công.
+        </Alert>
+      ) : null}
+
       <div className="d-flex flex-wrap justify-content-between align-items-end mt-2 mb-3 gap-2">
         <div>
           <h1 className="h3 fw-bold mb-1">
@@ -166,6 +222,17 @@ export default function SessionDetailPage() {
             </span>
           </div>
         </div>
+        {canEditAssignment(session) ? (
+          <Button
+            as={Link}
+            to={`/manager/class-sessions/${sessionId}/assignment/edit`}
+            state={backTarget ? { from: backTarget } : undefined}
+            variant="outline-danger"
+            size="sm"
+          >
+            Cập nhật HLV / Phòng
+          </Button>
+        ) : null}
       </div>
 
       <Row className="g-3 mb-3">
