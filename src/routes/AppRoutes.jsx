@@ -36,6 +36,11 @@ const MembershipHistoryPage = lazy(
 );
 const MyPlanPage = lazy(() => import('../pages/member/memberships/MyPlanPage'));
 
+// Member – View Class Schedule (US32)
+const MemberClassSchedulePage = lazy(
+  () => import('../pages/member/classSchedule/MemberClassSchedulePage'),
+);
+
 // Placeholders for phases that don't have full UI yet — kept as stubs so
 // navigation doesn't 404 during development of later phases.
 function ComingSoon({ feature }) {
@@ -315,6 +320,18 @@ export default function AppRoutes() {
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
                 <MemberChangePasswordPage />
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/class-sessions"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                <MemberClassSchedulePage />
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
