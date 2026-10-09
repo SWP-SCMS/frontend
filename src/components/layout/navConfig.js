@@ -48,9 +48,9 @@ export const APP_SHELL_USER_MENU = {
 export const MEMBER_SIDEBAR_ITEMS = [
   { to: '/member/dashboard', label: 'Trang tổng quan', icon: 'dashboard' },
   { to: '/member/plan', label: 'Gói tập của tôi', icon: 'dumbbell' },
+  { to: '/member/class-sessions', label: 'Lịch lớp', icon: 'calendar' },
   { to: '/member/memberships', label: 'Lịch sử thanh toán', icon: 'receipt' },
   { to: '/member/profile', label: 'Hồ sơ cá nhân', icon: 'profile', end: true },
-  { to: null, label: 'Lịch tập & Check-in', icon: 'calendar' },
 ];
 
 // Mục menu trên header Member.
@@ -58,7 +58,7 @@ export const MEMBER_TOP_ITEMS = [
   { to: '/member/dashboard', label: 'Trang chủ' },
   { to: '/offers', label: 'Gói tập' },
   { to: '/member/profile', label: 'Hồ sơ cá nhân', end: true },
-  { to: null, label: 'Lịch tập' },
+  { to: '/member/class-sessions', label: 'Lịch tập' },
   { to: null, label: 'Thông báo' },
 ];
 

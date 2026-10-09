@@ -1,0 +1,122 @@
+/* Member Class Schedule (US32) — calendar-only local styles.
+ * Mirrors ManagerSessionListPage.css patterns but scoped under
+ * `.mcs-*` so it never collides with the Manager page (US28)
+ * or any other Member page.
+ */
+
+.mcs-cal-scroll {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.075);
+}
+
+.mcs-cal-table {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(140px, 1fr));
+  min-width: 100%;
+}
+
+.mcs-cal-head {
+  display: contents;
+}
+
+.mcs-cal-head-cell {
+  padding: 0.5rem 0.75rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.075);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.mcs-cal-head-cell:last-child {
+  border-right: 0;
+}
+
+.mcs-cal-today .mcs-cal-weekday,
+.mcs-cal-today .mcs-cal-daymonth {
+  color: var(--bs-danger, #dc3545);
+  font-weight: 600;
+}
+
+.mcs-cal-weekday {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.mcs-cal-daymonth {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.mcs-cal-body {
+  display: contents;
+}
+
+.mcs-cal-cell {
+  min-height: 140px;
+  padding: 0.5rem;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: #fff;
+}
+
+.mcs-cal-cell:nth-child(7n) {
+  border-right: 0;
+}
+
+.mcs-cal-cell.mcs-cal-today {
+  background: rgba(220, 53, 69, 0.04);
+}
+
+.mcs-cal-empty {
+  font-size: 0.8rem;
+  color: #adb5bd;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.mcs-cal-session {
+  display: block;
+  border: 1px solid rgba(220, 53, 69, 0.25);
+  border-radius: 0.375rem;
+  background: #fff;
+  padding: 0.4rem 0.55rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.mcs-cal-session:last-child {
+  margin-bottom: 0;
+}
+
+.mcs-cal-session-time {
+  font-weight: 600;
+  color: #212529;
+}
+
+.mcs-cal-session-class {
+  font-weight: 600;
+  margin-top: 0.15rem;
+  color: #212529;
+}
+
+.mcs-cal-session-meta {
+  font-size: 0.78rem;
+  color: #6c757d;
+  margin-top: 0.15rem;
+}
+
+.mcs-cal-session-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  align-items: center;
+}
+
+.mcs-pill-sm {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.2em 0.45em;
+}
