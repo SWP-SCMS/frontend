@@ -1,4 +1,4 @@
-// Manager – Session detail (US29).
+// Manager – Session detail (US29) + Cancel (US31).
 //
 // Read-only view of a single Class Session. Loads via the dedicated
 // GET /api/v1/manager/class-sessions/{id} endpoint.
@@ -12,15 +12,28 @@
 //     canUpdateAssignment, canCancel }
 //
 // bookedCount is intentionally NOT rendered: the verified detail DTO
-// does not include it. canUpdateAssignment / canCancel are ignored —
-// US29 is read-only.
+// does not include it.
+//
+// US29 surfaces the detail only (read-only). US31 extends the page
+// with a single destructive action ("Hủy buổi tập") rendered as a
+// Bootstrap Modal containing an RHF + Zod reason form. The PATCH
+// success response is the authoritative full ClassSessionDetailResponse
+// and is applied directly via setSession — no navigate-away, no extra
+// GET refetch, no separate Booking / Notification / Audit calls.
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import { getManagerSessionDetail } from '../../../services/classSessionService';
+import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  cancelSession,
+  getManagerSessionDetail,
+} from '../../../services/classSessionService';
 
 const GYM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
@@ -106,6 +119,36 @@ function canEditAssignment(session) {
   return true;
 }
 
+// US31 — determine whether the current detail page is eligible for
+// the "Hủy buổi tập" action. Mirrors BR-SES-03:
+//   * Session must be SCHEDULED, AND
+//   * canCancel must not be explicitly false.
+// The server is authoritative; this is a UX gate only. canCancel is
+// computed by the BE as `status === SCHEDULED` (same boolean reused
+// for canUpdateAssignment — verified at ClassSessionDetailResponse.from).
+function canCancelSession(session) {
+  if (!session) return false;
+  if (session.status !== 'SCHEDULED') return false;
+  if (session.canCancel === false) return false;
+  return true;
+}
+
+// US31 — page-local Zod schema for the cancel reason. Mirrors the BE
+// validation in ClassSessionCancellationService#validate:
+//   - reason is REQUIRED (string, non-blank after trim, <= 1000 chars).
+// Zod's `.trim()` runs BEFORE .min(1) / .max(1000), so the resolved
+// value is already trimmed and matches the BE's trimmed value.
+const cancelReasonSchema = z.object({
+  reason: z
+    .string({
+      required_error: 'Vui lòng nhập lý do hủy.',
+      invalid_type_error: 'Lý do hủy không hợp lệ.',
+    })
+    .trim()
+    .min(1, 'Vui lòng nhập lý do hủy.')
+    .max(1000, 'Lý do hủy không được vượt quá 1000 ký tự.'),
+});
+
 export default function SessionDetailPage() {
   const { sessionId } = useParams();
   const location = useLocation();
@@ -145,6 +188,93 @@ export default function SessionDetailPage() {
     // mutations to it would only be the strip-effect itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ----- US31 — Cancel Session modal state -----
+  // The cancel flow stays on this page (no navigate-away). The PATCH
+  // response is the authoritative full ClassSessionDetailResponse and
+  // is applied directly via setSession. One-time success feedback is
+  // local component state — it does not ride in location.state.
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
+  const [cancelServerError, setCancelServerError] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  const {
+    register: registerCancel,
+    handleSubmit: handleCancelSubmit,
+    reset: resetCancel,
+    setError: setCancelFieldError,
+    formState: { errors: cancelErrors, isValid: isCancelValid },
+  } = useForm({
+    resolver: zodResolver(cancelReasonSchema),
+    mode: 'onChange',
+    defaultValues: { reason: '' },
+  });
+
+  function openCancelModal() {
+    setCancelServerError(null);
+    setCancelSuccess(false);
+    resetCancel({ reason: '' });
+    setShowCancelModal(true);
+  }
+
+  function closeCancelModal() {
+    if (cancelling) return;
+    setShowCancelModal(false);
+    setCancelServerError(null);
+    resetCancel({ reason: '' });
+  }
+
+  async function onCancelSubmit(data) {
+    setCancelServerError(null);
+    // Defense-in-depth: refuse to send if the page-local gate says
+    // the Session is no longer cancellable. The button is hidden in
+    // this state, but a stale page could still trigger this.
+    if (!canCancelSession(session)) {
+      setCancelServerError({
+        message:
+          'Buổi tập này không ở trạng thái Đã lên lịch nên không thể hủy.',
+      });
+      return;
+    }
+    setCancelling(true);
+    try {
+      const updated = await cancelSession(sessionId, {
+        reason: data.reason.trim(),
+      });
+      // Authoritative PATCH response — apply directly. No navigate,
+      // no extra GET, no separate Booking/Notification/Audit calls.
+      setSession(updated);
+      setShowCancelModal(false);
+      setCancelSuccess(true);
+      resetCancel({ reason: '' });
+    } catch (err) {
+      const code = err?.response?.data?.code;
+      // VALIDATION_ERROR with data.errors.reason → inline reason.
+      // Other codes (SESSION_NOT_FOUND, SESSION_NOT_SCHEDULED,
+      // MALFORMED_REQUEST, INVALID_TOKEN, role mismatch, generic 5xx)
+      // fall through to the global ErrorAlert.
+      const sharedHandled = applyServerErrors(err, setCancelFieldError, {
+        fields: ['reason'],
+      });
+      let pageLocalHandled = false;
+      switch (code) {
+        case 'SESSION_NOT_FOUND':
+        case 'SESSION_NOT_SCHEDULED':
+        case 'MALFORMED_REQUEST':
+          setCancelServerError(err);
+          pageLocalHandled = true;
+          break;
+        default:
+          break;
+      }
+      if (!sharedHandled && !pageLocalHandled) {
+        setCancelServerError(err);
+      }
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -203,6 +333,17 @@ export default function SessionDetailPage() {
         </Alert>
       ) : null}
 
+      {cancelSuccess ? (
+        <Alert
+          variant="success"
+          className="mt-3 mb-0 py-2"
+          dismissible
+          onClose={() => setCancelSuccess(false)}
+        >
+          Hủy buổi tập thành công.
+        </Alert>
+      ) : null}
+
       <div className="d-flex flex-wrap justify-content-between align-items-end mt-2 mb-3 gap-2">
         <div>
           <h1 className="h3 fw-bold mb-1">
@@ -222,17 +363,29 @@ export default function SessionDetailPage() {
             </span>
           </div>
         </div>
-        {canEditAssignment(session) ? (
-          <Button
-            as={Link}
-            to={`/manager/class-sessions/${sessionId}/assignment/edit`}
-            state={backTarget ? { from: backTarget } : undefined}
-            variant="outline-danger"
-            size="sm"
-          >
-            Cập nhật HLV / Phòng
-          </Button>
-        ) : null}
+        <div className="d-flex gap-2 flex-wrap">
+          {canEditAssignment(session) ? (
+            <Button
+              as={Link}
+              to={`/manager/class-sessions/${sessionId}/assignment/edit`}
+              state={backTarget ? { from: backTarget } : undefined}
+              variant="outline-danger"
+              size="sm"
+            >
+              Cập nhật HLV / Phòng
+            </Button>
+          ) : null}
+          {canCancelSession(session) ? (
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              onClick={openCancelModal}
+            >
+              Hủy buổi tập
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <Row className="g-3 mb-3">
@@ -341,6 +494,137 @@ export default function SessionDetailPage() {
           </Card.Body>
         </Card>
       ) : null}
+
+      {/* ----- US31 — Cancel Session modal ----- */}
+      <Modal
+        show={showCancelModal}
+        onHide={closeCancelModal}
+        centered
+        backdrop={cancelling ? 'static' : true}
+        keyboard={!cancelling}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Hủy buổi tập</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleCancelSubmit(onCancelSubmit)} noValidate>
+          <Modal.Body>
+            <p className="text-muted small mb-3">
+              Buổi tập sẽ được chuyển sang trạng thái Đã huỷ và vẫn
+              được giữ lại trong lịch sử. Các lượt đăng ký hiện đang
+              BOOKED của buổi tập này sẽ được hệ thống xử lý theo
+              quy tắc nghiệp vụ phía backend.
+            </p>
+
+            {/* Read-only context block (mirrors the US30 read-only block) */}
+            <div className="border rounded p-3 mb-3 bg-light">
+              <Row className="g-3">
+                <Col md={6}>
+                  <div className="text-uppercase small text-muted">
+                    Lớp học
+                  </div>
+                  <div className="fw-semibold">
+                    {session.className || '—'}
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="text-uppercase small text-muted">
+                    Ngày · Giờ
+                  </div>
+                  <div className="fw-semibold">
+                    {formatGymDate(session.startTime)} ·{' '}
+                    {formatGymTime(session.startTime)} –{' '}
+                    {formatGymTime(session.endTime)}
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="text-uppercase small text-muted">
+                    Huấn luyện viên
+                  </div>
+                  <div className="fw-semibold">
+                    {session.coachName || '—'}
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="text-uppercase small text-muted">
+                    Phòng tập
+                  </div>
+                  <div className="fw-semibold">
+                    {session.roomName || '—'}
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="text-uppercase small text-muted">
+                    Sức chứa buổi tập
+                  </div>
+                  <div className="fw-semibold">
+                    {typeof session.capacity === 'number'
+                      ? session.capacity
+                      : '—'}
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
+            <ErrorAlert
+              error={cancelServerError}
+              title="Không hủy được buổi tập"
+              onClose={
+                cancelServerError
+                  ? () => setCancelServerError(null)
+                  : undefined
+              }
+            />
+
+            <Form.Group controlId="cancel-reason">
+              <Form.Label>Lý do hủy *</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={4}
+                maxLength={1000}
+                placeholder="Ví dụ: HLV xin nghỉ đột xuất; lớp học bị trùng phòng…"
+                isInvalid={Boolean(cancelErrors.reason)}
+                {...registerCancel('reason')}
+                disabled={cancelling}
+              />
+              <Form.Text className="text-muted">
+                Bắt buộc. Tối đa 1000 ký tự. Lý do sẽ được lưu vào
+                lịch sử huỷ.
+              </Form.Text>
+              <Form.Control.Feedback type="invalid">
+                {cancelErrors.reason?.message}
+              </Form.Control.Feedback>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              type="button"
+              variant="outline-secondary"
+              onClick={closeCancelModal}
+              disabled={cancelling}
+            >
+              Đóng
+            </Button>
+            <Button
+              type="submit"
+              variant="danger"
+              disabled={!isCancelValid || cancelling}
+            >
+              {cancelling ? (
+                <>
+                  <Spinner
+                    size="sm"
+                    animation="border"
+                    className="me-2"
+                  />
+                  Đang hủy…
+                </>
+              ) : (
+                'Xác nhận hủy'
+              )}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </div>
   );
 }

@@ -1,11 +1,13 @@
-// Manager-scoped Class Session API (US27 + US28 + US29 + US30).
+// Manager-scoped Class Session API (US27 + US28 + US29 + US30 + US31).
 //
 // Endpoints (bearer-auth, MANAGER-only — backend enforces BR-SEC-04):
-//   POST /api/v1/manager/class-sessions              createSingleSession       (US27)
-//   GET  /api/v1/manager/class-sessions              listManagerSessions      (US28)
-//   GET  /api/v1/manager/class-sessions/{id}         getManagerSessionDetail  (US29)
+//   POST  /api/v1/manager/class-sessions              createSingleSession       (US27)
+//   GET   /api/v1/manager/class-sessions              listManagerSessions      (US28)
+//   GET   /api/v1/manager/class-sessions/{id}         getManagerSessionDetail  (US29)
 //   PATCH /api/v1/manager/class-sessions/{id}/assignment
-//                                                      updateSessionAssignment  (US30)
+//                                                       updateSessionAssignment  (US30)
+//   PATCH /api/v1/manager/class-sessions/{id}/cancel
+//                                                       cancelSession            (US31)
 //
 // Notes:
 //   - The list endpoint returns a ClassSessionPageResponse:
@@ -114,6 +116,47 @@ export async function updateSessionAssignment(sessionId, patch) {
   const { data } = await api.patch(
     `/manager/class-sessions/${encodeURIComponent(sessionId)}/assignment`,
     patch,
+  );
+  return data;
+}
+
+// PATCH /api/v1/manager/class-sessions/{id}/cancel (US31)
+//
+// Path param:
+//   id  UUID string from the current route
+//        /manager/class-sessions/:sessionId
+//
+// Expected payload (verified, server-enforced):
+//   {
+//     reason,   // string — REQUIRED, non-blank after trim, <= 1000 chars
+//   }
+//
+// The BE trims the reason before persisting and before writing the
+// Audit row. The FE trims before sending so client-side invalidation
+// (min(1) / max(1000)) matches the BE rule exactly.
+//
+// Errors reachable from this PATCH (verified):
+//   400 VALIDATION_ERROR  (data.errors.reason)
+//   400 MALFORMED_REQUEST
+//   404 SESSION_NOT_FOUND
+//   409 SESSION_NOT_SCHEDULED
+//   401 INVALID_TOKEN
+//   403 role mismatch
+//
+// Success status: 200 OK
+// Returns: ClassSessionDetailResponse — same shape US29 consumes. The
+// response carries the authoritative post-cancel state (status =
+// CANCELLED, cancelledAt, cancellationReason, canCancel = false,
+// canUpdateAssignment = false). The FE uses this response directly so
+// no extra GET refetch is required after a successful PATCH.
+export async function cancelSession(sessionId, body) {
+  if (!sessionId) throw new Error('sessionId is required');
+  if (!body || typeof body !== 'object') {
+    throw new Error('body object is required');
+  }
+  const { data } = await api.patch(
+    `/manager/class-sessions/${encodeURIComponent(sessionId)}/cancel`,
+    body,
   );
   return data;
 }
