@@ -11,6 +11,7 @@ import LoadingScreen from '../components/common/LoadingScreen';
 import AppShell from '../components/layout/AppShell';
 import StaffLayout from '../components/layout/StaffLayout';
 import MemberLayout from '../components/layout/MemberLayout';
+import CoachLayout from '../components/layout/CoachLayout';
 import PlusOnlyGate from '../components/layout/PlusOnlyGate';
 import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfig';
 
@@ -50,16 +51,16 @@ const ClassBookingPage = lazy(
   () => import('../pages/member/classBooking/ClassBookingPage'),
 );
 
-// Placeholders for phases that don't have full UI yet — kept as stubs so
-// navigation doesn't 404 during development of later phases.
-function ComingSoon({ feature }) {
-  return (
-    <div className="container py-5">
-      <h2 className="mb-2">Sắp ra mắt</h2>
-      <p className="text-muted mb-0">{feature}</p>
-    </div>
-  );
-}
+// Coach – Dashboard / Lịch phụ trách / Hồ sơ
+const CoachDashboardPage = lazy(
+  () => import('../pages/coach/dashboard/CoachDashboardPage'),
+);
+const CoachSchedulePage = lazy(
+  () => import('../pages/coach/schedule/CoachSchedulePage'),
+);
+const CoachProfilePage = lazy(
+  () => import('../pages/coach/profile/CoachProfilePage'),
+);
 
 // Manager – Dashboard
 const ManagerDashboardPage = lazy(
@@ -424,19 +425,24 @@ export default function AppRoutes() {
         }
       />
 
-      {/* ---------- Coach (Phase 6 stubs) ---------- */}
+      {/* ---------- Coach ----------
+       * CoachLayout (không chuông thông báo, logo không bấm được) được mount
+       * một lần ở route cha; các trang con hiển thị qua <Outlet />. */}
       <Route
         path="/coach"
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.COACH}>
-              <AppShell>
-                <ComingSoon feature="Coach Dashboard — Phase 6" />
-              </AppShell>
+              <CoachLayout />
             </RoleRoute>
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<Navigate to="/coach/dashboard" replace />} />
+        <Route path="dashboard" element={withSuspense(<CoachDashboardPage />)} />
+        <Route path="schedule" element={withSuspense(<CoachSchedulePage />)} />
+        <Route path="profile" element={withSuspense(<CoachProfilePage />)} />
+      </Route>
 
       {/* ---------- Manager ----------
        * Persistent dark shell across the entire Manager area.
