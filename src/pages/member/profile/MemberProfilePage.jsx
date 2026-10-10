@@ -11,8 +11,8 @@
 // Đổi mật khẩu nằm ở trang riêng /member/profile/password (US04).
 //
 // Các trường BE chưa hỗ trợ (giới tính, địa chỉ, mối quan hệ, khung giờ liên
-// hệ, ghi chú chấn thương, chỉ số InBody, tải ảnh từ máy, ngày gia nhập) được
-// giữ lại trên giao diện ở dạng làm mờ, ghi "Sắp ra mắt".
+// hệ, ghi chú chấn thương, tải ảnh từ máy, ngày gia nhập) được giữ lại trên
+// giao diện ở dạng làm mờ, ghi "Sắp ra mắt". Thẻ chỉ số InBody đã bỏ.
 //
 // Migration note (RHF + Zod):
 //   - profileImageUrl http(s) regex is intentionally PAGE-LOCAL. It is NOT
@@ -39,9 +39,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
+import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import { getMyProfile, updateMyProfile } from '../../../services/memberService';
 import { useAuth } from '../../../context/useAuth';
-import { extractErrorMessage, normalizePhone } from '../../../utils';
+import { extractErrorMessage, formatDate, normalizePhone } from '../../../utils';
 import { applyServerErrors } from '../../../utils/serverErrors';
 import { emailSchema, birthDateSchema } from '../../../schemas/fragments';
 
@@ -189,7 +190,6 @@ const ICONS = {
     </>
   ),
   check: <path d="M20 6 9 17l-5-5" />,
-  chevron: <path d="m9 6 6 6-6 6" />,
   arrow: (
     <>
       <path d="M5 12h14" />
@@ -463,13 +463,7 @@ export default function MemberProfilePage() {
     <form className="scms-mp" onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="scms-mp-top">
         <div>
-          <div className="scms-mp-crumb">
-            <span>Trang chủ</span>
-            <Icon name="chevron" size={14} />
-            <span>Hội viên</span>
-            <Icon name="chevron" size={14} />
-            <strong>Hồ sơ cá nhân</strong>
-          </div>
+          <MemberBreadcrumb current="Hồ sơ cá nhân" />
           <h1 className="scms-mp-title">Hồ sơ cá nhân</h1>
         </div>
         <span className={`scms-mp-badge${hasActiveMembership ? ' on' : ''}`}>
@@ -499,7 +493,7 @@ export default function MemberProfilePage() {
       ) : null}
 
       <div className="scms-mp-grid">
-        {/* ===== Cột trái: ảnh, định danh, InBody ===== */}
+        {/* ===== Cột trái: ảnh, định danh ===== */}
         <div className="scms-mp-col">
           <div className="scms-mp-card">
             <div className="scms-mp-avatar-wrap">
@@ -581,7 +575,14 @@ export default function MemberProfilePage() {
             <div className="scms-mp-rows">
               <div className="scms-mp-row">
                 <span className="k">Ngày gia nhập</span>
-                <span className="v scms-mp-soontag">Sắp ra mắt</span>
+                {/* Ngày đăng ký tài khoản thành công. TODO: BE chưa trả
+                    `createdAt` trong GET /members/me/profile; khi có thì ô
+                    này tự hiện ngày, hiện tại hiện "Sắp ra mắt". */}
+                {user?.createdAt ? (
+                  <span className="v">{formatDate(user.createdAt)}</span>
+                ) : (
+                  <span className="v scms-mp-soontag">Sắp ra mắt</span>
+                )}
               </div>
               <div className="scms-mp-row">
                 <span className="k">Trạng thái tài khoản</span>
@@ -608,27 +609,6 @@ export default function MemberProfilePage() {
                 Hội viên xuất trình mã Member ID hoặc đọc Số điện thoại cá nhân
                 tại quầy để Lễ tân tra cứu hồ sơ.
               </span>
-            </div>
-          </div>
-
-          <div className="scms-mp-card soon">
-            <div className="scms-mp-card-head">
-              <span className="scms-mp-label-small">Chỉ số thể lực InBody</span>
-              <span className="scms-mp-soontag">Sắp ra mắt</span>
-            </div>
-            <div className="scms-mp-metrics">
-              <div className="scms-mp-metric">
-                <small>Chiều cao</small>
-                <strong>— cm</strong>
-              </div>
-              <div className="scms-mp-metric">
-                <small>Cân nặng</small>
-                <strong>— kg</strong>
-              </div>
-              <div className="scms-mp-metric">
-                <small>Mỡ Body</small>
-                <strong>— %</strong>
-              </div>
             </div>
           </div>
         </div>

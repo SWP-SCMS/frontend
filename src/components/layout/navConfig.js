@@ -47,19 +47,10 @@ export const APP_SHELL_USER_MENU = {
 // Mục menu bên trái trong Member area. `to: null` nghĩa là chưa có trang -> làm mờ.
 export const MEMBER_SIDEBAR_ITEMS = [
   { to: '/member/dashboard', label: 'Trang tổng quan', icon: 'dashboard' },
-  { to: '/member/plan', label: 'Gói tập của tôi', icon: 'dumbbell' },
+  { to: '/member/plan', label: 'Gói tập', icon: 'dumbbell' },
   { to: '/member/class-sessions', label: 'Lịch lớp', icon: 'calendar' },
   { to: '/member/memberships', label: 'Lịch sử thanh toán', icon: 'receipt' },
   { to: '/member/profile', label: 'Hồ sơ cá nhân', icon: 'profile', end: true },
-];
-
-// Mục menu trên header Member.
-export const MEMBER_TOP_ITEMS = [
-  { to: '/member/dashboard', label: 'Trang chủ' },
-  { to: '/offers', label: 'Gói tập' },
-  { to: '/member/profile', label: 'Hồ sơ cá nhân', end: true },
-  { to: '/member/class-sessions', label: 'Lịch tập' },
-  { to: null, label: 'Thông báo' },
 ];
 
 // Nhãn khu vực + role chip cho khu vực staff. Bổ sung cho phase

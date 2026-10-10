@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import { Alert, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../../context/useAuth';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
+import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { listActiveOffers } from '../../../services/membershipService';
 import {
@@ -23,7 +24,6 @@ import {
 } from '../../../services/memberService';
 import {
   extractErrorMessage,
-  formatDate,
   formatDateTime,
   formatPrice,
 } from '../../../utils';
@@ -78,7 +78,6 @@ const ICONS = {
       <path d="m13 6 6 6-6 6" />
     </>
   ),
-  chevron: <path d="m9 6 6 6-6 6" />,
   route: (
     <>
       <circle cx="6" cy="19" r="3" />
@@ -407,9 +406,10 @@ export default function MemberDashboardPage() {
   let badgeText = 'Đang tải...';
   if (!membershipLoading && membershipError) badgeText = 'Không tải được gói tập';
   else if (!membershipLoading && hasActiveMembership) {
+    // BE trả camelCase (planCode); giữ fallback snake_case cho bản cũ.
     const plan =
-      activeMembership.plan_code_snapshot || activeMembership.planCode || '';
-    badgeText = `Gói ${plan} đang hoạt động · đến ${formatDate(activeMembership.ends_at)}`;
+      activeMembership.planCode || activeMembership.plan_code_snapshot || '';
+    badgeText = `Gói ${plan} đang hoạt động`;
   } else if (!membershipLoading) badgeText = 'Chưa kích hoạt gói tập';
 
   // Lộ trình: có gói tập thì đang ở bước 3, chưa có thì ở bước 2.
@@ -424,13 +424,7 @@ export default function MemberDashboardPage() {
     <div className="scms-md">
       <div className="scms-md-top">
         <div>
-          <div className="scms-md-crumb">
-            <span>Trang chủ</span>
-            <Icon name="chevron" size={14} />
-            <span>Hội viên</span>
-            <Icon name="chevron" size={14} />
-            <strong>Trang tổng quan</strong>
-          </div>
+          <MemberBreadcrumb current="Trang tổng quan" />
           <h1 className="scms-md-title">
             Chào mừng bạn đến với SCMS Sports Center, {fullName}!
           </h1>
@@ -508,32 +502,32 @@ export default function MemberDashboardPage() {
               <Step
                 state={stateOf(1)}
                 label={{ num: 1, text: 'Bước 1: Tạo tài khoản' }}
-                title="Đăng ký & Xác thực (Đã hoàn tất)"
-                text={`Mã số hội viên ${user?.memberId || ''} đã được khởi tạo thành công trên hệ thống SCMS.`}
+                title="Đăng Ký & Xác Thực"
+                text={`Mã số hội viên ${user?.memberId || ''} đã được tạo thành công trên hệ thống SCMS.`}
               />
               <Step
                 state={stateOf(2)}
                 here={currentStep === 2}
-                label={{ num: 2, text: 'Bước 2: Hoàn thiện thông tin & Chọn gói' }}
+                label={{ num: 2, text: 'Bước 2: Đăng Ký Gói Tập' }}
                 title={
                   hasActiveMembership
-                    ? 'Bạn đã có gói tập'
-                    : 'Chọn gói tập phù hợp & Bổ sung mục tiêu'
+                    ? 'Bạn Đã Có Gói Tập'
+                    : 'Chọn Gói Tập Phù Hợp'
                 }
-                text="Lựa chọn gói Basic hoặc Plus và cập nhật thể trạng, mục tiêu hiện tại."
+                text="Lựa chọn gói Basic hoặc Plus để bắt đầu hành trình tập luyện của bạn."
               />
               <Step
                 state={stateOf(3)}
                 here={currentStep === 3}
-                label={{ num: 3, text: 'Bước 3: Bắt đầu rèn luyện' }}
-                title="Đo InBody & Gặp huấn luyện viên"
-                text="Đánh giá chỉ số cơ mỡ chi tiết và tham gia buổi định hướng tập luyện đầu tiên."
+                label={{ num: 3, text: 'Bước 3: Tham Gia Lớp Tập' }}
+                title="Chọn Lớp Tập & HLV Cá Nhân"
+                text="Tham gia buổi định hướng tập luyện đầu tiên và hỗ trợ PT 1-1."
               />
               <Step
                 state={stateOf(4)}
-                label={{ num: 4, text: 'Bước 4: Tập luyện và theo dõi kết quả' }}
+                label={{ num: 4, text: 'Bước 4: Tập Luyện Và Theo Dõi Kết Quả' }}
                 title="Theo dõi kết quả sau mỗi buổi tập"
-                text="Có cập nhật thông báo sau mỗi buổi tập."
+                text="Cập nhật thông báo sau mỗi buổi tập và đánh giá tiến độ."
               />
             </div>
           </div>
