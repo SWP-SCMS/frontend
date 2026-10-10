@@ -1,0 +1,518 @@
+/* Trang "Đăng ký lớp" của Hội viên. Tiền tố .cbs- để không đụng .mcs- của
+ * MemberClassSchedulePage. Nền trang (sáng) do MemberLayout cung cấp. */
+
+.cbs {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ----- Tiêu đề trang (cùng kiểu các trang Member khác) ----- */
+
+.cbs-top {
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.cbs-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cbs-sub {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.cbs-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* ----- Bảng lọc ----- */
+
+.cbs-filter {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.cbs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.cbs-chips-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.cbs-chip {
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #eef2f7;
+  color: #334155;
+}
+
+.cbs-chip:hover {
+  background: #e2e8f0;
+}
+
+.cbs-chip.active {
+  background: #dc2626;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+}
+
+.cbs-selects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cbs-select {
+  position: relative;
+  min-width: 220px;
+}
+
+.cbs-select-icon {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: #dc2626;
+  pointer-events: none;
+}
+
+.cbs-select select {
+  width: 100%;
+  padding: 0.6rem 2rem 0.6rem 2.4rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background-color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.cbs-select select:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Ô chọn ngày và nút "Bỏ bộ lọc" */
+.cbs-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cbs-dates label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.cbs-date {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.85rem;
+  color: #1e293b;
+}
+
+.cbs-clear {
+  padding: 0.55rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.cbs-clear:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.cbs-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cbs-range-error {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+.cbs-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ----- Danh sách buổi tập ----- */
+
+.cbs-day {
+  margin-bottom: 1.25rem;
+}
+
+.cbs-day-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: capitalize;
+}
+
+.cbs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cbs-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+.cbs-item.booked {
+  border-color: #a7f3d0;
+  background: #f0fdf9;
+}
+
+.cbs-time {
+  width: 110px;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cbs-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.cbs-class {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cbs-meta {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.cbs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.cbs-tag {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.cbs-tag.gray {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.cbs-tag.green {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.cbs-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  min-width: 150px;
+}
+
+.cbs-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.6rem;
+  border: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: #dc2626;
+}
+
+.cbs-btn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.cbs-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cbs-btn.cancel {
+  background: #fff;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.cbs-btn.cancel:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.cbs-note {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-align: right;
+}
+
+.cbs-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+}
+
+.cbs-empty strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #0f172a;
+}
+
+.cbs-center {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+/* ----- Hộp xác nhận đặt chỗ ----- */
+
+.cbs-dialog {
+  max-width: 540px;
+}
+
+.cbs-dialog .modal-content {
+  border: 0;
+  border-radius: 1.25rem;
+}
+
+.cbs-modal {
+  padding: 1.75rem;
+}
+
+.cbs-mhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.cbs-mtitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.cbs-msub {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.cbs-mclose {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #eef2f7;
+  color: #475569;
+}
+
+.cbs-mclose:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.cbs-mcard {
+  padding: 0.5rem 1.25rem;
+  margin-bottom: 1rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.cbs-mrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.cbs-mrow:last-child {
+  border-bottom: 0;
+}
+
+.cbs-mrow-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.cbs-mrow-label svg {
+  color: #dc2626;
+}
+
+.cbs-mrow-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: right;
+}
+
+.cbs-plan-pill {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: #059669;
+}
+
+.cbs-qty {
+  color: #059669;
+}
+
+.cbs-qty.full {
+  color: #64748b;
+}
+
+.cbs-mnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  border-radius: 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.cbs-mnote svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: #dc2626;
+}
+
+.cbs-merror {
+  padding: 0.7rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}
+
+.cbs-mactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cbs-mbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border: 0;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.cbs-mbtn.ghost {
+  background: #eef2f7;
+  color: #334155;
+}
+
+.cbs-mbtn.ghost:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.cbs-mbtn.primary {
+  flex: 1;
+  min-width: 240px;
+  color: #fff;
+  background: #dc2626;
+  box-shadow: 0 8px 16px -6px rgba(220, 38, 38, 0.45);
+}
+
+.cbs-mbtn.primary:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.cbs-mbtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
