@@ -202,31 +202,79 @@ a.scms-ml-navitem:hover {
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
 }
 
-.scms-ml-topnav {
+/* Nút chuông thông báo (bên trái thanh header). */
+.scms-ml-bell {
+  position: relative;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
-  gap: 2rem;
-}
-
-.scms-ml-toplink {
-  font-size: 0.85rem;
-  text-decoration: none;
-  color: #e6bdb8;
-  transition: color 0.15s;
-}
-
-a.scms-ml-toplink:hover {
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #282a2e;
   color: #e2e2e8;
+  transition: background 0.15s, color 0.15s;
 }
 
-.scms-ml-toplink.active {
-  color: #dc2626;
-  font-weight: 600;
+.scms-ml-bell:hover,
+.scms-ml-bell.show {
+  background: #dc2626;
+  color: #fff;
 }
 
-.scms-ml-toplink.disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+/* Chấm đỏ báo có thông báo mới: góc trên bên phải chuông. */
+.scms-ml-bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid #282a2e;
+  animation: scms-ml-pulse 1.8s ease-in-out infinite;
+}
+
+/* Khi chuông đổi nền đỏ (hover/mở), viền chấm đổi theo để chấm vẫn nổi rõ. */
+.scms-ml-bell:hover .scms-ml-bell-dot,
+.scms-ml-bell.show .scms-ml-bell-dot {
+  background: #fff;
+  border-color: #dc2626;
+}
+
+@keyframes scms-ml-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  50% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+}
+
+/* Bỏ mũi tên nhỏ mặc định của Bootstrap Dropdown. */
+.scms-ml-bell::after {
+  display: none;
+}
+
+.scms-ml-bell-menu {
+  min-width: 300px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  background: #1e2024;
+  overflow: hidden;
+}
+
+.scms-ml-bell-head {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e2e2e8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.scms-ml-bell-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #e6bdb8;
 }
 
 .scms-ml-user {
@@ -323,10 +371,6 @@ a.scms-ml-toplink:hover {
     height: auto;
     padding: 0.75rem 1rem;
     gap: 0.5rem;
-  }
-
-  .scms-ml-topnav {
-    display: none;
   }
 
   .scms-ml-main {

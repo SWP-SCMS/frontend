@@ -90,9 +90,9 @@ export default function MyPlanPage() {
             <span className="scms-my-plan-crumb-sep">›</span>
             <span>Hội viên</span>
             <span className="scms-my-plan-crumb-sep">›</span>
-            <strong>Gói tập của tôi</strong>
+            <strong>Gói tập</strong>
           </div>
-          <h1 className="scms-my-plan-title">Gói tập của tôi</h1>
+          <h1 className="scms-my-plan-title">Gói tập</h1>
           <p className="scms-my-plan-sub">
             Thông tin gói tập bạn đang sử dụng tại SCMS.
           </p>

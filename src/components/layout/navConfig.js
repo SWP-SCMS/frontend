@@ -56,15 +56,6 @@ export const MEMBER_SIDEBAR_ITEMS = [
   { to: '/member/profile', label: 'Hồ sơ cá nhân', icon: 'profile', end: true },
 ];
 
-// Mục menu trên header Member.
-export const MEMBER_TOP_ITEMS = [
-  { to: '/member/dashboard', label: 'Trang chủ' },
-  { to: '/offers', label: 'Gói tập' },
-  { to: '/member/profile', label: 'Hồ sơ cá nhân', end: true },
-  { to: '/member/class-sessions', label: 'Lịch tập' },
-  { to: null, label: 'Thông báo' },
-];
-
 // Nhãn khu vực + role chip cho khu vực staff. Bổ sung cho phase
 // staff-area layout unification. Additive only — không đụng 4 export ở trên.
 // APP_SHELL_NAV_ITEMS vẫn giữ nguyên (không thêm trường icon, không sửa

@@ -13,7 +13,7 @@ import { getMyMemberships } from '../../services/membershipService';
 import { MemberAreaContext } from './MemberAreaContext';
 import MemberSidebar from './MemberSidebar';
 import MemberHeader from './MemberHeader';
-import { MEMBER_SIDEBAR_ITEMS, MEMBER_TOP_ITEMS } from './navConfig';
+import { MEMBER_SIDEBAR_ITEMS } from './navConfig';
 import './MemberLayout.css';
 
 export default function MemberLayout({ children }) {
@@ -98,6 +98,12 @@ export default function MemberLayout({ children }) {
 
   const requestLogout = () => setConfirmOpen(true);
 
+  // Số thông báo chưa đọc (UNREAD) hiện trên chuông.
+  // TODO: BE chưa có API đọc thông báo cho Hội viên (BR-NOT-03/04). Khi có,
+  // thay số 0 này bằng số thông báo UNREAD lấy từ API.
+  // Muốn xem thử chấm đỏ: tạm đổi 0 thành 1.
+  const unreadCount = 0;
+
   return (
     <MemberAreaContext.Provider value={areaValue}>
       <div className="scms-ml">
@@ -114,7 +120,7 @@ export default function MemberLayout({ children }) {
         <div className="scms-ml-body">
           <MemberHeader
             user={user}
-            items={MEMBER_TOP_ITEMS}
+            unreadCount={unreadCount}
             onRequestLogout={requestLogout}
           />
 

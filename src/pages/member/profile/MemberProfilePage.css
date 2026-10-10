@@ -19,20 +19,6 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
-.scms-mp-crumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-bottom: 0.5rem;
-}
-
-.scms-mp-crumb strong {
-  color: #dc2626;
-  font-weight: 500;
-}
-
 .scms-mp-title {
   font-size: 1.75rem;
   font-weight: 700;
@@ -399,35 +385,6 @@
   color: #7f1d1d;
 }
 
-/* ----- InBody (sắp ra mắt) ----- */
-
-.scms-mp-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
-}
-
-.scms-mp-metric {
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-  text-align: center;
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-}
-
-.scms-mp-metric small {
-  display: block;
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.scms-mp-metric strong {
-  font-size: 1rem;
-  color: #1e293b;
-}
-
 /* ----- Form ----- */
 
 .scms-mp-fields {
@@ -503,10 +460,6 @@ textarea.scms-mp-input {
   letter-spacing: 0.04em;
   color: #475569;
   background: #e2e8f0;
-}
-
-.scms-mp-card.soon {
-  opacity: 0.6;
 }
 
 .scms-mp-radios {
