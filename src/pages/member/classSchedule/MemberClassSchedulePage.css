@@ -4,6 +4,37 @@
  * or any other Member page.
  */
 
+/* ----- Tiêu đề trang (cùng kiểu các trang Member khác) ----- */
+
+.mcs-page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.mcs-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mcs-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.mcs-sub {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
 .mcs-cal-scroll {
   overflow-x: auto;
   border-radius: 0.5rem;
@@ -32,10 +63,29 @@
   border-right: 0;
 }
 
-.mcs-cal-today .mcs-cal-weekday,
-.mcs-cal-today .mcs-cal-daymonth {
-  color: var(--bs-danger, #dc3545);
-  font-weight: 600;
+/* Cột "hôm nay" (theo giờ phòng tập): tiêu đề tô đỏ chữ trắng. */
+.mcs-cal-head-cell.mcs-cal-today {
+  background: #dc2626;
+  border-bottom-color: #dc2626;
+}
+
+.mcs-cal-head-cell.mcs-cal-today .mcs-cal-weekday,
+.mcs-cal-head-cell.mcs-cal-today .mcs-cal-daymonth {
+  color: #fff;
+  font-weight: 700;
+}
+
+.mcs-cal-today-tag {
+  display: inline-block;
+  margin-top: 0.15rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #dc2626;
+  background: #fff;
 }
 
 .mcs-cal-weekday {
@@ -65,8 +115,10 @@
   border-right: 0;
 }
 
+/* Thân cột "hôm nay": nền và viền đỏ nhạt để nổi hơn các ngày khác. */
 .mcs-cal-cell.mcs-cal-today {
-  background: rgba(220, 53, 69, 0.04);
+  background: #fef2f2;
+  box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.35);
 }
 
 .mcs-cal-empty {
@@ -88,6 +140,192 @@
 
 .mcs-cal-session:last-child {
   margin-bottom: 0;
+}
+
+/* Thẻ buổi tập là nút bấm: bấm để xem chi tiết. */
+.mcs-cal-session-btn {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.mcs-cal-session-btn:hover,
+.mcs-cal-session-btn:focus-visible {
+  border-color: #dc2626;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+  outline: none;
+}
+
+/* ----- Hộp chi tiết buổi tập ----- */
+
+.mcs-dialog {
+  max-width: 520px;
+}
+
+.mcs-dialog .modal-content {
+  border: 0;
+  border-radius: 1.25rem;
+}
+
+.mcs-modal {
+  padding: 1.75rem;
+}
+
+.mcs-mhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.mcs-mtitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #0f172a;
+}
+
+.mcs-msub {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.mcs-mclose {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #eef2f7;
+  color: #475569;
+}
+
+.mcs-mclose:hover {
+  background: #e2e8f0;
+}
+
+.mcs-mcard {
+  padding: 0.5rem 1.25rem;
+  margin-bottom: 1rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.mcs-mrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.mcs-mrow:last-child {
+  border-bottom: 0;
+}
+
+.mcs-mrow-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.mcs-mrow-label svg {
+  color: #dc2626;
+}
+
+.mcs-mrow-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: right;
+  color: #0f172a;
+}
+
+/* Ô điểm danh: xám = chưa điểm danh, xanh = đã điểm danh. */
+.mcs-att {
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.mcs-att.todo {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.mcs-att.done {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.mcs-mfeedback {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+.mcs-mfeedback-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.mcs-mfeedback-title svg {
+  color: #dc2626;
+}
+
+.mcs-mfeedback-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #334155;
+  white-space: pre-wrap;
+}
+
+.mcs-mfeedback-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #94a3b8;
+}
+
+.mcs-mactions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mcs-mbtn {
+  padding: 0.7rem 1.75rem;
+  border: 0;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: #eef2f7;
+  color: #334155;
+}
+
+.mcs-mbtn:hover {
+  background: #e2e8f0;
 }
 
 .mcs-cal-session-time {

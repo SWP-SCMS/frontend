@@ -89,6 +89,33 @@ a.scms-ml-navitem:hover {
   color: #f87171;
 }
 
+/* Mục cần gói PLUS mà hội viên chưa có: làm mờ nhưng vẫn bấm được để hiện
+ * thông báo; nhãn PLUS nằm bên phải. */
+.scms-ml-navitem.locked {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0.55;
+}
+
+.scms-ml-navitem.locked:hover {
+  background: #282a2e;
+  opacity: 0.8;
+}
+
+.scms-ml-plus {
+  margin-left: auto;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: #dc2626;
+}
+
 /* Mục chưa có trang: làm mờ, không bấm được. */
 .scms-ml-navitem.disabled {
   opacity: 0.45;

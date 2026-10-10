@@ -11,6 +11,7 @@ import LoadingScreen from '../components/common/LoadingScreen';
 import AppShell from '../components/layout/AppShell';
 import StaffLayout from '../components/layout/StaffLayout';
 import MemberLayout from '../components/layout/MemberLayout';
+import PlusOnlyGate from '../components/layout/PlusOnlyGate';
 import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfig';
 
 // Public pages
@@ -39,6 +40,10 @@ const MyPlanPage = lazy(() => import('../pages/member/memberships/MyPlanPage'));
 // Member – View Class Schedule (US32)
 const MemberClassSchedulePage = lazy(
   () => import('../pages/member/classSchedule/MemberClassSchedulePage'),
+);
+// Member – Đăng ký lớp (đặt / hủy lịch các buổi tập)
+const ClassBookingPage = lazy(
+  () => import('../pages/member/classBooking/ClassBookingPage'),
 );
 
 // Placeholders for phases that don't have full UI yet — kept as stubs so
@@ -326,12 +331,28 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/member/class-booking"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                <PlusOnlyGate feature="Đăng ký lớp">
+                  {withSuspense(<ClassBookingPage />)}
+                </PlusOnlyGate>
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/member/class-sessions"
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
-                <MemberClassSchedulePage />
+                <PlusOnlyGate feature="Lịch của tôi">
+                  <MemberClassSchedulePage />
+                </PlusOnlyGate>
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>

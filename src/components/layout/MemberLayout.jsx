@@ -28,6 +28,9 @@ export default function MemberLayout({ children }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // Tên dịch vụ cần gói PLUS mà hội viên vừa bấm vào (null = không hiện hộp).
+  const [plusNoticeFor, setPlusNoticeFor] = useState(null);
+
   const loadMemberships = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -51,16 +54,26 @@ export default function MemberLayout({ children }) {
     [memberships],
   );
 
+  // BR-BKG-03/05: chỉ gói PLUS còn hiệu lực mới dùng được đặt lớp / lịch.
+  const planCode =
+    activeMembership?.planCode ?? activeMembership?.plan_code_snapshot ?? '';
+  const isPlus = activeMembership != null && planCode === 'PLUS';
+
+  // Làm mờ các mục PLUS khi đã biết chắc hội viên không có gói PLUS. Nếu chưa
+  // tải xong hoặc tải lỗi thì không khóa (BE vẫn là nơi kiểm tra quyền thật).
+  const plusLocked = !loading && !error && !isPlus;
+
   const areaValue = useMemo(
     () => ({
       memberships,
       activeMembership,
       hasActiveMembership: activeMembership != null,
+      isPlus,
       loading,
       error,
       reload: loadMemberships,
     }),
-    [memberships, activeMembership, loading, error, loadMemberships],
+    [memberships, activeMembership, isPlus, loading, error, loadMemberships],
   );
 
   // Chỉ đăng xuất sau khi người dùng bấm "Đăng xuất" trong hộp thoại xác nhận.
@@ -93,6 +106,8 @@ export default function MemberLayout({ children }) {
           activeMembership={activeMembership}
           statusText={statusText}
           items={MEMBER_SIDEBAR_ITEMS}
+          plusLocked={plusLocked}
+          onLockedClick={(item) => setPlusNoticeFor(item.label)}
           onRequestLogout={requestLogout}
         />
 
@@ -105,6 +120,37 @@ export default function MemberLayout({ children }) {
 
           <main className="scms-ml-main">{children}</main>
         </div>
+
+        {/* Thông báo khi hội viên không có gói PLUS bấm vào dịch vụ PLUS */}
+        <Modal
+          show={plusNoticeFor != null}
+          onHide={() => setPlusNoticeFor(null)}
+          centered
+        >
+          <Modal.Header closeButton>
+            <Modal.Title className="h5">Cần đăng ký gói PLUS</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            Bạn cần đăng ký gói PLUS để sử dụng dịch vụ &quot;{plusNoticeFor}&quot;.
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="outline-secondary"
+              onClick={() => setPlusNoticeFor(null)}
+            >
+              Đóng
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setPlusNoticeFor(null);
+                navigate('/member/plan');
+              }}
+            >
+              Xem gói tập
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
         <Modal
           show={confirmOpen}
