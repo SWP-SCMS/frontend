@@ -35,6 +35,10 @@ const MembershipHistoryPage = lazy(
   () => import('../pages/member/memberships/MembershipHistoryPage'),
 );
 const MyPlanPage = lazy(() => import('../pages/member/memberships/MyPlanPage'));
+// Member – thanh toán gói tập (chuyển khoản SePay)
+const MemberCheckoutPage = lazy(
+  () => import('../pages/member/checkout/MemberCheckoutPage'),
+);
 
 // Member – View Class Schedule (US32)
 const MemberClassSchedulePage = lazy(
@@ -296,6 +300,18 @@ export default function AppRoutes() {
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
                 <MembershipHistoryPage />
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/checkout/:offerId"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<MemberCheckoutPage />)}
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
