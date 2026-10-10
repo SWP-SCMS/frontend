@@ -13,63 +13,22 @@
 //   - Gói tập (menu)                           -> /offers
 //   - Khám phá các gói tập                     -> cuộn xuống bảng giá
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { listActiveOffers } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
-import BrandLogo from '../../../components/common/BrandLogo';
+import PublicHeader from '../../../components/layout/PublicHeader';
+import PublicFooter from '../../../components/layout/PublicFooter';
+import Icon from '../../../components/layout/PublicIcon';
 import {
   HOMEPAGE_COPY,
   FEATURES,
   PLAN_OVERVIEW,
   SPACES,
-  FOOTER_INFO,
 } from '../../../content/homeContent';
 
 import './HomePage.css';
-
-const iconProps = {
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 2,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-};
-
-function Icon({ name, size = 22 }) {
-  const paths = {
-    dumbbell: (
-      <>
-        <path d="M6.5 6.5l11 11" />
-        <path d="m3 10 7-7" />
-        <path d="m14 21 7-7" />
-        <path d="m2 6 4-4" />
-        <path d="m18 22 4-4" />
-      </>
-    ),
-    coach: (
-      <>
-        <circle cx="12" cy="7" r="4" />
-        <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
-      </>
-    ),
-    unlock: (
-      <>
-        <rect x="3" y="11" width="18" height="11" rx="2" />
-        <path d="M7 11V7a5 5 0 0 1 9.5-2" />
-      </>
-    ),
-    check: <path d="m5 12 5 5L20 7" />,
-    arrowRight: <path d="M5 12h14m-6-6 6 6-6 6" />,
-    arrowDown: <path d="M12 5v14m-6-6 6 6 6-6" />,
-  };
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" {...iconProps}>
-      {paths[name]}
-    </svg>
-  );
-}
 
 // Giá hiển thị: lấy Offer rẻ nhất của gói; không có thì dùng giá mặc định.
 function buildPriceInfo(offers, plan) {
@@ -96,23 +55,6 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
 
-  // Role-aware "Trang cá nhân" target. Member has its own dashboard at
-  // /member/dashboard; other roles stay on their role-scoped home.
-  const personalHomePath = useMemo(() => {
-    switch (user?.role) {
-      case 'MEMBER':
-        return '/member/dashboard';
-      case 'MANAGER':
-        return '/manager/dashboard';
-      case 'RECEPTIONIST':
-        return '/reception';
-      case 'COACH':
-        return '/coach';
-      default:
-        return '/login';
-    }
-  }, [user?.role]);
-
   // Không tải được Offer thì vẫn hiện giá mặc định, không báo lỗi cho khách.
   useEffect(() => {
     let cancelled = false;
@@ -138,47 +80,8 @@ export default function HomePage() {
 
   return (
     <div className="scms-home">
-      {/* Header */}
-      <header className="scms-home-header">
-        <BrandLogo />
-
-        <nav className="scms-home-nav d-none d-md-flex">
-          <Link to="/" className="active">Trang chủ</Link>
-          <Link to="/offers">Gói tập</Link>
-        </nav>
-
-        <div className="scms-home-actions">
-          {isReady && isAuthenticated ? (
-            <>
-              <span className="d-none d-md-inline small text-secondary">
-                {user?.fullName || 'Tài khoản'}
-              </span>
-              <Link
-                to={personalHomePath}
-                className="scms-home-btn scms-home-btn-ghost"
-              >
-                Trang cá nhân
-              </Link>
-              <button
-                type="button"
-                className="scms-home-btn scms-home-btn-primary"
-                onClick={handleLogout}
-              >
-                Đăng xuất
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="scms-home-btn scms-home-btn-ghost d-none d-sm-inline-flex">
-                Đăng nhập
-              </Link>
-              <Link to="/register" className="scms-home-btn scms-home-btn-primary">
-                Đăng ký thành viên
-              </Link>
-            </>
-          )}
-        </div>
-      </header>
+      {/* Header dùng chung */}
+      <PublicHeader active="home" />
 
       {isReady && isAuthenticated && user?.role === 'MANAGER' && (
         <aside className="scms-home-manager-bar" aria-label="Manager Dashboard">
@@ -373,38 +276,8 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="scms-home-footer">
-        <div className="scms-home-wrap">
-          <div className="row g-4">
-            <div className="col-md-6">
-              <div className="d-flex align-items-center gap-2 mb-3">
-                <span className="scms-home-logo scms-home-logo-sm" aria-hidden="true">
-                  <Icon name="dumbbell" size={16} />
-                </span>
-                <span className="fw-semibold text-uppercase">SCMS Gym</span>
-              </div>
-              <p className="scms-home-muted small">{FOOTER_INFO.desc}</p>
-              <span className="scms-home-muted small">{FOOTER_INFO.project}</span>
-            </div>
-            <div className="col-md-3">
-              <div className="fw-semibold mb-2">Địa chỉ &amp; Liên hệ</div>
-              <p className="scms-home-muted small mb-1">{FOOTER_INFO.address}</p>
-              <p className="scms-home-muted small mb-1">{FOOTER_INFO.hotline}</p>
-              <p className="scms-home-muted small mb-0">{FOOTER_INFO.email}</p>
-            </div>
-            <div className="col-md-3">
-              <div className="fw-semibold mb-2">Giờ mở cửa</div>
-              <p className="scms-home-muted small mb-1">{FOOTER_INFO.hoursDays}</p>
-              <p className="scms-home-accent-soft fw-semibold mb-0">{FOOTER_INFO.hours}</p>
-            </div>
-          </div>
-          <div className="d-flex flex-wrap justify-content-between gap-2 mt-5 pt-3 scms-home-muted small">
-            <span>© {new Date().getFullYear()} SCMS Sports Center. All rights reserved.</span>
-            <span>{FOOTER_INFO.standard}</span>
-          </div>
-        </div>
-      </footer>
+      {/* Footer dùng chung */}
+      <PublicFooter />
     </div>
   );
 }

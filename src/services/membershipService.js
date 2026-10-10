@@ -1,15 +1,22 @@
-// Public membership offer browsing. The handoff prefers these as public,
-// read-only endpoints that only expose ACTIVE offers.
+// Membership offers (công khai) và lịch sử Membership của Hội viên.
 
+import axios from 'axios';
+import { API_BASE_URL } from '../constants';
 import api from './api';
 
+// Hai API Offer là CÔNG KHAI (không cần đăng nhập). Dùng một axios riêng,
+// KHÔNG gắn Authorization: nếu gửi kèm một token cũ/hết hạn, BE trả 401 dù
+// API vốn không yêu cầu đăng nhập.
+const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { Accept: 'application/json' },
+});
+
 // GET /api/v1/membership-offers?planCode=BASIC|PLUS
-// planCode is optional; backend returns [] when nothing matches.
-// NOTE: the backend allows this endpoint for MEMBER *or* RECEPTIONIST
-// (us12 contract), so Receptionist pages reuse this function rather than
-// declaring a duplicate in receptionistService.js.
+// Chỉ trả Offer ACTIVE; planCode là tùy chọn; không có kết quả thì trả [].
+// Trang của Lễ tân cũng dùng lại hàm này thay vì khai báo lại.
 export async function listActiveOffers({ planCode } = {}) {
-  const { data } = await api.get('/membership-offers', {
+  const { data } = await publicApi.get('/membership-offers', {
     params: planCode ? { planCode } : undefined,
   });
   return Array.isArray(data) ? data : [];
@@ -17,7 +24,7 @@ export async function listActiveOffers({ planCode } = {}) {
 
 // GET /api/v1/membership-offers/{offerId}
 export async function getOfferById(offerId) {
-  const { data } = await api.get(`/membership-offers/${offerId}`);
+  const { data } = await publicApi.get(`/membership-offers/${offerId}`);
   return data;
 }
 

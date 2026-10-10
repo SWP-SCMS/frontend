@@ -1,0 +1,389 @@
+/* Bảng gói tập công khai (/offers). Tiền tố .sof- để không đụng class khác.
+ * Dùng biến màu và các class .scms-home-* của trang chủ (HomePage.css). */
+
+/* ----- Đầu trang ----- */
+
+.sof-hero {
+  padding: 3.5rem 0 3rem;
+}
+
+.sof-title {
+  max-width: 820px;
+  margin-top: 0.5rem;
+}
+
+.sof-subtitle {
+  max-width: 680px;
+  margin: 1rem 0 0;
+  font-size: 1.05rem;
+}
+
+.sof-trust {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 1.1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: var(--h-card);
+}
+
+.sof-trust-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  background: var(--h-bg-deep);
+  color: var(--h-red);
+}
+
+.sof-trust-title {
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+/* ----- Tiêu đề khu danh sách gói ----- */
+
+.sof-heading {
+  margin-bottom: 2rem;
+}
+
+/* ----- Lưới gói: mỗi cột một thời hạn, BASIC trên, PLUS dưới ----- */
+
+.sof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem 1.5rem;
+  align-items: start;
+}
+
+.sof-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sof-col-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--h-red);
+}
+
+/* ----- Thẻ gói ----- */
+
+.sof-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  border-radius: 0.9rem;
+  background: #1a1c20;
+  border: 1px solid transparent;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.sof-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
+}
+
+.sof-card.plus {
+  background: var(--h-card);
+  border-color: rgba(220, 38, 38, 0.45);
+}
+
+.sof-ribbon {
+  position: absolute;
+  top: -12px;
+  right: 1.5rem;
+  padding: 0.25rem 0.9rem;
+  border-radius: 999px;
+  background: var(--h-red);
+  color: #fff6f5;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sof-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sof-plan {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--h-muted);
+}
+
+.sof-card.plus .sof-plan {
+  color: var(--h-red-soft);
+}
+
+.sof-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #333539;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--h-text);
+}
+
+.sof-name {
+  margin: 0 0 0.4rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.sof-desc {
+  margin-bottom: 1rem;
+}
+
+.sof-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.sof-price-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sof-card.plus .sof-price-value {
+  color: var(--h-red-soft);
+}
+
+.sof-permonth {
+  min-height: 1.6rem;
+  margin: 0.15rem 0 1rem;
+  font-size: 0.8rem;
+  color: var(--h-muted);
+}
+
+.sof-save {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.sof-feat {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 1rem 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  font-size: 0.85rem;
+}
+
+.sof-feat li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.sof-feat li.off {
+  color: #6b7280;
+  text-decoration: line-through;
+  text-decoration-color: rgba(107, 114, 128, 0.6);
+}
+
+.sof-feat-icon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--h-red-soft);
+}
+
+.sof-card.plus .sof-feat-icon {
+  color: var(--h-red);
+}
+
+.sof-feat li.off .sof-feat-icon {
+  color: #6b7280;
+}
+
+.sof-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sof-card .scms-home-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Khung chờ tải */
+.sof-skeleton {
+  min-height: 420px;
+  background: linear-gradient(
+    100deg,
+    #1a1c20 30%,
+    #24272c 50%,
+    #1a1c20 70%
+  );
+  background-size: 200% 100%;
+  animation: sof-shimmer 1.4s linear infinite;
+}
+
+@keyframes sof-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Thông báo lỗi / rỗng */
+.sof-state {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  border-radius: 0.9rem;
+  background: var(--h-card);
+}
+
+.sof-state h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.sof-state p {
+  margin: 0 0 1.25rem;
+  color: var(--h-muted);
+}
+
+/* ----- Bảng so sánh ----- */
+
+.sof-compare {
+  max-width: 820px;
+  border-radius: 0.9rem;
+  overflow: hidden;
+  background: var(--h-card);
+}
+
+.sof-compare-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 110px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+}
+
+.sof-compare-row:last-child {
+  border-bottom: 0;
+}
+
+.sof-compare-head {
+  background: var(--h-card-hi);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--h-muted);
+}
+
+.sof-compare-head span:not(:first-child),
+.sof-compare-cell {
+  text-align: center;
+}
+
+.sof-compare-plus {
+  color: var(--h-red-soft);
+}
+
+.sof-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.sof-mark.yes {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+
+.sof-mark.no {
+  background: rgba(107, 114, 128, 0.18);
+  color: #9ca3af;
+}
+
+@media (max-width: 575.98px) {
+  .sof-compare-row {
+    grid-template-columns: 1fr 60px 60px;
+    padding: 0.9rem 1rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* ----- Câu hỏi thường gặp ----- */
+
+.sof-faq {
+  max-width: 780px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sof-faq-item {
+  border-radius: 0.75rem;
+  background: var(--h-card);
+}
+
+.sof-faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.4rem;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+}
+
+.sof-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.sof-faq-item summary svg {
+  flex-shrink: 0;
+  color: var(--h-muted);
+  transition: transform 0.2s;
+}
+
+.sof-faq-item[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.sof-faq-item p {
+  margin: 0;
+  padding: 0 1.4rem 1.25rem;
+  color: var(--h-muted);
+  line-height: 1.65;
+}
