@@ -56,7 +56,7 @@ export default function MembershipHistoryPage() {
     return (
       <div className="scms-mh">
         <div className="scms-mh-loading">
-          <Spinner animation="border" size="sm" /> Đang tải lịch sử gói tập…
+          <Spinner animation="border" size="sm" /> Đang tải lịch sử thanh toán…
         </div>
       </div>
     );
@@ -71,9 +71,9 @@ export default function MembershipHistoryPage() {
             <span className="scms-mh-crumb-sep">›</span>
             <span>Hội viên</span>
             <span className="scms-mh-crumb-sep">›</span>
-            <strong>Lịch sử gói tập</strong>
+            <strong>Lịch sử thanh toán</strong>
           </div>
-          <h1 className="scms-mh-title">Lịch sử gói tập</h1>
+          <h1 className="scms-mh-title">Lịch sử thanh toán</h1>
           <p className="scms-mh-sub">
             Toàn bộ gói tập bạn đã đăng ký, mới nhất trước.
           </p>
@@ -85,7 +85,7 @@ export default function MembershipHistoryPage() {
         ) : null}
       </div>
 
-      <ErrorAlert error={error} title="Không tải được lịch sử gói tập" />
+      <ErrorAlert error={error} title="Không tải được lịch sử thanh toán" />
 
       {rows.length === 0 ? (
         error ? null : (
@@ -117,7 +117,7 @@ export default function MembershipHistoryPage() {
           <div className="scms-mh-tablewrap">
             <table className="scms-mh-table">
               <caption className="visually-hidden">
-                Lịch sử gói tập đã đăng ký
+                Lịch sử thanh toán các gói tập đã đăng ký
               </caption>
               <thead>
                 <tr>

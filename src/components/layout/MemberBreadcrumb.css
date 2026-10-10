@@ -1,0 +1,15 @@
+/* Breadcrumb chung của Member area (xem MemberBreadcrumb.jsx). */
+
+.scms-bc {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.scms-bc strong {
+  color: #dc2626;
+  font-weight: 500;
+}
