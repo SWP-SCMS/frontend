@@ -47,16 +47,11 @@ export const APP_SHELL_USER_MENU = {
 // Mục menu bên trái trong Member area. `to: null` nghĩa là chưa có trang -> làm mờ.
 export const MEMBER_SIDEBAR_ITEMS = [
   { to: '/member/dashboard', label: 'Trang tổng quan', icon: 'dashboard' },
-<<<<<<< Updated upstream
-  { to: '/member/plan', label: 'Gói tập của tôi', icon: 'dumbbell' },
-  { to: '/member/class-sessions', label: 'Lịch lớp', icon: 'calendar' },
-=======
   { to: '/member/plan', label: 'Gói tập', icon: 'dumbbell' },
   // `requiresPlus: true`: chỉ hội viên gói PLUS dùng được (BR-BKG-03/05).
   // Hội viên BASIC thấy mục này bị làm mờ kèm nhãn PLUS.
   { to: '/member/class-booking', label: 'Đăng ký lớp', icon: 'clipboard', requiresPlus: true },
   { to: '/member/class-sessions', label: 'Lịch của tôi', icon: 'calendar', requiresPlus: true },
->>>>>>> Stashed changes
   { to: '/member/memberships', label: 'Lịch sử thanh toán', icon: 'receipt' },
   { to: '/member/profile', label: 'Hồ sơ cá nhân', icon: 'profile', end: true },
 ];
