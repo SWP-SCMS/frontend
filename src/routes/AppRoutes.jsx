@@ -58,6 +58,15 @@ const CoachDashboardPage = lazy(
 const CoachSchedulePage = lazy(
   () => import('../pages/coach/schedule/CoachSchedulePage'),
 );
+const CoachSessionDetailPage = lazy(
+  () => import('../pages/coach/schedule/CoachSessionDetailPage'),
+);
+const CoachSessionStudentsPage = lazy(
+  () => import('../pages/coach/schedule/CoachSessionStudentsPage'),
+);
+const CoachSessionAttendancePage = lazy(
+  () => import('../pages/coach/schedule/CoachSessionAttendancePage'),
+);
 const CoachProfilePage = lazy(
   () => import('../pages/coach/profile/CoachProfilePage'),
 );
@@ -441,6 +450,18 @@ export default function AppRoutes() {
         <Route index element={<Navigate to="/coach/dashboard" replace />} />
         <Route path="dashboard" element={withSuspense(<CoachDashboardPage />)} />
         <Route path="schedule" element={withSuspense(<CoachSchedulePage />)} />
+        <Route
+          path="schedule/:sessionId"
+          element={withSuspense(<CoachSessionDetailPage />)}
+        />
+        <Route
+          path="schedule/:sessionId/students"
+          element={withSuspense(<CoachSessionStudentsPage />)}
+        />
+        <Route
+          path="schedule/:sessionId/attendance"
+          element={withSuspense(<CoachSessionAttendancePage />)}
+        />
         <Route path="profile" element={withSuspense(<CoachProfilePage />)} />
       </Route>
 

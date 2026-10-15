@@ -69,3 +69,16 @@
   border-color: #dc2626;
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
 }
+
+/* Ảnh hồ sơ học viên ở trang điểm danh. */
+.scms-coach-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee2e2;
+  color: #dc2626;
+}
