@@ -14,7 +14,7 @@ import {
   formatGymDayHeading,
   formatGymTime,
 } from '../../../utils/gymTime';
-import { isAttended } from './attendance';
+import { getAttendanceDisplay } from './attendance';
 
 const CLASS_TYPE_LABEL = {
   GROUP: 'Nhóm',
@@ -92,7 +92,7 @@ function Row({ icon, label, children }) {
 
 export default function SessionDetailModal({ session, onClose }) {
   const s = session;
-  const attended = isAttended(s);
+  const att = getAttendanceDisplay(s);
   const feedback =
     typeof s?.coachFeedback === 'string' ? s.coachFeedback.trim() : '';
   const subtitle = [s?.disciplineName, CLASS_TYPE_LABEL[s?.classType]]
@@ -139,8 +139,16 @@ export default function SessionDetailModal({ session, onClose }) {
             {s?.roomName || '—'}
           </Row>
           <Row icon="check" label="Điểm danh:">
-            <span className={`mcs-att ${attended ? 'done' : 'todo'}`}>
-              {attended ? 'Đã điểm danh' : 'Chưa điểm danh'}
+            <span
+              className={`mcs-att ${
+                att.key === 'present'
+                  ? 'done'
+                  : att.key === 'absent'
+                    ? 'absent'
+                    : 'todo'
+              }`}
+            >
+              {att.text}
             </span>
           </Row>
         </div>

@@ -20,7 +20,7 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import SessionDetailModal from './SessionDetailModal';
-import { isAttended } from './attendance';
+import { getAttendanceDisplay } from './attendance';
 import {
   listAllMyBookedBookings,
   toBookingId,
@@ -341,7 +341,7 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
 // ----- Một buổi tập trong lưới (bấm để xem chi tiết) -----
 function SessionCard({ session, onClick }) {
   const s = session || {};
-  const attended = isAttended(s);
+  const att = getAttendanceDisplay(s);
   return (
     <button
       type="button"
@@ -360,15 +360,17 @@ function SessionCard({ session, onClick }) {
       </div>
       <div className="mcs-cal-session-foot">
         <ClassTypePill classType={s.classType} small />
-        {/* Xám: chưa điểm danh. Xanh: đã được điểm danh (attendanceStatus = PRESENT). */}
+        {/* Xám: chưa điểm danh. Xanh: đã điểm danh. Đỏ: vắng (quá hạn mà chưa PRESENT). */}
         <span
           className={`badge mcs-pill-sm ${
-            attended
+            att.key === 'present'
               ? 'bg-success-subtle text-success-emphasis'
-              : 'bg-secondary-subtle text-secondary-emphasis'
+              : att.key === 'absent'
+                ? 'bg-danger-subtle text-danger-emphasis'
+                : 'bg-secondary-subtle text-secondary-emphasis'
           }`}
         >
-          {attended ? 'Đã điểm danh' : 'Chưa điểm danh'}
+          {att.text}
         </span>
       </div>
     </button>

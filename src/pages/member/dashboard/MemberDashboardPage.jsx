@@ -16,6 +16,7 @@ import { Alert, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../../context/useAuth';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
+import PlusDashboardPanels from './PlusDashboardPanels';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { listActiveOffers } from '../../../services/membershipService';
 import {
@@ -317,6 +318,7 @@ export default function MemberDashboardPage() {
   const {
     activeMembership,
     hasActiveMembership,
+    isPlus,
     loading: membershipLoading,
     error: membershipError,
     reload: reloadMemberships,
@@ -482,6 +484,15 @@ export default function MemberDashboardPage() {
 
       <div className="scms-md-grid">
         <div className="scms-md-col">
+          {/* Có gói (PLUS hoặc BASIC): thời hạn gói, lịch sắp tới, đánh giá Coach
+              (BASIC thì hai thẻ sau bị mờ). Chưa có gói: lộ trình + gói đề xuất. */}
+          {hasActiveMembership ? (
+            <PlusDashboardPanels
+              membership={activeMembership}
+              locked={!isPlus}
+            />
+          ) : (
+            <>
           <div className="scms-md-card">
             <div className="scms-md-card-head">
               <div className="scms-md-headrow">
@@ -603,6 +614,8 @@ export default function MemberDashboardPage() {
               <Icon name="arrow" />
             </Link>
           </div>
+            </>
+          )}
         </div>
 
         <div className="scms-md-col">
