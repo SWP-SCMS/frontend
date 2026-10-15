@@ -12,7 +12,7 @@
 // Ba ô thống kê bấm được: mở hộp danh sách tương ứng.
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Badge, Button, Modal, Spinner, Table } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { useAuth } from '../../../context/useAuth';
@@ -27,7 +27,6 @@ import {
   gymEndOfDayIsoInstant,
   gymLocalDateToIsoInstant,
 } from '../../../utils/gymTime';
-import CoachSessionModal from '../schedule/CoachSessionModal';
 import { SESSION_STATUS_LABELS } from '../schedule/sessionStatus';
 import '../schedule/CoachSchedulePage.css';
 
@@ -107,6 +106,7 @@ function StatCard({ value, label, onClick }) {
 
 export default function CoachDashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [today, setToday] = useState([]); // buổi hôm nay, đã có tên lớp / phòng
   const [upcoming, setUpcoming] = useState([]);
   const [openSessions, setOpenSessions] = useState([]); // buổi còn hiệu lực (chưa có tên lớp)
@@ -117,7 +117,6 @@ export default function CoachDashboardPage() {
 
   // Hộp đang mở: 'today' | 'classes' | 'members' | null.
   const [panel, setPanel] = useState(null);
-  const [selectedSessionId, setSelectedSessionId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -333,7 +332,7 @@ export default function CoachDashboardPage() {
                           variant="outline-danger"
                           onClick={() => {
                             setPanel(null);
-                            setSelectedSessionId(s.id);
+                            navigate(`/coach/schedule/${s.id}`);
                           }}
                         >
                           Chi tiết
@@ -412,12 +411,6 @@ export default function CoachDashboardPage() {
         </Modal.Footer>
       </Modal>
 
-      {selectedSessionId ? (
-        <CoachSessionModal
-          sessionId={selectedSessionId}
-          onHide={() => setSelectedSessionId(null)}
-        />
-      ) : null}
     </div>
   );
 }

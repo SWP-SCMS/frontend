@@ -6,7 +6,7 @@
 //   - GET /coach/class-sessions/{id}    : lấy tên lớp, phòng, loại lớp, cho
 //     từng thẻ (danh sách chưa có các trường này). Mỗi tuần chỉ vài
 //     buổi nên gọi song song.
-// Bấm một thẻ để xem chi tiết + điểm danh (CoachSessionModal).
+// Bấm một thẻ để xem chi tiết + điểm danh (CoachSessionInfoModal).
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -27,7 +27,7 @@ import {
   getWeekRangeDates,
   gymLocalDateToIsoInstant,
 } from '../../../utils/gymTime';
-import CoachSessionModal from './CoachSessionModal';
+import CoachSessionInfoModal from './CoachSessionInfoModal';
 import { SESSION_STATUS_LABELS } from './sessionStatus';
 import '../../member/classSchedule/MemberClassSchedulePage.css';
 
@@ -68,7 +68,7 @@ export default function CoachSchedulePage() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(null); // buổi đang xem trong hộp thông tin
 
   const weekRange = useMemo(() => getWeekRangeDates(calYmd), [calYmd]);
 
@@ -138,7 +138,7 @@ export default function CoachSchedulePage() {
           <h1 className="mcs-title">Lịch phụ trách</h1>
           <p className="mcs-sub">
             Các buổi tập bạn đứng lớp, theo từng tuần. Bấm vào một buổi để xem
-            học viên và điểm danh.
+            chi tiết, danh sách học viên và điểm danh.
           </p>
         </div>
       </header>
@@ -199,11 +199,12 @@ export default function CoachSchedulePage() {
       />
 
       {selectedId ? (
-        <CoachSessionModal
+        <CoachSessionInfoModal
           sessionId={selectedId}
           onHide={() => setSelectedId(null)}
         />
       ) : null}
+
     </div>
   );
 }
