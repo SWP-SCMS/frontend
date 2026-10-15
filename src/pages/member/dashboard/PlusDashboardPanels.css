@@ -1,0 +1,111 @@
+/* Các thẻ dành cho hội viên gói PLUS (.scms-pd-*). Dùng chung khung thẻ
+ * .scms-md-card của trang tổng quan. */
+
+.scms-pd-days {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #dc2626;
+  line-height: 1.1;
+}
+
+.scms-pd-days small {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.scms-pd-bar {
+  height: 8px;
+  margin: 0.75rem 0 0.5rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.scms-pd-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #dc2626;
+}
+
+.scms-pd-muted {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.scms-pd-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scms-pd-list li {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.scms-pd-when {
+  display: flex;
+  flex-direction: column;
+  min-width: 90px;
+  color: #dc2626;
+}
+
+.scms-pd-when span {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.scms-pd-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.scms-pd-feedback {
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 0.25rem !important;
+}
+
+/* Gói BASIC: thẻ bị khóa — nội dung mờ, ghi chú nằm giữa thẻ. */
+.scms-pd-locked {
+  position: relative;
+  overflow: hidden;
+}
+
+.scms-pd-locked > :not(.scms-pd-lock) {
+  filter: blur(3px);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scms-pd-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  color: #0f172a;
+}
+
+.scms-pd-skel {
+  display: block;
+  height: 14px;
+  border-radius: 6px;
+  background: #cbd5e1;
+}
