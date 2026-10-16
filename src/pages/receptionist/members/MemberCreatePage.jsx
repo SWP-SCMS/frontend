@@ -225,7 +225,7 @@ export default function MemberCreatePage() {
       <ErrorAlert
         error={serverError}
         title="Không tạo được hội viên"
-        onClose={error?.response ? () => setServerError(null) : undefined}
+        onClose={serverError?.response ? () => setServerError(null) : undefined}
       />
 
       {/* Note: no noValidate here on purpose — the profileImageUrl input
