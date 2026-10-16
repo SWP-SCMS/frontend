@@ -7,6 +7,7 @@ import { ROLES } from '../../constants';
 
 export const APP_SHELL_NAV_ITEMS = {
   [ROLES.RECEPTIONIST]: [
+    { to: '/reception/check-in', label: 'Check-in trung tâm' },
     { to: '/reception/dashboard', label: 'Tổng quan' },
     { to: '/reception/members', label: 'Tra cứu hội viên' },
     { to: '/reception/members/new', label: 'Đăng ký hội viên' },

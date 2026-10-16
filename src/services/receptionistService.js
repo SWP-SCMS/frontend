@@ -14,6 +14,7 @@
 //   POST  /reception/members                             createReceptionMember
 //   POST  /reception/members/{memberId}/membership-orders createReceptionMembershipOrder
 //   GET   /reception/members/{memberId}/membership-orders/pending resumeReceptionPendingOrder
+//   POST  /reception/center-visits                     createReceptionCenterVisit
 //
 // Sellable offers (US12 `GET /membership-offers`) are intentionally NOT
 // declared here — `membershipService.listActiveOffers` already wraps that
@@ -21,8 +22,8 @@
 //
 // IMPORTANT — the deliberate omissions, updated for US20:
 //   1. No bank-transfer "continue payment" endpoint. US18 owns that flow.
-//   2. No bookings/sessions/attendance. No such endpoint or user story
-//      exists yet. `classService.js` still carries placeholder comments.
+//   2. Center Visit check-in is deliberately separate from bookings,
+//      sessions, and attendance. This service does not mutate any of them.
 //
 // `memberId` everywhere is the public member code (^MB-[0-9]+$), never an
 // account UUID. Read-only fields (accountId, role, status, version) must
@@ -39,6 +40,18 @@ export async function searchReceptionMember({ memberId, phone } = {}) {
   if (memberId && memberId.trim()) params.memberId = memberId.trim();
   if (phone && phone.trim()) params.phone = phone.trim();
   const { data } = await api.get('/reception/members/search', { params });
+  return data;
+}
+
+// POST /api/v1/reception/center-visits
+// `memberId` is the public MB-* Member code, never the account UUID.
+// A retained idempotency key lets an ambiguous retry replay the original
+// Visit instead of creating another Center Visit.
+export async function createReceptionCenterVisit(payload, idempotencyKey) {
+  const config = idempotencyKey
+    ? { headers: { 'Idempotency-Key': idempotencyKey } }
+    : undefined;
+  const { data } = await api.post('/reception/center-visits', payload, config);
   return data;
 }
 

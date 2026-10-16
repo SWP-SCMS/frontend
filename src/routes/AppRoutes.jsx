@@ -81,6 +81,11 @@ const ReceptionistDashboardPage = lazy(
   () => import('../pages/receptionist/dashboard/ReceptionistDashboardPage'),
 );
 
+// Receptionist – Center Check-in (US36)
+const ReceptionCenterCheckInPage = lazy(
+  () => import('../pages/receptionist/checkIn/ReceptionCenterCheckInPage'),
+);
+
 // Receptionist – Member search & profile (US11)
 const ReceptionistMemberListPage = lazy(
   () => import('../pages/receptionist/members/MemberListPage'),
@@ -405,7 +410,8 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/reception/dashboard" replace />} />
+        <Route index element={<Navigate to="/reception/check-in" replace />} />
+        <Route path="check-in" element={withSuspense(<ReceptionCenterCheckInPage />)} />
         <Route path="dashboard" element={withSuspense(<ReceptionistDashboardPage />)} />
         <Route path="members" element={withSuspense(<ReceptionistMemberListPage />)} />
         <Route path="members/new" element={withSuspense(<ReceptionistMemberCreatePage />)} />

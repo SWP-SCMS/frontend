@@ -16,7 +16,7 @@ import { useAuth } from '../context/useAuth';
 // on the correct dashboard instead of being funneled to /member/dashboard.
 const ROLE_HOME = {
   [ROLES.MEMBER]: '/member/dashboard',
-  [ROLES.RECEPTIONIST]: '/reception',
+  [ROLES.RECEPTIONIST]: '/reception/check-in',
   [ROLES.COACH]: '/coach',
   [ROLES.MANAGER]: '/manager/dashboard',
 };
