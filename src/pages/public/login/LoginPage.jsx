@@ -36,6 +36,25 @@ const iconProps = {
   strokeLinejoin: 'round',
 };
 
+// Đổi lỗi đăng nhập của BE thành câu tiếng Việt (xử lý theo status / code, không
+// parse chuỗi detail).
+// BR-AUTH-03/04: sai tài khoản, sai mật khẩu hoặc tài khoản không được phép đăng
+// nhập đều dùng MỘT thông báo chung, không tiết lộ thành phần nào sai.
+function loginErrorMessage(err) {
+  const status = err?.response?.status;
+  const code = err?.response?.data?.code;
+  if (!err?.response) {
+    return 'Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.';
+  }
+  if (status === 401 || status === 403 || code === 'INVALID_CREDENTIALS') {
+    return 'Email / số điện thoại hoặc mật khẩu không đúng.';
+  }
+  if (status === 400) {
+    return 'Vui lòng nhập đầy đủ email / số điện thoại và mật khẩu.';
+  }
+  return 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.';
+}
+
 export default function LoginPage() {
   const { login, isAuthenticated, role, isReady } = useAuth();
   const location = useLocation();
@@ -97,7 +116,7 @@ export default function LoginPage() {
       // here — the guard handles it deterministically on the next render.
       setLoginResolved(true);
     } catch (err) {
-      setError(err);
+      setError(new Error(loginErrorMessage(err)));
     } finally {
       setSubmitting(false);
     }

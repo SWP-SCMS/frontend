@@ -1,0 +1,168 @@
+/* Danh sách gói tập trên trang Gói tập của Hội viên (.scms-mo-*). */
+
+.scms-mo {
+  margin-top: 2rem;
+}
+
+.scms-mo-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.25rem;
+}
+
+.scms-mo-sub {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.scms-mo-note {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.9rem;
+}
+
+.scms-mo-center,
+.scms-mo-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.scms-mo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.scms-mo-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.scms-mo-card.plus {
+  border-color: #dc2626;
+}
+
+.scms-mo-ribbon {
+  position: absolute;
+  top: -0.65rem;
+  right: 1rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.scms-mo-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scms-mo-plan {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.scms-mo-duration {
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.scms-mo-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.scms-mo-desc {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.scms-mo-price {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.scms-mo-card.plus .scms-mo-price {
+  color: #dc2626;
+}
+
+.scms-mo-price small {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.scms-mo-permonth {
+  font-size: 0.8rem;
+  color: #047857;
+}
+
+.scms-mo-feat {
+  list-style: none;
+  margin: 0.5rem 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #334155;
+  flex: 1;
+}
+
+.scms-mo-feat li.off {
+  color: #94a3b8;
+}
+
+.scms-mo-btn {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.scms-mo-btn.primary {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.scms-mo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
