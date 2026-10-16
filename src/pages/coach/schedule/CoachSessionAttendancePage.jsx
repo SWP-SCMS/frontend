@@ -54,6 +54,8 @@ export default function CoachSessionAttendancePage() {
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Lỗi theo từng học viên: { [attendanceId]: thông báo }.
+  const [failures, setFailures] = useState({});
 
   // Trạng thái đang hiển thị = lựa chọn chưa lưu, nếu không có thì giá trị đã lưu.
   function currentStatus(record) {
@@ -73,28 +75,40 @@ export default function CoachSessionAttendancePage() {
 
   const changedCount = Object.keys(draft).length;
 
+  // Học viên bị lỗi khi lưu, kèm tên + mã để Coach biết chính xác là ai.
+  const failedMembers = (session?.members ?? [])
+    .map((m) => {
+      const record = attendanceByMember.get(m.memberId);
+      const message = record?.id ? failures[record.id] : null;
+      return message ? { ...m, message } : null;
+    })
+    .filter(Boolean);
+
   async function handleSave() {
     setSaving(true);
     setSaved(false);
     setError(null);
+    setFailures({});
     const remaining = { ...draft };
-    try {
-      // Gửi lần lượt từng thay đổi; lỗi ở đâu thì dừng ở đó, phần đã lưu
-      // được giữ lại và phần còn lại vẫn nằm trong danh sách chưa lưu.
-      for (const [attendanceId, status] of Object.entries(draft)) {
+    const failed = {};
+    // Gửi lần lượt từng học viên. Học viên nào lỗi (ví dụ chưa check-in với
+    // lễ tân) thì ghi lại đúng người đó và VẪN tiếp tục lưu những người còn
+    // lại; người lỗi vẫn nằm trong danh sách chưa lưu.
+    for (const [attendanceId, status] of Object.entries(draft)) {
+      try {
         const updated = await updateAttendance(sessionId, attendanceId, status);
         setAttendance((list) =>
           list.map((a) => (a.id === attendanceId ? { ...a, ...updated } : a)),
         );
         delete remaining[attendanceId];
+      } catch (err) {
+        failed[attendanceId] = toAttendanceError(err).message || 'Không lưu được.';
       }
-      setSaved(true);
-    } catch (err) {
-      setError(toAttendanceError(err));
-    } finally {
-      setDraft(remaining);
-      setSaving(false);
     }
+    setDraft(remaining);
+    setFailures(failed);
+    setSaved(Object.keys(failed).length === 0);
+    setSaving(false);
   }
 
   return (
@@ -109,6 +123,23 @@ export default function CoachSessionAttendancePage() {
       {saved ? (
         <Alert variant="success" dismissible onClose={() => setSaved(false)}>
           Đã lưu điểm danh.
+        </Alert>
+      ) : null}
+      {failedMembers.length > 0 ? (
+        <Alert variant="danger" dismissible onClose={() => setFailures({})}>
+          <Alert.Heading className="h6 mb-1">
+            Chưa lưu được cho {failedMembers.length} học viên
+          </Alert.Heading>
+          <ul className="mb-0">
+            {failedMembers.map((f) => (
+              <li key={f.memberId}>
+                <strong>
+                  {f.fullName} ({f.memberCode})
+                </strong>
+                : {f.message}
+              </li>
+            ))}
+          </ul>
         </Alert>
       ) : null}
 
@@ -177,6 +208,11 @@ export default function CoachSessionAttendancePage() {
                               onChange={() => choose(record, 'ABSENT')}
                             />
                           </div>
+                          {record?.id && failures[record.id] ? (
+                            <div className="text-danger small mt-1">
+                              {failures[record.id]}
+                            </div>
+                          ) : null}
                         </td>
                       </tr>
                     );
