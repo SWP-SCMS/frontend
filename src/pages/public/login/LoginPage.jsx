@@ -20,7 +20,7 @@ import '../auth/shared-auth.css';
 
 const ROLE_HOME = {
   [ROLES.MEMBER]: '/member/dashboard',
-  [ROLES.RECEPTIONIST]: '/reception',
+  [ROLES.RECEPTIONIST]: '/reception/check-in',
   [ROLES.COACH]: '/coach',
   // Manager goes straight to the dashboard so they don't land on a
   // bare redirect at "/manager" before bouncing again.
