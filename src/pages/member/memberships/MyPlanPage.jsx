@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import MemberOfferSection from './MemberOfferSection';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import { formatDate, formatPrice } from '../../../utils';
 import './MyPlanPage.css';
@@ -106,23 +107,7 @@ export default function MyPlanPage() {
 
       {!activeMembership ? (
         error ? null : (
-          <div className="scms-my-plan-empty">
-            <span className="scms-my-plan-empty-icon" aria-hidden="true">
-              <svg
-                width="40"
-                height="40"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <path d="M6.5 6.5l11 11" />
-                <path d="m3 10 7-7" />
-                <path d="m14 21 7-7" />
-                <path d="m2 6 4-4" />
-                <path d="m18 22 4-4" />
-              </svg>
-            </span>
+          <div className="scms-my-plan-notice">
             <h2>
               {hasAny ? 'Gói tập của bạn đã hết hạn' : 'Bạn chưa có gói tập'}
             </h2>
@@ -131,14 +116,20 @@ export default function MyPlanPage() {
                 ? 'Hãy đăng ký gói mới để tiếp tục sử dụng khu vực tập luyện.'
                 : 'Đăng ký gói tập đầu tiên để bắt đầu tập luyện tại SCMS.'}
             </p>
-            <Link to="/offers" className="scms-my-plan-empty-cta">
-              Xem các gói tập
-            </Link>
           </div>
         )
       ) : (
         <PlanCard membership={activeMembership} />
       )}
+
+      {/* BR-MEM-08: đang có gói ACTIVE thì chưa mua được gói mới. */}
+      <MemberOfferSection
+        blockedReason={
+          activeMembership
+            ? 'Bạn đang có gói tập còn hiệu lực. Bạn có thể đăng ký gói mới sau khi gói hiện tại hết hạn.'
+            : null
+        }
+      />
     </div>
   );
 }
@@ -228,9 +219,9 @@ function PlanCard({ membership }) {
       </dl>
 
       <div className="scms-my-plan-actions">
-        <Link to="/offers" className="scms-my-plan-btn ghost">
+        <a href="#member-offers" className="scms-my-plan-btn ghost">
           Nâng cấp / gia hạn
-        </Link>
+        </a>
         <Link to="/member/memberships" className="scms-my-plan-btn">
           Xem lịch sử thanh toán
         </Link>
