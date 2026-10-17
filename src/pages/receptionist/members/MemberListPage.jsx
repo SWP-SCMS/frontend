@@ -13,7 +13,7 @@
 //   - INACTIVE accounts are reported as 404 on purpose.
 
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Alert, Button, Col, Form, InputGroup, Row, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -28,6 +28,7 @@ const STATUS_BADGE = {
 };
 
 export default function MemberListPage() {
+  const location = useLocation();
   const [params, setParams] = useSearchParams();
 
   // 'memberId' | 'phone' — mirrors the mutually-exclusive backend params.
@@ -253,6 +254,15 @@ export default function MemberListPage() {
             <div className="mt-3 d-flex flex-wrap gap-2">
               <Button as={Link} to={`/reception/members/${member.memberId}`} variant="outline-danger" size="sm">
                 Xem hồ sơ đầy đủ
+              </Button>
+              <Button
+                as={Link}
+                to={`/reception/members/${member.memberId}/bookings`}
+                state={{ from: `${location.pathname}${location.search}` }}
+                variant="outline-danger"
+                size="sm"
+              >
+                Đặt / quản lý lịch
               </Button>
               <Button as={Link} to={`/reception/orders/new?memberId=${member.memberId}`} variant="outline-secondary" size="sm">
                 Tạo đơn gói tập

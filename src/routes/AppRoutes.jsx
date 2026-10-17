@@ -93,6 +93,12 @@ const ReceptionistMemberListPage = lazy(
 const ReceptionistMemberDetailPage = lazy(
   () => import('../pages/receptionist/members/MemberDetailPage'),
 );
+const ReceptionistMemberBookingPage = lazy(
+  () =>
+    import(
+      '../pages/receptionist/bookings/ReceptionistMemberBookingPage'
+    ),
+);
 
 // Receptionist – Create a Member (US15)
 const ReceptionistMemberCreatePage = lazy(
@@ -415,6 +421,10 @@ export default function AppRoutes() {
         <Route path="dashboard" element={withSuspense(<ReceptionistDashboardPage />)} />
         <Route path="members" element={withSuspense(<ReceptionistMemberListPage />)} />
         <Route path="members/new" element={withSuspense(<ReceptionistMemberCreatePage />)} />
+        <Route
+          path="members/:memberId/bookings"
+          element={withSuspense(<ReceptionistMemberBookingPage />)}
+        />
         <Route path="members/:memberId" element={withSuspense(<ReceptionistMemberDetailPage />)} />
         <Route path="membership-offers" element={withSuspense(<ReceptionistMembershipOfferListPage />)} />
         <Route path="orders/new" element={withSuspense(<ReceptionistMembershipOrderCreatePage />)} />
