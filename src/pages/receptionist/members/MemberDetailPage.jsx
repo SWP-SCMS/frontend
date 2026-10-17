@@ -36,7 +36,7 @@
 //     semantics byte-for-byte.
 
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Alert,
   Button,
@@ -158,6 +158,7 @@ function profileToEditableForm(profile) {
 export default function MemberDetailPage() {
   const { memberId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ----- Non-form page state (intentionally OUT of RHF) -----
   const [profile, setProfile] = useState(null);
@@ -388,7 +389,7 @@ export default function MemberDetailPage() {
             </span>
           </div>
         </div>
-        <div className="d-flex gap-2">
+        <div className="d-flex flex-wrap gap-2">
           <Button
             variant="outline-secondary"
             size="sm"
@@ -399,6 +400,15 @@ export default function MemberDetailPage() {
           </Button>
           <Button as={Link} to={`/reception/orders/new?memberId=${profile.memberId}`} variant="outline-danger" size="sm">
             Tạo đơn gói tập
+          </Button>
+          <Button
+            as={Link}
+            to={`/reception/members/${profile.memberId}/bookings`}
+            state={{ from: `${location.pathname}${location.search}` }}
+            variant="outline-danger"
+            size="sm"
+          >
+            Đặt / quản lý lịch
           </Button>
           {/* US20 – cash at the counter. Kept next to the bank-transfer
               entry point so staff pick the right one without hunting. */}
