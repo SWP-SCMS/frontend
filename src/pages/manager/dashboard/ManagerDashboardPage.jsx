@@ -28,32 +28,6 @@ function Metric({ label, value, note, to }) {
   );
 }
 
-function AttentionItem({ count, title, description, to, clearText }) {
-  const numericCount = Number(count) || 0;
-  const needsAttention = numericCount > 0;
-
-  return (
-    <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 py-3 border-bottom">
-      <div className="d-flex align-items-start gap-3">
-        <span
-          className={`badge rounded-pill mt-1 ${needsAttention ? 'text-bg-warning' : 'text-bg-success'}`}
-        >
-          {numericCount}
-        </span>
-        <div>
-          <div className="fw-semibold">{title}</div>
-          <div className="text-muted small">
-            {needsAttention ? description : clearText}
-          </div>
-        </div>
-      </div>
-      <Button as={Link} to={to} variant="outline-secondary" size="sm">
-        Kiểm tra
-      </Button>
-    </div>
-  );
-}
-
 export default function ManagerDashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
@@ -121,64 +95,36 @@ export default function ManagerDashboardPage() {
             />
           </Row>
 
-          <Row className="g-3">
-            <Col xl={7}>
-              <Card className="border-0 shadow-sm h-100">
-                <Card.Body>
-                  <h2 className="h5 fw-bold mb-1">Việc cần chú ý</h2>
-                  <p className="text-muted small mb-1">
-                    Những trạng thái nên được kiểm tra trong ca vận hành hiện tại.
-                  </p>
-                  <AttentionItem
-                    count={data.centerVisits?.openVisits}
-                    title="Lượt vào chưa checkout"
-                    description="Cần kiểm tra các hội viên chưa được ghi nhận rời trung tâm."
-                    clearText="Không có lượt vào nào đang mở."
-                    to="/manager/reports"
-                  />
-                  <AttentionItem
-                    count={data.members?.suspendedMembers}
-                    title="Tài khoản hội viên đang tạm khóa"
-                    description="Kiểm tra trạng thái và lý do tạm khóa nếu cần xử lý."
-                    clearText="Không có hội viên nào đang tạm khóa."
-                    to="/manager/members"
-                  />
-                  <AttentionItem
-                    count={data.bookings?.cancelledBookings}
-                    title="Lượt đặt đã hủy"
-                    description="Xem báo cáo chi tiết nếu số lượt hủy có dấu hiệu bất thường."
-                    clearText="Chưa ghi nhận lượt đặt bị hủy."
-                    to="/manager/reports"
-                  />
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col xl={5}>
-              <Card className="border-0 shadow-sm h-100">
-                <Card.Body>
-                  <h2 className="h5 fw-bold mb-1">Đi nhanh</h2>
-                  <p className="text-muted small mb-3">
-                    Mở các khu vực quản lý thường dùng.
-                  </p>
-                  <div className="d-grid gap-2">
-                    <Button as={Link} to="/manager/class-sessions" variant="outline-danger">
-                      Quản lý buổi tập
-                    </Button>
-                    <Button as={Link} to="/manager/members" variant="outline-danger">
-                      Quản lý hội viên
-                    </Button>
-                    <Button as={Link} to="/manager/reports" variant="danger">
-                      Xem báo cáo chi tiết
-                    </Button>
-                    <Button as={Link} to="/manager/audit-events" variant="outline-secondary">
-                      Lịch sử hoạt động
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+          <Card className="border-0 shadow-sm">
+            <Card.Body>
+              <h2 className="h5 fw-bold mb-1">Đi nhanh</h2>
+              <p className="text-muted small mb-3">
+                Mở các khu vực quản lý thường dùng.
+              </p>
+              <Row className="g-2">
+                <Col sm={6} xl={3}>
+                  <Button as={Link} to="/manager/class-sessions" variant="outline-danger" className="w-100">
+                    Quản lý buổi tập
+                  </Button>
+                </Col>
+                <Col sm={6} xl={3}>
+                  <Button as={Link} to="/manager/members" variant="outline-danger" className="w-100">
+                    Quản lý hội viên
+                  </Button>
+                </Col>
+                <Col sm={6} xl={3}>
+                  <Button as={Link} to="/manager/reports" variant="danger" className="w-100">
+                    Xem báo cáo chi tiết
+                  </Button>
+                </Col>
+                <Col sm={6} xl={3}>
+                  <Button as={Link} to="/manager/audit-events" variant="outline-secondary" className="w-100">
+                    Lịch sử hoạt động
+                  </Button>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
         </>
       ) : null}
     </div>

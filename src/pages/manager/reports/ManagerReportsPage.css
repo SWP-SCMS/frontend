@@ -57,7 +57,7 @@
 
 .manager-report-metric {
   width: 220px;
-  height: 126px;
+  height: 148px;
   box-sizing: border-box;
   padding: 1rem;
   border: 1px solid #e5e7eb;
@@ -101,6 +101,7 @@
   color: #737b86;
   font-size: 0.75rem;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .manager-report-progress {
