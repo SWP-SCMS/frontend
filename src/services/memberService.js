@@ -40,6 +40,13 @@ export async function updateMyProfile(patch) {
   return data;
 }
 
+export async function uploadMyProfileImage(file) {
+  const body = new FormData();
+  body.append('file', file);
+  const { data } = await api.post('/members/me/profile/image', body);
+  return data;
+}
+
 // POST /api/v1/members/me/membership-orders
 // Bank-transfer only; cash flow goes through Receptionist services.
 export async function createMyMembershipOrder({ offerId }) {

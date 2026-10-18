@@ -73,6 +73,16 @@ export async function updateReceptionMemberProfile(memberId, patch) {
   return data;
 }
 
+export async function uploadReceptionMemberProfileImage(memberId, file) {
+  const body = new FormData();
+  body.append('file', file);
+  const { data } = await api.post(
+    `/reception/members/${encodeURIComponent(memberId)}/profile/image`,
+    body,
+  );
+  return data;
+}
+
 // POST /api/v1/reception/members/{memberId}/reset-password
 // 204 No Content — the caller gets no body and must not expect a password.
 export async function resetReceptionMemberPassword(memberId) {
@@ -177,16 +187,13 @@ export async function cancelMembershipOrder(orderId, { reason }) {
 // cannot for a receipt whose order it cannot read — see the note on
 // `getReceptionMembershipHistory` in the page.
 //
-// Authorization (as of backend commit 4012273, "allow receptionist bank
-// transfer receipt access"):
+// Authorization:
 //   MEMBER       -> only their own receipts
 //   COACH        -> 403 always
-//   RECEPTIONIST -> any receipt
+//   RECEPTIONIST -> only receipts processed by that same receptionist
 //   MANAGER      -> any receipt
-// So a 403 here means either a coach, or a member reading someone else's
-// receipt. There is no longer a "bank-transfer needs a manager" case — an
-// earlier version of this file documented that, and it was wrong once
-// PaymentService.receipt() dropped its CASH-only check.
+// PAYMENT_FORBIDDEN is therefore a normal authorization outcome when a
+// receptionist opens a receipt handled by another receptionist.
 export async function getReceipt(receiptId) {
   const { data } = await api.get(`/receipts/${receiptId}`);
   return data;
@@ -199,11 +206,8 @@ export async function getReceipt(receiptId) {
 // the backend looks up member_profiles.member_code and 404s if it is unknown
 // or does not belong to a MEMBER account.
 //
-// RECEPTIONIST and MANAGER (backend commit 63badea widened this from
-// RECEPTIONIST only: SecurityConfiguration uses hasAnyRole and the service
-// calls ensureAny(actor)). A coach is still refused. The individual
-// getReceipt() is open to any non-coach, so this list is the only way to
-// enumerate a member's receipts.
+// A receptionist receives only receipts processed by their own account;
+// a manager receives the complete member receipt history.
 export async function getReceptionMemberReceipts(memberId) {
   const { data } = await api.get(`/reception/members/${memberId}/receipts`);
   return data;

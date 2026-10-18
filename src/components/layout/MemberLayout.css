@@ -47,8 +47,29 @@
 .scms-ml-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.65rem;
   padding: 0 1rem;
+}
+
+.scms-ml-navgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.scms-ml-navgroup-label {
+  padding: 0.35rem 0.55rem;
+  color: #a8a8b3;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.scms-ml-navgroup-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .scms-ml-navitem {
@@ -78,6 +99,7 @@ a.scms-ml-navitem:hover {
 /* Nút "Đăng xuất" trong sidebar: dáng giống mục menu nhưng là <button>. */
 .scms-ml-navbtn {
   width: 100%;
+  margin-top: 0.25rem;
   border: 0;
   background: none;
   text-align: left;

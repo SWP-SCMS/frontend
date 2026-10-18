@@ -35,6 +35,7 @@ import {
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
+import BulkCancelSessionsModal from '../../../components/manager/BulkCancelSessionsModal';
 import { listClasses } from '../../../services/sportClassService';
 import { listRooms } from '../../../services/roomService';
 import { searchStaffAccounts } from '../../../services/staffAccountService';
@@ -42,6 +43,7 @@ import {
   listManagerSessions,
 } from '../../../services/classSessionService';
 import './ManagerSessionListPage.css';
+import { getGymZoneTodayIsoDate } from '../../../utils/gymTime';
 
 // BE-enforced page size cap for staff-accounts (1..100).
 const COACH_PAGE_SIZE = 100;
@@ -96,11 +98,7 @@ const VIEW_OPTIONS = [
 // boundary Instants we send to the BE are explicitly anchored at
 // UTC+07:00.
 function getLocalTodayIsoDate() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  return getGymZoneTodayIsoDate();
 }
 
 // Format an ISO Instant string in Asia/Ho_Chi_Minh.
@@ -431,6 +429,10 @@ export default function ManagerSessionListPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showBulkCancel, setShowBulkCancel] = useState(false);
+  const [bulkNotice, setBulkNotice] = useState(null);
+  const [reloadVersion, setReloadVersion] = useState(0);
 
   // Calendar view state (concatenated content across all pages of the bounded week).
   const [calSessions, setCalSessions] = useState([]);
@@ -510,7 +512,13 @@ export default function ManagerSessionListPage() {
     baseFilterParams,
     listPage,
     listRangeIso,
+    reloadVersion,
   ]);
+
+  useEffect(() => {
+    const visible = new Set(sessions.map((session) => session.id));
+    setSelectedIds((current) => current.filter((id) => visible.has(id)));
+  }, [sessions]);
 
   // Whenever calendar-mode URL state changes, fetch EVERY page of the bounded week.
   useEffect(() => {
@@ -692,6 +700,17 @@ export default function ManagerSessionListPage() {
     Boolean(toYmd);
 
   const listTotalPages = totalPages || 0;
+  const activeClassName = classId ? classNameById.get(classId) : null;
+  const selectedSessions = useMemo(
+    () =>
+      sessions
+        .filter((session) => selectedIds.includes(session.id))
+        .map((session) => ({
+          ...session,
+          className: classNameById.get(session.classId) || null,
+        })),
+    [classNameById, selectedIds, sessions],
+  );
 
   return (
     <div>
@@ -849,6 +868,26 @@ export default function ManagerSessionListPage() {
         </Card.Body>
       </Card>
 
+      {classId ? (
+        <div className="d-flex align-items-center gap-2 mb-3">
+          <span className="badge bg-danger-subtle text-danger-emphasis">
+            Lớp: {activeClassName || classId}
+          </span>
+          <Button
+            size="sm"
+            variant="link"
+            className="p-0"
+            onClick={() => onFilterChange('classId', '')}
+          >
+            Bỏ lọc lớp
+          </Button>
+        </div>
+      ) : null}
+
+      {bulkNotice ? (
+        <div className="alert alert-success py-2 mb-3">{bulkNotice}</div>
+      ) : null}
+
       {/* ----- Per-resource lookup errors ----- */}
       {classesError ? (
         <ErrorAlert
@@ -912,6 +951,9 @@ export default function ManagerSessionListPage() {
           totalFiltersActive={totalFiltersActive}
           onClearFilters={clearAllFilters}
           sessionBrowserFrom={sessionBrowserFrom}
+          selectedIds={selectedIds}
+          onSelectedIdsChange={setSelectedIds}
+          onOpenBulkCancel={() => setShowBulkCancel(true)}
         />
       ) : null}
 
@@ -938,6 +980,18 @@ export default function ManagerSessionListPage() {
           sessionBrowserFrom={sessionBrowserFrom}
         />
       ) : null}
+
+      <BulkCancelSessionsModal
+        show={showBulkCancel}
+        sessions={selectedSessions}
+        onHide={() => setShowBulkCancel(false)}
+        onApplied={(result) => {
+          setShowBulkCancel(false);
+          setSelectedIds([]);
+          setBulkNotice(`Đã hủy ${result.cancelledCount} buổi tập.`);
+          setReloadVersion((value) => value + 1);
+        }}
+      />
     </div>
   );
 }
@@ -962,11 +1016,29 @@ function ListView({
   totalFiltersActive,
   onClearFilters,
   sessionBrowserFrom,
+  selectedIds,
+  onSelectedIdsChange,
+  onOpenBulkCancel,
 }) {
   const hasSessions = (sessions || []).length > 0;
   const safePage = Math.max(0, page | 0);
   const safeTotalPages = Math.max(0, totalPages | 0);
   const pageDisplay = safeTotalPages > 0 ? safePage + 1 : 0;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60 * 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const selectableIds = (sessions || [])
+    .filter(
+      (session) =>
+        session.status === 'SCHEDULED' &&
+        new Date(session.startTime).getTime() > now,
+    )
+    .map((session) => session.id);
+  const allSelected =
+    selectableIds.length > 0 &&
+    selectableIds.every((id) => selectedIds.includes(id));
 
   let body;
   if (loading) {
@@ -1009,6 +1081,16 @@ function ListView({
       <Table hover responsive className="align-middle mb-0">
         <thead className="table-light">
           <tr>
+            <th style={{ width: 42 }}>
+              <Form.Check
+                aria-label="Chọn tất cả buổi đủ điều kiện trên trang"
+                checked={allSelected}
+                disabled={selectableIds.length === 0}
+                onChange={(event) =>
+                  onSelectedIdsChange(event.target.checked ? selectableIds : [])
+                }
+              />
+            </th>
             <th>Ngày</th>
             <th>Thời gian</th>
             <th>Lớp học</th>
@@ -1032,6 +1114,20 @@ function ListView({
               : '—';
             return (
               <tr key={s.id}>
+                <td>
+                  <Form.Check
+                    aria-label={`Chọn buổi tập ${className}`}
+                    checked={selectedIds.includes(s.id)}
+                    disabled={!selectableIds.includes(s.id)}
+                    onChange={(event) =>
+                      onSelectedIdsChange((current) =>
+                        event.target.checked
+                          ? [...new Set([...current, s.id])]
+                          : current.filter((id) => id !== s.id),
+                      )
+                    }
+                  />
+                </td>
                 <td>{formatGymDate(s.startTime)}</td>
                 <td>
                   {formatGymTime(s.startTime)} – {formatGymTime(s.endTime)}
@@ -1069,6 +1165,19 @@ function ListView({
 
   return (
     <div className="card border-0 shadow-sm">
+      <div className="px-3 py-2 border-bottom d-flex justify-content-between align-items-center gap-2">
+        <span className="small text-muted">
+          Đã chọn {selectedIds.length} buổi đủ điều kiện trên trang hiện tại.
+        </span>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={onOpenBulkCancel}
+          disabled={loading || selectedIds.length === 0}
+        >
+          Hủy các buổi đã chọn
+        </Button>
+      </div>
       <div className="table-responsive">{body}</div>
       <div className="px-3 py-2 border-top d-flex flex-wrap justify-content-between align-items-center text-muted small">
         <div>

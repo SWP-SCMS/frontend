@@ -8,11 +8,12 @@
 // createdAt / updatedAt / version are NOT in the response DTO.
 
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import { getRoom } from '../../../services/roomService';
+import { getRoom, listRoomSuspensions } from '../../../services/roomService';
+import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 
 const STATUS_BADGE = {
   ACTIVE: 'bg-success-subtle text-success-emphasis',
@@ -21,19 +22,31 @@ const STATUS_BADGE = {
 
 export default function RoomDetailPage() {
   const { roomId } = useParams();
+  const location = useLocation();
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [suspensions, setSuspensions] = useState([]);
+  const [suspensionsError, setSuspensionsError] = useState(null);
+  const [loadedAt, setLoadedAt] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSuspensionsError(null);
     try {
       const data = await getRoom(roomId);
       setRoom(data);
+      try {
+        setSuspensions(await listRoomSuspensions(roomId));
+      } catch (suspensionError) {
+        setSuspensions([]);
+        setSuspensionsError(suspensionError);
+      }
     } catch (err) {
       setError(err);
     } finally {
+      setLoadedAt(Date.now());
       setLoading(false);
     }
   }, [roomId]);
@@ -68,6 +81,10 @@ export default function RoomDetailPage() {
     );
   }
 
+  const extendableSuspension = suspensions
+    .filter((item) => new Date(item.endTime).getTime() > loadedAt)
+    .sort((left, right) => new Date(right.endTime) - new Date(left.endTime))[0];
+
   return (
     <div>
       <Link
@@ -83,6 +100,15 @@ export default function RoomDetailPage() {
           <p className="text-muted mb-0">Phòng tập</p>
         </div>
         <div className="d-flex gap-2 flex-wrap">
+          {room.status === 'ACTIVE' ? (
+            <Button
+              as={Link}
+              to={`/manager/rooms/${room.id}/impact`}
+              variant="danger"
+            >
+              Tạm ngưng / ngưng hoạt động
+            </Button>
+          ) : null}
           <Button
             as={Link}
             to={`/manager/rooms/${room.id}/edit`}
@@ -92,6 +118,10 @@ export default function RoomDetailPage() {
           </Button>
         </div>
       </div>
+
+      {location.state?.notice ? (
+        <Alert variant="success">{location.state.notice}</Alert>
+      ) : null}
 
       <Row className="g-3 mb-3">
         <Col md={6}>
@@ -127,6 +157,39 @@ export default function RoomDetailPage() {
           </Card>
         </Col>
       </Row>
+
+      <Card className="border-0 shadow-sm">
+        <Card.Body>
+          <h2 className="h6 text-uppercase text-muted">Lịch sử tạm ngưng</h2>
+          {suspensionsError ? (
+            <ErrorAlert error={suspensionsError} title="Không tải được lịch sử tạm ngưng" />
+          ) : suspensions.length === 0 ? (
+            <p className="text-muted mb-0">Chưa có khoảng tạm ngưng nào.</p>
+          ) : (
+            <ul className="mb-0">
+              {suspensions.map((item) => (
+                <li key={item.id} className="mb-2">
+                  {formatGymDate(item.startTime)} · {formatGymTime(item.startTime)}
+                  {' → '}
+                  {formatGymDate(item.endTime)} · {formatGymTime(item.endTime)}
+                  {item.reason ? <div className="small text-muted">{item.reason}</div> : null}
+                  {room.status === 'ACTIVE' && item.id === extendableSuspension?.id ? (
+                    <Button
+                      as={Link}
+                      to={`/manager/rooms/${room.id}/impact?extensionSuspensionId=${encodeURIComponent(item.id)}`}
+                      variant="link"
+                      size="sm"
+                      className="p-0 mt-1"
+                    >
+                      Gia hạn tạm ngưng
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card.Body>
+      </Card>
     </div>
   );
 }

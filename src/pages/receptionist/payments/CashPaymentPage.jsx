@@ -1,4 +1,4 @@
-// Receptionist – Collect a cash payment at the front desk (US20).
+// Receptionist – Unified membership sale at the front desk.
 //
 // BE: POST /api/v1/reception/members/{memberId}/cash-payments
 //       body: { offerId }
@@ -27,13 +27,12 @@
 //     payment window and nothing to reconcile later, so this page has no
 //     expiry logic at all.
 //
-// Flow: this page is reachable from the sidebar with NO member selected, so it
-// owns the lookup itself (US11 search) instead of bouncing the user to the
-// member list. The `?memberId=` deep link from a member profile is still
-// honoured for the "Thu tiền mặt" button on that page.
+// Both payment choices live in one receptionist workflow, but still call their
+// separate backend contracts. Receptionist must never call the Member-only
+// SePay initialization endpoint.
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Alert,
   Button,
@@ -50,6 +49,7 @@ import {
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import {
   cancelMembershipOrder,
+  createReceptionMembershipOrder,
   createReceptionCashPayment,
   getReceptionPendingOrder,
   searchReceptionMember,
@@ -76,8 +76,14 @@ const MEMBER_STATUS_LABELS = {
   INACTIVE: 'Ngừng hoạt động',
 };
 
+const PAYMENT_METHOD = {
+  BANK_TRANSFER: 'BANK_TRANSFER',
+  CASH: 'CASH',
+};
+
 export default function CashPaymentPage() {
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
   const memberId = params.get('memberId') || '';
 
   // ---- Lookup state (US11) ----
@@ -94,11 +100,17 @@ export default function CashPaymentPage() {
   const [member, setMember] = useState(null);
   const [offers, setOffers] = useState([]);
   const [offerId, setOfferId] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState(
+    params.get('method') === 'cash' || location.pathname.endsWith('/payments/cash')
+      ? PAYMENT_METHOD.CASH
+      : PAYMENT_METHOD.BANK_TRANSFER,
+  );
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState(null);
+  const [transferOrder, setTransferOrder] = useState(null);
   // PaymentResultResponse KHÔNG trả về tên gói hay số tiền (chỉ có
   // paymentId, orderId, status, method, membershipId, receiptId, paidAt).
   // Nên giữ lại thông tin offer lúc bấm xác nhận, trước khi clear lựa chọn.
@@ -134,6 +146,7 @@ export default function CashPaymentPage() {
     setMember(null);
     setPendingOrder(null);
     setReceipt(null);
+    setTransferOrder(null);
     setPurchased(null);
     setOfferId('');
 
@@ -213,6 +226,7 @@ export default function CashPaymentPage() {
     setSearchError(null);
     setMember(null);
     setReceipt(null);
+    setTransferOrder(null);
     setPurchased(null);
     setError(null);
   }
@@ -227,19 +241,26 @@ export default function CashPaymentPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await createReceptionCashPayment(memberId, { offerId });
-      setReceipt(result);
       setPurchased(selectedOffer);
-      setPendingOrder(null);
-      setOfferId('');
-      // The member now holds an ACTIVE membership, so any further attempt is a
-      // guaranteed 409. Refresh so the page reflects the new state instead of
-      // offering the same action again.
-      try {
-        const refreshed = await searchReceptionMember({ memberId });
-        setMember(refreshed);
-      } catch {
-        // Non-fatal: the receipt is what matters most.
+      if (paymentMethod === PAYMENT_METHOD.CASH) {
+        const result = await createReceptionCashPayment(memberId, { offerId });
+        setReceipt(result);
+        setTransferOrder(null);
+        setPendingOrder(null);
+        setOfferId('');
+        // Cash activates the membership immediately. Refresh the canonical
+        // member state so the UI no longer offers another purchase.
+        try {
+          const refreshed = await searchReceptionMember({ memberId });
+          setMember(refreshed);
+        } catch {
+          // Non-fatal: the receipt is what matters most.
+        }
+      } else {
+        const order = await createReceptionMembershipOrder(memberId, { offerId });
+        setTransferOrder(order);
+        setReceipt(null);
+        setPendingOrder(order);
       }
     } catch (err) {
       const code = err?.response?.data?.code;
@@ -274,6 +295,7 @@ export default function CashPaymentPage() {
       // the cash form becomes usable. Re-read rather than assume, in case the
       // backend reported a race.
       setPendingOrder(null);
+      setTransferOrder(null);
       setCancelling(false);
       setCancelReason('');
     } catch (err) {
@@ -299,9 +321,9 @@ export default function CashPaymentPage() {
     return (
       <div>
         <header className="mb-3">
-          <h1 className="h3 fw-bold mb-1">Thu tiền mặt</h1>
+          <h1 className="h3 fw-bold mb-1">Tạo đơn gói tập</h1>
           <p className="text-muted mb-0">
-            Tìm hội viên, chọn gói tập và xác nhận đã nhận tiền mặt.
+            Tìm hội viên, chọn gói tập và phương thức thanh toán.
           </p>
         </header>
 
@@ -392,7 +414,7 @@ export default function CashPaymentPage() {
     return (
       <div>
         <header className="mb-3">
-          <h1 className="h3 fw-bold mb-1">Thu tiền mặt</h1>
+          <h1 className="h3 fw-bold mb-1">Tạo đơn gói tập</h1>
         </header>
         <div className="text-center py-5">
           <Spinner animation="border" variant="danger" />
@@ -406,7 +428,7 @@ export default function CashPaymentPage() {
     return (
       <div>
         <header className="mb-3">
-          <h1 className="h3 fw-bold mb-1">Thu tiền mặt</h1>
+          <h1 className="h3 fw-bold mb-1">Tạo đơn gói tập</h1>
         </header>
         <ErrorAlert error={error} title="Không tải được thông tin hội viên" />
         <div className="d-flex gap-2">
@@ -425,11 +447,50 @@ export default function CashPaymentPage() {
   return (
     <div>
       <header className="mb-3">
-        <h1 className="h3 fw-bold mb-1">Thu tiền mặt</h1>
+        <h1 className="h3 fw-bold mb-1">Tạo đơn gói tập</h1>
         <p className="text-muted mb-0">
-          Bước 2 — Chọn gói và xác nhận đã nhận tiền mặt.
+          Bước 2 — Chọn gói và phương thức thanh toán.
         </p>
       </header>
+
+      {transferOrder ? (
+        <Alert variant="success">
+          <Alert.Heading className="h6 mb-2">Đã tạo đơn chuyển khoản</Alert.Heading>
+          <p className="small mb-2">
+            Mã đơn <strong>{transferOrder.orderNumber}</strong> cho gói{' '}
+            <strong>{transferOrder.offerName}</strong> đã được tạo ở trạng thái chờ
+            thanh toán.
+          </p>
+          <p className="small text-muted mb-3">
+            Hướng dẫn hội viên thực hiện chuyển khoản theo thông tin thanh toán hiện
+            có, sau đó kiểm tra kết quả tại màn hình Đối soát.
+          </p>
+          <div className="d-flex flex-wrap gap-2">
+            <Button as={Link} to="/reception/payments/reconcile" variant="danger" size="sm">
+              Mở Đối soát
+            </Button>
+            <Button
+              type="button"
+              variant="outline-danger"
+              size="sm"
+              onClick={() => setCancelling(true)}
+            >
+              Hủy đơn / đổi phương thức
+            </Button>
+            <Button
+              as={Link}
+              to={`/reception/members/${memberId}`}
+              variant="outline-secondary"
+              size="sm"
+            >
+              Về hồ sơ hội viên
+            </Button>
+            <Button variant="outline-danger" size="sm" onClick={handleClearMember}>
+              Tạo đơn cho hội viên khác
+            </Button>
+          </div>
+        </Alert>
+      ) : null}
 
       {receipt ? (
         <Alert variant="success">
@@ -517,7 +578,7 @@ export default function CashPaymentPage() {
               size="sm"
               onClick={handleClearMember}
             >
-              Thu tiền cho hội viên khác
+              Tạo đơn cho hội viên khác
             </Button>
           </div>
         </Alert>
@@ -527,18 +588,18 @@ export default function CashPaymentPage() {
         <Alert variant="danger">
           Tài khoản đang ở trạng thái{' '}
           <strong>{MEMBER_STATUS_LABELS[memberStatus] || memberStatus}</strong> nên
-          không thể thu tiền. Hãy kích hoạt lại tài khoản trước.
+          không thể tạo đơn hoặc thanh toán. Hãy kích hoạt lại tài khoản trước.
         </Alert>
       ) : null}
 
-      {blockedByPendingOrder ? (
+      {blockedByPendingOrder && !transferOrder ? (
         <Alert variant="warning">
           <Alert.Heading className="h6 mb-1">Đơn đang chờ thanh toán</Alert.Heading>
           <div className="small mb-2">
             Hội viên đang có đơn chưa thanh toán (
             <strong>{pendingOrder.orderNumber}</strong> — {pendingOrder.offerName},{' '}
             {formatPrice(pendingOrder.priceAmount, pendingOrder.currencyCode)}) nên
-            không thể tạo giao dịch tiền mặt mới.
+            không thể tạo đơn mới.
           </div>
           {pendingOrder.paymentMethod === 'CASH' ? (
             <div className="small text-muted mb-0">
@@ -549,10 +610,9 @@ export default function CashPaymentPage() {
           ) : (
             <div className="small text-muted mb-0">
               Đơn này là <strong>chuyển khoản ngân hàng</strong>, chưa có tiền thật.
-              Thu tiền mặt không áp dụng được cho đơn đó — màn hình này tạo giao dịch
-              mới, không chuyển đổi đơn cũ. Nếu đơn bị tạo nhầm, hãy huỷ nó rồi
-              thu tiền mặt ngay tại đây. Nếu khách đã chuyển khoản thật, đừng huỷ —
-              dùng màn hình <strong>Đối soát</strong> để ghi nhận.
+              Nếu khách đã chuyển khoản thật, không huỷ đơn; hãy dùng màn hình{' '}
+              <strong>Đối soát</strong>. Nếu đơn được tạo nhầm hoặc khách đổi sang
+              tiền mặt, hãy huỷ đơn trước rồi tạo giao dịch mới.
             </div>
           )}
           <div className="d-flex flex-wrap gap-2 mt-3">
@@ -561,7 +621,7 @@ export default function CashPaymentPage() {
               size="sm"
               onClick={() => setCancelling(true)}
             >
-              Huỷ đơn treo &amp; thu tiền mặt
+              Huỷ đơn chờ thanh toán
             </Button>
             <Button
               as={Link}
@@ -597,7 +657,7 @@ export default function CashPaymentPage() {
             <p className="small mb-3">
               Đơn này đang ở trạng thái chờ thanh toán chuyển khoản. Huỷ đơn sẽ chuyển
               nó sang <strong>EXPIRED</strong> và vô hiệu hoá các khoản thanh toán
-              đang chờ, sau đó bạn có thể thu tiền mặt tại đây. Thao tác được ghi
+              đang chờ, sau đó bạn có thể tạo giao dịch mới. Thao tác được ghi
               vào nhật ký hệ thống và không thể hoàn tác.
             </p>
             <Form.Group>
@@ -615,7 +675,7 @@ export default function CashPaymentPage() {
                 autoFocus
               />
               <Form.Text className="text-muted">
-                Bắt buộc — backend từ chối lý do rỗng.
+                Vui lòng ghi rõ lý do để lưu vào lịch sử hoạt động.
               </Form.Text>
             </Form.Group>
             <ErrorAlert
@@ -653,7 +713,7 @@ export default function CashPaymentPage() {
       ) : null}
 
       {error && !conflictMessage ? (
-        <ErrorAlert error={error} title="Không thu được tiền" onClose={() => setError(null)} />
+        <ErrorAlert error={error} title="Không tạo được đơn gói tập" onClose={() => setError(null)} />
       ) : null}
 
       <Row className="g-3">
@@ -662,7 +722,7 @@ export default function CashPaymentPage() {
             <Card className="border-0 shadow-sm">
               <Card.Body>
                 <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                  <h2 className="h6 fw-bold mb-0">Bước 2 — Chọn gói tập</h2>
+                  <h2 className="h6 fw-bold mb-0">Bước 2 — Chọn gói và thanh toán</h2>
                   <Button
                     variant="link"
                     size="sm"
@@ -718,12 +778,74 @@ export default function CashPaymentPage() {
                       </div>
                     ) : null}
 
+                    <Form.Group className="mt-3">
+                      <Form.Label className="small text-muted mb-2">
+                        Phương thức thanh toán
+                      </Form.Label>
+                      <Row className="g-2">
+                        <Col md={6}>
+                          <Card
+                            className={`h-100 ${
+                              paymentMethod === PAYMENT_METHOD.BANK_TRANSFER
+                                ? 'border-danger'
+                                : 'border'
+                            }`}
+                          >
+                            <Card.Body className="p-3">
+                              <Form.Check
+                                type="radio"
+                                id="payment-bank-transfer"
+                                name="paymentMethod"
+                                value={PAYMENT_METHOD.BANK_TRANSFER}
+                                checked={paymentMethod === PAYMENT_METHOD.BANK_TRANSFER}
+                                onChange={() => setPaymentMethod(PAYMENT_METHOD.BANK_TRANSFER)}
+                                label="Chuyển khoản"
+                              />
+                              <div className="text-muted small mt-1">
+                                Tạo đơn chờ thanh toán và xử lý kết quả qua SePay/Đối soát.
+                              </div>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                        <Col md={6}>
+                          <Card
+                            className={`h-100 ${
+                              paymentMethod === PAYMENT_METHOD.CASH
+                                ? 'border-danger'
+                                : 'border'
+                            }`}
+                          >
+                            <Card.Body className="p-3">
+                              <Form.Check
+                                type="radio"
+                                id="payment-cash"
+                                name="paymentMethod"
+                                value={PAYMENT_METHOD.CASH}
+                                checked={paymentMethod === PAYMENT_METHOD.CASH}
+                                onChange={() => setPaymentMethod(PAYMENT_METHOD.CASH)}
+                                label="Tiền mặt"
+                              />
+                              <div className="text-muted small mt-1">
+                                Xác nhận đã nhận tiền, kích hoạt gói và xuất biên lai ngay.
+                              </div>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      </Row>
+                    </Form.Group>
+
                     <Alert variant="light" className="border small text-muted mt-3 mb-3">
-                      Xác nhận này ghi nhận đã nhận đủ tiền mặt tại quầy, tạo gói tập
-                      và xuất biên lai ngay lập tức. Thao tác không thể hoàn tác và
-                      không có thời hạn chờ — nếu tiền chưa thực tế nhận, đừng xác nhận.
-                      Giao dịch này độc lập với đơn chuyển khoản: nó tự tạo đơn riêng
-                      với phương thức <strong>CASH</strong>.
+                      {paymentMethod === PAYMENT_METHOD.CASH ? (
+                        <>
+                          Xác nhận này ghi nhận đã nhận đủ tiền mặt, kích hoạt gói tập
+                          và xuất biên lai ngay. Nếu chưa thực tế nhận tiền, đừng xác nhận.
+                        </>
+                      ) : (
+                        <>
+                          Hệ thống sẽ tạo đơn chuyển khoản ở trạng thái chờ thanh toán.
+                          Gói tập chỉ được kích hoạt sau khi khoản thanh toán được xác nhận.
+                        </>
+                      )}
                     </Alert>
 
                     {/* The button is disabled for blocked states, so say why
@@ -731,8 +853,8 @@ export default function CashPaymentPage() {
                     {isSuspended || blockedByPendingOrder ? (
                       <p className="text-danger small mb-2">
                         {isSuspended
-                          ? 'Tài khoản không ACTIVE nên không thể thu tiền.'
-                          : 'Không thể thu tiền mặt khi hội viên còn đơn chờ thanh toán.'}
+                          ? 'Tài khoản không ACTIVE nên không thể tạo đơn.'
+                          : 'Không thể tạo đơn mới khi hội viên còn đơn chờ thanh toán.'}
                       </p>
                     ) : null}
 
@@ -744,7 +866,9 @@ export default function CashPaymentPage() {
                       {submitting ? (
                         <Spinner animation="border" size="sm" />
                       ) : (
-                        'Xác nhận đã nhận tiền mặt'
+                        paymentMethod === PAYMENT_METHOD.CASH
+                          ? 'Xác nhận đã nhận tiền mặt'
+                          : 'Tạo đơn chuyển khoản'
                       )}
                     </Button>
                   </>
@@ -776,9 +900,8 @@ export default function CashPaymentPage() {
           </Card>
 
           <Alert variant="light" className="border small text-muted mb-0">
-            Thanh toán tiền mặt là giao dịch tức thì: gói tập được kích hoạt và
-            biên lai được xuất ngay. Nếu khách chuyển khoản ngân hàng, dùng màn
-            hình <strong>Tạo đơn gói tập</strong> thay vì màn hình này.
+            Chuyển khoản tạo đơn chờ thanh toán; tiền mặt hoàn tất giao dịch,
+            kích hoạt gói và xuất biên lai ngay.
           </Alert>
         </Col>
       </Row>

@@ -1,0 +1,30 @@
+.scms-workflow-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.scms-workflow-breadcrumb-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.scms-workflow-breadcrumb a {
+  color: #64748b;
+  text-decoration: none;
+}
+
+.scms-workflow-breadcrumb a:hover {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+.scms-workflow-breadcrumb strong {
+  color: #b91c1c;
+  font-weight: 600;
+}

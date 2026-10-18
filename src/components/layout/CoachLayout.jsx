@@ -1,22 +1,38 @@
 // Khung giao diện cho khu vực Huấn luyện viên (Coach).
 // Giao diện giống MemberLayout (dùng lại CSS .scms-ml-*) nhưng:
-//   - Không có chuông thông báo.
+//   - Thông báo được mở từ sidebar dùng chung contract authenticated.
 //   - Logo KHÔNG bấm được (không bay ra trang chủ).
 //   - Không tải gói tập, không có thẻ thành viên.
 // Menu: Trang tổng quan, Lịch phụ trách, Hồ sơ cá nhân, Đăng xuất.
 
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Button, Modal } from 'react-bootstrap';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Button, Dropdown, Modal } from 'react-bootstrap';
 import { useAuth } from '../../context/useAuth';
 import Icon from './MemberIcon';
+import useNotificationUnreadCount from './useNotificationUnreadCount';
 import './MemberLayout.css';
 import '../common/BrandLogo.css';
 
 const COACH_SIDEBAR_ITEMS = [
-  { to: '/coach/dashboard', label: 'Trang tổng quan', icon: 'dashboard' },
-  { to: '/coach/schedule', label: 'Lịch phụ trách', icon: 'calendar' },
-  { to: '/coach/profile', label: 'Hồ sơ cá nhân', icon: 'profile' },
+  {
+    label: 'Tổng quan',
+    items: [{ to: '/coach/dashboard', label: 'Trang tổng quan', icon: 'dashboard' }],
+  },
+  {
+    label: 'Công việc',
+    items: [
+      { to: '/coach/schedule', label: 'Lịch phụ trách', icon: 'calendar' },
+      { to: '/coach/members', label: 'Hội viên được phân công', icon: 'profile' },
+    ],
+  },
+  {
+    label: 'Tài khoản',
+    items: [
+      { to: '/coach/notifications', label: 'Thông báo', icon: 'bell' },
+      { to: '/coach/profile', label: 'Hồ sơ cá nhân', icon: 'profile' },
+    ],
+  },
 ];
 
 // Logo giống BrandLogo nhưng là <div>, không có link.
@@ -37,6 +53,8 @@ function StaticLogo() {
 export default function CoachLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const unreadCount = useNotificationUnreadCount();
+  const hasUnread = unreadCount > 0;
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -62,17 +80,24 @@ export default function CoachLayout() {
           </div>
           <div className="scms-ml-sidebar-label">Khu vực Huấn luyện viên</div>
           <nav className="scms-ml-nav">
-            {COACH_SIDEBAR_ITEMS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `scms-ml-navitem${isActive ? ' active' : ''}`
-                }
-              >
-                <Icon name={item.icon} />
-                {item.label}
-              </NavLink>
+            {COACH_SIDEBAR_ITEMS.map((section) => (
+              <div className="scms-ml-navgroup" key={section.label}>
+                <div className="scms-ml-navgroup-label">{section.label}</div>
+                <div className="scms-ml-navgroup-items">
+                  {section.items.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `scms-ml-navitem${isActive ? ' active' : ''}`
+                      }
+                    >
+                      <Icon name={item.icon} />
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
             ))}
             <button
               type="button"
@@ -87,7 +112,29 @@ export default function CoachLayout() {
       </aside>
 
       <div className="scms-ml-body">
-        <header className="scms-ml-header" style={{ justifyContent: 'flex-end' }}>
+        <header className="scms-ml-header">
+          <Dropdown align="start">
+            <Dropdown.Toggle
+              as="button"
+              type="button"
+              className="scms-ml-bell"
+              aria-label={hasUnread ? `Thông báo (${unreadCount} mới)` : 'Thông báo'}
+              id="coach-notification-bell"
+            >
+              <Icon name="bell" size={20} />
+              {hasUnread ? <span className="scms-ml-bell-dot" aria-hidden="true"></span> : null}
+            </Dropdown.Toggle>
+            <Dropdown.Menu className="scms-ml-bell-menu">
+              <div className="scms-ml-bell-head">Thông báo</div>
+              <div className="scms-ml-bell-empty">
+                {hasUnread ? `Bạn có ${unreadCount} thông báo mới.` : 'Chưa có thông báo nào.'}
+              </div>
+              <Dropdown.Item as={Link} to="/coach/notifications" className="small text-danger">
+                Xem tất cả thông báo
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+
           <div className="scms-ml-user">
             <span className="scms-ml-role">
               <span className="scms-ml-role-dot" aria-hidden="true"></span>

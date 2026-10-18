@@ -35,6 +35,10 @@ import {
 } from '../../../services/membershipOfferAdminService';
 import { applyServerErrors } from '../../../utils/serverErrors';
 import { formatPrice } from '../../../utils';
+import {
+  isPositiveIntegerWithin,
+  MAX_MEMBERSHIP_OFFER_AMOUNT,
+} from '../../../utils/decimalInteger';
 
 const PLAN_OPTIONS = [
   { value: 'BASIC', label: 'BASIC' },
@@ -67,8 +71,8 @@ const membershipOfferEditSchema = z.object({
     .min(1, 'Vui lòng nhập giá gói tập.')
     .regex(/^\d+$/, 'Giá gói tập phải là số nguyên dương (VND).')
     .refine(
-      (s) => Number(s) > 0,
-      'Giá gói tập phải lớn hơn 0.',
+      (s) => isPositiveIntegerWithin(s, MAX_MEMBERSHIP_OFFER_AMOUNT),
+      'Giá gói tập phải từ 1 đến 9999999999999999999 VND.',
     ),
   durationDays: z
     .string()

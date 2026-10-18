@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import EmptyState from '../../../components/common/EmptyState';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import { ACCOUNT_STATUS } from '../../../constants';
 import {
   createReceptionCenterVisit,
@@ -299,23 +300,20 @@ export default function ReceptionCenterCheckInPage() {
           <Card.Body>
             <Row className="g-4 align-items-start">
               <Col md="auto" className="text-center">
-                {selectedMember.profileImageUrl ? (
-                  <img
-                    src={selectedMember.profileImageUrl}
-                    alt={`Ảnh hồ sơ của ${selectedMember.fullName || selectedMember.memberId}`}
-                    className="img-thumbnail rounded"
-                    width="200"
-                    height="200"
-                    style={{ objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div
+                <AuthenticatedProfileImage
+                  src={selectedMember.profileImageUrl}
+                  alt={`Ảnh hồ sơ của ${selectedMember.fullName || selectedMember.memberId}`}
+                  className="img-thumbnail rounded"
+                  width="200"
+                  height="200"
+                  style={{ objectFit: 'cover' }}
+                  fallback={<div
                     className="border rounded bg-light text-muted d-flex align-items-center justify-content-center p-3"
                     style={{ width: 200, height: 200 }}
                   >
                     Chưa có ảnh hồ sơ
-                  </div>
-                )}
+                  </div>}
+                />
               </Col>
 
               <Col>

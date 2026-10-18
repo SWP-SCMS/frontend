@@ -12,6 +12,7 @@
 //
 // Component chỉ render — không tải dữ liệu, không gọi API.
 
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import BrandLogo from '../common/BrandLogo';
 import StaffIcon from './StaffIcon';
@@ -23,6 +24,8 @@ function iconForRoute(to) {
   if (!to) return 'dashboard';
   // Dashboard entries
   if (to === '/manager/dashboard' || to === '/reception/dashboard') return 'dashboard';
+  if (to.includes('/notifications')) return 'bell';
+  if (to === '/reception/center-visits') return 'members';
   // Staff / accounts management (Manager only)
   if (to.startsWith('/manager/staff-accounts')) return 'staff';
   // Member management
@@ -42,11 +45,9 @@ function iconForRoute(to) {
   // Membership offers (both Manager and Receptionist)
   if (to.includes('/membership-offers')) return 'offer';
   // Reports (Manager only)
-  if (to === '/manager/reports') return 'reports';
+  if (to.startsWith('/manager/reports') || to === '/manager/audit-events') return 'reports';
   // Payment reconciliation (both Manager and Receptionist)
   if (to.includes('/payments/reconcile')) return 'reconcile';
-  // Cash payment (Receptionist only)
-  if (to === '/reception/payments/cash') return 'cash';
   return 'dashboard';
 }
 
@@ -89,7 +90,38 @@ export default function StaffSidebar({
   onRequestLogout,
 }) {
   const { pathname } = useLocation();
-  const activeIndex = findActiveIndex(pathname, items);
+  const flatItems = useMemo(
+    () => items.flatMap((section) => section.items ?? []),
+    [items],
+  );
+  const activeIndex = findActiveIndex(pathname, flatItems);
+  const activeItem = flatItems[activeIndex];
+  const activeSectionIndex = items.findIndex((section) =>
+    section.items?.some((item) => item.to === activeItem?.to),
+  );
+  const [openSections, setOpenSections] = useState(() =>
+    new Set(activeSectionIndex >= 0 ? [activeSectionIndex] : [0]),
+  );
+
+  useEffect(() => {
+    if (activeSectionIndex < 0) return;
+    setOpenSections((current) => {
+      if (current.has(activeSectionIndex)) return current;
+      const next = new Set(current);
+      next.add(activeSectionIndex);
+      return next;
+    });
+  }, [activeSectionIndex]);
+
+  function toggleSection(index) {
+    setOpenSections((current) => {
+      const next = new Set(current);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
   return (
     <aside className="scms-sd-sidebar">
       <div>
@@ -98,17 +130,49 @@ export default function StaffSidebar({
         </div>
         <div className="scms-sd-sidebar-label">{sidebarLabel}</div>
         <nav className="scms-sd-nav">
-          {items.map((item, i) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`scms-sd-navitem${i === activeIndex ? ' active' : ''}`}
-              aria-current={i === activeIndex ? 'page' : undefined}
-            >
-              <StaffIcon name={iconForRoute(item.to)} />
-              {item.label}
-            </Link>
-          ))}
+          {items.map((section, sectionIndex) => {
+            const isOpen = openSections.has(sectionIndex);
+            return (
+              <div className="scms-sd-navgroup" key={section.label}>
+                <button
+                  type="button"
+                  className="scms-sd-navgroup-toggle"
+                  onClick={() => toggleSection(sectionIndex)}
+                  aria-expanded={isOpen}
+                  aria-controls={`staff-nav-section-${sectionIndex}`}
+                >
+                  <span>{section.label}</span>
+                  <span
+                    className={`scms-sd-navgroup-chevron${isOpen ? ' open' : ''}`}
+                    aria-hidden="true"
+                  >
+                    ›
+                  </span>
+                </button>
+                <div
+                  id={`staff-nav-section-${sectionIndex}`}
+                  className="scms-sd-navgroup-items"
+                  hidden={!isOpen}
+                >
+                  {section.items.map((item) => {
+                    const itemIndex = flatItems.findIndex((candidate) => candidate.to === item.to);
+                    const isActive = itemIndex === activeIndex;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className={`scms-sd-navitem${isActive ? ' active' : ''}`}
+                        aria-current={isActive ? 'page' : undefined}
+                      >
+                        <StaffIcon name={iconForRoute(item.to)} />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
           <button
             type="button"
             className="scms-sd-navitem scms-sd-navbtn"

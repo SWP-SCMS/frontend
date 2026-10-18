@@ -22,6 +22,32 @@ export function getGymZoneTodayIsoDate() {
   }).format(now);
 }
 
+export function latestEligibleBirthDate(
+  minimumAge,
+  today = getGymZoneTodayIsoDate(),
+) {
+  if (!ISO_DATE_RE.test(today) || !Number.isInteger(minimumAge)) return '';
+  const year = Number(today.slice(0, 4)) - minimumAge;
+  let monthDay = today.slice(5);
+  if (monthDay === '02-28') {
+    const birthYearIsLeap =
+      year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const currentYear = Number(today.slice(0, 4));
+    const currentYearIsLeap =
+      currentYear % 4 === 0 &&
+      (currentYear % 100 !== 0 || currentYear % 400 === 0);
+    if (birthYearIsLeap && !currentYearIsLeap) monthDay = '02-29';
+  }
+  return `${String(year).padStart(4, '0')}-${monthDay}`;
+}
+
+export function isAtLeastAgeOnGymDate(value, minimumAge) {
+  return (
+    ISO_DATE_RE.test(value) &&
+    value <= latestEligibleBirthDate(minimumAge)
+  );
+}
+
 // Ngày (YYYY-MM-DD) theo giờ phòng tập của một Instant ISO.
 export function getGymLocalIsoDate(iso) {
   if (!iso) return '';

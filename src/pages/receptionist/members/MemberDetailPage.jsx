@@ -52,11 +52,15 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
+import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
+import ProfileImageUploadControl from '../../../components/common/ProfileImageUploadControl';
 import {
   getReceptionMemberProfile,
   getReceptionMemberReceipts,
   resetReceptionMemberPassword,
   updateReceptionMemberProfile,
+  uploadReceptionMemberProfileImage,
 } from '../../../services/receptionistService';
 import { ACCOUNT_STATUS } from '../../../constants';
 import { formatDateTime, formatPrice, normalizePhone } from '../../../utils';
@@ -379,6 +383,10 @@ export default function MemberDetailPage() {
 
   return (
     <div>
+      <WorkflowBreadcrumb
+        items={[{ to: '/reception/members', label: 'Hội viên' }]}
+        current={profile.memberId}
+      />
       <header className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
         <div>
           <h1 className="h3 fw-bold mb-1">{profile.fullName || 'Hội viên'}</h1>
@@ -398,7 +406,18 @@ export default function MemberDetailPage() {
           >
             Đặt lại mật khẩu
           </Button>
-          <Button as={Link} to={`/reception/orders/new?memberId=${profile.memberId}`} variant="outline-danger" size="sm">
+          <Button
+            as={Link}
+            to={`/reception/orders/new?memberId=${profile.memberId}`}
+            variant="danger"
+            size="sm"
+            disabled={profile.status !== ACCOUNT_STATUS.ACTIVE}
+            title={
+              profile.status === ACCOUNT_STATUS.ACTIVE
+                ? 'Tạo đơn và chọn phương thức thanh toán'
+                : 'Chỉ tạo đơn với tài khoản đang hoạt động'
+            }
+          >
             Tạo đơn gói tập
           </Button>
           <Button
@@ -409,22 +428,6 @@ export default function MemberDetailPage() {
             size="sm"
           >
             Đặt / quản lý lịch
-          </Button>
-          {/* US20 – cash at the counter. Kept next to the bank-transfer
-              entry point so staff pick the right one without hunting. */}
-          <Button
-            as={Link}
-            to={`/reception/payments/cash?memberId=${profile.memberId}`}
-            variant="danger"
-            size="sm"
-            disabled={profile.status !== ACCOUNT_STATUS.ACTIVE}
-            title={
-              profile.status === ACCOUNT_STATUS.ACTIVE
-                ? 'Thu tiền mặt tại quầy'
-                : 'Chỉ thu tiền với tài khoản đang hoạt động'
-            }
-          >
-            Thu tiền mặt
           </Button>
         </div>
       </header>
@@ -587,6 +590,29 @@ export default function MemberDetailPage() {
             <Card className="border-0 shadow-sm mb-3">
               <Card.Body>
                 <h2 className="h6 fw-bold mb-3">Thông tin tài khoản</h2>
+                <div className="d-flex align-items-start gap-3 mb-3">
+                  <AuthenticatedProfileImage
+                    src={profile.profileImageUrl}
+                    alt={`Ảnh ${profile.fullName || profile.memberId}`}
+                    width="96"
+                    height="96"
+                    className="rounded border"
+                    style={{ objectFit: 'cover' }}
+                    fallback={
+                      <div className="rounded border bg-light text-muted d-flex align-items-center justify-content-center" style={{ width: 96, height: 96 }}>
+                        Chưa có ảnh
+                      </div>
+                    }
+                  />
+                  <ProfileImageUploadControl
+                    onUpload={(file) => uploadReceptionMemberProfileImage(memberId, file)}
+                    onUploaded={(updated) => {
+                      setProfile(updated);
+                      reset(profileToEditableForm(updated));
+                      setNotice('Đã cập nhật ảnh hồ sơ hội viên.');
+                    }}
+                  />
+                </div>
                 <dl className="row mb-0 small">
                   <dt className="col-5 text-muted fw-normal">Mã hội viên</dt>
                   <dd className="col-7">{profile.memberId}</dd>
@@ -594,15 +620,16 @@ export default function MemberDetailPage() {
                   <dd className="col-7">{profile.role}</dd>
                   <dt className="col-5 text-muted fw-normal">Trạng thái</dt>
                   <dd className="col-7">{profile.status}</dd>
-                  <dt className="col-5 text-muted fw-normal">Ảnh đại diện</dt>
-                  <dd className="col-7 text-break">{profile.profileImageUrl || '—'}</dd>
                 </dl>
               </Card.Body>
             </Card>
 
             <Card className="border-0 shadow-sm mb-3">
               <Card.Body>
-                <h2 className="h6 fw-bold mb-3">Lịch sử biên lai</h2>
+                <h2 className="h6 fw-bold mb-1">Biên lai do bạn xử lý</h2>
+                <p className="text-muted small">
+                  Lễ tân chỉ thấy các biên lai do chính tài khoản đang đăng nhập xử lý.
+                </p>
 
                 {!receipts ? (
                   <Button

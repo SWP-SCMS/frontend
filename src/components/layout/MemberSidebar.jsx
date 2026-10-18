@@ -70,13 +70,20 @@ export default function MemberSidebar({
         </div>
         <div className="scms-ml-sidebar-label">Khu vực Hội viên</div>
         <nav className="scms-ml-nav">
-          {items.map((item) => (
-            <SidebarItem
-              key={item.label}
-              item={item}
-              plusLocked={plusLocked}
-              onLockedClick={onLockedClick}
-            />
+          {items.map((section) => (
+            <div className="scms-ml-navgroup" key={section.label}>
+              <div className="scms-ml-navgroup-label">{section.label}</div>
+              <div className="scms-ml-navgroup-items">
+                {section.items.map((item) => (
+                  <SidebarItem
+                    key={item.label}
+                    item={item}
+                    plusLocked={plusLocked}
+                    onLockedClick={onLockedClick}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
           <button
             type="button"

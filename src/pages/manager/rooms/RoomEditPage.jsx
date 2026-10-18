@@ -139,6 +139,17 @@ export default function RoomEditPage() {
       setSaved('no-changes');
       return;
     }
+    if (original?.status === 'ACTIVE' && patch.status === 'INACTIVE') {
+      const otherChanges = Object.keys(patch).filter((key) => key !== 'status');
+      if (otherChanges.length > 0) {
+        setFormLevelError(
+          'Vui lòng lưu thay đổi tên/sức chứa trước. Việc ngưng hoạt động phòng phải thực hiện qua luồng xem trước ảnh hưởng riêng.',
+        );
+        return;
+      }
+      navigate(`/manager/rooms/${roomId}/impact`);
+      return;
+    }
     try {
       await updateRoom(roomId, patch);
       setSaved('saved');
@@ -296,8 +307,9 @@ export default function RoomEditPage() {
             ))}
           </Form.Select>
           <Form.Text className="text-muted">
-            Thay đổi từ ACTIVE sang INACTIVE để ngưng hoạt động. Đây
-            là thao tác có thể đảo ngược, không phải xoá.
+            Thay đổi từ ACTIVE sang INACTIVE sẽ chuyển sang luồng xem trước
+            và xử lý tất cả buổi tập bị ảnh hưởng; hệ thống không gửi PATCH
+            ngưng hoạt động trực tiếp.
           </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.status?.message}

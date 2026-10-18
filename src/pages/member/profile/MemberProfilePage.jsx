@@ -11,7 +11,7 @@
 // Đổi mật khẩu nằm ở trang riêng /member/profile/password (US04).
 //
 // Các trường BE chưa hỗ trợ (giới tính, địa chỉ, mối quan hệ, khung giờ liên
-// hệ, ghi chú chấn thương, tải ảnh từ máy, ngày gia nhập) được giữ lại trên
+// hệ, ghi chú chấn thương, ngày gia nhập) được giữ lại trên
 // giao diện ở dạng làm mờ, ghi "Sắp ra mắt". Thẻ chỉ số InBody đã bỏ.
 //
 // Migration note (RHF + Zod):
@@ -38,9 +38,15 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
+import ProfileImageUploadControl from '../../../components/common/ProfileImageUploadControl';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
-import { getMyProfile, updateMyProfile } from '../../../services/memberService';
+import {
+  getMyProfile,
+  updateMyProfile,
+  uploadMyProfileImage,
+} from '../../../services/memberService';
 import { useAuth } from '../../../context/useAuth';
 import { extractErrorMessage, formatDate, normalizePhone } from '../../../utils';
 import { applyServerErrors } from '../../../utils/serverErrors';
@@ -283,7 +289,6 @@ export default function MemberProfilePage() {
   const [serverError, setServerError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [showImageInput, setShowImageInput] = useState(false);
-  const [imageBroken, setImageBroken] = useState(false);
 
   const {
     register,
@@ -393,7 +398,6 @@ export default function MemberProfilePage() {
     setSuccess(false);
     setServerError(null);
     setShowImageInput(false);
-    setImageBroken(false);
   }
 
   async function onSubmit(data) {
@@ -451,8 +455,6 @@ export default function MemberProfilePage() {
   const initial = (fullNameValue.trim().split(/\s+/).pop() || '?')
     .charAt(0)
     .toUpperCase();
-  const showImage = profileImageUrlValue.trim() && !imageBroken;
-
   const planCode =
     activeMembership?.plan_code_snapshot || activeMembership?.planCode || '';
   let tierText = 'Chưa đăng ký gói tập';
@@ -498,15 +500,11 @@ export default function MemberProfilePage() {
           <div className="scms-mp-card">
             <div className="scms-mp-avatar-wrap">
               <div className="scms-mp-avatar">
-                {showImage ? (
-                  <img
-                    src={profileImageUrlValue.trim()}
-                    alt={`Ảnh đại diện ${fullNameValue}`}
-                    onError={() => setImageBroken(true)}
-                  />
-                ) : (
-                  initial
-                )}
+                <AuthenticatedProfileImage
+                  src={profileImageUrlValue.trim()}
+                  alt={`Ảnh đại diện ${fullNameValue}`}
+                  fallback={initial}
+                />
               </div>
               <div>
                 <div className="scms-mp-avatar-name">{fullNameValue || '—'}</div>
@@ -523,15 +521,25 @@ export default function MemberProfilePage() {
                 onClick={() => setShowImageInput((s) => !s)}
               >
                 <Icon name="upload" />
-                Tải ảnh mới
+                Dùng URL ảnh cũ
               </button>
+
+              <ProfileImageUploadControl
+                onUpload={uploadMyProfileImage}
+                onUploaded={(updated) => {
+                  setUser({ ...(user || {}), ...(updated || {}) });
+                  const next = toForm(updated);
+                  setOriginal(next);
+                  reset(next);
+                  setSuccess(true);
+                }}
+              />
 
               {showImageInput ? (
                 <div style={{ width: '100%' }}>
                   <input
                     className="scms-mp-input"
                     {...register('profileImageUrl')}
-                    onInput={() => setImageBroken(false)}
                     placeholder="Dán đường dẫn ảnh (https://...)"
                     aria-label="Đường dẫn ảnh đại diện"
                     aria-invalid={Boolean(errors.profileImageUrl)}
@@ -542,14 +550,13 @@ export default function MemberProfilePage() {
                     </div>
                   ) : (
                     <div className="scms-mp-hint" style={{ marginTop: 6 }}>
-                      Bấm &quot;Lưu thay đổi hồ sơ&quot; để lưu ảnh. Tải ảnh trực
-                      tiếp từ máy: <strong>Sắp ra mắt</strong>.
+                      Bấm &quot;Lưu thay đổi hồ sơ&quot; để lưu URL ảnh cũ.
                     </div>
                   )}
                 </div>
               ) : (
                 <span className="scms-mp-hint">
-                  Hiện hỗ trợ ảnh qua đường dẫn (URL). Tải tệp từ máy: Sắp ra mắt.
+                  Tải tệp JPEG/PNG là cách chính; URL tuyệt đối cũ vẫn được hỗ trợ.
                 </span>
               )}
             </div>

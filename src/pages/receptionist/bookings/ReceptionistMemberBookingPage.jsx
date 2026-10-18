@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import EmptyState from '../../../components/common/EmptyState';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
 import { ACCOUNT_STATUS } from '../../../constants';
 import {
   cancelReceptionMemberBooking,
@@ -470,6 +471,13 @@ export default function ReceptionistMemberBookingPage() {
 
   return (
     <div>
+      <WorkflowBreadcrumb
+        items={[
+          { to: '/reception/members', label: 'Hội viên' },
+          { to: safeBackPath, label: profile.memberId },
+        ]}
+        current="Lịch đặt"
+      />
       <header className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
         <div>
           <h1 className="h3 fw-bold mb-1">Đặt / quản lý lịch</h1>
@@ -477,9 +485,6 @@ export default function ReceptionistMemberBookingPage() {
             Chọn buổi tập, xem lịch sử và hủy lịch cho hội viên đã chọn.
           </p>
         </div>
-        <Button as={Link} to={safeBackPath} variant="outline-secondary" size="sm">
-          ← Quay lại hội viên
-        </Button>
       </header>
 
       <Card className="border-0 shadow-sm mb-3">

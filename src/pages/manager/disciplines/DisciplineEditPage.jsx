@@ -33,8 +33,13 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import AffectedSessionsAlert from '../../../components/common/AffectedSessionsAlert';
 import { getDiscipline, updateDiscipline } from '../../../services/disciplineService';
 import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  extractAffectedSessions,
+  hasAffectedSessionPayload,
+} from '../../../utils/schedulingProblem';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE — đang hoạt động.' },
@@ -84,6 +89,7 @@ export default function DisciplineEditPage() {
   const [saved, setSaved] = useState(null);
   // Form-level (non-field) error for the friendly "at least one field" hint.
   const [formLevelError, setFormLevelError] = useState(null);
+  const [blockingSessions, setBlockingSessions] = useState([]);
 
   const {
     register,
@@ -105,6 +111,7 @@ export default function DisciplineEditPage() {
     setLoadError(null);
     setSaved(null);
     setFormLevelError(null);
+    setBlockingSessions([]);
     try {
       const data = await getDiscipline(disciplineId);
       const next = disciplineToForm(data);
@@ -149,6 +156,7 @@ export default function DisciplineEditPage() {
   async function onSubmit(data) {
     setSaved(null);
     setFormLevelError(null);
+    setBlockingSessions([]);
     setServerError(null);
     const patch = buildPatch(data);
     if (Object.keys(patch).length === 0) {
@@ -160,7 +168,8 @@ export default function DisciplineEditPage() {
       setSaved('saved');
       navigate(`/manager/disciplines/${disciplineId}`, { replace: true });
     } catch (err) {
-      const fieldErrors = err?.response?.data?.errors;
+      const problem = err?.response?.data;
+      const fieldErrors = problem?.errors;
       const code = err?.response?.data?.code;
       const message =
         err?.response?.data?.detail || err?.response?.data?.message;
@@ -171,6 +180,11 @@ export default function DisciplineEditPage() {
       // Whether the shared helper produced at least one inline error.
       // Gates the global ErrorAlert below.
       let sharedHandled = false;
+      let pageLocalHandled = false;
+      const affectedSessions = extractAffectedSessions(problem);
+      const hasAffectedSessions =
+        code === 'VALIDATION_ERROR' &&
+        (hasAffectedSessionPayload(problem) || affectedSessions.length > 0);
       // PAGE-LOCAL: DISCIPLINE_NAME_CONFLICT.
       if (
         code === 'DISCIPLINE_NAME_CONFLICT' &&
@@ -180,8 +194,15 @@ export default function DisciplineEditPage() {
           type: 'server',
           message: 'Tên bộ môn đã tồn tại.',
         });
+        pageLocalHandled = true;
       }
-      if (
+      if (hasAffectedSessions) {
+        setFormLevelError(
+          'Không thể ngưng hoạt động bộ môn khi vẫn còn buổi tập đang diễn ra hoặc được lên lịch trong tương lai. Vui lòng xử lý các buổi tập bên dưới rồi thử lại.',
+        );
+        setBlockingSessions(affectedSessions);
+        pageLocalHandled = true;
+      } else if (
         code === 'VALIDATION_ERROR' &&
         /at least one field is required/i.test(message || '')
       ) {
@@ -199,7 +220,7 @@ export default function DisciplineEditPage() {
       // mappings (DISCIPLINE_NAME_CONFLICT, "at least one field",
       // DISCIPLINE_NOT_FOUND via setLoadError) are independent and
       // are preserved as-is.
-      if (!sharedHandled) {
+      if (!sharedHandled && !pageLocalHandled) {
         setServerError(err);
       }
     }
@@ -256,9 +277,10 @@ export default function DisciplineEditPage() {
           Không có thay đổi để lưu.
         </div>
       ) : null}
-      {formLevelError ? (
-        <div className="alert alert-warning py-2 mb-3">{formLevelError}</div>
-      ) : null}
+      <AffectedSessionsAlert
+        message={formLevelError}
+        sessions={blockingSessions}
+      />
 
       <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Form.Group controlId="edit-name">

@@ -18,6 +18,7 @@ import { Alert, Button, Col, Form, InputGroup, Row, Spinner } from 'react-bootst
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
+import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import { searchReceptionMember } from '../../../services/receptionistService';
 import { ACCOUNT_STATUS } from '../../../constants';
 import { formatDate, normalizePhone } from '../../../utils';
@@ -245,9 +246,15 @@ export default function MemberListPage() {
               </Col>
               <Col sm={6} lg={3}>
                 <div className="text-muted small">Ảnh đại diện</div>
-                <div className="fw-semibold text-break">
-                  {member.profileImageUrl || '—'}
-                </div>
+                <AuthenticatedProfileImage
+                  src={member.profileImageUrl}
+                  alt={`Ảnh ${member.fullName || member.memberId}`}
+                  width="48"
+                  height="48"
+                  className="rounded border"
+                  style={{ objectFit: 'cover' }}
+                  fallback={<span className="text-muted">—</span>}
+                />
               </Col>
             </Row>
 
@@ -264,25 +271,19 @@ export default function MemberListPage() {
               >
                 Đặt / quản lý lịch
               </Button>
-              <Button as={Link} to={`/reception/orders/new?memberId=${member.memberId}`} variant="outline-secondary" size="sm">
-                Tạo đơn gói tập
-              </Button>
-              {/* Cash is a separate endpoint (US20), not an option on the
-                  order form — offer it here so staff don't have to detour
-                  through the full profile page. */}
               <Button
                 as={Link}
-                to={`/reception/payments/cash?memberId=${member.memberId}`}
+                to={`/reception/orders/new?memberId=${member.memberId}`}
                 variant="danger"
                 size="sm"
                 disabled={member.status !== ACCOUNT_STATUS.ACTIVE}
                 title={
                   member.status === ACCOUNT_STATUS.ACTIVE
-                    ? 'Thu tiền mặt tại quầy'
-                    : 'Chỉ thu tiền với tài khoản đang hoạt động'
+                    ? 'Tạo đơn và chọn phương thức thanh toán'
+                    : 'Chỉ tạo đơn với tài khoản đang hoạt động'
                 }
               >
-                Thu tiền mặt
+                Tạo đơn gói tập
               </Button>
             </div>
           </div>

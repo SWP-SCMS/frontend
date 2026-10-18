@@ -10,6 +10,8 @@ import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
+import MemberCoachAssignmentCard from '../../../components/manager/MemberCoachAssignmentCard';
 import {
   changeMemberAccountStatus,
   getMemberAccount,
@@ -144,11 +146,12 @@ export default function MemberAccountDetailPage() {
 
   return (
     <div>
-      <Link to="/manager/members" className="small text-decoration-none">
-        ← Quay lại danh sách
-      </Link>
+      <WorkflowBreadcrumb
+        items={[{ to: '/manager/members', label: 'Hội viên' }]}
+        current={account.memberId || account.fullName || 'Chi tiết'}
+      />
 
-      <div className="d-flex flex-wrap justify-content-between align-items-end mt-2 mb-3 gap-2">
+      <div className="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
         <div>
           <h1 className="h3 fw-bold mb-1">{account.fullName || '—'}</h1>
           <p className="text-muted mb-1">
@@ -227,6 +230,11 @@ export default function MemberAccountDetailPage() {
           </Card>
         </Col>
       </Row>
+
+      <MemberCoachAssignmentCard
+        memberAccountId={account.accountId}
+        memberStatus={account.status}
+      />
 
       <Card className="border-0 shadow-sm mt-3">
         <Card.Body>

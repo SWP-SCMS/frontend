@@ -1,6 +1,6 @@
 // /coach/schedule/:sessionId/students — danh sách học viên của buổi dạy.
 // Trang CHỈ XEM: điểm danh chỉ hiển thị, muốn sửa thì sang trang Điểm danh.
-// Cột "Đánh giá" chờ BE có API Feedback (BR-FDB-*).
+// Kết quả/nhận xét của từng học viên được đọc từ API theo Session.
 
 import { Link, useParams } from 'react-router-dom';
 import { Button, Spinner, Table } from 'react-bootstrap';
@@ -66,7 +66,16 @@ export default function CoachSessionStudentsPage() {
                           record={attendanceByMember.get(m.memberId)}
                         />
                       </td>
-                      <td className="text-muted small">Sắp ra mắt</td>
+                      <td>
+                        <Button
+                          as={Link}
+                          to={`/coach/schedule/${sessionId}/members/${m.memberId}/training`}
+                          variant="outline-danger"
+                          size="sm"
+                        >
+                          Xem kết quả
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

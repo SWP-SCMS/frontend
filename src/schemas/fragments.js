@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import { normalizePhone } from '../utils';
+import { getGymZoneTodayIsoDate } from '../utils/gymTime';
 
 // Pragmatic email shape. The backend does the authoritative validation;
 // this just avoids obvious typos. Match the regex used by the current
@@ -70,7 +71,7 @@ export const birthDateSchema = z
   .string()
   .min(1, 'Vui lòng nhập ngày sinh.')
   .refine(
-    (d) => d <= new Date().toISOString().slice(0, 10),
+    (d) => d <= getGymZoneTodayIsoDate(),
     'Ngày sinh không được ở tương lai.',
   );
 
@@ -80,4 +81,13 @@ export const birthDateSchema = z
 // current RegisterPage and ChangePasswordPage submit unchanged.
 export const passwordSchema = z
   .string()
-  .min(8, 'Mật khẩu phải có ít nhất 8 ký tự.');
+  .min(8, 'Mật khẩu phải có ít nhất 8 ký tự.')
+  .refine(
+    (value) => new TextEncoder().encode(value).length <= 72,
+    'Mật khẩu không được vượt quá 72 byte UTF-8.',
+  );
+
+export const passwordByteMaxSchema = z.string().refine(
+  (value) => new TextEncoder().encode(value).length <= 72,
+  'Mật khẩu không được vượt quá 72 byte UTF-8.',
+);

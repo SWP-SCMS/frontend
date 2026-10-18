@@ -30,7 +30,7 @@
 //   - PAGE-LOCAL backend codes (CLASS_*, VALIDATION_ERROR +
 //     "at least one field is required") stay page-local.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
@@ -38,14 +38,33 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import { getClass, updateClass } from '../../../services/sportClassService';
+import AffectedSessionsAlert from '../../../components/common/AffectedSessionsAlert';
+import {
+  getClass,
+  listSupportedClassTypes,
+  updateClass,
+} from '../../../services/sportClassService';
 import { applyServerErrors } from '../../../utils/serverErrors';
+import { extractAffectedSessions } from '../../../utils/schedulingProblem';
 
-const TYPE_OPTIONS = [
-  { value: 'GROUP', label: 'Nhóm' },
-  { value: 'YOGA', label: 'Yoga' },
-  { value: 'PT_1_1', label: 'PT 1:1' },
-];
+const TYPE_LABELS = {
+  GROUP: 'Nhóm',
+  YOGA: 'Yoga',
+  PT_1_1: 'PT 1:1',
+};
+
+function normalizeWriteTypes(values) {
+  return [
+    ...new Set(
+      (Array.isArray(values) ? values : []).filter(
+        (value) =>
+          typeof value === 'string' &&
+          value.trim().length > 0 &&
+          value !== 'YOGA',
+      ),
+    ),
+  ];
+}
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE — đang hoạt động.' },
@@ -53,21 +72,30 @@ const STATUS_OPTIONS = [
 ];
 
 // Page-local edit schema. disciplineId is intentionally NOT in the
-// schema — it is immutable and never sent.
-const classEditSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, 'Vui lòng nhập tên lớp.')
-    .max(150, 'Tên lớp đã quá dài (tối đa 150 ký tự).'),
-  classType: z.enum(['GROUP', 'YOGA', 'PT_1_1'], {
-    message: 'Loại lớp không hợp lệ.',
-  }),
-  description: z.string(),
-  status: z.enum(['ACTIVE', 'INACTIVE'], {
-    message: 'Trạng thái không hợp lệ.',
-  }),
-});
+// schema — it is immutable and never sent. An existing legacy type may
+// remain unchanged so unrelated fields can still be edited, but every
+// deliberate type change must target a server-supported write value.
+function buildClassEditSchema(supportedTypes, originalType) {
+  const supported = new Set(supportedTypes);
+  return z.object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Vui lòng nhập tên lớp.')
+      .max(150, 'Tên lớp đã quá dài (tối đa 150 ký tự).'),
+    classType: z
+      .string()
+      .min(1, 'Vui lòng chọn loại lớp.')
+      .refine(
+        (value) => value === originalType || supported.has(value),
+        'Loại lớp không còn được hệ thống hỗ trợ.',
+      ),
+    description: z.string(),
+    status: z.enum(['ACTIVE', 'INACTIVE'], {
+      message: 'Trạng thái không hợp lệ.',
+    }),
+  });
+}
 
 function classToForm(c) {
   return {
@@ -98,6 +126,27 @@ export default function ClassEditPage() {
   const [serverError, setServerError] = useState(null);
   const [saved, setSaved] = useState(null);
   const [formLevelError, setFormLevelError] = useState(null);
+  const [blockingSessions, setBlockingSessions] = useState([]);
+  const [supportedClassTypes, setSupportedClassTypes] = useState([]);
+  const [loadingClassTypes, setLoadingClassTypes] = useState(true);
+  const [classTypesError, setClassTypesError] = useState(null);
+  const classTypeOptions = useMemo(
+    () =>
+      supportedClassTypes.map((value) => ({
+        value,
+        label: TYPE_LABELS[value] || value,
+      })),
+    [supportedClassTypes],
+  );
+  const classEditSchema = useMemo(
+    () => buildClassEditSchema(supportedClassTypes, original?.classType),
+    [original?.classType, supportedClassTypes],
+  );
+  const legacyClassType =
+    original?.classType &&
+    !supportedClassTypes.includes(original.classType)
+      ? original.classType
+      : null;
 
   const {
     register,
@@ -120,6 +169,7 @@ export default function ClassEditPage() {
     setLoadError(null);
     setSaved(null);
     setFormLevelError(null);
+    setBlockingSessions([]);
     try {
       const data = await getClass(classId);
       const next = classToForm(data);
@@ -140,6 +190,31 @@ export default function ClassEditPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadClassTypes() {
+      setLoadingClassTypes(true);
+      setClassTypesError(null);
+      try {
+        const types = await listSupportedClassTypes();
+        if (!cancelled) {
+          setSupportedClassTypes(normalizeWriteTypes(types));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setSupportedClassTypes([]);
+          setClassTypesError(err);
+        }
+      } finally {
+        if (!cancelled) setLoadingClassTypes(false);
+      }
+    }
+    loadClassTypes();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function buildPatch(data) {
     const patch = {};
@@ -173,6 +248,7 @@ export default function ClassEditPage() {
   async function onSubmit(data) {
     setSaved(null);
     setFormLevelError(null);
+    setBlockingSessions([]);
     setServerError(null);
     const patch = buildPatch(data);
     if (Object.keys(patch).length === 0) {
@@ -184,8 +260,9 @@ export default function ClassEditPage() {
       setSaved('saved');
       navigate(`/manager/classes/${classId}`, { replace: true });
     } catch (err) {
-      const fieldErrors = err?.response?.data?.errors;
-      const code = err?.response?.data?.code;
+      const problem = err?.response?.data;
+      const fieldErrors = problem?.errors;
+      const code = problem?.code;
       const message =
         err?.response?.data?.detail || err?.response?.data?.message;
       if (code === 'CLASS_NOT_FOUND') {
@@ -209,6 +286,15 @@ export default function ClassEditPage() {
       // Whether the shared helper produced at least one inline error.
       // Gates the global ErrorAlert below.
       let sharedHandled = false;
+      let pageLocalHandled = false;
+      const classTypeUnsupported = code === 'CLASS_TYPE_UNSUPPORTED';
+      if (code === 'CLASS_HAS_ACTIVE_SESSIONS') {
+        setFormLevelError(
+          'Không thể ngưng hoạt động lớp khi vẫn còn buổi tập đang diễn ra hoặc đã lên lịch. Backend không tự hủy các buổi này; vui lòng xử lý chúng trước rồi thử lại.',
+        );
+        setBlockingSessions(extractAffectedSessions(problem));
+        pageLocalHandled = true;
+      }
       if (
         code === 'CLASS_NAME_CONFLICT' &&
         !hasFieldMessage(fieldErrors, 'name')
@@ -217,6 +303,17 @@ export default function ClassEditPage() {
           type: 'server',
           message: 'Tên lớp đã tồn tại trong bộ môn đã chọn.',
         });
+        pageLocalHandled = true;
+      }
+      if (
+        classTypeUnsupported &&
+        !hasFieldMessage(fieldErrors, 'classType')
+      ) {
+        setError('classType', {
+          type: 'server',
+          message: 'Loại lớp này không còn được hỗ trợ. Vui lòng chọn loại khác.',
+        });
+        pageLocalHandled = true;
       }
       if (
         code === 'VALIDATION_ERROR' &&
@@ -237,7 +334,7 @@ export default function ClassEditPage() {
       // independent and are preserved as-is. CLASS_NOT_FOUND above
       // already returned with its own (intentional) both-inline-and-
       // global behavior.
-      if (!sharedHandled) {
+      if (!sharedHandled && !pageLocalHandled) {
         setServerError(err);
       }
     }
@@ -289,14 +386,20 @@ export default function ClassEditPage() {
         title="Không lưu được thay đổi"
         onClose={() => setServerError(null)}
       />
+      <ErrorAlert
+        error={classTypesError}
+        title="Không tải được loại lớp được hỗ trợ"
+      />
       {saved === 'no-changes' ? (
         <div className="alert alert-warning py-2 mb-3">
           Không có thay đổi để lưu.
         </div>
       ) : null}
-      {formLevelError ? (
-        <div className="alert alert-warning py-2 mb-3">{formLevelError}</div>
-      ) : null}
+      <AffectedSessionsAlert
+        message={formLevelError}
+        sessions={blockingSessions}
+        classId={classId}
+      />
 
       <Form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Card className="border-0 shadow-sm mb-3">
@@ -339,8 +442,15 @@ export default function ClassEditPage() {
               <Form.Select
                 {...register('classType')}
                 isInvalid={Boolean(errors.classType)}
+                disabled={loadingClassTypes || Boolean(classTypesError)}
               >
-                {TYPE_OPTIONS.map((o) => (
+                {legacyClassType ? (
+                  <option value={legacyClassType} disabled>
+                    {TYPE_LABELS[legacyClassType] || legacyClassType}{' '}
+                    (loại cũ — giữ nguyên hoặc chuyển sang loại được hỗ trợ)
+                  </option>
+                ) : null}
+                {classTypeOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
@@ -349,6 +459,10 @@ export default function ClassEditPage() {
               <Form.Control.Feedback type="invalid">
                 {errors.classType?.message}
               </Form.Control.Feedback>
+              <Form.Text className="text-muted">
+                Các lựa chọn có thể ghi được tải từ hệ thống. Loại lớp cũ
+                có thể được giữ nguyên khi chỉ sửa trường khác.
+              </Form.Text>
             </Form.Group>
           </Col>
           <Col md={6}>
@@ -405,6 +519,7 @@ export default function ClassEditPage() {
               if (original) reset(original);
               setSaved(null);
               setFormLevelError(null);
+              setBlockingSessions([]);
             }}
             disabled={isSubmitting}
           >

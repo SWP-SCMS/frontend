@@ -50,8 +50,56 @@
 .scms-sd-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
   padding: 0 1rem;
+}
+
+.scms-sd-navgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.scms-sd-navgroup-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  background: transparent;
+  color: #a8a8b3;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.scms-sd-navgroup-toggle:hover {
+  color: #f1d3cf;
+}
+
+.scms-sd-navgroup-chevron {
+  font-size: 1.1rem;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 0.15s ease;
+}
+
+.scms-sd-navgroup-chevron.open {
+  transform: rotate(90deg);
+}
+
+.scms-sd-navgroup-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.scms-sd-navgroup-items[hidden] {
+  display: none;
 }
 
 .scms-sd-navitem {
@@ -81,6 +129,7 @@ a.scms-sd-navitem:hover {
 /* Nút "Đăng xuất" trong sidebar: dáng giống mục menu nhưng là <button>. */
 .scms-sd-navbtn {
   width: 100%;
+  margin-top: 0.25rem;
   border: 0;
   background: none;
   text-align: left;
@@ -120,6 +169,77 @@ a.scms-sd-navitem:hover {
   display: flex;
   align-items: center;
   gap: 2rem;
+}
+
+.scms-sd-bell {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #282a2e;
+  color: #e2e2e8;
+  transition: background 0.15s, color 0.15s;
+}
+
+.scms-sd-bell:hover,
+.scms-sd-bell.show {
+  background: #dc2626;
+  color: #fff;
+}
+
+.scms-sd-bell::after {
+  display: none;
+}
+
+.scms-sd-bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid #282a2e;
+  animation: scms-sd-pulse 1.8s ease-in-out infinite;
+}
+
+.scms-sd-bell:hover .scms-sd-bell-dot,
+.scms-sd-bell.show .scms-sd-bell-dot {
+  background: #fff;
+  border-color: #dc2626;
+}
+
+@keyframes scms-sd-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  50% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+}
+
+.scms-sd-bell-menu {
+  min-width: 300px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  background: #1e2024;
+  overflow: hidden;
+}
+
+.scms-sd-bell-head {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e2e2e8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.scms-sd-bell-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #e6bdb8;
 }
 
 .scms-sd-user {
@@ -220,7 +340,7 @@ a.scms-sd-navitem:hover {
   }
 
   .scms-sd-topnav {
-    display: none;
+    display: flex;
   }
 
   .scms-sd-main {

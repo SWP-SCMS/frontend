@@ -14,6 +14,7 @@ import { MemberAreaContext } from './MemberAreaContext';
 import MemberSidebar from './MemberSidebar';
 import MemberHeader from './MemberHeader';
 import { MEMBER_SIDEBAR_ITEMS } from './navConfig';
+import useNotificationUnreadCount from './useNotificationUnreadCount';
 import './MemberLayout.css';
 
 export default function MemberLayout({ children }) {
@@ -23,6 +24,7 @@ export default function MemberLayout({ children }) {
   const [memberships, setMemberships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const unreadCount = useNotificationUnreadCount();
 
   // Hộp thoại xác nhận trước khi đăng xuất.
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -97,12 +99,6 @@ export default function MemberLayout({ children }) {
   } else if (!loading) statusText = 'Chưa kích hoạt gói tập';
 
   const requestLogout = () => setConfirmOpen(true);
-
-  // Số thông báo chưa đọc (UNREAD) hiện trên chuông.
-  // TODO: BE chưa có API đọc thông báo cho Hội viên (BR-NOT-03/04). Khi có,
-  // thay số 0 này bằng số thông báo UNREAD lấy từ API.
-  // Muốn xem thử chấm đỏ: tạm đổi 0 thành 1.
-  const unreadCount = 0;
 
   return (
     <MemberAreaContext.Provider value={areaValue}>

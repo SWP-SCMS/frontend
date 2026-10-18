@@ -8,14 +8,20 @@ import { Container, Navbar, Nav, Offcanvas, Button, Dropdown } from 'react-boots
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import { ROLES } from '../../constants';
-import { APP_SHELL_NAV_ITEMS, APP_SHELL_USER_MENU } from './navConfig';
+import {
+  APP_SHELL_NAV_ITEMS,
+  APP_SHELL_USER_MENU,
+  flattenNavSections,
+} from './navConfig';
 
 export default function AppShell({ children }) {
   const { user, role, isAuthenticated, logout } = useAuth();
   const [showSidebar, setShowSidebar] = useState(false);
   const navigate = useNavigate();
 
-  const items = role ? APP_SHELL_NAV_ITEMS[role] || [] : [];
+  const items = role
+    ? flattenNavSections(APP_SHELL_NAV_ITEMS[role] || [])
+    : [];
   const userMenuItems = role ? APP_SHELL_USER_MENU[role] || [] : [];
 
   async function handleLogout() {

@@ -42,3 +42,43 @@ export async function updateRoom(roomId, patch) {
   const { data } = await api.patch(`/manager/rooms/${roomId}`, patch);
   return data;
 }
+
+export async function listRoomSuspensions(roomId) {
+  const { data } = await api.get(`/manager/rooms/${roomId}/suspensions`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createRoomSuspension(roomId, payload) {
+  const { data } = await api.post(
+    `/manager/rooms/${roomId}/suspensions`,
+    payload,
+  );
+  return data;
+}
+
+export async function extendRoomSuspension(roomId, suspensionId, payload) {
+  const { data } = await api.patch(
+    `/manager/rooms/${roomId}/suspensions/${suspensionId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function previewRoomImpact(roomId, payload) {
+  const { data } = await api.post(
+    `/manager/rooms/${roomId}/impact-preview`,
+    payload,
+  );
+  return {
+    count: Number(data?.count) || 0,
+    sessions: Array.isArray(data?.sessions) ? data.sessions : [],
+  };
+}
+
+export async function applyRoomImpact(roomId, payload) {
+  const { data } = await api.post(
+    `/manager/rooms/${roomId}/impact-apply`,
+    payload,
+  );
+  return data;
+}

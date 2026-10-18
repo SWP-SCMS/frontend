@@ -3,17 +3,44 @@
 //   - Dùng class .scms-sd-* (không đụng .scms-ml-* của Member).
 //   - Role chip và avatar-fallback lấy từ prop roleLabel
 //     (thay vì hard-code "Hội viên" như Member).
-//   - accountId lấy từ user?.accountId (staff user có accountId, không có memberId).
+//   - Không hiển thị UUID tài khoản trong giao diện nghiệp vụ.
 //   - Vùng top-nav render rỗng (không có top-nav cho staff ở phase này).
 //
 // Component chỉ render — không tải dữ liệu, không gọi API.
 
+import { Dropdown } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import StaffIcon from './StaffIcon';
 
-export default function StaffHeader({ user, roleLabel, onRequestLogout }) {
+export default function StaffHeader({ user, roleLabel, unreadCount = 0, notificationPath, onRequestLogout }) {
+  const hasUnread = unreadCount > 0;
   return (
     <header className="scms-sd-header">
-      <nav className="scms-sd-topnav">{/* intentionally empty for staff area */}</nav>
+      <nav className="scms-sd-topnav">
+        {notificationPath ? (
+          <Dropdown align="start">
+            <Dropdown.Toggle
+              as="button"
+              type="button"
+              className="scms-sd-bell"
+              aria-label={hasUnread ? `Thông báo (${unreadCount} mới)` : 'Thông báo'}
+              id="staff-notification-bell"
+            >
+              <StaffIcon name="bell" size={20} />
+              {hasUnread ? <span className="scms-sd-bell-dot" aria-hidden="true"></span> : null}
+            </Dropdown.Toggle>
+            <Dropdown.Menu className="scms-sd-bell-menu">
+              <div className="scms-sd-bell-head">Thông báo</div>
+              <div className="scms-sd-bell-empty">
+                {hasUnread ? `Bạn có ${unreadCount} thông báo mới.` : 'Chưa có thông báo nào.'}
+              </div>
+              <Dropdown.Item as={Link} to={notificationPath} className="small text-danger">
+                Xem tất cả thông báo
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+        ) : null}
+      </nav>
 
       <div className="scms-sd-user">
         <span className="scms-sd-role">
@@ -25,7 +52,7 @@ export default function StaffHeader({ user, roleLabel, onRequestLogout }) {
             {user?.fullName || roleLabel}
           </span>
           <span className="scms-sd-user-code">
-            {user?.accountId || '—'}
+            {user?.email || roleLabel}
           </span>
         </div>
         <span className="scms-sd-avatar" aria-hidden="true">

@@ -15,7 +15,8 @@
 //     manager's date + HH:mm selection to those Instants (see
 //     gymLocalToIsoInstant helper below). The BE then compares
 //     startTime strictly against clock.instant() (must be in the
-//     future) and endTime strictly against startTime.
+//     future), endTime strictly against startTime, and duration at most
+//     from 30 to 90 minutes.
 //   - capacity: positive integer; must not exceed the selected
 //     Room's capacity (BE-side check).
 //   - Backend validates Class / Coach / Room existence and status,
@@ -43,6 +44,7 @@ import { listRooms } from '../../../services/roomService';
 import { searchStaffAccounts } from '../../../services/staffAccountService';
 import { createSingleSession } from '../../../services/classSessionService';
 import { applyServerErrors } from '../../../utils/serverErrors';
+import { getGymZoneTodayIsoDate } from '../../../utils/gymTime';
 
 // Maximum page size the BE accepts for /manager/staff-accounts
 // (StaffAccountController validation: 1 <= size <= 100). Using the
@@ -62,18 +64,8 @@ const TYPE_LABEL = {
   PT_1_1: 'PT 1:1',
 };
 
-// Returns today's calendar date in the browser's local time zone
-// formatted as yyyy-MM-dd. Matches the HTML date input's value
-// format and the user's perspective of "today". The backend
-// re-validates against Asia/Ho_Chi_Minh; any cross-time-zone
-// edge case surfaces as an inline startTime error from the BE
-// (it compares the composed Instant against the application clock).
 function getLocalTodayIsoDate() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  return getGymZoneTodayIsoDate();
 }
 
 // Convert a Vietnam-gym-local date (yyyy-MM-dd) and time (HH:mm)
@@ -157,6 +149,13 @@ async function fetchAllActiveCoaches() {
 // Page-local Zod schema for the editable fields only. `classId` is
 // read from the route/loaded class and is not validated as a form
 // field.
+function localTimeToMinutes(value) {
+  const match = ISO_TIME_RE.exec(value);
+  if (!match) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
 const singleSessionCreateSchema = z
   .object({
     coachId: z.string().min(1, 'Vui lòng chọn huấn luyện viên.'),
@@ -184,7 +183,29 @@ const singleSessionCreateSchema = z
   .refine((data) => data.endTime > data.startTime, {
     message: 'Giờ kết thúc phải sau giờ bắt đầu.',
     path: ['endTime'],
-  });
+  })
+  .refine(
+    (data) => {
+      const start = localTimeToMinutes(data.startTime);
+      const end = localTimeToMinutes(data.endTime);
+      return start == null || end == null || end - start >= 30;
+    },
+    {
+      message: 'Thời lượng buổi tập phải ít nhất 30 phút.',
+      path: ['endTime'],
+    },
+  )
+  .refine(
+    (data) => {
+      const start = localTimeToMinutes(data.startTime);
+      const end = localTimeToMinutes(data.endTime);
+      return start == null || end == null || end - start <= 90;
+    },
+    {
+      message: 'Thời lượng buổi tập không được vượt quá 90 phút.',
+      path: ['endTime'],
+    },
+  );
 
 export default function SingleSessionCreatePage() {
   const { classId } = useParams();
