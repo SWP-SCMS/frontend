@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Accordion, Alert, Button, Card, Col, Form, ProgressBar, Row, Spinner } from 'react-bootstrap';
+import { Accordion, Button, Card, Col, Form, ProgressBar, Row, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
@@ -24,6 +24,8 @@ const schema = z.object({
     ctx.addIssue({ code: 'custom', path: ['to'], message: 'Ngày kết thúc phải từ ngày bắt đầu trở đi.' });
   }
 });
+
+const DEFAULT_FILTERS = { from: '', to: '', includeTestData: false };
 
 function count(value) {
   const numeric = Number(value);
@@ -85,10 +87,10 @@ export default function ManagerReportsPage() {
   const [error, setError] = useState(null);
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { from: '', to: '', includeTestData: false },
+    defaultValues: DEFAULT_FILTERS,
   });
 
-  async function submit(filters) {
+  const loadReports = useCallback(async (filters) => {
     setLoading(true);
     setError(null);
     try {
@@ -105,12 +107,15 @@ export default function ManagerReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadReports(DEFAULT_FILTERS);
+  }, [loadReports]);
 
   function clear() {
-    reset();
-    setReports(null);
-    setError(null);
+    reset(DEFAULT_FILTERS);
+    loadReports(DEFAULT_FILTERS);
   }
 
   return (
@@ -125,7 +130,7 @@ export default function ManagerReportsPage() {
 
       <Card className="border-0 shadow-sm mb-4">
         <Card.Body>
-          <Form onSubmit={handleSubmit(submit)}>
+          <Form onSubmit={handleSubmit(loadReports)}>
             <Row className="g-3 align-items-end">
               <Col md={3}>
                 <Form.Label>Từ ngày</Form.Label>
@@ -141,7 +146,7 @@ export default function ManagerReportsPage() {
                 <Form.Check type="switch" label="Bao gồm dữ liệu kiểm thử" {...register('includeTestData')} />
               </Col>
               <Col md={3} className="d-flex gap-2">
-                <Button type="submit" variant="danger" disabled={loading}>{loading ? 'Đang tải…' : 'Xem báo cáo'}</Button>
+                <Button type="submit" variant="danger" disabled={loading}>{loading ? 'Đang tải…' : 'Lọc báo cáo'}</Button>
                 <Button type="button" variant="outline-secondary" disabled={loading} onClick={clear}>Đặt lại</Button>
               </Col>
             </Row>
@@ -151,7 +156,6 @@ export default function ManagerReportsPage() {
 
       <ErrorAlert error={error} title="Không tải được báo cáo vận hành" onClose={() => setError(null)} />
       {loading ? <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div> : null}
-      {!loading && !reports ? <Alert variant="light" className="border">Chọn khoảng thời gian, hoặc để trống để xem toàn bộ dữ liệu.</Alert> : null}
 
       {!loading && reports ? (
         <Accordion alwaysOpen defaultActiveKey={['members']} className="manager-report-accordion">

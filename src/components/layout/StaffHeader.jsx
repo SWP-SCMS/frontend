@@ -51,9 +51,9 @@ export default function StaffHeader({ user, roleLabel, unreadCount = 0, notifica
           <span className="scms-sd-user-name">
             {user?.fullName || roleLabel}
           </span>
-          <span className="scms-sd-user-code">
-            {user?.email || roleLabel}
-          </span>
+          {user?.email ? (
+            <span className="scms-sd-user-code">{user.email}</span>
+          ) : null}
         </div>
         <span className="scms-sd-avatar" aria-hidden="true">
           <StaffIcon name="user" size={18} />
