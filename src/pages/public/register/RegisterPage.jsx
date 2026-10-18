@@ -18,9 +18,8 @@
 //     via the existing scms-login-fielderror style beside the input,
 //     preserving the current visual structure (we do NOT redesign the
 //     page to use isInvalid / Form.Control.Feedback).
-//   - The legacy 13..120 age rule is preserved as a page-local refinement
-//     on the birthDate schema. It is NOT part of the shared birthDate
-//     fragment and must NOT be propagated to other forms.
+//   - Registration requires an exact calendar age of at least 16 in
+//     Asia/Ho_Chi_Minh, matching the backend LocalDate rule.
 //   - ACCOUNT_IDENTIFIER_ALREADY_EXISTS from the backend has no field
 //     clue — it surfaces as a global ErrorAlert; do NOT guess email or phone.
 
@@ -41,6 +40,10 @@ import {
   passwordSchema,
   birthDateSchema,
 } from '../../../schemas/fragments';
+import {
+  isAtLeastAgeOnGymDate,
+  latestEligibleBirthDate,
+} from '../../../utils/gymTime';
 
 import './RegisterPage.css';
 import '../auth/shared-auth.css';
@@ -105,18 +108,9 @@ function EyeButton({ shown, onToggle }) {
   );
 }
 
-// Legacy FE-only age rule (pre-existing in the prior useState-based
-// source). It is intentionally page-local and is NOT promoted into the
-// shared birthDateSchema fragment.
 const ageRefinedBirthDateSchema = birthDateSchema.refine(
-  (d) => {
-    const age = Math.floor(
-      (Date.now() - new Date(d).getTime()) /
-        (365.25 * 24 * 60 * 60 * 1000),
-    );
-    return age >= 13 && age <= 120;
-  },
-  { message: 'Ngày sinh không hợp lệ.' },
+  (d) => isAtLeastAgeOnGymDate(d, 16),
+  { message: 'Bạn phải đủ 16 tuổi để đăng ký.' },
 );
 
 const registerSchema = z
@@ -358,6 +352,7 @@ export default function RegisterPage() {
               className="scms-login-input scms-register-date"
               type="date"
               {...register('birthDate')}
+              max={latestEligibleBirthDate(16)}
               autoComplete="bday"
             />
           </Field>

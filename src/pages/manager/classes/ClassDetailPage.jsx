@@ -15,6 +15,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
 import { getClass } from '../../../services/sportClassService';
 
 const STATUS_BADGE = {
@@ -81,19 +82,24 @@ export default function ClassDetailPage() {
 
   return (
     <div>
-      <Link
-        to="/manager/classes"
-        className="small text-decoration-none"
-      >
-        ← Quay lại danh sách
-      </Link>
+      <WorkflowBreadcrumb
+        items={[{ to: '/manager/classes', label: 'Lớp học' }]}
+        current={classData.name || 'Chi tiết'}
+      />
 
-      <div className="d-flex flex-wrap justify-content-between align-items-end mt-2 mb-3 gap-2">
+      <div className="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
         <div>
           <h1 className="h3 fw-bold mb-1">{classData.name || '—'}</h1>
           <p className="text-muted mb-0">Lớp đào tạo</p>
         </div>
         <div className="d-flex gap-2 flex-wrap">
+          <Button
+            as={Link}
+            to={`/manager/class-sessions?view=list&classId=${encodeURIComponent(classData.id)}`}
+            variant="outline-danger"
+          >
+            Xem lịch / buổi tập
+          </Button>
           <Button
             as={Link}
             to={`/manager/classes/${classData.id}/sessions/new`}

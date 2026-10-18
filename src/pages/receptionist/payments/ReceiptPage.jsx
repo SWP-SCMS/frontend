@@ -4,7 +4,8 @@ import { Alert, Button, Card, Col, Row, Spinner, Stack } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getReceipt } from '../../../services/receptionistService';
-import { formatDateTime, formatPrice } from '../../../utils';
+import { formatPrice } from '../../../utils';
+import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 import { downloadReceiptPdf, paymentMethodLabel } from '../../../utils/receiptPdf';
 import './ReceiptPage.css';
 
@@ -29,7 +30,7 @@ function DetailRow({ label, value, mono = false }) {
   );
 }
 
-export default function ReceiptPage() {
+export default function ReceiptPage({ memberMode = false }) {
   const { receiptId } = useParams();
 
   const [receipt, setReceipt] = useState(null);
@@ -96,12 +97,9 @@ export default function ReceiptPage() {
     );
   }
 
-  // A 403 here means one of two things: the account is a coach (blocked
-  // outright), or a member is reading a receipt that is not theirs. It no
-  // longer means "bank-transfer receipt, ask a manager" — the backend lifted
-  // that restriction in commit 4012273.
   if (error) {
     const status = error?.response?.status;
+    const code = error?.response?.data?.code;
     return (
       <>
         <ErrorAlert
@@ -109,18 +107,18 @@ export default function ReceiptPage() {
           title="Không xem được biên lai"
           onClose={() => setError(null)}
         />
-        {status === 403 ? (
+        {status === 403 || code === 'PAYMENT_FORBIDDEN' ? (
           <Alert variant="warning">
             <Alert.Heading className="h6 mb-1">Bạn không có quyền xem biên lai này</Alert.Heading>
             <div className="small">
-              Biên lai chỉ mở cho chính hội viên đó, quản trị viên và lễ tân.
-              Nếu bạn đang đăng nhập bằng tài khoản không thuộc quyền này, hãy quay
-              lại màn hình đăng nhập.
+              {memberMode
+                ? 'Bạn chỉ có thể xem biên lai thuộc tài khoản của mình.'
+                : 'Biên lai này có thể do nhân viên khác xử lý hoặc tài khoản của bạn không có quyền truy cập. Quản lý vẫn có thể xem mọi biên lai.'}
             </div>
           </Alert>
         ) : null}
-        <Button as={Link} to="/reception/payments/cash" variant="outline-secondary" size="sm">
-          Về màn hình Thu tiền mặt
+        <Button as={Link} to={memberMode ? '/member/receipts' : '/reception/orders/new'} variant="outline-secondary" size="sm">
+          {memberMode ? 'Về danh sách biên lai' : 'Về màn hình tạo đơn'}
         </Button>
       </>
     );
@@ -165,7 +163,7 @@ export default function ReceiptPage() {
               </div>
 
               <DetailRow label="Số biên lai" value={receipt.receiptNumber} />
-              <DetailRow label="Ngày xuất" value={formatDateTime(receipt.issuedAt)} />
+              <DetailRow label="Ngày xuất" value={`${formatGymDate(receipt.issuedAt)} · ${formatGymTime(receipt.issuedAt)}`} />
               <DetailRow label="Hội viên" value={memberName} />
               <DetailRow label="Mã hội viên" value={memberCode} />
               <DetailRow label="Gói tập" value={offerName} />
@@ -193,27 +191,16 @@ export default function ReceiptPage() {
                 </div>
               </div>
 
-              {/* Reference block: useful when a customer calls about one
-                  specific transaction, but noise on paper. */}
-              <div className="no-print mt-4 pt-3 border-top">
-                <div className="text-muted small mb-2">
-                  Mã hệ thống (để tra cứu, không in ra giấy)
-                </div>
-                <DetailRow label="Mã biên lai" value={receipt.receiptId} mono />
-                <DetailRow label="Mã thanh toán" value={receipt.paymentId} mono />
-                <DetailRow label="Mã đơn" value={receipt.orderId} mono />
-                <DetailRow label="Mã tài khoản" value={receipt.memberAccountId} mono />
-              </div>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
       <div className="no-print mt-3 d-flex gap-2">
-        <Button as={Link} to="/reception/payments/cash" variant="outline-secondary" size="sm">
-          Về màn hình Thu tiền mặt
+        <Button as={Link} to={memberMode ? '/member/receipts' : '/reception/orders/new'} variant="outline-secondary" size="sm">
+          {memberMode ? 'Về danh sách biên lai' : 'Về màn hình tạo đơn'}
         </Button>
-        {memberCode ? (
+        {!memberMode && memberCode ? (
           <Button
             as={Link}
             to={`/reception/members/${memberCode}`}

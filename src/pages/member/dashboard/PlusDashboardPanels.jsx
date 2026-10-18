@@ -77,11 +77,14 @@ export default function PlusDashboardPanels({ membership, locked = false }) {
     if (locked) return undefined;
     let cancelled = false;
     // Hai API độc lập: một cái lỗi thì cái kia vẫn hiện.
-    Promise.allSettled([listAllMyBookedBookings(), listMyFeedback()]).then(
+    Promise.allSettled([
+      listAllMyBookedBookings(),
+      listMyFeedback({ page: 0, size: MAX_FEEDBACK }),
+    ]).then(
       ([b, f]) => {
         if (cancelled) return;
         if (b.status === 'fulfilled') setBookings(b.value);
-        if (f.status === 'fulfilled') setFeedback(f.value);
+        if (f.status === 'fulfilled') setFeedback(f.value.content);
         const failed = [b, f].find((r) => r.status === 'rejected');
         if (failed) setError(failed.reason);
         setLoading(false);

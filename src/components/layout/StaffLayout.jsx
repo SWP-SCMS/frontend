@@ -16,6 +16,8 @@ import { Button, Modal } from 'react-bootstrap';
 import { useAuth } from '../../context/useAuth';
 import StaffSidebar from './StaffSidebar';
 import StaffHeader from './StaffHeader';
+import useNotificationUnreadCount from './useNotificationUnreadCount';
+import { flattenNavSections } from './navConfig';
 import './StaffLayout.css';
 
 export default function StaffLayout({
@@ -26,6 +28,9 @@ export default function StaffLayout({
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const unreadCount = useNotificationUnreadCount();
+  const notificationPath = flattenNavSections(sidebarItems)
+    .find((item) => item.to.endsWith('/notifications'))?.to;
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -57,6 +62,8 @@ export default function StaffLayout({
         <StaffHeader
           user={user}
           roleLabel={roleLabel}
+          unreadCount={unreadCount}
+          notificationPath={notificationPath}
           onRequestLogout={requestLogout}
         />
 

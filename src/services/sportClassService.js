@@ -3,6 +3,7 @@
 // Endpoints (all bearer-auth, MANAGER-only — backend enforces via
 // SecurityConfiguration.requestMatchers("/manager/classes", "/manager/classes/**").hasRole("MANAGER")):
 //   GET    /api/v1/manager/classes                       listClasses
+//   GET    /api/v1/manager/classes/types                 listSupportedClassTypes
 //   POST   /api/v1/manager/classes                       createClass
 //   GET    /api/v1/manager/classes/{classId}             getClass
 //   PATCH  /api/v1/manager/classes/{classId}             updateClass
@@ -11,8 +12,10 @@
 //   - List returns a plain array; server sort is fixed (name ASC, id ASC).
 //   - No pagination, no search/filter query params — those are FE-only today.
 //   - Create body shape: { disciplineId, name, classType, description? }.
-//     classType ∈ { 'GROUP', 'YOGA', 'PT_1_1' }. status is NOT accepted on
-//     create (new classes are always ACTIVE server-side).
+//     The write-capable class types come from GET /manager/classes/types.
+//     Legacy reads may still return YOGA, but YOGA is not write-capable.
+//     status is NOT accepted on create (new classes are always ACTIVE
+//     server-side).
 //   - PATCH body shape: subset of { name, classType, description, status }.
 //     At least one field MUST be present (else 400). disciplineId is
 //     immutable after create; the BE rejects any attempt to alter it.
@@ -23,6 +26,12 @@ import api from './api';
 // GET /api/v1/manager/classes
 export async function listClasses() {
   const { data } = await api.get('/manager/classes');
+  return Array.isArray(data) ? data : [];
+}
+
+// GET /api/v1/manager/classes/types
+export async function listSupportedClassTypes() {
+  const { data } = await api.get('/manager/classes/types');
   return Array.isArray(data) ? data : [];
 }
 

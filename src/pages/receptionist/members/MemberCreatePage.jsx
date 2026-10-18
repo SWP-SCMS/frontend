@@ -6,7 +6,7 @@
 //
 // Contract details that shape this UI:
 //   - All of fullName/phone/email/birthDate are required. birthDate must not
-//     be in the future.
+//     be in the future, and the Member must be at least 16 years old.
 //   - The default password is derived server-side from the normalized phone
 //     and stored only as a BCrypt hash. It is NEVER returned, so this page
 //     must not promise to show it.
@@ -44,19 +44,32 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 import { createReceptionMember } from '../../../services/receptionistService';
 import { applyServerErrors } from '../../../utils/serverErrors';
 import {
+  isAtLeastAgeOnGymDate,
+  latestEligibleBirthDate,
+} from '../../../utils/gymTime';
+import {
   fullNameSchema,
   emailSchema,
   phoneCreateSchema,
   birthDateSchema,
 } from '../../../schemas/fragments';
 
-// Page-local schema: shared fragments + optional profileImageUrl.
+function isAtLeast16YearsOld(birthDate) {
+  return isAtLeastAgeOnGymDate(birthDate, 16);
+}
+
+const memberBirthDateSchema = birthDateSchema.refine(isAtLeast16YearsOld, {
+  message: 'Hội viên phải đủ 16 tuổi.',
+});
+
+// Page-local schema: shared fragments + creation-only minimum age and
+// optional profileImageUrl.
 // No URL-regex check is added here on purpose — see the file header.
 const memberCreateSchema = z.object({
   fullName: fullNameSchema,
   phone: phoneCreateSchema,
   email: emailSchema,
-  birthDate: birthDateSchema,
+  birthDate: memberBirthDateSchema,
   profileImageUrl: z.string(),
 });
 
@@ -285,7 +298,7 @@ export default function MemberCreatePage() {
                       <Form.Control
                         type="date"
                         {...register('birthDate')}
-                        max={new Date().toISOString().slice(0, 10)}
+                        max={latestEligibleBirthDate(16)}
                         isInvalid={Boolean(errors.birthDate)}
                       />
                       <Form.Control.Feedback type="invalid">

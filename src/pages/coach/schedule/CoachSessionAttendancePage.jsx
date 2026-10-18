@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Form, Spinner, Table } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import Icon from '../../../components/layout/MemberIcon';
 import { updateAttendance } from '../../../services/coachScheduleService';
 import { toAttendanceError } from './attendanceErrors';
@@ -20,20 +21,16 @@ import './CoachSchedulePage.css';
 
 // Ảnh hồ sơ học viên; chưa có ảnh hoặc ảnh lỗi thì hiện biểu tượng người.
 function Avatar({ url }) {
-  const [broken, setBroken] = useState(false);
-  if (!url || broken) {
-    return (
+  return (
+    <AuthenticatedProfileImage
+      src={url}
+      alt=""
+      className="scms-coach-avatar"
+      fallback={
       <span className="scms-coach-avatar" aria-hidden="true">
         <Icon name="user" size={22} />
       </span>
-    );
-  }
-  return (
-    <img
-      className="scms-coach-avatar"
-      src={url}
-      alt=""
-      onError={() => setBroken(true)}
+      }
     />
   );
 }

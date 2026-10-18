@@ -3,7 +3,7 @@
 // Backend behavior (SportClassService#create):
 //   - disciplineId: required, must reference an ACTIVE Discipline.
 //   - name: required, trim().length in 1..150.
-//   - classType: required, enum { GROUP, YOGA, PT_1_1 }.
+//   - classType: required, enum { GROUP, PT_1_1 } for writes.
 //   - description: optional, blank -> null.
 //   - status: NOT accepted on create. Every new class is created ACTIVE
 //     server-side. Sending `status` in the body yields 400 MALFORMED_REQUEST.
@@ -18,7 +18,7 @@
 //     selector (plan §D.6).
 // All domain code mappings are kept PAGE-LOCAL.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
@@ -26,29 +26,52 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import { createClass } from '../../../services/sportClassService';
+import {
+  createClass,
+  listSupportedClassTypes,
+} from '../../../services/sportClassService';
 import { listDisciplines } from '../../../services/disciplineService';
 import { applyServerErrors } from '../../../utils/serverErrors';
 
-// Page-local schema. status is intentionally absent — backend assigns ACTIVE.
-const classCreateSchema = z.object({
-  disciplineId: z.string().min(1, 'Vui lòng chọn bộ môn.'),
-  name: z
-    .string()
-    .trim()
-    .min(1, 'Vui lòng nhập tên lớp.')
-    .max(150, 'Tên lớp không được vượt quá 150 ký tự.'),
-  classType: z.enum(['GROUP', 'YOGA', 'PT_1_1'], {
-    message: 'Loại lớp không hợp lệ.',
-  }),
-  description: z.string(),
-});
+const TYPE_LABELS = {
+  GROUP: 'Nhóm',
+  YOGA: 'Yoga',
+  PT_1_1: 'PT 1:1',
+};
 
-const TYPE_OPTIONS = [
-  { value: 'GROUP', label: 'Nhóm' },
-  { value: 'YOGA', label: 'Yoga' },
-  { value: 'PT_1_1', label: 'PT 1:1' },
-];
+function normalizeWriteTypes(values) {
+  return [
+    ...new Set(
+      (Array.isArray(values) ? values : []).filter(
+        (value) =>
+          typeof value === 'string' &&
+          value.trim().length > 0 &&
+          value !== 'YOGA',
+      ),
+    ),
+  ];
+}
+
+// Page-local schema. status is intentionally absent — backend assigns ACTIVE.
+// classType is validated against the latest server-provided write capability.
+function buildClassCreateSchema(supportedTypes) {
+  const supported = new Set(supportedTypes);
+  return z.object({
+    disciplineId: z.string().min(1, 'Vui lòng chọn bộ môn.'),
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Vui lòng nhập tên lớp.')
+      .max(150, 'Tên lớp không được vượt quá 150 ký tự.'),
+    classType: z
+      .string()
+      .min(1, 'Vui lòng chọn loại lớp.')
+      .refine((value) => supported.has(value), {
+        message: 'Loại lớp không còn được hệ thống hỗ trợ.',
+      }),
+    description: z.string(),
+  });
+}
 
 export default function ClassCreatePage() {
   const navigate = useNavigate();
@@ -56,8 +79,23 @@ export default function ClassCreatePage() {
   const [disciplines, setDisciplines] = useState([]);
   const [loadingDisciplines, setLoadingDisciplines] = useState(true);
   const [disciplinesError, setDisciplinesError] = useState(null);
+  const [supportedClassTypes, setSupportedClassTypes] = useState([]);
+  const [loadingClassTypes, setLoadingClassTypes] = useState(true);
+  const [classTypesError, setClassTypesError] = useState(null);
 
   const [serverError, setServerError] = useState(null);
+  const classTypeOptions = useMemo(
+    () =>
+      supportedClassTypes.map((value) => ({
+        value,
+        label: TYPE_LABELS[value] || value,
+      })),
+    [supportedClassTypes],
+  );
+  const classCreateSchema = useMemo(
+    () => buildClassCreateSchema(supportedClassTypes),
+    [supportedClassTypes],
+  );
 
   const {
     register,
@@ -100,8 +138,23 @@ export default function ClassCreatePage() {
     }
   }
 
+  async function fetchClassTypes() {
+    setLoadingClassTypes(true);
+    setClassTypesError(null);
+    try {
+      const types = await listSupportedClassTypes();
+      setSupportedClassTypes(normalizeWriteTypes(types));
+    } catch (err) {
+      setSupportedClassTypes([]);
+      setClassTypesError(err);
+    } finally {
+      setLoadingClassTypes(false);
+    }
+  }
+
   useEffect(() => {
     fetchDisciplines();
+    fetchClassTypes();
   }, []);
 
   async function onSubmit(data) {
@@ -125,6 +178,7 @@ export default function ClassCreatePage() {
       const fieldErrors = err?.response?.data?.errors;
       const alreadyMappedName = hasFieldMessage(fieldErrors, 'name');
       const alreadyMappedDisc = hasFieldMessage(fieldErrors, 'disciplineId');
+      const classTypeUnsupported = code === 'CLASS_TYPE_UNSUPPORTED';
 
       // PAGE-LOCAL domain conflicts.
       if (code === 'CLASS_NAME_CONFLICT' && !alreadyMappedName) {
@@ -145,11 +199,20 @@ export default function ClassCreatePage() {
           message: 'Bộ môn không tồn tại.',
         });
       }
+      if (
+        classTypeUnsupported &&
+        !hasFieldMessage(fieldErrors, 'classType')
+      ) {
+        setError('classType', {
+          type: 'server',
+          message: 'Loại lớp này không còn được hỗ trợ. Vui lòng chọn loại khác.',
+        });
+      }
 
       // Global ErrorAlert is the shared-helper path's fallback: only
       // raised when the helper did NOT handle the error. Page-local
       // mappings above are independent and are preserved as-is.
-      if (!handled) {
+      if (!handled && !classTypeUnsupported) {
         setServerError(err);
       }
 
@@ -171,8 +234,17 @@ export default function ClassCreatePage() {
     !loadingDisciplines &&
     !disciplinesError &&
     disciplines.length === 0;
+  const noSupportedClassTypes =
+    !loadingClassTypes &&
+    !classTypesError &&
+    supportedClassTypes.length === 0;
   const submitDisabled =
-    isSubmitting || loadingDisciplines || noActiveDisciplines;
+    isSubmitting ||
+    loadingDisciplines ||
+    loadingClassTypes ||
+    Boolean(classTypesError) ||
+    noActiveDisciplines ||
+    noSupportedClassTypes;
 
   return (
     <div>
@@ -195,6 +267,12 @@ export default function ClassCreatePage() {
       />
 
       <ErrorAlert
+        error={classTypesError}
+        title="Không tải được loại lớp được hỗ trợ"
+        onClose={() => setClassTypesError(null)}
+      />
+
+      <ErrorAlert
         error={serverError}
         title="Không tạo được lớp"
         onClose={() => setServerError(null)}
@@ -208,6 +286,12 @@ export default function ClassCreatePage() {
             Tạo bộ môn mới
           </Alert.Link>
           .
+        </Alert>
+      ) : null}
+
+      {noSupportedClassTypes ? (
+        <Alert variant="warning">
+          Hệ thống hiện chưa cung cấp loại lớp nào có thể tạo mới.
         </Alert>
       ) : null}
 
@@ -240,7 +324,7 @@ export default function ClassCreatePage() {
           <Form.Control
             {...register('name')}
             maxLength={150}
-            placeholder="VD: Yoga cơ bản"
+            placeholder="VD: Fitness nhóm cơ bản"
             isInvalid={Boolean(errors.name)}
           />
           <Form.Control.Feedback type="invalid">
@@ -253,9 +337,10 @@ export default function ClassCreatePage() {
           <Form.Select
             {...register('classType')}
             isInvalid={Boolean(errors.classType)}
+            disabled={loadingClassTypes || Boolean(classTypesError)}
           >
             <option value="">-- Chọn loại lớp --</option>
-            {TYPE_OPTIONS.map((o) => (
+            {classTypeOptions.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

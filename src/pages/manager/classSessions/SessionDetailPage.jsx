@@ -29,6 +29,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
 import { applyServerErrors } from '../../../utils/serverErrors';
 import {
   cancelSession,
@@ -323,9 +324,10 @@ export default function SessionDetailPage() {
 
   return (
     <div>
-      <Link to={backTarget} className="small text-decoration-none">
-        ← Quay lại Buổi tập
-      </Link>
+      <WorkflowBreadcrumb
+        items={[{ to: backTarget, label: 'Buổi tập' }]}
+        current={`${session.className || 'Chi tiết'} · ${formatGymDate(session.startTime)}`}
+      />
 
       {assignmentUpdated ? (
         <Alert variant="success" className="mt-3 mb-0 py-2">

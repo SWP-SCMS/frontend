@@ -14,7 +14,7 @@
 //     unique and non-empty.
 //   - startDate: yyyy-MM-dd, must be today or later (Asia/Ho_Chi_Minh).
 //   - startTime / endTime: HH:mm, endTime must be strictly after
-//     startTime.
+//     startTime and each Session must last from 30 to 90 minutes.
 //   - capacity: positive integer; must not exceed selected Room's
 //     capacity.
 //   - Generates exactly 30 ClassSession rows starting on/after
@@ -44,6 +44,7 @@ import { listRooms } from '../../../services/roomService';
 import { searchStaffAccounts } from '../../../services/staffAccountService';
 import { createRecurringSchedule } from '../../../services/recurringScheduleService';
 import { applyServerErrors } from '../../../utils/serverErrors';
+import { getGymZoneTodayIsoDate } from '../../../utils/gymTime';
 
 // Maximum page size the BE accepts for /manager/staff-accounts
 // (StaffAccountController validation: 1 <= size <= 100). Using the
@@ -76,6 +77,13 @@ const TYPE_LABEL = {
 // Page-local Zod schema for the editable fields only. `classId`
 // is read from the route/loaded class and is not validated as a
 // form field.
+function localTimeToMinutes(value) {
+  const match = ISO_TIME_RE.exec(value);
+  if (!match) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
 const recurringScheduleCreateSchema = z
   .object({
     coachId: z.string().min(1, 'Vui lòng chọn huấn luyện viên.'),
@@ -110,19 +118,32 @@ const recurringScheduleCreateSchema = z
   .refine((data) => data.endTime > data.startTime, {
     message: 'Giờ kết thúc phải sau giờ bắt đầu.',
     path: ['endTime'],
-  });
+  })
+  .refine(
+    (data) => {
+      const start = localTimeToMinutes(data.startTime);
+      const end = localTimeToMinutes(data.endTime);
+      return start == null || end == null || end - start >= 30;
+    },
+    {
+      message: 'Thời lượng mỗi buổi tập phải ít nhất 30 phút.',
+      path: ['endTime'],
+    },
+  )
+  .refine(
+    (data) => {
+      const start = localTimeToMinutes(data.startTime);
+      const end = localTimeToMinutes(data.endTime);
+      return start == null || end == null || end - start <= 90;
+    },
+    {
+      message: 'Thời lượng mỗi buổi tập không được vượt quá 90 phút.',
+      path: ['endTime'],
+    },
+  );
 
-// Returns today's calendar date in the browser's local time zone
-// formatted as yyyy-MM-dd. Matches the HTML date input's value
-// format and the user's perspective of "today". The backend
-// re-validates against Asia/Ho_Chi_Minh; any cross-time-zone
-// edge case surfaces as an inline startDate error from the BE.
 function getLocalTodayIsoDate() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  return getGymZoneTodayIsoDate();
 }
 
 function hasFieldMessage(fieldErrors, field) {

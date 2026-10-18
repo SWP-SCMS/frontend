@@ -2,7 +2,7 @@ node_modules
 dist
 dist-ssr
 *.local
-
+docs
 # env files (keep example checked in)
 .env
 .env.*.local

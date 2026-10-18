@@ -160,3 +160,25 @@ export async function cancelSession(sessionId, body) {
   );
   return data;
 }
+
+export async function previewSessionCancellation(payload) {
+  const { data } = await api.post(
+    '/manager/class-sessions/cancellation-preview',
+    payload,
+  );
+  return {
+    count: Number(data?.count) || 0,
+    sessionIds: Array.isArray(data?.sessionIds) ? data.sessionIds : [],
+  };
+}
+
+export async function bulkCancelSessions(payload) {
+  const { data } = await api.post(
+    '/manager/class-sessions/bulk-cancel',
+    payload,
+  );
+  return {
+    cancelledCount: Number(data?.cancelledCount) || 0,
+    sessionIds: Array.isArray(data?.sessionIds) ? data.sessionIds : [],
+  };
+}

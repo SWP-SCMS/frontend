@@ -31,24 +31,11 @@ const DASHBOARD_LINKS = [
     cta: 'Đăng ký hội viên',
   },
   {
-    // Points at the member LIST, not /orders/new: creating an order needs a
-    // member, and /orders/new without ?memberId= is an EmptyState telling the
-    // user to go find one. Sending staff through the list first is the
-    // shortest honest path.
     title: 'Tạo đơn gói tập',
     description:
-      'Tìm hội viên rồi tạo đơn chuyển khoản ngân hàng. Đơn ở trạng thái chờ thanh toán tới khi bạn đối soát.',
-    to: '/reception/members',
+      'Tìm hội viên, chọn gói tập rồi thanh toán bằng chuyển khoản hoặc tiền mặt trên cùng một màn hình.',
+    to: '/reception/orders/new',
     cta: 'Tạo đơn',
-  },
-  {
-    // Separate from the order card above because cash is its own endpoint
-    // (US20) and starts with a member lookup, not an offer picker.
-    title: 'Thu tiền mặt',
-    description:
-      'Tìm hội viên, chọn gói tập và xác nhận đã nhận tiền mặt. Gói được kích hoạt và xuất biên lai ngay.',
-    to: '/reception/payments/cash',
-    cta: 'Thu tiền mặt',
   },
   {
     title: 'Gói tập',
@@ -91,19 +78,6 @@ export default function ReceptionistDashboardPage() {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={6} lg={4}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="text-muted small">Mã tài khoản</div>
-              <div
-                className="fw-semibold text-truncate"
-                title={user?.accountId || ''}
-              >
-                {user?.accountId || '—'}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
       </Row>
 
       <h2 className="h5 fw-bold mb-3">Truy cập nhanh</h2>
@@ -133,10 +107,9 @@ export default function ReceptionistDashboardPage() {
       </Row>
 
       <p className="text-muted small mt-4 mb-0">
-        Thanh toán tại quầy hỗ trợ <strong>tiền mặt</strong> (kích hoạt ngay tại
-        màn hình Thu tiền mặt) và <strong>chuyển khoản ngân hàng</strong> (tạo
-        đơn rồi đối soát). Các chức năng đặt lịch và điểm danh sẽ được bổ sung
-        khi backend có endpoint tương ứng.
+        Thanh toán tại quầy hỗ trợ <strong>tiền mặt</strong> (kích hoạt gói và
+        xuất biên lai ngay) hoặc <strong>chuyển khoản ngân hàng</strong> (tạo đơn
+        chờ thanh toán rồi đối soát).
       </p>
     </div>
   );

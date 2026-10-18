@@ -50,6 +50,21 @@ const MemberClassSchedulePage = lazy(
 const ClassBookingPage = lazy(
   () => import('../pages/member/classBooking/ClassBookingPage'),
 );
+const MemberTrainingPlansPage = lazy(
+  () => import('../pages/member/training/MemberTrainingPlansPage'),
+);
+const MemberTrainingResultsPage = lazy(
+  () => import('../pages/member/training/MemberTrainingResultsPage'),
+);
+const MemberTrainingFeedbackPage = lazy(
+  () => import('../pages/member/training/MemberTrainingFeedbackPage'),
+);
+const MemberReceiptListPage = lazy(
+  () => import('../pages/member/receipts/MemberReceiptListPage'),
+);
+const NotificationPage = lazy(
+  () => import('../pages/common/NotificationPage'),
+);
 
 // Coach – Dashboard / Lịch phụ trách / Hồ sơ
 const CoachDashboardPage = lazy(
@@ -67,13 +82,31 @@ const CoachSessionStudentsPage = lazy(
 const CoachSessionAttendancePage = lazy(
   () => import('../pages/coach/schedule/CoachSessionAttendancePage'),
 );
+const CoachSessionMemberTrainingPage = lazy(
+  () => import('../pages/coach/schedule/CoachSessionMemberTrainingPage'),
+);
 const CoachProfilePage = lazy(
   () => import('../pages/coach/profile/CoachProfilePage'),
+);
+const CoachAssignedMemberListPage = lazy(
+  () => import('../pages/coach/members/CoachAssignedMemberListPage'),
+);
+const CoachMemberProfilePage = lazy(
+  () => import('../pages/coach/members/CoachMemberProfilePage'),
+);
+const CoachMemberTrainingPage = lazy(
+  () => import('../pages/coach/members/CoachMemberTrainingPage'),
 );
 
 // Manager – Dashboard
 const ManagerDashboardPage = lazy(
   () => import('../pages/manager/dashboard/ManagerDashboardPage'),
+);
+const ManagerReportsPage = lazy(
+  () => import('../pages/manager/reports/ManagerReportsPage'),
+);
+const AuditHistoryPage = lazy(
+  () => import('../pages/manager/audit/AuditHistoryPage'),
 );
 
 // Receptionist – Dashboard
@@ -84,6 +117,9 @@ const ReceptionistDashboardPage = lazy(
 // Receptionist – Center Check-in (US36)
 const ReceptionCenterCheckInPage = lazy(
   () => import('../pages/receptionist/checkIn/ReceptionCenterCheckInPage'),
+);
+const OpenCenterVisitsPage = lazy(
+  () => import('../pages/receptionist/centerVisits/OpenCenterVisitsPage'),
 );
 
 // Receptionist – Member search & profile (US11)
@@ -108,11 +144,6 @@ const ReceptionistMemberCreatePage = lazy(
 // Receptionist – Membership Offer browsing (US12)
 const ReceptionistMembershipOfferListPage = lazy(
   () => import('../pages/receptionist/membershipOffers/MembershipOfferListPage'),
-);
-
-// Receptionist – Bank-transfer Membership Order (US16)
-const ReceptionistMembershipOrderCreatePage = lazy(
-  () => import('../pages/receptionist/orders/MembershipOrderCreatePage'),
 );
 
 // Manager – Staff/Manager account management (US05-08)
@@ -209,6 +240,9 @@ const RoomDetailPage = lazy(
 const RoomEditPage = lazy(
   () => import('../pages/manager/rooms/RoomEditPage'),
 );
+const RoomImpactPage = lazy(
+  () => import('../pages/manager/rooms/RoomImpactPage'),
+);
 
 // Manager – Recurring Schedule Creation (US26)
 const RecurringScheduleCreatePage = lazy(
@@ -247,10 +281,8 @@ const CashPaymentPage = lazy(
 );
 
 // Printable receipt (US20 follow-up). The backend authorises
-// GET /receipts/* for any active staff account and then narrows per
-// receipt inside the service: a COACH is refused, a MEMBER may only read
-// their own, and a RECEPTIONIST or MANAGER may read any (backend commit
-// 4012273 removed the CASH-only limit that used to apply to receptionists).
+// GET /receipts/* is narrowed per receipt: MANAGER may read any;
+// RECEPTIONIST may read only receipts processed by that same account.
 // The page explains a 403 rather than showing a bare error, because the
 // remaining causes need different responses.
 const ReceiptPage = lazy(
@@ -395,6 +427,12 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route path="/member/training-plans" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingPlansPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/training-results" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingResultsPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/feedback" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingFeedbackPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/receipts" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberReceiptListPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/receipts/:receiptId" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<ReceiptPage memberMode />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/notifications" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<NotificationPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
 
       {/* ---------- Receptionist ----------
        * Persistent dark shell across the entire Receptionist area.
@@ -418,7 +456,9 @@ export default function AppRoutes() {
       >
         <Route index element={<Navigate to="/reception/check-in" replace />} />
         <Route path="check-in" element={withSuspense(<ReceptionCenterCheckInPage />)} />
+        <Route path="center-visits" element={withSuspense(<OpenCenterVisitsPage />)} />
         <Route path="dashboard" element={withSuspense(<ReceptionistDashboardPage />)} />
+        <Route path="notifications" element={withSuspense(<NotificationPage />)} />
         <Route path="members" element={withSuspense(<ReceptionistMemberListPage />)} />
         <Route path="members/new" element={withSuspense(<ReceptionistMemberCreatePage />)} />
         <Route
@@ -427,16 +467,13 @@ export default function AppRoutes() {
         />
         <Route path="members/:memberId" element={withSuspense(<ReceptionistMemberDetailPage />)} />
         <Route path="membership-offers" element={withSuspense(<ReceptionistMembershipOfferListPage />)} />
-        <Route path="orders/new" element={withSuspense(<ReceptionistMembershipOrderCreatePage />)} />
+        <Route path="orders/new" element={withSuspense(<CashPaymentPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
         <Route path="payments/cash" element={withSuspense(<CashPaymentPage />)} />
       </Route>
 
-      {/* Receipt view/print. Deliberately allows RECEPTIONIST *and* MANAGER:
-          since backend commit 4012273 a receptionist may read any receipt,
-          including bank-transfer ones, and a coach is refused inside the
-          service. COACH is left out of this route so a coach is redirected
-          home rather than shown a page that could only ever 403. */}
+      {/* Receipt view/print. Route permits Receptionist and Manager; backend
+          still restricts each receptionist to receipts they processed. */}
       <Route
         path="/receipts/:receiptId"
         element={
@@ -478,7 +515,17 @@ export default function AppRoutes() {
           path="schedule/:sessionId/attendance"
           element={withSuspense(<CoachSessionAttendancePage />)}
         />
+        <Route
+          path="schedule/:sessionId/members/:memberAccountId/training"
+          element={withSuspense(<CoachSessionMemberTrainingPage />)}
+        />
         <Route path="profile" element={withSuspense(<CoachProfilePage />)} />
+        <Route path="members" element={withSuspense(<CoachAssignedMemberListPage />)} />
+        <Route path="members/:memberAccountId" element={withSuspense(<CoachMemberProfilePage />)} />
+        <Route path="members/:memberAccountId/training-plans" element={withSuspense(<CoachMemberTrainingPage kind="plans" />)} />
+        <Route path="members/:memberAccountId/training-results" element={withSuspense(<CoachMemberTrainingPage kind="results" />)} />
+        <Route path="members/:memberAccountId/feedback" element={withSuspense(<CoachMemberTrainingPage kind="feedback" />)} />
+        <Route path="notifications" element={withSuspense(<NotificationPage />)} />
       </Route>
 
       {/* ---------- Manager ----------
@@ -526,6 +573,7 @@ export default function AppRoutes() {
         <Route path="rooms/new" element={withSuspense(<RoomCreatePage />)} />
         <Route path="rooms/:roomId" element={withSuspense(<RoomDetailPage />)} />
         <Route path="rooms/:roomId/edit" element={withSuspense(<RoomEditPage />)} />
+        <Route path="rooms/:roomId/impact" element={withSuspense(<RoomImpactPage />)} />
         <Route
           path="classes/:classId/recurring-schedules/new"
           element={withSuspense(<RecurringScheduleCreatePage />)}
@@ -540,7 +588,10 @@ export default function AppRoutes() {
           path="class-sessions/:sessionId/assignment/edit"
           element={withSuspense(<SessionAssignmentEditPage />)}
         />
-        <Route path="reports" element={withSuspense(<RevenueReportPage />)} />
+        <Route path="reports" element={withSuspense(<ManagerReportsPage />)} />
+        <Route path="reports/revenue" element={withSuspense(<RevenueReportPage />)} />
+        <Route path="audit-events" element={withSuspense(<AuditHistoryPage />)} />
+        <Route path="notifications" element={withSuspense(<NotificationPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
       </Route>
 

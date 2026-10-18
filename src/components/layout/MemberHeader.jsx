@@ -6,12 +6,11 @@
 //   - Chỉ render — không tải dữ liệu, không gọi API.
 //
 // Bên trái là nút chuông thông báo. `unreadCount` là số thông báo chưa đọc:
-// lớn hơn 0 thì hiện chấm đỏ ở góc chuông (BR-NOT-04: thông báo mới ở trạng
-// thái UNREAD). Backend chưa có API đọc thông báo cho Hội viên nên số này
-// do MemberLayout truyền xuống; khi có API thì danh sách thông báo cũng đổ
-// vào bảng của chuông ở đây.
+// lớn hơn 0 thì hiện chấm đỏ ở góc chuông. MemberLayout lấy số chưa đọc từ
+// API dùng chung; menu dẫn đến trang thông báo đầy đủ để đọc và cập nhật.
 
 import { Dropdown } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import Icon from './MemberIcon';
 
 export default function MemberHeader({ user, unreadCount = 0, onRequestLogout }) {
@@ -39,6 +38,9 @@ export default function MemberHeader({ user, unreadCount = 0, onRequestLogout })
               ? `Bạn có ${unreadCount} thông báo mới.`
               : 'Chưa có thông báo nào.'}
           </div>
+          <Dropdown.Item as={Link} to="/member/notifications" className="small text-danger">
+            Xem tất cả thông báo
+          </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown>
 

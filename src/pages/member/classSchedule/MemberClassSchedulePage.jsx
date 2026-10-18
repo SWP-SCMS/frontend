@@ -12,9 +12,9 @@
 // Mỗi phần tử booking đã có sẵn: className, classType, disciplineName,
 // coachName, roomName, startTime, endTime nên trang không gọi thêm API nào.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Button, Card, Form, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Form, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
@@ -73,9 +73,12 @@ export default function MemberClassSchedulePage() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [linkedSessionMissing, setLinkedSessionMissing] = useState(false);
 
   // Buổi tập đang xem chi tiết (null = không mở hộp).
   const [selected, setSelected] = useState(null);
+  const handledLinkedSession = useRef(null);
+  const linkedSessionId = params.get('sessionId');
 
   const weekRange = useMemo(() => getWeekRangeDates(calYmd), [calYmd]);
   const weekRangeIso = useMemo(() => {
@@ -129,6 +132,30 @@ export default function MemberClassSchedulePage() {
     },
     [params, setParams],
   );
+
+  useEffect(() => {
+    if (loading || error || !linkedSessionId || handledLinkedSession.current === linkedSessionId) return;
+
+    handledLinkedSession.current = linkedSessionId;
+    const booking = bookings.find((item) => String(item.sessionId) === linkedSessionId);
+    if (!booking) {
+      setLinkedSessionMissing(true);
+      return;
+    }
+
+    const sessionDate = getGymLocalIsoDate(booking.startTime);
+    if (sessionDate) setWeek(sessionDate);
+    setLinkedSessionMissing(false);
+    setSelected({ ...booking, id: toBookingId(booking) ?? booking.sessionId });
+  }, [bookings, error, linkedSessionId, loading, setWeek]);
+
+  const closeSelected = useCallback(() => {
+    setSelected(null);
+    if (!params.has('sessionId')) return;
+    const next = new URLSearchParams(params);
+    next.delete('sessionId');
+    setParams(next, { replace: true });
+  }, [params, setParams]);
 
   const shiftCalendarWeek = useCallback(
     (delta) => {
@@ -203,6 +230,12 @@ export default function MemberClassSchedulePage() {
         onClose={error?.response ? () => setError(null) : undefined}
       />
 
+      {linkedSessionMissing ? (
+        <Alert variant="warning">
+          Không tìm thấy buổi tập này trong lịch đang đặt của bạn. Buổi tập có thể đã bị hủy hoặc không còn hiệu lực.
+        </Alert>
+      ) : null}
+
       <CalendarView
         loading={loading}
         sessions={weekSessions}
@@ -212,7 +245,7 @@ export default function MemberClassSchedulePage() {
 
       <SessionDetailModal
         session={selected}
-        onClose={() => setSelected(null)}
+        onClose={closeSelected}
       />
     </div>
   );

@@ -31,7 +31,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { changePasswordRequest } from '../../../services/authService';
 import { useAuth } from '../../../context/useAuth';
-import { passwordSchema } from '../../../schemas/fragments';
+import {
+  passwordByteMaxSchema,
+  passwordSchema,
+} from '../../../schemas/fragments';
 
 import './MemberChangePasswordPage.css';
 
@@ -40,7 +43,10 @@ import './MemberChangePasswordPage.css';
 // path can be assigned precisely.
 const changePasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại.'),
+    currentPassword: z
+      .string()
+      .min(1, 'Vui lòng nhập mật khẩu hiện tại.')
+      .pipe(passwordByteMaxSchema),
     newPassword: passwordSchema,
     confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu.'),
   })
@@ -99,19 +105,22 @@ export default function MemberChangePasswordPage() {
       // PAGE-LOCAL backend error mapping — these codes are not handled
       // by the shared serverErrors helper (intentionally narrow scope).
       const code = err?.response?.data?.code;
+      let handled = false;
       if (code === 'CURRENT_PASSWORD_INCORRECT') {
         setError('currentPassword', {
           type: 'server',
           message: 'Mật khẩu hiện tại không đúng.',
         });
+        handled = true;
       } else if (code === 'NEW_PASSWORD_SAME_AS_CURRENT') {
         setError('newPassword', {
           type: 'server',
           message: 'Mật khẩu mới phải khác mật khẩu hiện tại.',
         });
+        handled = true;
       }
       // Unknown / non-field server failures fall through to ErrorAlert.
-      setServerError(err);
+      if (!handled) setServerError(err);
     }
   }
 
@@ -171,7 +180,9 @@ export default function MemberChangePasswordPage() {
               {errors.newPassword?.message}
             </Form.Control.Feedback>
           </InputGroup>
-          <Form.Text className="text-muted">Tối thiểu 8 ký tự.</Form.Text>
+          <Form.Text className="text-muted">
+            Tối thiểu 8 ký tự và tối đa 72 byte UTF-8.
+          </Form.Text>
         </Form.Group>
 
         <Form.Group className="mb-4" controlId="cp-confirm">

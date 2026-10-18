@@ -18,6 +18,7 @@ import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import PlusDashboardPanels from './PlusDashboardPanels';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import MemberCoachCard from '../../../components/member/MemberCoachCard';
 import { listActiveOffers } from '../../../services/membershipService';
 import {
   createMyMembershipOrder,
@@ -481,6 +482,8 @@ export default function MemberDashboardPage() {
           </div>
         </div>
       ) : null}
+
+      <MemberCoachCard />
 
       <div className="scms-md-grid">
         <div className="scms-md-col">
