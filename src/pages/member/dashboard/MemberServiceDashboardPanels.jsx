@@ -1,5 +1,4 @@
-// Ba thẻ dành cho hội viên đang có gói PLUS, thay cho "Lộ trình 4 bước" và
-// "Gói tập đề xuất" trên trang tổng quan:
+// Ba thẻ dành cho hội viên đang có gói tập ACTIVE trên trang tổng quan:
 //   1. Thời gian còn lại của gói  : từ Membership ACTIVE (startsAt / endsAt)
 //   2. Lịch tập sắp tới           : GET /members/me/bookings?status=BOOKED
 //   3. Đánh giá của Coach         : GET /members/me/feedback (BR-FDB-02)
@@ -15,7 +14,7 @@ import {
   formatGymDate,
   formatGymTime,
 } from '../../../utils/gymTime';
-import './PlusDashboardPanels.css';
+import './MemberServiceDashboardPanels.css';
 
 const MAX_UPCOMING = 5;
 const MAX_FEEDBACK = 3;
@@ -40,41 +39,14 @@ function planTime(membership) {
   };
 }
 
-// Khung xám thay cho nội dung (không dùng dữ liệu giả) + ghi chú mở khóa.
-function LockedBody() {
-  return (
-    <>
-      <ul className="scms-pd-list" aria-hidden="true">
-        <li>
-          <span className="scms-pd-skel" style={{ width: 70 }} />
-          <span className="scms-pd-skel" style={{ flex: 1 }} />
-        </li>
-        <li>
-          <span className="scms-pd-skel" style={{ width: 70 }} />
-          <span className="scms-pd-skel" style={{ flex: 1 }} />
-        </li>
-      </ul>
-      <div className="scms-pd-lock">
-        <strong>Bạn cần tham gia gói Plus để mở khóa tính năng này</strong>
-        <Link to="/member/plan" className="scms-md-link">
-          Xem gói tập
-        </Link>
-      </div>
-    </>
-  );
-}
-
-// Hội viên gói BASIC (locked): thẻ Lịch tập sắp tới và Đánh giá của Coach bị mờ
-// kèm ghi chú cần gói PLUS; không gọi API của hai thẻ đó (BR-BKG-03/05, BR-COA-01).
-export default function PlusDashboardPanels({ membership, locked = false }) {
+export default function MemberServiceDashboardPanels({ membership }) {
   const [bookings, setBookings] = useState([]);
   const [feedback, setFeedback] = useState([]);
-  const [loading, setLoading] = useState(!locked);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [now] = useState(() => Date.now()); // mốc "bây giờ" lúc mở trang
 
   useEffect(() => {
-    if (locked) return undefined;
     let cancelled = false;
     // Hai API độc lập: một cái lỗi thì cái kia vẫn hiện.
     Promise.allSettled([
@@ -93,7 +65,7 @@ export default function PlusDashboardPanels({ membership, locked = false }) {
     return () => {
       cancelled = true;
     };
-  }, [locked]);
+  }, []);
 
   // Buổi chưa kết thúc, sớm nhất trước.
   const upcoming = useMemo(() => {
@@ -128,7 +100,7 @@ export default function PlusDashboardPanels({ membership, locked = false }) {
           <div>
             <h2>Thời gian còn lại của gói</h2>
             <span className="sub">
-              Gói {pick(membership, 'plan_code_snapshot', 'planCode') || 'PLUS'}
+              Gói {pick(membership, 'plan_code_snapshot', 'planCode') || '—'}
             </span>
           </div>
         </div>
@@ -161,7 +133,7 @@ export default function PlusDashboardPanels({ membership, locked = false }) {
         onClose={() => setError(null)}
       />
 
-      <div className={`scms-md-card${locked ? " scms-pd-locked" : ""}`}>
+      <div className="scms-md-card">
         <div className="scms-md-card-head">
           <div>
             <h2>Lịch tập sắp tới</h2>
@@ -171,9 +143,7 @@ export default function PlusDashboardPanels({ membership, locked = false }) {
             Xem tất cả lịch
           </Link>
         </div>
-        {locked ? (
-          <LockedBody />
-        ) : loading ? (
+        {loading ? (
           <div className="scms-md-center">
             <Spinner animation="border" variant="danger" />
           </div>
@@ -202,16 +172,14 @@ export default function PlusDashboardPanels({ membership, locked = false }) {
         )}
       </div>
 
-      <div className={`scms-md-card${locked ? " scms-pd-locked" : ""}`}>
+      <div className="scms-md-card">
         <div className="scms-md-card-head">
           <div>
             <h2>Đánh giá của Coach</h2>
             <span className="sub">Nhận xét mới nhất dành cho bạn</span>
           </div>
         </div>
-        {locked ? (
-          <LockedBody />
-        ) : loading ? (
+        {loading ? (
           <div className="scms-md-center">
             <Spinner animation="border" variant="danger" />
           </div>

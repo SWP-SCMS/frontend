@@ -12,7 +12,6 @@ import AppShell from '../components/layout/AppShell';
 import StaffLayout from '../components/layout/StaffLayout';
 import MemberLayout from '../components/layout/MemberLayout';
 import CoachLayout from '../components/layout/CoachLayout';
-import PlusOnlyGate from '../components/layout/PlusOnlyGate';
 import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfig';
 
 // Public pages
@@ -425,9 +424,7 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
-                <PlusOnlyGate feature="Đăng ký lớp">
-                  {withSuspense(<ClassBookingPage />)}
-                </PlusOnlyGate>
+                {withSuspense(<ClassBookingPage />)}
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
@@ -439,9 +436,7 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
-                <PlusOnlyGate feature="Lịch của tôi">
-                  <MemberClassSchedulePage />
-                </PlusOnlyGate>
+                <MemberClassSchedulePage />
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>

@@ -111,8 +111,7 @@ a.scms-ml-navitem:hover {
   color: #f87171;
 }
 
-/* Mục cần gói PLUS mà hội viên chưa có: làm mờ nhưng vẫn bấm được để hiện
- * thông báo; nhãn PLUS nằm bên phải. */
+/* Mục cần Benefit mà gói hiện tại chưa có. */
 .scms-ml-navitem.locked {
   width: 100%;
   border: 0;
@@ -127,7 +126,7 @@ a.scms-ml-navitem:hover {
   opacity: 0.8;
 }
 
-.scms-ml-plus {
+.scms-ml-benefit {
   margin-left: auto;
   padding: 0.1rem 0.5rem;
   border-radius: 999px;

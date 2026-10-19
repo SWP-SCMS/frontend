@@ -27,11 +27,6 @@ export const ACCOUNT_STATUS = Object.freeze({
   SUSPENDED: 'SUSPENDED',
 });
 
-export const MEMBERSHIP_PLAN = Object.freeze({
-  BASIC: 'BASIC',
-  PLUS: 'PLUS',
-});
-
 // API base URL. Vite replaces import.meta.env.* at build time. We expose a
 // safe default so missing env files don't crash the app at import time, but
 // the real value should always be set via .env.

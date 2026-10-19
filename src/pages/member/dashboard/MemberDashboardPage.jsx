@@ -16,7 +16,7 @@ import { Alert, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../../context/useAuth';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
-import PlusDashboardPanels from './PlusDashboardPanels';
+import MemberServiceDashboardPanels from './MemberServiceDashboardPanels';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import MemberCoachCard from '../../../components/member/MemberCoachCard';
 import { listActiveOffers } from '../../../services/membershipService';
@@ -110,9 +110,9 @@ function Icon({ name, size = 18 }) {
 
 // Khu vực Dashboard chỉ là danh sách đề xuất rút gọn. Các loại gói khác vẫn
 // được hiển thị đầy đủ ở /member/plan qua liên kết "Tất cả gói tập".
-function isRecommendedPlan(planCode, planOffers) {
+function isRecommendedPlan(planOffers) {
   const displayName = planOffers?.[0]?.planDisplayName?.trim().toUpperCase();
-  return planCode === 'PLUS' || displayName === 'PREMIUM';
+  return displayName === 'PLUS' || displayName === 'PREMIUM';
 }
 
 // ----- Hàm hỗ trợ -----
@@ -186,9 +186,8 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
   const offer = list.find((o) => o.offerId === pickedOfferId) || list[0];
   const busy = Boolean(offer) && busyOfferId === offer.offerId;
 
-  // BR-PKG-01/02: BASIC dùng khu vực gym; PLUS thêm đặt lịch lớp và HLV cá nhân.
+  // Public Offer hiện chỉ có hai capability ổn định; hiển thị theo dữ liệu BE.
   const features = [
-    { ok: true, text: 'Sử dụng khu vực gym & tập luyện tại trung tâm' },
     {
       ok: offer.supportsBooking,
       text: offer.supportsBooking
@@ -198,8 +197,8 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
     {
       ok: offer.supportsPersonalCoaching,
       text: offer.supportsPersonalCoaching
-        ? 'Huấn luyện viên cá nhân (PT 1-1) & Training'
-        : 'Chưa gồm HLV cá nhân & Training',
+        ? 'Huấn luyện viên cá nhân (PT 1-1)'
+        : 'Chưa gồm HLV cá nhân',
     },
   ];
 
@@ -285,7 +284,6 @@ export default function MemberDashboardPage() {
   const {
     activeMembership,
     hasActiveMembership,
-    isPlus,
     loading: membershipLoading,
     error: membershipError,
     reload: reloadMemberships,
@@ -453,13 +451,10 @@ export default function MemberDashboardPage() {
 
       <div className="scms-md-grid">
         <div className="scms-md-col">
-          {/* Có gói (PLUS hoặc BASIC): thời hạn gói, lịch sắp tới, đánh giá Coach
-              (BASIC thì hai thẻ sau bị mờ). Chưa có gói: lộ trình + gói đề xuất. */}
+          {/* Có gói ACTIVE: thời hạn, lịch sắp tới và đánh giá Coach.
+              Chưa có gói: lộ trình + gói đề xuất. */}
           {hasActiveMembership ? (
-            <PlusDashboardPanels
-              membership={activeMembership}
-              locked={!isPlus}
-            />
+            <MemberServiceDashboardPanels membership={activeMembership} />
           ) : (
             <>
           <div className="scms-md-card">
@@ -494,7 +489,7 @@ export default function MemberDashboardPage() {
                     ? 'Bạn Đã Có Gói Tập'
                     : 'Chọn Gói Tập Phù Hợp'
                 }
-                text="Lựa chọn gói Basic hoặc Plus để bắt đầu hành trình tập luyện của bạn."
+                text="Lựa chọn gói có quyền lợi phù hợp để bắt đầu hành trình tập luyện của bạn."
               />
               <Step
                 state={stateOf(3)}
@@ -558,9 +553,7 @@ export default function MemberDashboardPage() {
             ) : (
               <div className="scms-md-plans">
                 {Object.entries(groupedOffers)
-                  .filter(([planCode, planOffers]) =>
-                    isRecommendedPlan(planCode, planOffers),
-                  )
+                  .filter(([, planOffers]) => isRecommendedPlan(planOffers))
                   .map(([planCode, planOffers]) => (
                     <PlanCard
                       key={planCode}

@@ -67,17 +67,21 @@ export function findBestSavingsOfferId(pricing) {
   return bestId;
 }
 
-// Danh sách quyền lợi của một Offer (BR-PKG-01/02), dựa trên cờ BE trả về.
+// Public Offer hiện chỉ trả hai capability ổn định. Không suy thêm quyền lợi
+// từ mã Plan; BE-GAP-005 theo dõi việc bổ sung benefitCodes đầy đủ.
 export function buildFeatures(offer) {
   return [
-    { ok: true, text: 'Sử dụng khu vực gym & tập luyện tại trung tâm' },
     {
       ok: Boolean(offer?.supportsBooking),
-      text: 'Đặt lịch lớp Yoga / Group và PT 1-1',
+      text: offer?.supportsBooking
+        ? 'Có quyền đặt lớp trực tuyến'
+        : 'Chưa gồm quyền đặt lớp trực tuyến',
     },
     {
       ok: Boolean(offer?.supportsPersonalCoaching),
-      text: 'Personal Coach, kế hoạch và kết quả tập luyện',
+      text: offer?.supportsPersonalCoaching
+        ? 'Có quyền huấn luyện viên cá nhân'
+        : 'Chưa gồm quyền huấn luyện viên cá nhân',
     },
   ];
 }

@@ -9,20 +9,18 @@ import { NavLink } from 'react-router-dom';
 import BrandLogo from '../common/BrandLogo';
 import Icon from './MemberIcon';
 
-function SidebarItem({ item, plusLocked, onLockedClick }) {
-  // Mục cần gói PLUS mà hội viên chưa có: làm mờ, kèm nhãn PLUS. Vẫn bấm được
-  // để hiện thông báo "cần đăng ký gói PLUS" thay vì chuyển trang.
-  if (item.requiresPlus && plusLocked) {
+function SidebarItem({ item, isBenefitLocked, onLockedClick }) {
+  if (isBenefitLocked(item.requiredBenefit)) {
     return (
       <button
         type="button"
         className="scms-ml-navitem locked"
         onClick={() => onLockedClick(item)}
-        title="Cần gói PLUS để sử dụng"
+        title="Gói tập hiện tại chưa có quyền sử dụng"
       >
         <Icon name={item.icon} />
         {item.label}
-        <span className="scms-ml-plus">PLUS</span>
+        <span className="scms-ml-benefit">Quyền lợi</span>
       </button>
     );
   }
@@ -58,7 +56,7 @@ export default function MemberSidebar({
   activeMembership,
   statusText,
   items,
-  plusLocked = false,
+  isBenefitLocked = () => false,
   onLockedClick = () => {},
   onRequestLogout,
 }) {
@@ -78,7 +76,7 @@ export default function MemberSidebar({
                   <SidebarItem
                     key={item.label}
                     item={item}
-                    plusLocked={plusLocked}
+                    isBenefitLocked={isBenefitLocked}
                     onLockedClick={onLockedClick}
                   />
                 ))}

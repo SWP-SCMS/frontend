@@ -79,7 +79,7 @@ const BOOKING_ERROR_MESSAGES = {
   SESSION_NOT_BOOKABLE:
     'Buổi tập không còn nhận đặt lịch (đã bắt đầu hoặc không còn SCHEDULED).',
   BOOKING_PLUS_MEMBERSHIP_REQUIRED:
-    'Hội viên cần có gói PLUS còn hiệu lực tại thời điểm buổi tập.',
+    'Gói tập của hội viên chưa có quyền đặt lớp hoặc chưa đáp ứng quyền lợi của bộ môn này.',
   BOOKING_DUPLICATE: 'Hội viên đã đặt buổi tập này.',
   BOOKING_TIME_CONFLICT:
     'Buổi tập trùng giờ với một lịch khác mà hội viên đã đặt.',
@@ -538,7 +538,7 @@ export default function ReceptionistMemberBookingPage() {
           <h2 className="h5 fw-bold mb-1">Buổi tập sắp tới</h2>
           <p className="small text-muted mb-0">
             Tất cả thời gian hiển thị theo múi giờ Asia/Ho_Chi_Minh. Điều kiện đặt lịch
-            (gói PLUS còn hiệu lực, xung đột lịch và số chỗ còn lại) sẽ được hệ thống
+            (quyền lợi gói tập, xung đột lịch và số chỗ còn lại) sẽ được hệ thống
             kiểm tra khi xác nhận.
           </p>
         </Card.Header>
