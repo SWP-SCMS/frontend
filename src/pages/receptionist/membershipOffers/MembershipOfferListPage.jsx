@@ -1,6 +1,6 @@
 // Receptionist – Membership Offer list (US12).
 //
-// BE: GET /api/v1/membership-offers?planCode=BASIC|PLUS
+// BE: GET /api/v1/membership-offers?planCode={dynamicPlanCode}
 //     -> MembershipOfferSummary[] (plain array, NOT paginated)
 //   Each item: offerId, planCode, planDisplayName, name, description,
 //   priceAmount, currencyCode, durationDays, supportsBooking,
@@ -28,19 +28,7 @@ import {
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import { listActiveOffers } from '../../../services/membershipService';
-import { MEMBERSHIP_PLAN } from '../../../constants';
 import { formatPrice } from '../../../utils';
-
-const PLAN_FILTERS = [
-  { value: '', label: 'Tất cả' },
-  { value: MEMBERSHIP_PLAN.BASIC, label: 'BASIC' },
-  { value: MEMBERSHIP_PLAN.PLUS, label: 'PLUS' },
-];
-
-const PLAN_BADGE = {
-  [MEMBERSHIP_PLAN.BASIC]: 'bg-info-subtle text-info-emphasis',
-  [MEMBERSHIP_PLAN.PLUS]: 'bg-warning-subtle text-warning-emphasis',
-};
 
 function readStringParam(params, name) {
   const v = params.get(name);
@@ -67,7 +55,7 @@ export default function MembershipOfferListPage() {
     setLoading(true);
     setError(null);
 
-    listActiveOffers(plan ? { planCode: plan } : {})
+    listActiveOffers()
       .then((result) => {
         if (cancelled) return;
         setOffers(result);
@@ -83,7 +71,7 @@ export default function MembershipOfferListPage() {
     return () => {
       cancelled = true;
     };
-  }, [plan]);
+  }, []);
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);
@@ -114,6 +102,12 @@ export default function MembershipOfferListPage() {
     });
   }, [offers, query, plan]);
 
+  const planFilters = useMemo(() => {
+    const unique = new Map();
+    offers.forEach((offer) => unique.set(offer.planCode, offer.planDisplayName || offer.planCode));
+    return [{ value: '', label: 'Tất cả' }, ...[...unique.entries()].sort((a, b) => a[1].localeCompare(b[1], 'vi')).map(([value, label]) => ({ value, label }))];
+  }, [offers]);
+
   const cardBody = useMemo(() => {
     if (loading) {
       return (
@@ -142,7 +136,7 @@ export default function MembershipOfferListPage() {
               <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
                 <div>
                   <span className={`badge me-2 ${
-                    PLAN_BADGE[offer.planCode] || 'bg-light text-dark'
+                    'bg-light text-dark'
                   }`}>
                     {offer.planCode || '—'}
                   </span>
@@ -222,11 +216,11 @@ export default function MembershipOfferListPage() {
         <div>
           <div className="text-muted small mb-1">Loại gói</div>
           <ButtonGroup size="sm">
-            {PLAN_FILTERS.map((f) => (
+            {planFilters.map((f) => (
               <Button
                 key={f.value || 'all-plan'}
                 variant={plan === f.value ? 'danger' : 'outline-danger'}
-                onClick={() => setParam('plan', f.value)}
+                onClick={() => setParam('planCode', f.value)}
               >
                 {f.label}
               </Button>

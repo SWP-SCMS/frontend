@@ -2,8 +2,8 @@
 //
 // API: GET /api/v1/membership-offers  (công khai, chỉ trả Offer ACTIVE)
 //
-// Bố cục: mỗi cột là một thời hạn (1 tháng, 3 tháng...), gói PLUS nằm dưới gói
-// BASIC cùng thời hạn.
+// Bố cục: mỗi cột là một thời hạn (1 tháng, 3 tháng...), các loại gói trong
+// cùng thời hạn được sắp theo tên hiển thị.
 //
 // Nút Chọn gói (xem OfferCtaButton.jsx): chưa đăng nhập -> Đăng nhập; Hội viên
 // đã đăng nhập -> trang thanh toán gói (/member/checkout/:offerId).
@@ -13,11 +13,9 @@ import PublicDarkLayout from '../../../components/layout/PublicDarkLayout';
 import Icon from '../../../components/layout/PublicIcon';
 import { listActiveOffers } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
-import { MEMBERSHIP_PLAN } from '../../../constants';
 import {
   OFFERS_COPY,
   TRUST_POINTS,
-  COMPARE_ROWS,
   FAQS,
 } from '../../../content/offersContent';
 import {
@@ -56,8 +54,7 @@ export default function OfferListPage() {
   const pricing = useMemo(() => computeOfferPricing(offers), [offers]);
   const bestId = useMemo(() => findBestSavingsOfferId(pricing), [pricing]);
 
-  // Mỗi CỘT là một thời hạn (1 tháng, 3 tháng...); trong cột, gói PLUS nằm
-  // DƯỚI gói BASIC cùng thời hạn.
+  // Mỗi cột là một thời hạn; các loại gói được lấy động từ API.
   const columns = useMemo(() => {
     const byDuration = new Map();
     for (const o of offers) {
@@ -65,13 +62,16 @@ export default function OfferListPage() {
       if (!byDuration.has(days)) byDuration.set(days, []);
       byDuration.get(days).push(o);
     }
-    const planRank = (code) =>
-      code === MEMBERSHIP_PLAN.BASIC ? 0 : code === MEMBERSHIP_PLAN.PLUS ? 1 : 2;
     return [...byDuration.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([days, list]) => ({
         days,
-        list: [...list].sort((a, b) => planRank(a.planCode) - planRank(b.planCode)),
+        list: [...list].sort((a, b) =>
+          (a.planDisplayName || a.planCode || '').localeCompare(
+            b.planDisplayName || b.planCode || '',
+            'vi',
+          ),
+        ),
       }));
   }, [offers]);
 
@@ -167,30 +167,6 @@ export default function OfferListPage() {
         </div>
       </section>
 
-      {/* So sánh BASIC / PLUS */}
-      <section className="scms-home-section scms-home-section-dark">
-        <div className="scms-home-wrap">
-          <div className="text-center mx-auto mb-5" style={{ maxWidth: 680 }}>
-            <span className="scms-home-eyebrow">{OFFERS_COPY.compareEyebrow}</span>
-            <h2 className="scms-home-h2">{OFFERS_COPY.compareTitle}</h2>
-          </div>
-          <div className="sof-compare mx-auto">
-            <div className="sof-compare-row sof-compare-head">
-              <span>Quyền lợi</span>
-              <span>BASIC</span>
-              <span className="sof-compare-plus">PLUS</span>
-            </div>
-            {COMPARE_ROWS.map((row) => (
-              <div className="sof-compare-row" key={row.label}>
-                <span>{row.label}</span>
-                <CompareCell ok={row.basic} />
-                <CompareCell ok={row.plus} plus />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Câu hỏi thường gặp */}
       <section className="scms-home-section">
         <div className="scms-home-wrap">
@@ -218,13 +194,12 @@ export default function OfferListPage() {
 
 // ----- Một thẻ gói tập -----
 function OfferCard({ offer, info, best }) {
-  const isPlus = offer.planCode === MEMBERSHIP_PLAN.PLUS;
   const features = buildFeatures(offer);
   const perMonth = info?.perMonth;
   const showPerMonth = perMonth && Number(offer.durationDays) !== 30;
 
   return (
-    <article className={`sof-card${isPlus ? ' plus' : ''}`}>
+    <article className="sof-card">
       {best ? <span className="sof-ribbon">Tiết kiệm nhất</span> : null}
 
       <div className="sof-card-top">
@@ -272,19 +247,8 @@ function OfferCard({ offer, info, best }) {
       </ul>
 
       <div className="sof-actions">
-        <OfferCtaButton offerId={offer.offerId} highlight={isPlus} />
+        <OfferCtaButton offerId={offer.offerId} />
       </div>
     </article>
-  );
-}
-
-function CompareCell({ ok, plus = false }) {
-  return (
-    <span className={`sof-compare-cell${plus ? ' sof-compare-plus' : ''}`}>
-      <span className={`sof-mark ${ok ? 'yes' : 'no'}`}>
-        <Icon name={ok ? 'check' : 'x'} size={16} />
-      </span>
-      <span className="visually-hidden">{ok ? 'Có' : 'Không'}</span>
-    </span>
   );
 }

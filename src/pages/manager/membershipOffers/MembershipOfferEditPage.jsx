@@ -4,13 +4,6 @@
 // the list endpoint (MembershipOfferResponse is what we have available)
 // and PATCH back the user-edited fields.
 //
-// KNOWN ISSUE (out of scope for this migration):
-//   MembershipOfferResponse does NOT include `status`, so when editing
-//   we default to ACTIVE on the form. Once the backend exposes status
-//   on the response, we should prefill from there instead. This
-//   migration preserves the current effective behavior; the fix is
-//   an API-contract change that is explicitly deferred.
-//
 // Migration note (RHF + Zod):
 //   - separate page-local edit schema (membershipOfferEditSchema);
 //     do not blindly reuse the create schema because the edit page
@@ -40,11 +33,6 @@ import {
   MAX_MEMBERSHIP_OFFER_AMOUNT,
 } from '../../../utils/decimalInteger';
 
-const PLAN_OPTIONS = [
-  { value: 'BASIC', label: 'BASIC' },
-  { value: 'PLUS', label: 'PLUS' },
-];
-
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE' },
   { value: 'INACTIVE', label: 'INACTIVE' },
@@ -53,9 +41,7 @@ const STATUS_OPTIONS = [
 // Page-local edit schema — same field set as Create. The wire payload
 // mirrors Create's (no diff vs original at the FE).
 const membershipOfferEditSchema = z.object({
-  planCode: z.enum(['BASIC', 'PLUS'], {
-    message: 'Vui lòng chọn loại gói tập.',
-  }),
+  planCode: z.string().trim().min(1, 'Thiếu mã loại gói tập.'),
   name: z
     .string()
     .trim()
@@ -102,9 +88,6 @@ function offerToForm(o) {
         : String(o.priceAmount),
     durationDays:
       o.durationDays == null ? '' : String(o.durationDays),
-    // Backend response doesn't include status. Default to ACTIVE so the
-    // manager can intentionally flip it via the dropdown if needed.
-    // This is the documented known issue (out of scope).
     status: o.status || 'ACTIVE',
   };
 }
@@ -166,7 +149,6 @@ export default function MembershipOfferEditPage() {
     setServerError(null);
     try {
       await updateMembershipOffer(offerId, {
-        planCode: data.planCode,
         name: data.name.trim(),
         description: data.description.trim(),
         priceAmount: data.priceAmount,
@@ -261,16 +243,10 @@ export default function MembershipOfferEditPage() {
           <Col md={6}>
             <Form.Group controlId="edit-planCode">
               <Form.Label>Loại gói tập *</Form.Label>
-              <Form.Select
-                {...register('planCode')}
-                isInvalid={Boolean(errors.planCode)}
-              >
-                {PLAN_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </Form.Select>
+              <Form.Control {...register('planCode')} readOnly />
+              <Form.Text className="text-muted">
+                Loại gói không thể đổi sau khi tạo gói bán.
+              </Form.Text>
               <Form.Control.Feedback type="invalid">
                 {errors.planCode?.message}
               </Form.Control.Feedback>

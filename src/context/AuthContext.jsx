@@ -78,7 +78,8 @@ export function AuthProvider({ children }) {
     bootstrapPromise =
       bootstrapPromise ||
       (async () => {
-        const token = await refreshSession();
+        const session = await refreshSession();
+        const token = session?.accessToken;
         if (!token) return null;
         setAccessToken(token);
         // /members/me/profile is a Member-only endpoint (BE restricts it to
@@ -86,8 +87,14 @@ export function AuthProvider({ children }) {
         // we build a minimal profile straight from the JWT claims — no
         // round-trip needed.
         const payload = getAccessTokenPayload();
-        if (payload?.role && payload.role !== ROLES.MEMBER) {
-          return buildProfileFromToken(payload);
+        const role = session.role ?? payload?.role;
+        if (role && role !== ROLES.MEMBER) {
+          return {
+            accountId: session.accountId ?? payload?.sub ?? null,
+            role,
+            fullName: session.fullName ?? '',
+            memberId: null,
+          };
         }
         try {
           return await getMyProfile();

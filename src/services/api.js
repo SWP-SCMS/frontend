@@ -77,7 +77,8 @@ let refreshPromise = null;
 async function performRefresh() {
   // Import lazily so we don't create a circular module graph.
   const { refreshSession } = await import('../services/authService');
-  return refreshSession();
+  const session = await refreshSession();
+  return session?.accessToken || null;
 }
 
 // Attach the bearer token to every outgoing request.

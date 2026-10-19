@@ -19,7 +19,7 @@
 //   - priceAmount is sent as a string (BigInteger-as-string), matching
 //     the pre-migration source.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
@@ -28,16 +28,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { createMembershipOffer } from '../../../services/membershipOfferAdminService';
+import { listMembershipPlans } from '../../../services/membershipPlanService';
 import { applyServerErrors } from '../../../utils/serverErrors';
 import {
   isPositiveIntegerWithin,
   MAX_MEMBERSHIP_OFFER_AMOUNT,
 } from '../../../utils/decimalInteger';
-
-const PLAN_OPTIONS = [
-  { value: 'BASIC', label: 'BASIC' },
-  { value: 'PLUS', label: 'PLUS' },
-];
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE' },
@@ -46,9 +42,7 @@ const STATUS_OPTIONS = [
 
 // Page-local schema.
 const membershipOfferCreateSchema = z.object({
-  planCode: z.enum(['BASIC', 'PLUS'], {
-    message: 'Vui lòng chọn loại gói tập.',
-  }),
+  planCode: z.string().trim().min(1, 'Vui lòng chọn loại gói tập.'),
   name: z
     .string()
     .trim()
@@ -84,6 +78,15 @@ const membershipOfferCreateSchema = z.object({
 export default function MembershipOfferCreatePage() {
   const navigate = useNavigate();
   const [serverError, setServerError] = useState(null);
+  const [plans, setPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  useEffect(() => {
+    listMembershipPlans()
+      .then((items) => setPlans(items.filter((item) => item.status === 'ACTIVE')))
+      .catch(setServerError)
+      .finally(() => setPlansLoading(false));
+  }, []);
 
   const {
     register,
@@ -149,8 +152,8 @@ export default function MembershipOfferCreatePage() {
 
       <h1 className="h3 fw-bold mt-2 mb-1">Tạo gói tập mới</h1>
       <p className="text-muted mb-4">
-        Mỗi gói tập thuộc một trong hai loại BASIC hoặc PLUS. Giá được tính
-        bằng VND, không có phần thập phân.
+        Chọn một loại gói đang hoạt động. Giá được tính bằng VND, không có
+        phần thập phân.
       </p>
 
       <ErrorAlert
@@ -169,12 +172,19 @@ export default function MembershipOfferCreatePage() {
                 isInvalid={Boolean(errors.planCode)}
               >
                 <option value="">— Chọn loại —</option>
-                {PLAN_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
+                {plans.map((plan) => (
+                  <option key={plan.code} value={plan.code}>
+                    {plan.displayName} ({plan.code})
                   </option>
                 ))}
               </Form.Select>
+              {plansLoading ? <Form.Text>Đang tải loại gói…</Form.Text> : null}
+              {!plansLoading && plans.length === 0 ? (
+                <Form.Text className="text-danger d-block">
+                  Chưa có loại gói ACTIVE.{' '}
+                  <Link to="/manager/membership-plans/new">Tạo loại gói</Link>
+                </Form.Text>
+              ) : null}
               <Form.Control.Feedback type="invalid">
                 {errors.planCode?.message}
               </Form.Control.Feedback>
@@ -209,7 +219,7 @@ export default function MembershipOfferCreatePage() {
           <Form.Control
             {...register('name')}
             maxLength={200}
-            placeholder="VD: BASIC 1 tháng"
+            placeholder="VD: Premium 1 tháng"
             isInvalid={Boolean(errors.name)}
           />
           <Form.Control.Feedback type="invalid">
@@ -270,7 +280,7 @@ export default function MembershipOfferCreatePage() {
         </Row>
 
         <div className="mt-4 d-flex gap-2">
-          <Button type="submit" variant="danger" disabled={isSubmitting}>
+          <Button type="submit" variant="danger" disabled={isSubmitting || plansLoading || plans.length === 0}>
             {isSubmitting ? (
               <>
                 <Spinner size="sm" animation="border" className="me-2" />

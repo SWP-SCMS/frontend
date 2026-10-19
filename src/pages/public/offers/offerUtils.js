@@ -30,7 +30,7 @@ export function pricePerMonth(offer) {
   return Math.round((price / days) * 30);
 }
 
-// So mỗi Offer với Offer có thời hạn NGẮN NHẤT cùng gói (BASIC / PLUS) để
+// So mỗi Offer với Offer có thời hạn NGẮN NHẤT cùng loại gói để
 // biết mua dài hạn rẻ hơn bao nhiêu %. Trả về Map offerId -> { perMonth, savings }.
 export function computeOfferPricing(offers) {
   const baseByPlan = new Map();

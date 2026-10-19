@@ -29,10 +29,13 @@ export async function loginRequest({ identifier, password }) {
 }
 
 // POST /api/v1/auth/refresh — uses HttpOnly cookie, no body needed.
+// Success has the same AuthResponse shape as login. Keep the complete
+// response because AuthContext needs accountId/fullName/role after a hard
+// refresh; callers that only need the token can select `accessToken`.
 export async function refreshSession() {
   try {
     const { data } = await authApi.post('/auth/refresh', {});
-    return data?.accessToken || null;
+    return data?.accessToken ? data : null;
   } catch {
     return null;
   }

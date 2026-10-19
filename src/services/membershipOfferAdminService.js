@@ -6,12 +6,8 @@
 //   PATCH  /api/v1/manager/membership-offers/{id}  updateMembershipOffer
 //
 // Notes:
-//   - MembershipOfferResponse does NOT include `status` (only the public
-//     surface does). The admin DTO accepts status, so when filtering by
-//     status on the FE we currently cannot tell ACTIVE vs INACTIVE apart
-//     from the response alone. We forward the intended status filter to
-//     the BE? -> not implemented there, so FE filters client-side.
-//   - Plan codes are BASIC | PLUS (per MembershipPlanCode enum).
+//   - Plan codes come from the dynamic Membership Plan catalogue.
+//   - planCode is immutable after an Offer is created.
 //   - priceAmount is a BigInteger in VND; we send it as a number string
 //     because the BE accepts both string/number for JSON numbers.
 
@@ -26,7 +22,7 @@ export async function listMembershipOffersAdmin() {
 
 // POST /api/v1/manager/membership-offers
 // payload = {
-//   planCode: 'BASIC' | 'PLUS',
+//   planCode: string,
 //   name: string (1..200),
 //   description: string (non-empty),
 //   priceAmount: number | string (>0),
@@ -39,7 +35,7 @@ export async function createMembershipOffer(payload) {
 }
 
 // PATCH /api/v1/manager/membership-offers/{offerId}
-// `patch` may include any subset of: planCode, name, description,
+// `patch` may include any subset of: name, description,
 // priceAmount, durationDays, status. Backend trims strings and validates
 // required fields on creation.
 export async function updateMembershipOffer(offerId, patch) {

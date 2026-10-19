@@ -29,7 +29,6 @@ import {
   formatDateTime,
   formatPrice,
 } from '../../../utils';
-import { MEMBERSHIP_PLAN } from '../../../constants';
 import './MemberDashboardPage.css';
 
 // ----- Icon SVG vẽ trực tiếp (không cài thư viện icon) -----
@@ -109,23 +108,12 @@ function Icon({ name, size = 18 }) {
 
 // ----- Dữ liệu cố định của màn hình -----
 
-// Hai thẻ gói hiển thị (BR-SCP-04: MVP chỉ có BASIC và PLUS).
-const PLAN_CARDS = [
-  {
-    planCode: MEMBERSHIP_PLAN.BASIC,
-    tag: 'Gói khởi đầu',
-    chip: 'Cơ bản',
-    buttonText: 'Chọn gói Basic',
-    hot: false,
-  },
-  {
-    planCode: MEMBERSHIP_PLAN.PLUS,
-    tag: 'Phổ biến nhất',
-    chip: 'Được chọn nhiều',
-    buttonText: 'Đăng ký gói Plus ngay',
-    hot: true,
-  },
-];
+// Khu vực Dashboard chỉ là danh sách đề xuất rút gọn. Các loại gói khác vẫn
+// được hiển thị đầy đủ ở /member/plan qua liên kết "Tất cả gói tập".
+function isRecommendedPlan(planCode, planOffers) {
+  const displayName = planOffers?.[0]?.planDisplayName?.trim().toUpperCase();
+  return planCode === 'PLUS' || displayName === 'PREMIUM';
+}
 
 // ----- Hàm hỗ trợ -----
 
@@ -186,9 +174,7 @@ function Step({ state, label, title, text, here }) {
   );
 }
 
-function PlanCard({ config, offers, blockedReason, busyOfferId, onChoose }) {
-  const { hot, tag, chip, buttonText } = config;
-
+function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
   // Plan này chỉ có 1 mức giá -> giữ nguyên layout cũ, không cần bộ chọn.
   const list = offers || [];
   const hasVariants = list.length > 1;
@@ -199,25 +185,6 @@ function PlanCard({ config, offers, blockedReason, busyOfferId, onChoose }) {
   const [pickedOfferId, setPickedOfferId] = useState(null);
   const offer = list.find((o) => o.offerId === pickedOfferId) || list[0];
   const busy = Boolean(offer) && busyOfferId === offer.offerId;
-
-  // Chưa có offer ACTIVE nào cho plan này.
-  if (!offer) {
-    return (
-      <div className={`scms-md-plan${hot ? ' hot' : ''}`}>
-        <div>
-          <div className="scms-md-plan-top">
-            <small>{tag}</small>
-            <span className="scms-md-plan-chip">{chip}</span>
-          </div>
-          <div className="scms-md-plan-name">{config.planCode}</div>
-          <p className="scms-md-plan-desc">Hiện chưa có gói nào đang mở bán.</p>
-        </div>
-        <button type="button" className="scms-md-plan-btn" disabled>
-          {buttonText}
-        </button>
-      </div>
-    );
-  }
 
   // BR-PKG-01/02: BASIC dùng khu vực gym; PLUS thêm đặt lịch lớp và HLV cá nhân.
   const features = [
@@ -237,12 +204,11 @@ function PlanCard({ config, offers, blockedReason, busyOfferId, onChoose }) {
   ];
 
   return (
-    <div className={`scms-md-plan${hot ? ' hot' : ''}`}>
-      {hot ? <div className="scms-md-plan-ribbon">Gói khuyên dùng</div> : null}
+    <div className="scms-md-plan">
       <div>
         <div className="scms-md-plan-top">
-          <small>{tag}</small>
-          <span className="scms-md-plan-chip">{chip}</span>
+          <small>Loại gói</small>
+          <span className="scms-md-plan-chip">{list.length} lựa chọn</span>
         </div>
         <div className="scms-md-plan-name">
           {offer.planDisplayName || offer.planCode}
@@ -250,7 +216,7 @@ function PlanCard({ config, offers, blockedReason, busyOfferId, onChoose }) {
 
         {hasVariants ? (
           <div className="scms-md-plan-variants" role="radiogroup"
-            aria-label={`Chọn mức giá gói ${config.planCode}`}>
+            aria-label={`Chọn mức giá gói ${planCode}`}>
             {list.map((item) => {
               const active = item.offerId === offer.offerId;
               return (
@@ -302,7 +268,7 @@ function PlanCard({ config, offers, blockedReason, busyOfferId, onChoose }) {
           disabled={Boolean(blockedReason) || busy}
           onClick={() => onChoose(offer)}
         >
-          {busy ? 'Đang tạo đơn...' : buttonText}
+          {busy ? 'Đang tạo đơn...' : 'Chọn gói tập'}
         </button>
         {blockedReason ? (
           <div className="scms-md-plan-note">{blockedReason}</div>
@@ -560,7 +526,7 @@ export default function MemberDashboardPage() {
                   </span>
                 </div>
               </div>
-              <Link to="/offers" className="scms-md-link">
+              <Link to="/member/plan#member-offers" className="scms-md-link">
                 Tất cả gói tập <Icon name="arrow" size={16} />
               </Link>
             </div>
@@ -591,31 +557,23 @@ export default function MemberDashboardPage() {
               </div>
             ) : (
               <div className="scms-md-plans">
-                {PLAN_CARDS.map((config) => (
-                  <PlanCard
-                    key={config.planCode}
-                    config={config}
-                    offers={groupedOffers[config.planCode] || []}
-                    blockedReason={blockedReason}
-                    busyOfferId={orderingId}
-                    onChoose={handleChoose}
-                  />
-                ))}
+                {Object.entries(groupedOffers)
+                  .filter(([planCode, planOffers]) =>
+                    isRecommendedPlan(planCode, planOffers),
+                  )
+                  .map(([planCode, planOffers]) => (
+                    <PlanCard
+                      key={planCode}
+                      planCode={planCode}
+                      offers={planOffers}
+                      blockedReason={blockedReason}
+                      busyOfferId={orderingId}
+                      onChoose={handleChoose}
+                    />
+                  ))}
               </div>
             )}
 
-            <Link to="/offers" className="scms-md-all">
-              <span className="scms-md-headrow">
-                <span className="scms-md-all-icon">
-                  <Icon name="table" size={22} />
-                </span>
-                <span>
-                  <strong>Xem chi tiết tất cả gói tập & quyền lợi</strong>
-                  <span>Bao gồm mọi gói đang mở bán với thời hạn khác nhau</span>
-                </span>
-              </span>
-              <Icon name="arrow" />
-            </Link>
           </div>
             </>
           )}

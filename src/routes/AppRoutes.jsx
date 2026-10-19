@@ -186,6 +186,20 @@ const MembershipOfferEditPage = lazy(
     ),
 );
 
+// Manager – dynamic membership plan and benefit management
+const MembershipPlanListPage = lazy(
+  () => import('../pages/manager/membershipPlans/MembershipPlanListPage'),
+);
+const MembershipPlanCreatePage = lazy(
+  () => import('../pages/manager/membershipPlans/MembershipPlanCreatePage'),
+);
+const MembershipPlanDetailPage = lazy(
+  () => import('../pages/manager/membershipPlans/MembershipPlanDetailPage'),
+);
+const MembershipPlanEditPage = lazy(
+  () => import('../pages/manager/membershipPlans/MembershipPlanEditPage'),
+);
+
 // Manager – Revenue / Membership report (US22)
 const RevenueReportPage = lazy(
   () => import('../pages/manager/reports/RevenueReportPage'),
@@ -565,6 +579,10 @@ export default function AppRoutes() {
         <Route path="membership-offers/new" element={withSuspense(<MembershipOfferCreatePage />)} />
         <Route path="membership-offers/:offerId" element={withSuspense(<MembershipOfferDetailPage />)} />
         <Route path="membership-offers/:offerId/edit" element={withSuspense(<MembershipOfferEditPage />)} />
+        <Route path="membership-plans" element={withSuspense(<MembershipPlanListPage />)} />
+        <Route path="membership-plans/new" element={withSuspense(<MembershipPlanCreatePage />)} />
+        <Route path="membership-plans/:planCode" element={withSuspense(<MembershipPlanDetailPage />)} />
+        <Route path="membership-plans/:planCode/edit" element={withSuspense(<MembershipPlanEditPage />)} />
         <Route path="members" element={withSuspense(<MemberAccountListPage />)} />
         <Route path="coach-assignments" element={withSuspense(<CoachAssignmentQueuePage />)} />
         <Route path="members/:accountId" element={withSuspense(<MemberAccountDetailPage />)} />
