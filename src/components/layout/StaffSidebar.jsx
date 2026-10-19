@@ -24,6 +24,7 @@ function iconForRoute(to) {
   if (!to) return 'dashboard';
   // Dashboard entries
   if (to === '/manager/dashboard' || to === '/reception/dashboard') return 'dashboard';
+  if (to.endsWith('/profile')) return 'user';
   if (to.includes('/notifications')) return 'bell';
   if (to === '/reception/center-visits') return 'members';
   // Staff / accounts management (Manager only)

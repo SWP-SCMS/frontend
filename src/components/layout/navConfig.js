@@ -33,7 +33,10 @@ export const APP_SHELL_NAV_ITEMS = {
     },
     {
       label: 'Hệ thống',
-      items: [{ to: '/reception/notifications', label: 'Thông báo' }],
+      items: [
+        { to: '/reception/notifications', label: 'Thông báo' },
+        { to: '/reception/profile', label: 'Hồ sơ cá nhân' },
+      ],
     },
   ],
   [ROLES.COACH]: [
@@ -76,6 +79,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/manager/reports', label: 'Báo cáo chi tiết' },
         { to: '/manager/audit-events', label: 'Lịch sử hoạt động' },
         { to: '/manager/notifications', label: 'Thông báo' },
+        { to: '/manager/profile', label: 'Hồ sơ cá nhân' },
       ],
     },
   ],
@@ -90,9 +94,11 @@ export function flattenNavSections(sections = []) {
 export const APP_SHELL_USER_MENU = {
   [ROLES.MANAGER]: [
     { to: '/manager/dashboard', label: 'Trang tổng quan' },
+    { to: '/manager/profile', label: 'Hồ sơ cá nhân' },
   ],
   [ROLES.RECEPTIONIST]: [
     { to: '/reception/dashboard', label: 'Trang tổng quan' },
+    { to: '/reception/profile', label: 'Hồ sơ cá nhân' },
   ],
   [ROLES.COACH]: [
     { to: '/coach', label: 'Trang tổng quan' },
