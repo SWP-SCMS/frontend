@@ -8,7 +8,7 @@ export const OFFERS_COPY = {
   eyebrow: 'Bảng gói tập niêm yết',
   title: 'Chọn gói tập phù hợp với mục tiêu của bạn',
   subtitle:
-    'Giá niêm yết minh bạch, quyền lợi rõ ràng. Hai gói cố định BASIC và PLUS với nhiều thời hạn để bạn tự do lựa chọn mức đồng hành phù hợp.',
+    'Giá niêm yết minh bạch, quyền lợi rõ ràng. Chọn loại gói và thời hạn phù hợp với mục tiêu tập luyện của bạn.',
 
   listTitle: 'Các gói tập',
 

@@ -210,7 +210,7 @@ export default function MemberCheckoutPage() {
               ? 'Gói tập này không tồn tại hoặc không còn được bán.'
               : 'Không tải được thông tin gói tập. Vui lòng thử lại.'}
           </p>
-          <Link to="/offers" className="mco-btn primary">
+          <Link to="/member/plan#member-offers" className="mco-btn primary">
             Xem bảng gói tập
           </Link>
         </div>
@@ -228,7 +228,7 @@ export default function MemberCheckoutPage() {
 
   return (
     <div className="mco">
-      <Link to="/offers" className="mco-back">
+      <Link to="/member/plan#member-offers" className="mco-back">
         ← Quay lại bảng gói tập
       </Link>
       <h1 className="mco-title">Thanh toán gói tập</h1>
@@ -238,7 +238,7 @@ export default function MemberCheckoutPage() {
         <section className="mco-card">
           <h2 className="mco-h2">Đơn hàng của bạn</h2>
           <div className="mco-plan">
-            <span className={`mco-plan-tag${offer.planCode === 'PLUS' ? ' plus' : ''}`}>
+            <span className="mco-plan-tag">
               {offer.planDisplayName || offer.planCode}
             </span>
             <span className="mco-muted">{formatDuration(offer.durationDays)}</span>

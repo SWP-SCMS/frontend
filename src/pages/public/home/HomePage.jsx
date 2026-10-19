@@ -13,7 +13,7 @@
 //   - Gói tập (menu)                           -> /offers
 //   - Khám phá các gói tập                     -> cuộn xuống bảng giá
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { listActiveOffers } from '../../../services/membershipService';
@@ -50,10 +50,37 @@ function buildPriceInfo(offers, plan) {
   };
 }
 
+function buildDynamicPlanOverview(offers) {
+  const grouped = new Map();
+  offers.forEach((offer) => {
+    if (!grouped.has(offer.planCode)) grouped.set(offer.planCode, []);
+    grouped.get(offer.planCode).push(offer);
+  });
+  return [...grouped.entries()].map(([code, items]) => {
+    const sample = items[0];
+    const bullets = ['Sử dụng khu vực gym & tập luyện tại trung tâm'];
+    if (sample.supportsBooking) bullets.push('Đặt lịch lớp trực tuyến');
+    if (sample.supportsPersonalCoaching) bullets.push('Huấn luyện viên cá nhân và giáo án');
+    return {
+      code,
+      title: sample.planDisplayName || code,
+      tag: `${items.length} mức giá`,
+      tagline: sample.description || 'Lựa chọn thời hạn phù hợp với mục tiêu tập luyện.',
+      bullets,
+      cta: 'Xem và đăng ký',
+      defaultPrice: 0,
+    };
+  });
+}
+
 export default function HomePage() {
   const { isAuthenticated, isReady, user, logout } = useAuth();
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
+  const planOverview = useMemo(
+    () => (offers.length ? buildDynamicPlanOverview(offers) : PLAN_OVERVIEW),
+    [offers],
+  );
 
   // Không tải được Offer thì vẫn hiện giá mặc định, không báo lỗi cho khách.
   useEffect(() => {
@@ -198,7 +225,7 @@ export default function HomePage() {
             </div>
 
             <div className="row g-4 mx-auto" style={{ maxWidth: 900 }}>
-              {PLAN_OVERVIEW.map((plan) => {
+              {planOverview.map((plan) => {
                 const info = buildPriceInfo(offers, plan);
                 return (
                   <div key={plan.code} className="col-lg-6">
@@ -235,7 +262,7 @@ export default function HomePage() {
                         </ul>
                       </div>
                       <Link
-                        to="/login"
+                        to={info.offerId ? `/offers/${info.offerId}` : '/offers'}
                         className={`scms-home-btn scms-home-btn-lg w-100 mt-4 ${plan.highlight ? 'scms-home-btn-primary' : 'scms-home-btn-ghost'
                           }`}
                       >

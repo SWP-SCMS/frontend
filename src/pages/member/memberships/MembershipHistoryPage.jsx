@@ -107,7 +107,10 @@ export default function MembershipHistoryPage() {
             <p>
               Khi bạn đăng ký gói tập đầu tiên, lịch sử sẽ hiển thị tại đây.
             </p>
-            <Link to="/offers" className="scms-mh-empty-cta">
+            <Link
+              to="/member/plan#member-offers"
+              className="scms-mh-empty-cta"
+            >
               Xem các gói tập
             </Link>
           </div>

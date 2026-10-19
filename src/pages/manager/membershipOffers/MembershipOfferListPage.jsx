@@ -6,12 +6,8 @@
 //   priceAmount (BigInteger), currencyCode, durationDays,
 //   supportsBooking, supportsPersonalCoaching.
 //
-// NOTE: MembershipOfferResponse does NOT include a `status` field. We
-// keep the status filter on the FE for when the backend exposes it, but
-// the badge currently renders "—" because the value isn't returned.
-//
 // Filters:
-//   - planCode: BASIC | PLUS | ALL
+//   - planCode: any configured Membership Plan code | ALL
 //   - status:   ACTIVE | INACTIVE | ALL (currently client-only; BE list
 //     already returns only items visible to admin — INACTIVE is included)
 //   - free-text query against name + description (client-side filter).
@@ -32,13 +28,6 @@ import EmptyState from '../../../components/common/EmptyState';
 import { listMembershipOffersAdmin } from '../../../services/membershipOfferAdminService';
 import { formatPrice } from '../../../utils';
 
-const PLAN_FILTERS = [
-  { value: '', label: 'Tất cả' },
-  { value: 'BASIC', label: 'BASIC' },
-  { value: 'PLUS', label: 'PLUS' },
-];
-
-// status filter is FE-side until backend returns member status fields.
 const STATUS_FILTERS = [
   { value: '', label: 'Tất cả' },
   { value: 'ACTIVE', label: 'ACTIVE' },
@@ -48,11 +37,6 @@ const STATUS_FILTERS = [
 const STATUS_BADGE = {
   ACTIVE: 'bg-success-subtle text-success-emphasis',
   INACTIVE: 'bg-secondary-subtle text-secondary-emphasis',
-};
-
-const PLAN_BADGE = {
-  BASIC: 'bg-info-subtle text-info-emphasis',
-  PLUS: 'bg-warning-subtle text-warning-emphasis',
 };
 
 function readStringParam(params, name) {
@@ -132,6 +116,12 @@ export default function MembershipOfferListPage() {
     });
   }, [offers, query, plan, status]);
 
+  const planFilters = useMemo(() => {
+    const unique = new Map();
+    offers.forEach((offer) => unique.set(offer.planCode, offer.planDisplayName || offer.planCode));
+    return [{ value: '', label: 'Tất cả' }, ...[...unique.entries()].sort((a, b) => a[1].localeCompare(b[1], 'vi')).map(([value, label]) => ({ value, label }))];
+  }, [offers]);
+
   const tableBody = useMemo(() => {
     if (loading) {
       return (
@@ -183,10 +173,10 @@ export default function MembershipOfferListPage() {
               <td>
                 <span
                   className={`badge ${
-                    PLAN_BADGE[row.planCode] || 'bg-light text-dark'
+                    'bg-light text-dark'
                   }`}
                 >
-                  {row.planCode || '—'}
+                  {row.planDisplayName || row.planCode || '—'}
                 </span>
               </td>
               <td>{formatPrice(row.priceAmount, row.currencyCode)}</td>
@@ -225,7 +215,7 @@ export default function MembershipOfferListPage() {
         <div>
           <h1 className="h3 fw-bold mb-1">Quản lý gói tập</h1>
           <p className="text-muted mb-0">
-            Tạo và cập nhật các gói tập BASIC / PLUS hiển thị cho hội viên.
+            Tạo và cập nhật các gói bán theo loại gói đang cấu hình.
           </p>
         </div>
         <Button
@@ -270,7 +260,7 @@ export default function MembershipOfferListPage() {
         <div>
           <div className="text-muted small mb-1">Loại gói</div>
           <ButtonGroup size="sm">
-            {PLAN_FILTERS.map((f) => (
+            {planFilters.map((f) => (
               <Button
                 key={f.value || 'all-plan'}
                 variant={plan === f.value ? 'danger' : 'outline-danger'}

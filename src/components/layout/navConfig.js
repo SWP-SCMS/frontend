@@ -70,6 +70,7 @@ export const APP_SHELL_NAV_ITEMS = {
     {
       label: 'Kinh doanh',
       items: [
+        { to: '/manager/membership-plans', label: 'Loại gói & quyền lợi' },
         { to: '/manager/membership-offers', label: 'Gói tập' },
         { to: '/manager/payments/reconcile', label: 'Đối soát' },
       ],

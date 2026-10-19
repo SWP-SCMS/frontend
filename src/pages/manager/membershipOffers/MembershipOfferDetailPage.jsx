@@ -14,16 +14,11 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 // already returns everything), so we re-use the list service. This keeps
 // the FE working without inventing a non-existent endpoint.
 import { listMembershipOffersAdmin } from '../../../services/membershipOfferAdminService';
-import { formatDate, formatPrice } from '../../../utils';
+import { formatPrice } from '../../../utils';
 
 const STATUS_BADGE = {
   ACTIVE: 'bg-success-subtle text-success-emphasis',
   INACTIVE: 'bg-secondary-subtle text-secondary-emphasis',
-};
-
-const PLAN_BADGE = {
-  BASIC: 'bg-info-subtle text-info-emphasis',
-  PLUS: 'bg-warning-subtle text-warning-emphasis',
 };
 
 export default function MembershipOfferDetailPage() {
@@ -99,7 +94,7 @@ export default function MembershipOfferDetailPage() {
           <p className="text-muted mb-0">
             <span
               className={`badge me-2 ${
-                PLAN_BADGE[offer.planCode] || 'bg-light text-dark'
+                'bg-light text-dark'
               }`}
             >
               {offer.planCode || '—'}
@@ -201,15 +196,6 @@ export default function MembershipOfferDetailPage() {
         </Card.Body>
       </Card>
 
-      {/* createdAt / updatedAt intentionally omitted — not surfaced by
-          MembershipOfferResponse. Re-enable once the backend extends the DTO.
-       */}
-      {/* eslint-disable-next-line no-unused-vars */}
-      {false && (
-        <small className="text-muted d-block mt-3">
-          Cập nhật lần cuối: {formatDate(offer.updatedAt)}
-        </small>
-      )}
     </div>
   );
 }

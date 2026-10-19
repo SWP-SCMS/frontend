@@ -39,7 +39,7 @@ const DASHBOARD_LINKS = [
   },
   {
     title: 'Gói tập',
-    description: 'Xem các gói tập BASIC và PLUS đang được bán tại trung tâm.',
+    description: 'Xem các gói tập đang được bán tại trung tâm.',
     to: '/reception/membership-offers',
     cta: 'Xem gói tập',
   },
