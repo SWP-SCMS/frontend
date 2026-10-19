@@ -1,5 +1,11 @@
 import api from './api';
 
+export const ASSIGNMENT_CANDIDATE_STATUS = {
+  UNASSIGNED: 'UNASSIGNED',
+  ASSIGNED: 'ASSIGNED',
+  ALL: 'ALL',
+};
+
 export async function getMyActiveCoachAssignment() {
   const response = await api.get('/members/me/coach-assignment');
   return response.status === 204 ? null : response.data;
@@ -39,4 +45,28 @@ export async function endCoachAssignment(memberAccountId, payload) {
     payload,
   );
   return data;
+}
+
+// Manager discovery queue. The backend already limits this result to ACTIVE
+// Members whose ACTIVE Membership contains PERSONAL_COACHING.
+export async function listCoachAssignmentCandidates({
+  query,
+  assignmentStatus = ASSIGNMENT_CANDIDATE_STATUS.UNASSIGNED,
+  page = 0,
+  size = 20,
+} = {}) {
+  const params = { assignmentStatus, page, size };
+  if (query && query.trim()) params.query = query.trim();
+  const { data } = await api.get('/manager/coach-assignments/candidates', {
+    params,
+  });
+  return data;
+}
+
+// Workload is informational only. maximumMemberCount and
+// availableForAssignment are backend placeholders, so callers must not use
+// either field to disable or reject an assignment.
+export async function listCoachAssignmentWorkloads() {
+  const { data } = await api.get('/manager/coaches/assignment-workloads');
+  return Array.isArray(data) ? data : [];
 }
