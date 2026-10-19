@@ -41,7 +41,7 @@ const ERROR_MESSAGES = {
   COACH_NOT_FOUND: 'Không tìm thấy huấn luyện viên đã chọn.',
   COACH_NOT_ACTIVE: 'Huấn luyện viên đã chọn không còn hoạt động.',
   PLUS_MEMBERSHIP_REQUIRED:
-    'Hội viên cần có gói PLUS còn hiệu lực để được phân công huấn luyện viên.',
+    'Hội viên cần có gói tập còn hiệu lực với quyền huấn luyện viên cá nhân.',
   COACH_ALREADY_ASSIGNED: 'Hội viên đang được phân công cho chính huấn luyện viên này.',
   COACH_ASSIGNMENT_NOT_FOUND: 'Không còn phân công HLV đang hoạt động để kết thúc.',
   COACH_ASSIGNMENT_CONFLICT:
@@ -179,7 +179,7 @@ export default function MemberCoachAssignmentCard({
                 Huấn luyện viên cá nhân
               </h2>
               <p className="small text-muted mb-0">
-                Việc phân công yêu cầu hội viên đang hoạt động và có gói PLUS còn hiệu lực.
+                Việc phân công yêu cầu hội viên đang hoạt động và có quyền huấn luyện viên cá nhân.
               </p>
             </div>
             {!loading && !loadError && canAssign ? (

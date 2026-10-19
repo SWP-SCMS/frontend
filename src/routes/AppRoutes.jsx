@@ -201,6 +201,9 @@ const MemberAccountDetailPage = lazy(
 const MemberAccountEditPage = lazy(
   () => import('../pages/manager/members/MemberAccountEditPage'),
 );
+const CoachAssignmentQueuePage = lazy(
+  () => import('../pages/manager/coachAssignments/CoachAssignmentQueuePage'),
+);
 
 // Manager – Discipline management (US23)
 const DisciplineListPage = lazy(
@@ -563,6 +566,7 @@ export default function AppRoutes() {
         <Route path="membership-offers/:offerId" element={withSuspense(<MembershipOfferDetailPage />)} />
         <Route path="membership-offers/:offerId/edit" element={withSuspense(<MembershipOfferEditPage />)} />
         <Route path="members" element={withSuspense(<MemberAccountListPage />)} />
+        <Route path="coach-assignments" element={withSuspense(<CoachAssignmentQueuePage />)} />
         <Route path="members/:accountId" element={withSuspense(<MemberAccountDetailPage />)} />
         <Route path="members/:accountId/edit" element={withSuspense(<MemberAccountEditPage />)} />
         <Route path="disciplines" element={withSuspense(<DisciplineListPage />)} />

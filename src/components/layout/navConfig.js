@@ -55,6 +55,7 @@ export const APP_SHELL_NAV_ITEMS = {
       items: [
         { to: '/manager/staff-accounts', label: 'Nhân viên & Quản lý' },
         { to: '/manager/members', label: 'Hội viên' },
+        { to: '/manager/coach-assignments', label: 'Phân công HLV' },
       ],
     },
     {
