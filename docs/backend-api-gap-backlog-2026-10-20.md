@@ -40,6 +40,7 @@ Trạng thái sử dụng:
 | BE-GAP-011 | P3 | Membership Plan | Validation error chưa có field-level contract | OPEN |
 | BE-GAP-012 | P3 | Membership Plan | Response chưa cho biết Benefit đã bị khoá | OPEN |
 | BE-GAP-013 | P1 | Membership Order | Vẫn tạo được đơn từ Offer thuộc Plan INACTIVE | OPEN |
+| BE-GAP-014 | P1 | Discipline/Booking | API chưa trả và chưa cho cấu hình Benefit bắt buộc theo bộ môn | OPEN |
 
 ---
 
@@ -213,9 +214,14 @@ Timestamp phải là ISO-8601 UTC và được ghi trong OpenAPI.
 
 ## BE-GAP-005 — Membership và public Offer response thiếu đầy đủ Benefit/capability
 
-**Ưu tiên:** P1  
-**Trạng thái:** OPEN  
+**Ưu tiên:** P1
+**Trạng thái:** OPEN
 **Ảnh hưởng FE:** Phase 6 chưa thể pre-disable chính xác Booking, Center Visit, Personal Coaching và Training theo Plan động.
+
+**Fallback FE Phase 6:** khi Membership chưa có `benefitCodes`, frontend không
+suy quyền từ `planCode` và không khóa thao tác theo BASIC/PLUS; request vẫn được
+gửi để Backend xác nhận Benefit. Khi response có `benefitCodes`, UI sẽ tự động
+gate chính xác theo Benefit.
 
 ### Hiện trạng
 
@@ -553,6 +559,73 @@ không còn hiển thị Offer chỉ giảm khả năng xảy ra, không bảo v
 - Đơn/Membership đã thanh toán trước đó không bị ảnh hưởng khi Plan chuyển
   INACTIVE.
 - Không có race cho phép tạo đơn lọt qua trong lúc Plan đang bị vô hiệu hoá.
+
+---
+
+## BE-GAP-014 — API chưa trả và chưa cho cấu hình Benefit bắt buộc theo bộ môn
+
+**Ưu tiên:** P1
+**Trạng thái:** OPEN
+**Ảnh hưởng FE:** Phase 6 không thể pre-disable chính xác từng lớp/Session hoặc
+giải thích quyền lợi cụ thể còn thiếu trước khi Member gửi yêu cầu đặt lịch.
+
+### Hiện trạng
+
+Backend đã có bảng `discipline_required_benefits` và kiểm tra các Benefit bắt
+buộc của Discipline trong `BookingRepository`. Đây là lớp bảo vệ mutation đúng
+và cần tiếp tục được giữ.
+
+Tuy nhiên contract Discipline hiện chỉ có `id`, `name`, `description` và
+`status`:
+
+- `DisciplineCreateRequest` không nhận danh sách Benefit bắt buộc.
+- `DisciplinePatchRequest` không cho cập nhật danh sách Benefit bắt buộc.
+- `DisciplineResponse` không trả danh sách Benefit bắt buộc.
+- Session/catalogue dùng ở màn Member và Receptionist vì vậy cũng không cho FE
+  biết lớp cụ thể yêu cầu những quyền nào.
+
+Kết quả là dữ liệu rule có trong database nhưng Manager không cấu hình được qua
+API, còn FE chỉ biết Member không đủ quyền sau khi request booking bị Backend từ
+chối.
+
+### Đề nghị
+
+- Bổ sung `requiredBenefitCodes` vào Discipline create/patch/response; validate
+  mỗi mã tồn tại và đang hợp lệ trong Benefit catalogue.
+- Trả thông tin này trong Session/catalogue response mà Member và Receptionist
+  sử dụng, trực tiếp hoặc qua Discipline DTO lồng bên trong.
+- Khi booking bị từ chối do thiếu quyền, trả error payload có cấu trúc với
+  `requiredBenefitCodes` và `missingBenefitCodes`. Có thể giữ các error code
+  legacy như `BOOKING_PLUS_MEMBERSHIP_REQUIRED` để tương thích, nhưng không nên
+  buộc FE suy nghĩa từ chữ `PLUS`.
+- Cập nhật OpenAPI, generated contract tests và audit snapshot tương ứng.
+
+Contract tối thiểu đề xuất:
+
+```json
+{
+  "id": "uuid",
+  "name": "Bơi nâng cao",
+  "status": "ACTIVE",
+  "requiredBenefitCodes": [
+    "CLASS_BOOKING",
+    "POOL_ACCESS"
+  ]
+}
+```
+
+Error payload đề xuất:
+
+```json
+{
+  "code": "MEMBERSHIP_BENEFIT_REQUIRED",
+  "requiredBenefitCodes": ["CLASS_BOOKING", "POOL_ACCESS"],
+  "missingBenefitCodes": ["POOL_ACCESS"]
+}
+```
+
+Backend vẫn phải kiểm tra lại các quyền này trong transaction khi tạo booking;
+dữ liệu response chỉ phục vụ hiển thị và pre-disable trên FE.
 
 ---
 

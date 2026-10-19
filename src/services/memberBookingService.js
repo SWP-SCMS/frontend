@@ -15,7 +15,7 @@ export function toBookingId(booking) {
   return booking?.bookingId ?? booking?.id ?? null;
 }
 
-// BR-BKG-03/04: BE kiểm tra Member ACTIVE, Membership PLUS còn hiệu lực,
+// BR-BKG-03/04: BE kiểm tra Member ACTIVE và Benefit đặt lớp còn hiệu lực,
 // buổi tập còn chỗ, không trùng giờ. FE chỉ hiển thị lỗi BE trả về.
 export async function bookClassSession(sessionId) {
   const { data } = await api.post(

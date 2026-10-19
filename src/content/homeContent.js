@@ -9,8 +9,6 @@
 // service call. The shape of the exported objects is what the future
 // API is expected to return, so the JSX does not need to change.
 
-import { MEMBERSHIP_PLAN } from '../constants';
-
 export const HOMEPAGE_COPY = {
   badge: 'Hệ thống quản lý & rèn luyện thể thao thế hệ mới',
   heroTitleBefore: 'Nâng tầm thể chất với trải nghiệm tập luyện',
@@ -54,44 +52,6 @@ export const FEATURES = [
     title: 'Minh bạch & Chủ động 100%',
     desc: 'Mọi quyền lợi gói tập, lịch sử check-in, lịch tập cá nhân và thanh toán điện tử đều được kiểm soát minh bạch trên cổng tài khoản cá nhân. Cam kết tuyệt đối không phụ phí ẩn.',
     note: 'Rõ ràng trên mọi giao dịch',
-  },
-];
-
-// `defaultPrice` chỉ dùng khi API chưa trả về Offer nào cho gói này.
-export const PLAN_OVERVIEW = [
-  {
-    code: MEMBERSHIP_PLAN.BASIC,
-    title: 'BASIC',
-    tag: 'Tập Luyện Nền Tảng',
-    tagline:
-      'Lựa chọn hoàn hảo cho người mới bắt đầu hoặc người có thói quen tập luyện độc lập tự do.',
-    defaultPrice: 499000,
-    bullets: [
-      'Ra vào trung tâm không giới hạn giờ mở cửa (06:00 - 22:00 hàng ngày)',
-      'Sử dụng đầy đủ hệ thống máy tập Gym, tạ tự do & Cardio cao cấp',
-      'Tủ đồ bảo mật an toàn, phòng tắm nóng lạnh & tiện nghi cá nhân',
-      '01 buổi kiểm tra chỉ số InBody & định hướng thể trạng ban đầu',
-    ],
-    cta: 'Đăng ký gói Basic',
-    highlight: false,
-  },
-  {
-    code: MEMBERSHIP_PLAN.PLUS,
-    title: 'PLUS UNLIMITED',
-    tag: 'Trọn gói & Cá nhân hóa',
-    tagline:
-      'Dành riêng cho hội viên muốn tăng tốc đạt mục tiêu hình thể với sự đồng hành của chuyên gia.',
-    defaultPrice: 799000,
-    bullets: [
-      'Toàn bộ quyền lợi tiêu chuẩn của gói BASIC',
-      'Đi kèm 02 buổi huấn luyện viên cá nhân 1-1 (PT) hàng tháng',
-      'Được quyền đặt trước chỗ các lớp nhóm (Yoga, HIIT, Indoor Cycling)',
-      'Đo chỉ số InBody & đánh giá tiến trình chuyển hóa hàng tuần',
-      'Ưu tiên đặt lịch PT và khóa học qua ứng dụng trực tuyến',
-    ],
-    cta: 'Chọn gói Plus được khuyên dùng',
-    badge: 'Phổ biến nhất & Khuyên dùng',
-    highlight: true,
   },
 ];
 

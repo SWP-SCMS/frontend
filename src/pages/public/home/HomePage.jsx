@@ -3,7 +3,7 @@
 //   - Header cố định
 //   - Hero
 //   - Giá trị cốt lõi
-//   - Bảng gói BASIC / PLUS (giá lấy từ API, có giá mặc định dự phòng)
+//   - Bảng gói động lấy từ API
 //   - Không gian
 //   - Footer
 //
@@ -24,18 +24,15 @@ import Icon from '../../../components/layout/PublicIcon';
 import {
   HOMEPAGE_COPY,
   FEATURES,
-  PLAN_OVERVIEW,
   SPACES,
 } from '../../../content/homeContent';
 
 import './HomePage.css';
 
-// Giá hiển thị: lấy Offer rẻ nhất của gói; không có thì dùng giá mặc định.
+// Giá hiển thị: lấy Offer rẻ nhất của loại gói.
 function buildPriceInfo(offers, plan) {
   const ofPlan = offers.filter((o) => o.planCode === plan.code);
-  if (ofPlan.length === 0) {
-    return { price: formatPrice(plan.defaultPrice), unit: '/ tháng', offerId: null };
-  }
+  if (ofPlan.length === 0) return null;
   const cheapest = ofPlan.reduce((a, b) =>
     Number(b.priceAmount) < Number(a.priceAmount) ? b : a,
   );
@@ -58,9 +55,12 @@ function buildDynamicPlanOverview(offers) {
   });
   return [...grouped.entries()].map(([code, items]) => {
     const sample = items[0];
-    const bullets = ['Sử dụng khu vực gym & tập luyện tại trung tâm'];
+    const bullets = [];
     if (sample.supportsBooking) bullets.push('Đặt lịch lớp trực tuyến');
-    if (sample.supportsPersonalCoaching) bullets.push('Huấn luyện viên cá nhân và giáo án');
+    if (sample.supportsPersonalCoaching) bullets.push('Huấn luyện viên cá nhân');
+    if (bullets.length === 0) {
+      bullets.push('Quyền lợi áp dụng theo loại gói đã chọn');
+    }
     return {
       code,
       title: sample.planDisplayName || code,
@@ -77,19 +77,22 @@ export default function HomePage() {
   const { isAuthenticated, isReady, user, logout } = useAuth();
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(true);
   const planOverview = useMemo(
-    () => (offers.length ? buildDynamicPlanOverview(offers) : PLAN_OVERVIEW),
+    () => buildDynamicPlanOverview(offers),
     [offers],
   );
 
-  // Không tải được Offer thì vẫn hiện giá mặc định, không báo lỗi cho khách.
   useEffect(() => {
     let cancelled = false;
     listActiveOffers()
       .then((data) => {
         if (!cancelled) setOffers(data);
       })
-      .catch(() => { });
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setOffersLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -225,8 +228,17 @@ export default function HomePage() {
             </div>
 
             <div className="row g-4 mx-auto" style={{ maxWidth: 900 }}>
+              {!offersLoading && planOverview.length === 0 ? (
+                <div className="col-12 text-center scms-home-muted">
+                  Hiện chưa tải được danh sách gói tập.{' '}
+                  <Link to="/offers" className="scms-home-accent-soft">
+                    Mở trang gói tập
+                  </Link>
+                </div>
+              ) : null}
               {planOverview.map((plan) => {
                 const info = buildPriceInfo(offers, plan);
+                if (!info) return null;
                 return (
                   <div key={plan.code} className="col-lg-6">
                     <div

@@ -116,10 +116,13 @@ export const MEMBER_SIDEBAR_ITEMS = [
   {
     label: 'Lịch tập',
     items: [
-      // `requiresPlus: true`: chỉ hội viên gói PLUS dùng được (BR-BKG-03/05).
-      // Hội viên BASIC thấy mục này bị làm mờ kèm nhãn PLUS.
-      { to: '/member/class-booking', label: 'Đăng ký lớp', icon: 'clipboard', requiresPlus: true },
-      { to: '/member/class-sessions', label: 'Lịch của tôi', icon: 'calendar', requiresPlus: true },
+      {
+        to: '/member/class-booking',
+        label: 'Đăng ký lớp',
+        icon: 'clipboard',
+        requiredBenefit: 'CLASS_BOOKING',
+      },
+      { to: '/member/class-sessions', label: 'Lịch của tôi', icon: 'calendar' },
     ],
   },
   {

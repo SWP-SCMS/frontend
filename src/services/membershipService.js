@@ -12,7 +12,7 @@ const publicApi = axios.create({
   headers: { Accept: 'application/json' },
 });
 
-// GET /api/v1/membership-offers?planCode=BASIC|PLUS
+// GET /api/v1/membership-offers?planCode={dynamicPlanCode}
 // Chỉ trả Offer ACTIVE; planCode là tùy chọn; không có kết quả thì trả [].
 // Trang của Lễ tân cũng dùng lại hàm này thay vì khai báo lại.
 export async function listActiveOffers({ planCode } = {}) {

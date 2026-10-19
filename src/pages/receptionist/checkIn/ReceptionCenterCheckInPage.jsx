@@ -82,7 +82,7 @@ const CHECK_IN_BUSINESS_ERRORS = {
   CENTER_VISIT_PROFILE_IMAGE_REQUIRED:
     'Hội viên cần có ảnh hồ sơ trước khi check-in trung tâm.',
   CENTER_VISIT_MEMBERSHIP_REQUIRED:
-    'Hội viên cần có gói BASIC hoặc PLUS đang ACTIVE và còn hiệu lực để check-in trung tâm.',
+    'Hội viên cần có gói tập còn hiệu lực với quyền sử dụng trung tâm để check-in.',
 };
 
 function formatCenterCheckInTime(value) {

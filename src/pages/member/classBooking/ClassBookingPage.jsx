@@ -11,7 +11,7 @@
 // chọn rồi lọc trên trình duyệt, nhờ đó số đếm ở các nút bộ môn là đúng.
 //
 // Quy tắc nghiệp vụ (BE kiểm tra lại, FE chỉ gợi ý giao diện):
-//   BR-BKG-03/05: chỉ gói PLUS còn hiệu lực mới đặt được lịch.
+//   BR-BKG-03/05: cần Membership có Benefit đặt lớp phù hợp.
 //   BR-BKG-04   : buổi tập còn chỗ, không trùng giờ, chưa đặt trước đó.
 //   BR-BKG-06   : chỉ hủy được khi còn ít nhất 2 giờ trước giờ bắt đầu.
 
@@ -58,7 +58,7 @@ const STATUS_OPTIONS = [
 // Thông báo theo mã lỗi của BE (xử lý theo status / code, không đọc `detail`).
 const BOOKING_ERROR_MESSAGES = {
   BOOKING_PLUS_MEMBERSHIP_REQUIRED:
-    'Bạn cần có gói PLUS còn hiệu lực vào thời điểm buổi tập để đặt lịch.',
+    'Gói tập hiện tại chưa có quyền đặt lớp hoặc chưa đáp ứng quyền lợi của bộ môn này.',
   BOOKING_DUPLICATE: 'Bạn đã đặt buổi tập này rồi.',
   BOOKING_TIME_CONFLICT: 'Buổi tập này trùng giờ với một buổi bạn đã đặt.',
   SESSION_FULL: 'Buổi tập đã hết chỗ.',
@@ -157,13 +157,14 @@ export default function ClassBookingPage() {
   const { user } = useAuth();
   const {
     activeMembership,
-    hasActiveMembership,
+    benefitsKnown,
+    hasBenefit,
     loading: membershipLoading,
   } = useMemberArea();
 
-  // BR-BKG-03/05: chỉ PLUS mới đặt được lịch.
   const planCode = activeMembership?.planCode ?? activeMembership?.plan_code_snapshot ?? '';
-  const isPlus = hasActiveMembership && planCode === 'PLUS';
+  // Contract cũ chưa có Benefit: không khóa oan, BE xác nhận khi đặt.
+  const bookingAllowed = !benefitsKnown || hasBenefit('CLASS_BOOKING');
 
   // Khoảng ngày (để trống = mọi buổi tập sắp tới).
   const [fromYmd, setFromYmd] = useState('');
@@ -431,7 +432,7 @@ export default function ClassBookingPage() {
                   session={s}
                   booked={Boolean(bookedMap[s.id])}
                   busy={busyId === s.id}
-                  isPlus={isPlus}
+                  bookingAllowed={bookingAllowed}
                   membershipLoading={membershipLoading}
                   nowMs={nowMs}
                   onBook={() => openBookConfirm(s)}
@@ -466,8 +467,8 @@ export default function ClassBookingPage() {
         <MemberBreadcrumb current="Đăng ký lớp" />
         <h1 className="cbs-title">Đăng ký lớp</h1>
         <p className="cbs-sub">
-          Chọn buổi tập sắp tới và đặt lịch. Chỉ hội viên gói PLUS mới đặt được
-          lịch.
+          Chọn buổi tập sắp tới và đặt lịch. Gói tập cần có quyền đặt lớp phù
+          hợp với bộ môn.
         </p>
       </header>
 
@@ -779,7 +780,7 @@ function BookingConfirmModal({
           </InfoRow>
           <InfoRow icon="plan" label="Gói áp dụng:">
             <span className="cbs-plan-pill">
-              GÓI {planCode || 'PLUS'} • Hợp lệ
+              Gói {planCode || '—'} • Xác nhận quyền khi đặt
             </span>
           </InfoRow>
           <InfoRow icon="users" label="Số lượng:">
@@ -821,7 +822,7 @@ function BookingConfirmModal({
             disabled={busy}
           >
             <RowIcon name="check" size={16} />
-            {busy ? 'Đang đặt chỗ...' : 'Xác nhận đặt chỗ (Miễn phí theo gói PLUS)'}
+            {busy ? 'Đang đặt chỗ...' : 'Xác nhận đặt chỗ'}
           </button>
         </div>
       </Modal.Body>
@@ -834,7 +835,7 @@ function SessionItem({
   session,
   booked,
   busy,
-  isPlus,
+  bookingAllowed,
   membershipLoading,
   nowMs,
   onBook,
@@ -891,16 +892,16 @@ function SessionItem({
             <button
               type="button"
               className="cbs-btn"
-              disabled={busy || full || !isPlus}
+              disabled={busy || full || membershipLoading || !bookingAllowed}
               onClick={onBook}
             >
               {busy ? 'Đang đặt...' : full ? 'Hết chỗ' : 'Đặt lịch'}
             </button>
-            {!isPlus && !full ? (
+            {(membershipLoading || !bookingAllowed) && !full ? (
               <span className="cbs-note">
                 {membershipLoading
                   ? 'Đang kiểm tra gói tập...'
-                  : 'Cần gói PLUS để đặt lịch'}
+                  : 'Gói tập hiện tại chưa có quyền đặt lớp'}
               </span>
             ) : null}
           </>

@@ -12,9 +12,6 @@ export const OFFERS_COPY = {
 
   listTitle: 'Các gói tập',
 
-  compareEyebrow: 'So sánh quyền lợi',
-  compareTitle: 'BASIC hay PLUS: khác nhau ở đâu?',
-
   faqEyebrow: 'Giải đáp nhanh',
   faqTitle: 'Câu hỏi thường gặp',
 };
@@ -34,16 +31,8 @@ export const TRUST_POINTS = [
   {
     icon: 'calendar',
     title: 'Đặt lịch dễ dàng',
-    desc: 'Gói PLUS đặt lớp Yoga, Group và PT 1-1 ngay trên hệ thống.',
+    desc: 'Chọn gói có quyền đặt lớp để đăng ký các buổi tập ngay trên hệ thống.',
   },
-];
-
-// Bảng so sánh BASIC / PLUS (BR-PKG-01, BR-PKG-02, BR-COA-01).
-export const COMPARE_ROWS = [
-  { label: 'Sử dụng khu vực gym & tập luyện tại trung tâm', basic: true, plus: true },
-  { label: 'Đặt lịch lớp Yoga / Group', basic: false, plus: true },
-  { label: 'Đặt lịch PT 1-1', basic: false, plus: true },
-  { label: 'Personal Coach, kế hoạch và kết quả tập luyện', basic: false, plus: true },
 ];
 
 // Câu hỏi thường gặp (BR-PAY-01, BR-MEM-05, BR-MEM-08, BR-BKG-05, BR-BKG-06).
@@ -53,8 +42,8 @@ export const FAQS = [
     a: 'Hội viên tự mua gói thanh toán bằng chuyển khoản. Nếu bạn đến trực tiếp trung tâm, lễ tân có thể hỗ trợ tạo đơn và thu tiền mặt tại quầy.',
   },
   {
-    q: 'Gói BASIC có đặt được lớp Yoga, Group hoặc PT 1-1 không?',
-    a: 'Không. Gói BASIC dành cho việc sử dụng khu vực gym và tập luyện. Muốn đặt lịch lớp Yoga, Group hoặc PT 1-1 bạn cần gói PLUS còn hiệu lực.',
+    q: 'Gói nào có thể đặt lớp Yoga, Group hoặc PT 1-1?',
+    a: 'Bạn cần chọn gói đang mở bán có quyền đặt lớp phù hợp. Hệ thống sẽ kiểm tra quyền lợi của gói tại thời điểm đặt lịch.',
   },
   {
     q: 'Khi gói đang còn hạn, tôi có mua thêm gói mới được không?',

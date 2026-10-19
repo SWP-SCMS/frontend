@@ -1,4 +1,4 @@
-/* Các thẻ dành cho hội viên gói PLUS (.scms-pd-*). Dùng chung khung thẻ
+/* Các thẻ dịch vụ dành cho hội viên (.scms-pd-*). Dùng chung khung thẻ
  * .scms-md-card của trang tổng quan. */
 
 .scms-pd-days {
@@ -74,38 +74,4 @@
   flex-direction: column;
   align-items: flex-start !important;
   gap: 0.25rem !important;
-}
-
-/* Gói BASIC: thẻ bị khóa — nội dung mờ, ghi chú nằm giữa thẻ. */
-.scms-pd-locked {
-  position: relative;
-  overflow: hidden;
-}
-
-.scms-pd-locked > :not(.scms-pd-lock) {
-  filter: blur(3px);
-  opacity: 0.55;
-  pointer-events: none;
-  user-select: none;
-}
-
-.scms-pd-lock {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  text-align: center;
-  color: #0f172a;
-}
-
-.scms-pd-skel {
-  display: block;
-  height: 14px;
-  border-radius: 6px;
-  background: #cbd5e1;
 }
