@@ -65,6 +65,9 @@ const MemberReceiptListPage = lazy(
 const NotificationPage = lazy(
   () => import('../pages/common/NotificationPage'),
 );
+const StaffProfilePage = lazy(
+  () => import('../pages/common/StaffProfilePage'),
+);
 
 // Coach – Dashboard / Lịch phụ trách / Hồ sơ
 const CoachDashboardPage = lazy(
@@ -459,6 +462,7 @@ export default function AppRoutes() {
         <Route path="center-visits" element={withSuspense(<OpenCenterVisitsPage />)} />
         <Route path="dashboard" element={withSuspense(<ReceptionistDashboardPage />)} />
         <Route path="notifications" element={withSuspense(<NotificationPage />)} />
+        <Route path="profile" element={withSuspense(<StaffProfilePage />)} />
         <Route path="members" element={withSuspense(<ReceptionistMemberListPage />)} />
         <Route path="members/new" element={withSuspense(<ReceptionistMemberCreatePage />)} />
         <Route
@@ -592,6 +596,7 @@ export default function AppRoutes() {
         <Route path="reports/revenue" element={withSuspense(<RevenueReportPage />)} />
         <Route path="audit-events" element={withSuspense(<AuditHistoryPage />)} />
         <Route path="notifications" element={withSuspense(<NotificationPage />)} />
+        <Route path="profile" element={withSuspense(<StaffProfilePage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
       </Route>
 

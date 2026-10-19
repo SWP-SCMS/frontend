@@ -52,6 +52,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import StaffMembershipHistory from '../../../components/common/StaffMembershipHistory';
 import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import ProfileImageUploadControl from '../../../components/common/ProfileImageUploadControl';
@@ -702,6 +703,8 @@ export default function MemberDetailPage() {
           </Col>
         </Row>
       </Form>
+
+      <StaffMembershipHistory receptionMemberCode={profile.memberId} />
 
       <Modal show={showReset} onHide={() => setShowReset(false)} centered>
         <Modal.Header closeButton>
