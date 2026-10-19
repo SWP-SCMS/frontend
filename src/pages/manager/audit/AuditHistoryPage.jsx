@@ -29,6 +29,16 @@ const ACTION_LABELS = {
   MEMBERSHIP_ACTIVATED: 'Kích hoạt gói tập',
   PAYMENT_RECORDED: 'Ghi nhận thanh toán',
   RECEIPT_ISSUED: 'Phát hành biên lai',
+  MEMBERSHIP_PLAN_CREATED: 'Tạo loại gói tập',
+  MEMBERSHIP_PLAN_UPDATED: 'Cập nhật loại gói tập',
+  MEMBERSHIP_OFFER_CREATED: 'Tạo gói tập',
+  MEMBERSHIP_OFFER_UPDATED: 'Cập nhật gói tập',
+  TRAINING_PLAN_CREATED: 'Tạo kế hoạch tập luyện',
+  TRAINING_PLAN_UPDATED: 'Cập nhật kế hoạch tập luyện',
+  TRAINING_RESULT_CREATED: 'Ghi nhận kết quả tập luyện',
+  TRAINING_RESULT_UPDATED: 'Cập nhật kết quả tập luyện',
+  TRAINING_FEEDBACK_CREATED: 'Tạo nhận xét tập luyện',
+  TRAINING_FEEDBACK_UPDATED: 'Cập nhật nhận xét tập luyện',
 };
 
 const TARGET_LABELS = {
@@ -45,6 +55,18 @@ const TARGET_LABELS = {
   RECEIPT: 'Biên lai',
   ACCOUNT: 'Tài khoản',
   MEMBER_PROFILE: 'Hồ sơ hội viên',
+  MEMBERSHIP_PLAN: 'Loại gói tập',
+  MEMBERSHIP_OFFER: 'Gói tập',
+  TRAINING_PLAN: 'Kế hoạch tập luyện',
+  TRAINING_RESULT: 'Kết quả tập luyện',
+  TRAINING_FEEDBACK: 'Nhận xét tập luyện',
+};
+
+const ROLE_LABELS = {
+  MEMBER: 'Hội viên',
+  COACH: 'Huấn luyện viên',
+  RECEPTIONIST: 'Lễ tân',
+  MANAGER: 'Quản lý',
 };
 
 const FIELD_LABELS = {
@@ -94,6 +116,14 @@ function actionLabel(value) {
 
 function targetLabel(value) {
   return TARGET_LABELS[value] || humanize(value, 'Đối tượng hệ thống');
+}
+
+function actorIdentity(event) {
+  if (!event.actorAccountId) return { name: 'Hệ thống', role: '' };
+  return {
+    name: event.actorName?.trim() || 'Nhân viên hệ thống',
+    role: ROLE_LABELS[event.actorRole] || humanize(event.actorRole, ''),
+  };
 }
 
 function displayValue(value) {
@@ -218,12 +248,16 @@ export default function AuditHistoryPage() {
             <tbody>
               {rows.map((event) => {
                 const hasDetails = Boolean(event.reason) || visibleDetails(event.beforeData).length > 0 || visibleDetails(event.afterData).length > 0;
+                const actor = actorIdentity(event);
                 return (
                   <tr key={event.id}>
                     <td>{formatGymDate(event.createdAt)} · {formatGymTime(event.createdAt)}</td>
                     <td>{actionLabel(event.action)}</td>
                     <td>{targetLabel(event.targetType)}</td>
-                    <td>{event.actorAccountId ? 'Nhân viên hệ thống' : 'Hệ thống'}</td>
+                    <td>
+                      <div className="fw-semibold">{actor.name}</div>
+                      {actor.role ? <div className="small text-muted">{actor.role}</div> : null}
+                    </td>
                     <td>
                       {hasDetails ? (
                         <details>

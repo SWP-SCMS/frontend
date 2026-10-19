@@ -400,6 +400,20 @@ export default function RecurringScheduleCreatePage() {
       // `pageLocalHandled` pattern).
       let pageLocalHandled = false;
       switch (code) {
+        case 'LEGACY_YOGA_UNSUPPORTED':
+          setServerError({
+            ...err,
+            response: {
+              ...err?.response,
+              data: {
+                ...(err?.response?.data || {}),
+                message:
+                  'Lớp Yoga cũ chỉ được giữ lại để xem lịch sử và không thể tạo thêm lịch cố định.',
+              },
+            },
+          });
+          pageLocalHandled = true;
+          break;
         case 'CLASS_NOT_FOUND':
         case 'CLASS_INACTIVE':
           // The Class is context, not an editable field. Surface
