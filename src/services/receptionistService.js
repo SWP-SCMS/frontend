@@ -20,8 +20,9 @@
 // declared here — `membershipService.listActiveOffers` already wraps that
 // endpoint and the backend allows both MEMBER and RECEPTIONIST to call it.
 //
-// IMPORTANT — the deliberate omissions, updated for US20:
-//   1. No bank-transfer "continue payment" endpoint. US18 owns that flow.
+// IMPORTANT — deliberate scope boundaries, updated for Receptionist SePay:
+//   1. Bank-transfer continuation must use the Receptionist-scoped endpoint
+//      declared below, never the Member-only /members/me endpoint.
 //   2. Center Visit check-in is deliberately separate from bookings,
 //      sessions, and attendance. This service does not mutate any of them.
 //
@@ -155,6 +156,23 @@ export async function createReceptionCashPayment(memberId, { offerId }) {
   const { data } = await api.post(
     `/reception/members/${memberId}/cash-payments`,
     { offerId },
+  );
+  return data;
+}
+
+// POST /api/v1/reception/members/{memberId}/membership-orders/{orderId}/payments/sepay
+// Receptionist-scoped SePay init. `memberId` is the public MB-* code, never a
+// UUID, and `orderId` is the PENDING_PAYMENT order UUID. Backend creates or
+// reuses the PENDING payment (safe to retry), so this must never call the
+// Member-only POST /members/me/.../payments/sepay endpoint.
+//
+// Returns SepayPaymentResponse:
+//   { paymentId, orderId, orderNumber, amount, currency, provider,
+//     paymentReference, transferContent, bankCode, bankAccountNumber,
+//     bankAccountName, qrUrl, expiresAt, status }
+export async function createReceptionSepayPayment(memberId, orderId) {
+  const { data } = await api.post(
+    `/reception/members/${memberId}/membership-orders/${orderId}/payments/sepay`,
   );
   return data;
 }

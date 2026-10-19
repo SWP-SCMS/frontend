@@ -28,8 +28,11 @@
 //     expiry logic at all.
 //
 // Both payment choices live in one receptionist workflow, but still call their
-// separate backend contracts. Receptionist must never call the Member-only
-// SePay initialization endpoint.
+// separate backend contracts. The bank-transfer branch creates the Order, then
+// inits the Receptionist-scoped SePay payment
+// (POST /reception/members/{memberCode}/membership-orders/{orderId}/payments/sepay),
+// shows the QR inline, and polls GET /payments/{paymentId}/result.
+// Receptionist must never call the Member-only SePay initialization endpoint.
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
@@ -47,15 +50,18 @@ import {
 } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import StaffMembershipHistory from '../../../components/common/StaffMembershipHistory';
 import {
   cancelMembershipOrder,
   createReceptionMembershipOrder,
   createReceptionCashPayment,
+  createReceptionSepayPayment,
   getReceptionPendingOrder,
   searchReceptionMember,
 } from '../../../services/receptionistService';
+import { getPaymentResult } from '../../../services/paymentReconciliationService';
 import { listActiveOffers } from '../../../services/membershipService';
-import { formatPrice, normalizePhone } from '../../../utils';
+import { formatDateTime, formatPrice, normalizePhone } from '../../../utils';
 import './ReceiptPage.css';
 
 // Business 409s from the backend, mapped to counter-ready wording.
@@ -116,6 +122,16 @@ export default function CashPaymentPage() {
   // Nên giữ lại thông tin offer lúc bấm xác nhận, trước khi clear lựa chọn.
   const [purchased, setPurchased] = useState(null);
   const [pendingOrder, setPendingOrder] = useState(null);
+  const [membershipHistoryVersion, setMembershipHistoryVersion] = useState(0);
+
+  // ---- Receptionist SePay state (Phase 3) ----
+  // POST /reception/members/{memberCode}/membership-orders/{orderId}/payments/sepay
+  // -> SepayPaymentResponse; poll GET /payments/{paymentId}/result until PAID.
+  const [sepayPayment, setSepayPayment] = useState(null);
+  const [sepayResult, setSepayResult] = useState(null);
+  const [sepayLoading, setSepayLoading] = useState(false);
+  const [qrBroken, setQrBroken] = useState(false);
+  const [copied, setCopied] = useState('');
 
   // ---- Cancel-a-stuck-order state (PATCH /membership-orders/{id}/cancel) ----
   const [cancelling, setCancelling] = useState(false);
@@ -139,6 +155,89 @@ export default function CashPaymentPage() {
     };
   }, []);
 
+  // Poll GET /payments/{paymentId}/result every 5s until PAID/FAILED.
+  // QR display alone is never confirmation (BR-PAY-04).
+  useEffect(() => {
+    if (!sepayPayment?.paymentId) return undefined;
+    if (sepayResult?.status === 'PAID' || sepayResult?.status === 'FAILED') {
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setInterval(async () => {
+      try {
+        const r = await getPaymentResult(sepayPayment.paymentId);
+        if (!cancelled) setSepayResult(r);
+      } catch {
+        // Transient error: the next poll retries.
+      }
+    }, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [sepayPayment, sepayResult?.status]);
+
+  // A terminal transfer is no longer a cancellable pending order. Refresh the
+  // member and membership card after success so the newly activated package is
+  // visible without forcing the receptionist to leave or reload the page.
+  useEffect(() => {
+    const status = sepayResult?.status;
+    if (status !== 'PAID' && status !== 'FAILED') return;
+
+    setPendingOrder(null);
+    if (status !== 'PAID') return;
+
+    setOfferId('');
+    setMembershipHistoryVersion((version) => version + 1);
+    let cancelled = false;
+    searchReceptionMember({ memberId })
+      .then((refreshed) => {
+        if (!cancelled) setMember(refreshed);
+      })
+      .catch(() => {
+        // Non-fatal: payment result and membership history remain authoritative.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [memberId, sepayResult?.status]);
+
+  async function handleContinueSepay(order) {
+    if (!order) return;
+    setSepayLoading(true);
+    setError(null);
+    try {
+      const payment = await createReceptionSepayPayment(memberId, order.orderId);
+      setTransferOrder(order);
+      setSepayPayment(payment);
+      setSepayResult(null);
+      setQrBroken(false);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setSepayLoading(false);
+    }
+  }
+
+  async function handleCheckSepayNow() {
+    if (!sepayPayment?.paymentId) return;
+    try {
+      setSepayResult(await getPaymentResult(sepayPayment.paymentId));
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  async function handleCopy(key, text) {
+    try {
+      await navigator.clipboard.writeText(String(text));
+      setCopied(key);
+      setTimeout(() => setCopied((c) => (c === key ? '' : c)), 1500);
+    } catch {
+      // Clipboard blocked: the operator copies manually from the field.
+    }
+  }
+
   // Load the member whenever the deep-linked memberId changes (or clears).
   useEffect(() => {
     let cancelled = false;
@@ -148,6 +247,9 @@ export default function CashPaymentPage() {
     setReceipt(null);
     setTransferOrder(null);
     setPurchased(null);
+    setSepayPayment(null);
+    setSepayResult(null);
+    setQrBroken(false);
     setOfferId('');
 
     if (!memberId) {
@@ -228,6 +330,9 @@ export default function CashPaymentPage() {
     setReceipt(null);
     setTransferOrder(null);
     setPurchased(null);
+    setSepayPayment(null);
+    setSepayResult(null);
+    setQrBroken(false);
     setError(null);
   }
 
@@ -248,6 +353,7 @@ export default function CashPaymentPage() {
         setTransferOrder(null);
         setPendingOrder(null);
         setOfferId('');
+        setMembershipHistoryVersion((version) => version + 1);
         // Cash activates the membership immediately. Refresh the canonical
         // member state so the UI no longer offers another purchase.
         try {
@@ -261,6 +367,18 @@ export default function CashPaymentPage() {
         setTransferOrder(order);
         setReceipt(null);
         setPendingOrder(order);
+        // Immediately init the SePay payment so the QR is shown on this page
+        // (previously the operator had to go to Reconcile). Retries reuse the
+        // PENDING payment server-side.
+        setSepayLoading(true);
+        try {
+          const payment = await createReceptionSepayPayment(memberId, order.orderId);
+          setSepayPayment(payment);
+          setSepayResult(null);
+          setQrBroken(false);
+        } finally {
+          setSepayLoading(false);
+        }
       }
     } catch (err) {
       const code = err?.response?.data?.code;
@@ -296,6 +414,9 @@ export default function CashPaymentPage() {
       // backend reported a race.
       setPendingOrder(null);
       setTransferOrder(null);
+      setSepayPayment(null);
+      setSepayResult(null);
+      setQrBroken(false);
       setCancelling(false);
       setCancelReason('');
     } catch (err) {
@@ -454,42 +575,159 @@ export default function CashPaymentPage() {
       </header>
 
       {transferOrder ? (
-        <Alert variant="success">
-          <Alert.Heading className="h6 mb-2">Đã tạo đơn chuyển khoản</Alert.Heading>
-          <p className="small mb-2">
-            Mã đơn <strong>{transferOrder.orderNumber}</strong> cho gói{' '}
-            <strong>{transferOrder.offerName}</strong> đã được tạo ở trạng thái chờ
-            thanh toán.
-          </p>
-          <p className="small text-muted mb-3">
-            Hướng dẫn hội viên thực hiện chuyển khoản theo thông tin thanh toán hiện
-            có, sau đó kiểm tra kết quả tại màn hình Đối soát.
-          </p>
-          <div className="d-flex flex-wrap gap-2">
-            <Button as={Link} to="/reception/payments/reconcile" variant="danger" size="sm">
-              Mở Đối soát
-            </Button>
-            <Button
-              type="button"
-              variant="outline-danger"
-              size="sm"
-              onClick={() => setCancelling(true)}
-            >
-              Hủy đơn / đổi phương thức
-            </Button>
-            <Button
-              as={Link}
-              to={`/reception/members/${memberId}`}
-              variant="outline-secondary"
-              size="sm"
-            >
-              Về hồ sơ hội viên
-            </Button>
-            <Button variant="outline-danger" size="sm" onClick={handleClearMember}>
-              Tạo đơn cho hội viên khác
-            </Button>
-          </div>
-        </Alert>
+        <Card className="border-0 shadow-sm mb-3">
+          <Card.Body>
+            <h2 className="h6 fw-bold mb-2">
+              Đơn chuyển khoản {transferOrder.orderNumber} — {transferOrder.offerName}
+            </h2>
+            {sepayLoading ? (
+              <div className="text-center py-3">
+                <Spinner animation="border" variant="danger" />
+                <p className="text-muted small mb-0 mt-2">Đang tạo mã QR thanh toán…</p>
+              </div>
+            ) : sepayPayment ? (
+              <>
+                {sepayResult?.status === 'PAID' ? (
+                  <Alert variant="success" className="small">
+                    Đã nhận thanh toán
+                    {sepayResult.paidAt ? ` lúc ${formatDateTime(sepayResult.paidAt)}` : ''}.
+                    {sepayResult.receiptId ? (
+                      <>
+                        {' '}
+                        <Link to={`/receipts/${sepayResult.receiptId}`}>
+                          Xem &amp; in biên lai
+                        </Link>
+                      </>
+                    ) : null}
+                  </Alert>
+                ) : sepayResult?.status === 'FAILED' ? (
+                  <Alert variant="danger" className="small">
+                    Thanh toán không thành công và đơn chờ đã kết thúc. Có thể chọn
+                    lại gói bên dưới hoặc kiểm tra chi tiết tại màn hình Đối soát.
+                  </Alert>
+                ) : (
+                  <p className="small text-muted mb-3">
+                    Hướng dẫn hội viên quét mã QR hoặc chuyển khoản thủ công đúng nội
+                    dung bên dưới. Quét mã chưa phải là đã thanh toán — trang tự cập
+                    nhật khi ngân hàng báo đã nhận tiền.
+                    {sepayPayment.expiresAt ? (
+                      <> Hạn thanh toán: <strong>{formatDateTime(sepayPayment.expiresAt)}</strong>.</>
+                    ) : null}
+                  </p>
+                )}
+                <Row className="g-3 align-items-start">
+                  <Col md={4} className="text-center">
+                    {sepayPayment.qrUrl && !qrBroken ? (
+                      <img
+                        src={sepayPayment.qrUrl}
+                        alt="Mã QR chuyển khoản"
+                        className="img-fluid border rounded"
+                        style={{ maxWidth: 220 }}
+                        onError={() => setQrBroken(true)}
+                      />
+                    ) : (
+                      <Alert variant="light" className="border small mb-0">
+                        Không tải được mã QR. Hãy chuyển khoản thủ công theo thông tin
+                        bên cạnh.
+                      </Alert>
+                    )}
+                  </Col>
+                  <Col md={8}>
+                    <Table borderless size="sm" className="small mb-3">
+                      <tbody>
+                        {[
+                          { key: 'amount', label: 'Số tiền', value: formatPrice(sepayPayment.amount, sepayPayment.currency) },
+                          { key: 'content', label: 'Nội dung CK', value: sepayPayment.transferContent },
+                          { key: 'bank', label: 'Ngân hàng', value: sepayPayment.bankCode },
+                          { key: 'account', label: 'Số tài khoản', value: sepayPayment.bankAccountNumber },
+                          { key: 'name', label: 'Chủ tài khoản', value: sepayPayment.bankAccountName },
+                        ].map((r) => (
+                          <tr key={r.key}>
+                            <td className="text-muted fw-normal" style={{ width: 130 }}>{r.label}</td>
+                            <td>
+                              <span className={r.key === 'content' ? 'font-monospace' : undefined}>
+                                {r.value || '—'}
+                              </span>{' '}
+                              {r.value ? (
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="p-0 text-decoration-none"
+                                  onClick={() => handleCopy(r.key, r.key === 'amount' ? sepayPayment.amount : sepayPayment[r.key === 'content' ? 'transferContent' : r.key === 'bank' ? 'bankCode' : r.key === 'account' ? 'bankAccountNumber' : 'bankAccountName'])}
+                                >
+                                  {copied === r.key ? 'Đã chép' : 'Sao chép'}
+                                </Button>
+                              ) : null}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                    <div className="d-flex flex-wrap gap-2">
+                      {!['PAID', 'FAILED'].includes(sepayResult?.status) ? (
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={handleCheckSepayNow}
+                          disabled={!sepayPayment?.paymentId}
+                        >
+                          Khách đã chuyển, kiểm tra ngay
+                        </Button>
+                      ) : null}
+                      <Button
+                        as={Link}
+                        to="/reception/payments/reconcile"
+                        variant="outline-secondary"
+                        size="sm"
+                      >
+                        Mở Đối soát
+                      </Button>
+                      {!['PAID', 'FAILED'].includes(sepayResult?.status) ? (
+                        <Button
+                          type="button"
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => setCancelling(true)}
+                        >
+                          Hủy đơn / đổi phương thức
+                        </Button>
+                      ) : null}
+                    </div>
+                  </Col>
+                </Row>
+              </>
+            ) : (
+              <Alert variant="warning" className="small mb-0">
+                <p className="mb-2">
+                  Chưa tạo được mã QR. Có thể thử lại an toàn vì hệ thống sẽ dùng
+                  lại payment đang chờ, không tạo giao dịch trùng.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => handleContinueSepay(transferOrder)}
+                  disabled={sepayLoading}
+                >
+                  Thử tạo lại mã QR
+                </Button>
+              </Alert>
+            )}
+            <div className="d-flex flex-wrap gap-2 mt-3">
+              <Button
+                as={Link}
+                to={`/reception/members/${memberId}`}
+                variant="outline-secondary"
+                size="sm"
+              >
+                Về hồ sơ hội viên
+              </Button>
+              <Button variant="outline-danger" size="sm" onClick={handleClearMember}>
+                Tạo đơn cho hội viên khác
+              </Button>
+            </div>
+          </Card.Body>
+        </Card>
       ) : null}
 
       {receipt ? (
@@ -616,8 +854,18 @@ export default function CashPaymentPage() {
             </div>
           )}
           <div className="d-flex flex-wrap gap-2 mt-3">
+            {pendingOrder.paymentMethod !== 'CASH' ? (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => handleContinueSepay(pendingOrder)}
+                disabled={sepayLoading}
+              >
+                {sepayLoading ? <Spinner animation="border" size="sm" /> : 'Tiếp tục thanh toán (hiện QR)'}
+              </Button>
+            ) : null}
             <Button
-              variant="danger"
+              variant="outline-danger"
               size="sm"
               onClick={() => setCancelling(true)}
             >
@@ -898,6 +1146,11 @@ export default function CashPaymentPage() {
               </dl>
             </Card.Body>
           </Card>
+
+          <StaffMembershipHistory
+            key={`${memberId}-${membershipHistoryVersion}`}
+            receptionMemberCode={memberId}
+          />
 
           <Alert variant="light" className="border small text-muted mb-0">
             Chuyển khoản tạo đơn chờ thanh toán; tiền mặt hoàn tất giao dịch,
