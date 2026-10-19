@@ -10,6 +10,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import StaffMembershipHistory from '../../../components/common/StaffMembershipHistory';
 import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
 import MemberCoachAssignmentCard from '../../../components/manager/MemberCoachAssignmentCard';
 import {
@@ -230,6 +231,8 @@ export default function MemberAccountDetailPage() {
           </Card>
         </Col>
       </Row>
+
+      <StaffMembershipHistory managerMemberAccountId={account.accountId} />
 
       <MemberCoachAssignmentCard
         memberAccountId={account.accountId}
