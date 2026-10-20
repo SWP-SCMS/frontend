@@ -2,7 +2,8 @@
 //
 // Loads via GET /api/v1/manager/disciplines/{id}, then PATCHes only the
 // fields that actually changed vs. the original. The PATCH body is built
-// from a strict allow-list (name, description, status) and never includes
+// from a strict allow-list (name, description, status, requiredBenefitCodes)
+// and never includes
 // id / createdAt / updatedAt / version.
 //
 // Status is editable; flipping to INACTIVE is the only "deactivate" path
@@ -40,6 +41,8 @@ import {
   extractAffectedSessions,
   hasAffectedSessionPayload,
 } from '../../../utils/schedulingProblem';
+import { normalizeBenefitCodes } from '../../../utils/membershipBenefits';
+import DisciplineBenefitField from './DisciplineBenefitField';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'ACTIVE — đang hoạt động.' },
@@ -58,6 +61,7 @@ const disciplineEditSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE'], {
     message: 'Trạng thái không hợp lệ.',
   }),
+  requiredBenefitCodes: z.array(z.string()),
 });
 
 function disciplineToForm(d) {
@@ -65,6 +69,9 @@ function disciplineToForm(d) {
     name: d?.name || '',
     description: d?.description || '',
     status: d?.status || 'ACTIVE',
+    requiredBenefitCodes: normalizeBenefitCodes(d?.requiredBenefitCodes).filter(
+      (code) => code !== 'CLASS_BOOKING',
+    ),
   };
 }
 
@@ -96,6 +103,7 @@ export default function DisciplineEditPage() {
     handleSubmit,
     reset,
     setError,
+    control,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(disciplineEditSchema),
@@ -103,6 +111,7 @@ export default function DisciplineEditPage() {
       name: '',
       description: '',
       status: 'ACTIVE',
+      requiredBenefitCodes: [],
     },
   });
 
@@ -141,6 +150,11 @@ export default function DisciplineEditPage() {
     }
     if (data.status !== original?.status) {
       patch.status = data.status;
+    }
+    const nextBenefitCodes = normalizeBenefitCodes(data.requiredBenefitCodes).sort();
+    const originalBenefitCodes = normalizeBenefitCodes(original?.requiredBenefitCodes).sort();
+    if (nextBenefitCodes.join('|') !== originalBenefitCodes.join('|')) {
+      patch.requiredBenefitCodes = nextBenefitCodes;
     }
     return patch;
   }
@@ -212,7 +226,7 @@ export default function DisciplineEditPage() {
         // Shared helper: per-field errors restricted to the rendered
         // editable fields. Anything else falls through to ErrorAlert.
         sharedHandled = applyServerErrors(err, setError, {
-          fields: ['name', 'description', 'status'],
+          fields: ['name', 'description', 'status', 'requiredBenefitCodes'],
         });
       }
       // Global ErrorAlert is the shared-helper path's fallback: only
@@ -332,6 +346,11 @@ export default function DisciplineEditPage() {
             </Form.Group>
           </Col>
         </Row>
+
+        <DisciplineBenefitField
+          control={control}
+          error={errors.requiredBenefitCodes}
+        />
 
         <div className="mt-4 d-flex gap-2">
           <Button type="submit" variant="danger" disabled={isSubmitting}>

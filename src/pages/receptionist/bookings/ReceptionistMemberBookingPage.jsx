@@ -26,6 +26,7 @@ import {
   listReceptionMemberBookings,
 } from '../../../services/receptionistBookingService';
 import { getReceptionMemberProfile } from '../../../services/receptionistService';
+import { getReceptionMemberMemberships } from '../../../services/staffMembershipService';
 import {
   formatGymDate,
   formatGymTime,
@@ -35,6 +36,12 @@ import {
   gymLocalDateToIsoInstant,
   ISO_DATE_RE,
 } from '../../../utils/gymTime';
+import {
+  findMissingBenefitCodes,
+  formatBenefitCodeList,
+  hasBenefitContract,
+  normalizeBenefitCodes,
+} from '../../../utils/membershipBenefits';
 
 const HISTORY_PAGE_SIZE = 10;
 const SESSION_PAGE_SIZE = 20;
@@ -80,6 +87,8 @@ const BOOKING_ERROR_MESSAGES = {
     'Buổi tập không còn nhận đặt lịch (đã bắt đầu hoặc không còn SCHEDULED).',
   BOOKING_PLUS_MEMBERSHIP_REQUIRED:
     'Gói tập của hội viên chưa có quyền đặt lớp hoặc chưa đáp ứng quyền lợi của bộ môn này.',
+  MEMBERSHIP_BENEFIT_REQUIRED:
+    'Gói tập của hội viên chưa đáp ứng quyền lợi của bộ môn này.',
   BOOKING_DUPLICATE: 'Hội viên đã đặt buổi tập này.',
   BOOKING_TIME_CONFLICT:
     'Buổi tập trùng giờ với một lịch khác mà hội viên đã đặt.',
@@ -146,6 +155,12 @@ function errorCode(error) {
 
 function knownBookingError(error) {
   const code = errorCode(error);
+  if (code === 'MEMBERSHIP_BENEFIT_REQUIRED') {
+    const missing = formatBenefitCodeList(error?.response?.data?.missingBenefitCodes);
+    return missing
+      ? `Gói tập của hội viên còn thiếu quyền lợi: ${missing}.`
+      : BOOKING_ERROR_MESSAGES.MEMBERSHIP_BENEFIT_REQUIRED;
+  }
   return code ? BOOKING_ERROR_MESSAGES[code] : null;
 }
 
@@ -207,6 +222,9 @@ export default function ReceptionistMemberBookingPage() {
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState(null);
+  const [memberships, setMemberships] = useState([]);
+  const [membershipsLoading, setMembershipsLoading] = useState(true);
+  const [membershipsError, setMembershipsError] = useState(null);
 
   const [sessionsPageData, setSessionsPageData] = useState(null);
   const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -258,6 +276,17 @@ export default function ReceptionistMemberBookingPage() {
   const mutationsAllowed = profile?.status === ACCOUNT_STATUS.ACTIVE;
   const sessions = pageRows(sessionsPageData);
   const historyRows = pageRows(historyPageData);
+  const activeMembership = useMemo(
+    () => memberships.find((membership) => membership.status === 'ACTIVE') || null,
+    [memberships],
+  );
+  const membershipBenefitsKnown =
+    !membershipsLoading &&
+    !membershipsError &&
+    (activeMembership == null || hasBenefitContract(activeMembership));
+  const ownedBenefitCodes = normalizeBenefitCodes(
+    activeMembership?.benefitCodes ?? activeMembership?.benefit_codes,
+  );
 
   const requestedBackPath = location.state?.from;
   const safeBackPath =
@@ -281,6 +310,19 @@ export default function ReceptionistMemberBookingPage() {
       }
     } finally {
       if (requestId === profileRequestRef.current) setProfileLoading(false);
+    }
+  }, [memberId]);
+
+  const loadMemberships = useCallback(async () => {
+    setMembershipsLoading(true);
+    setMembershipsError(null);
+    try {
+      setMemberships(await getReceptionMemberMemberships(memberId));
+    } catch (error) {
+      setMemberships([]);
+      setMembershipsError(error);
+    } finally {
+      setMembershipsLoading(false);
     }
   }, [memberId]);
 
@@ -330,7 +372,8 @@ export default function ReceptionistMemberBookingPage() {
     setProfile(null);
     setNotice(null);
     loadProfile();
-  }, [loadProfile]);
+    loadMemberships();
+  }, [loadMemberships, loadProfile]);
 
   useEffect(() => {
     loadSessions();
@@ -593,6 +636,12 @@ export default function ReceptionistMemberBookingPage() {
             onClose={() => setSessionsError(null)}
           />
 
+          {membershipsError ? (
+            <Alert variant="warning" className="py-2">
+              Không tải được quyền lợi hiện tại của hội viên. Backend sẽ kiểm tra lại khi xác nhận đặt lịch.
+            </Alert>
+          ) : null}
+
           {sessionsLoading ? (
             <LoadingBlock />
           ) : sessions.length === 0 ? (
@@ -617,14 +666,43 @@ export default function ReceptionistMemberBookingPage() {
                     const full =
                       typeof session.availableCapacity === 'number' &&
                       session.availableCapacity <= 0;
+                    const requiredBenefitCodes = normalizeBenefitCodes(
+                      session.requiredBenefitCodes?.length
+                        ? session.requiredBenefitCodes
+                        : ['CLASS_BOOKING'],
+                    );
+                    const missingBenefitCodes = membershipBenefitsKnown
+                      ? findMissingBenefitCodes(requiredBenefitCodes, ownedBenefitCodes)
+                      : [];
+                    const benefitBlocked =
+                      membershipBenefitsKnown && missingBenefitCodes.length > 0;
                     const selectable =
-                      mutationsAllowed && session.bookingAvailable === true && !full;
+                      mutationsAllowed &&
+                      session.bookingAvailable === true &&
+                      !full &&
+                      !membershipsLoading &&
+                      !benefitBlocked;
+                    let unavailableTitle;
+                    if (!mutationsAllowed) {
+                      unavailableTitle = 'Hội viên không ở trạng thái ACTIVE';
+                    } else if (full) {
+                      unavailableTitle = 'Buổi tập đã hết chỗ';
+                    } else if (membershipsLoading) {
+                      unavailableTitle = 'Đang kiểm tra quyền lợi gói tập';
+                    } else if (benefitBlocked) {
+                      unavailableTitle = `Gói tập còn thiếu: ${formatBenefitCodeList(missingBenefitCodes)}`;
+                    } else if (session.bookingAvailable !== true) {
+                      unavailableTitle = 'Buổi tập không còn nhận đặt lịch';
+                    }
                     return (
                       <tr key={session.id}>
                         <td>
                           <div className="fw-semibold">{session.className || '—'}</div>
                           <div className="small text-muted">
                             {classDescription(session) || '—'}
+                          </div>
+                          <div className="small text-muted">
+                            Yêu cầu: {formatBenefitCodeList(requiredBenefitCodes)}
                           </div>
                         </td>
                         <td className="text-nowrap">
@@ -649,18 +727,14 @@ export default function ReceptionistMemberBookingPage() {
                             size="sm"
                             disabled={!selectable}
                             onClick={() => openBookModal(session)}
-                            title={
-                              !mutationsAllowed
-                                ? 'Hội viên không ở trạng thái ACTIVE'
-                                : full
-                                  ? 'Buổi tập đã hết chỗ'
-                                  : session.bookingAvailable !== true
-                                    ? 'Buổi tập không còn nhận đặt lịch'
-                                    : undefined
-                            }
+                            title={unavailableTitle}
                           >
                             {full
                               ? 'Hết chỗ'
+                              : membershipsLoading
+                                ? 'Đang kiểm tra'
+                              : benefitBlocked
+                                ? 'Thiếu quyền lợi'
                               : session.bookingAvailable === true
                                 ? 'Chọn buổi tập'
                                 : 'Không thể đặt'}
@@ -846,6 +920,14 @@ export default function ReceptionistMemberBookingPage() {
               <dd className="col-sm-8">{bookTarget?.coachName || '—'}</dd>
               <dt className="col-sm-4">Phòng</dt>
               <dd className="col-sm-8">{bookTarget?.roomName || '—'}</dd>
+              <dt className="col-sm-4">Quyền lợi yêu cầu</dt>
+              <dd className="col-sm-8">
+                {formatBenefitCodeList(
+                  bookTarget?.requiredBenefitCodes?.length
+                    ? bookTarget.requiredBenefitCodes
+                    : ['CLASS_BOOKING'],
+                )}
+              </dd>
             </dl>
             {bookingErrors.sessionId ? (
               <Alert variant="danger" className="mb-0 mt-3">

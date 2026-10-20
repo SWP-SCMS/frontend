@@ -34,7 +34,8 @@
 // MemberClassSessionResponse (verified wire):
 //   id, classId, className, classType, disciplineId, disciplineName,
 //   coachId, coachName, roomId, roomName, startTime, endTime,
-//   capacity, bookedCount, availableCapacity, status, bookingAvailable
+//   capacity, bookedCount, availableCapacity, status, bookingAvailable,
+//   requiredBenefitCodes
 //
 // Notes:
 //   - status is always SCHEDULED on this endpoint (the BE predicates

@@ -3,6 +3,8 @@
 // Backend behavior (DisciplineService#create):
 //   - name: required, @NotBlank, @Size(max=150).
 //   - description: optional, blank -> null.
+//   - requiredBenefitCodes: optional list of ACTIVE Benefit codes;
+//     CLASS_BOOKING is mandatory for every discipline and enforced by BE.
 //   - status: NOT accepted on create. Every new discipline is created ACTIVE
 //     server-side. Sending a `status` key in the body yields 400
 //     MALFORMED_REQUEST (record has no such field).
@@ -23,6 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { createDiscipline } from '../../../services/disciplineService';
 import { applyServerErrors } from '../../../utils/serverErrors';
+import DisciplineBenefitField from './DisciplineBenefitField';
 
 // Page-local schema. Status is intentionally absent — the backend assigns
 // ACTIVE automatically; including the key here would invite accidental
@@ -34,6 +37,7 @@ const disciplineCreateSchema = z.object({
     .min(1, 'Vui lòng nhập tên bộ môn.')
     .max(150, 'Tên bộ môn đã quá dài (tối đa 150 ký tự).'),
   description: z.string(),
+  requiredBenefitCodes: z.array(z.string()),
 });
 
 export default function DisciplineCreatePage() {
@@ -44,10 +48,11 @@ export default function DisciplineCreatePage() {
     register,
     handleSubmit,
     setError,
+    control,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(disciplineCreateSchema),
-    defaultValues: { name: '', description: '' },
+    defaultValues: { name: '', description: '', requiredBenefitCodes: [] },
   });
 
   async function onSubmit(data) {
@@ -56,6 +61,7 @@ export default function DisciplineCreatePage() {
       const created = await createDiscipline({
         name: data.name.trim(),
         description: data.description.trim(),
+        requiredBenefitCodes: data.requiredBenefitCodes,
       });
       navigate(`/manager/disciplines/${created.id}`, { replace: true });
     } catch (err) {
@@ -65,7 +71,7 @@ export default function DisciplineCreatePage() {
       // but we still pass the full list so a stray per-field error from
       // a future backend change does not silently suppress ErrorAlert.
       const handled = applyServerErrors(err, setError, {
-        fields: ['name', 'description'],
+        fields: ['name', 'description', 'requiredBenefitCodes'],
       });
 
       // PAGE-LOCAL: DISCIPLINE_NAME_CONFLICT.
@@ -137,6 +143,11 @@ export default function DisciplineCreatePage() {
             Không bắt buộc. Để trống nếu bộ môn không cần mô tả.
           </Form.Text>
         </Form.Group>
+
+        <DisciplineBenefitField
+          control={control}
+          error={errors.requiredBenefitCodes}
+        />
 
         <div className="mt-4 d-flex gap-2">
           <Button type="submit" variant="danger" disabled={isSubmitting}>

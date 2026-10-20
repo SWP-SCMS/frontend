@@ -29,7 +29,7 @@ test('normalizes benefit details and appends codes without details', () => {
       },
       {
         code: 'POOL_ACCESS',
-        displayName: 'Pool access',
+        displayName: 'Sử dụng hồ bơi',
         description: null,
         status: null,
       },
