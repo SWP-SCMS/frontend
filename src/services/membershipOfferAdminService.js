@@ -2,6 +2,7 @@
 //
 // Endpoints (all bearer-auth, MANAGER-only — backend enforces BR-SEC-04):
 //   GET    /api/v1/manager/membership-offers       listMembershipOffersAdmin
+//   GET    /api/v1/manager/membership-offers/{id}  getMembershipOfferAdmin
 //   POST   /api/v1/manager/membership-offers       createMembershipOffer
 //   PATCH  /api/v1/manager/membership-offers/{id}  updateMembershipOffer
 //
@@ -18,6 +19,14 @@ import api from './api';
 export async function listMembershipOffersAdmin() {
   const { data } = await api.get('/manager/membership-offers');
   return Array.isArray(data) ? data : [];
+}
+
+// GET /api/v1/manager/membership-offers/{offerId}
+// Returns MembershipOfferAdminDetailResponse, including plan display name,
+// status and the resolved Benefit catalogue for this offer.
+export async function getMembershipOfferAdmin(offerId) {
+  const { data } = await api.get(`/manager/membership-offers/${offerId}`);
+  return data;
 }
 
 // POST /api/v1/manager/membership-offers
