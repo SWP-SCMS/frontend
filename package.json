@@ -8,6 +8,7 @@
     "dev:free": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test:benefits": "node --test src/utils/membershipBenefits.test.js",
     "preview": "vite preview"
   },
   "dependencies": {
