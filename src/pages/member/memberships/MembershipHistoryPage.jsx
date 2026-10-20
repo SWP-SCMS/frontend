@@ -8,17 +8,17 @@
 // BR-MEM-04/05: Membership hết hạn chuyển EXPIRED và không dùng lại, nên lịch
 // sử ở đây là bản ghi bất biến — chỉ hiển thị, không thao tác.
 //
-// Lưu ý hợp đồng API: endpoint này trả List<Map> nên tên cột là snake_case,
-// khác với phần còn lại của dự án (record camelCase). Vì vậy mọi trường đọc ở
-// đây đều qua `pick()`, chấp nhận cả hai kiểu tên. Khi backend chuyển sang
-// record camelCase, chỉ cần rút gọn `pick` xuống còn một tên và xoá fallback.
+// Hợp đồng hiện tại trả record camelCase. `pick()` vẫn chấp nhận snake_case để
+// dữ liệu cũ hoặc môi trường chưa cập nhật không làm hỏng giao diện.
 
 import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import { formatDate, formatPrice } from '../../../utils';
+import { hasBenefitContract } from '../../../utils/membershipBenefits';
 import './MembershipHistoryPage.css';
 
 // Đọc một trường, chấp nhận cả snake_case (BE hiện tại) lẫn camelCase
@@ -127,6 +127,7 @@ export default function MembershipHistoryPage() {
                   <th scope="col">Gói tập</th>
                   <th scope="col">Thời hạn</th>
                   <th scope="col">Giá</th>
+                  <th scope="col">Quyền lợi</th>
                   <th scope="col">Trạng thái</th>
                 </tr>
               </thead>
@@ -172,6 +173,17 @@ export default function MembershipHistoryPage() {
                       </td>
                       <td className="scms-mh-price" data-label="Giá">
                         {formatPrice(priceAmount, currencyCode || 'VND')}
+                      </td>
+                      <td data-label="Quyền lợi">
+                        <MembershipBenefitList
+                          benefitCodes={row.benefitCodes ?? row.benefit_codes}
+                          benefits={row.benefits}
+                          emptyMessage={
+                            hasBenefitContract(row)
+                              ? 'Không có quyền lợi'
+                              : 'Chưa có dữ liệu quyền lợi'
+                          }
+                        />
                       </td>
                       <td data-label="Trạng thái">
                         <span

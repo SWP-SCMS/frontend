@@ -1,8 +1,7 @@
 // Manager – Edit membership offer (US08).
 //
-// Backend enforces the same validation rules as Create. We prefill from
-// the list endpoint (MembershipOfferResponse is what we have available)
-// and PATCH back the user-edited fields.
+// Backend enforces the same validation rules as Create. The form is prefilled
+// from the dedicated detail endpoint and PATCHes back the user-edited fields.
 //
 // Migration note (RHF + Zod):
 //   - separate page-local edit schema (membershipOfferEditSchema);
@@ -23,7 +22,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import {
-  listMembershipOffersAdmin,
+  getMembershipOfferAdmin,
   updateMembershipOffer,
 } from '../../../services/membershipOfferAdminService';
 import { applyServerErrors } from '../../../utils/serverErrors';
@@ -92,6 +91,15 @@ function offerToForm(o) {
   };
 }
 
+function displayLoadError(error) {
+  if (error?.response?.data?.code === 'MEMBERSHIP_OFFER_NOT_FOUND') {
+    return new Error(
+      'Không tìm thấy gói tập này. Gói có thể đã bị xoá hoặc đường dẫn không còn hợp lệ.',
+    );
+  }
+  return error;
+}
+
 export default function MembershipOfferEditPage() {
   const { offerId } = useParams();
   const navigate = useNavigate();
@@ -123,17 +131,8 @@ export default function MembershipOfferEditPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const list = await listMembershipOffersAdmin();
-      const found = list.find((o) => o.offerId === offerId);
-      if (!found) {
-        setLoadError(
-          new Error(
-            'Không tìm thấy gói tập này. Có thể đã bị xoá hoặc bạn không có quyền truy cập.',
-          ),
-        );
-      } else {
-        reset(offerToForm(found));
-      }
+      const offer = await getMembershipOfferAdmin(offerId);
+      reset(offerToForm(offer));
     } catch (err) {
       setLoadError(err);
     } finally {
@@ -206,7 +205,7 @@ export default function MembershipOfferEditPage() {
         </Link>
         <ErrorAlert
           className="mt-3"
-          error={loadError}
+          error={displayLoadError(loadError)}
           title="Không tải được gói tập"
         />
       </div>

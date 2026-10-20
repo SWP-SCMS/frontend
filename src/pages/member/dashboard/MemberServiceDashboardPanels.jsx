@@ -7,9 +7,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { listAllMyBookedBookings } from '../../../services/memberBookingService';
 import { listMyFeedback } from '../../../services/memberFeedbackService';
 import { formatDate, formatDateTime } from '../../../utils';
+import { hasBenefitContract } from '../../../utils/membershipBenefits';
 import {
   formatGymDate,
   formatGymTime,
@@ -125,6 +127,18 @@ export default function MemberServiceDashboardPanels({ membership }) {
         ) : (
           <div className="scms-pd-muted">Chưa có thông tin thời hạn gói.</div>
         )}
+        <div className="mt-3 pt-3 border-top">
+          <div className="small fw-semibold mb-2">Quyền lợi đang có</div>
+          <MembershipBenefitList
+            benefitCodes={membership?.benefitCodes}
+            benefits={membership?.benefits}
+            emptyMessage={
+              hasBenefitContract(membership)
+                ? 'Gói hiện tại không có quyền lợi được cấu hình.'
+                : 'Chưa có dữ liệu quyền lợi từ hệ thống.'
+            }
+          />
+        </div>
       </div>
 
       <ErrorAlert

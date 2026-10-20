@@ -1,25 +1,30 @@
 // Manager – Membership Offer detail (US08).
 //
-// Read-only view of a single offer. Provides an "Edit" link to the edit
-// page. MembershipOfferResponse does NOT include `status`, `createdAt`,
-// or `updatedAt`, so the status badge displays "—" until the backend
-// extends the DTO.
+// Read-only view of a single offer. The dedicated detail endpoint returns
+// MembershipOfferAdminDetailResponse, including status and resolved Benefits.
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-// We don't have a dedicated GET-by-id admin endpoint (the list endpoint
-// already returns everything), so we re-use the list service. This keeps
-// the FE working without inventing a non-existent endpoint.
-import { listMembershipOffersAdmin } from '../../../services/membershipOfferAdminService';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
+import { getMembershipOfferAdmin } from '../../../services/membershipOfferAdminService';
 import { formatPrice } from '../../../utils';
 
 const STATUS_BADGE = {
   ACTIVE: 'bg-success-subtle text-success-emphasis',
   INACTIVE: 'bg-secondary-subtle text-secondary-emphasis',
 };
+
+function displayLoadError(error) {
+  if (error?.response?.data?.code === 'MEMBERSHIP_OFFER_NOT_FOUND') {
+    return new Error(
+      'Không tìm thấy gói tập này. Gói có thể đã bị xoá hoặc đường dẫn không còn hợp lệ.',
+    );
+  }
+  return error;
+}
 
 export default function MembershipOfferDetailPage() {
   const { offerId } = useParams();
@@ -31,18 +36,9 @@ export default function MembershipOfferDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const list = await listMembershipOffersAdmin();
-      const found = list.find((o) => o.offerId === offerId);
-      if (!found) {
-        setError(
-          new Error(
-            'Không tìm thấy gói tập này. Có thể đã bị xoá hoặc bạn không có quyền truy cập.',
-          ),
-        );
-      } else {
-        setOffer(found);
-      }
+      setOffer(await getMembershipOfferAdmin(offerId));
     } catch (err) {
+      setOffer(null);
       setError(err);
     } finally {
       setLoading(false);
@@ -72,7 +68,7 @@ export default function MembershipOfferDetailPage() {
         </Link>
         <ErrorAlert
           className="mt-3"
-          error={error}
+          error={displayLoadError(error)}
           title="Không tải được gói tập"
         />
       </div>
@@ -168,20 +164,16 @@ export default function MembershipOfferDetailPage() {
                 <dt className="col-sm-4 text-muted fw-normal">Tiền tệ</dt>
                 <dd className="col-sm-8 mb-2">{offer.currencyCode || '—'}</dd>
 
-                <dt className="col-sm-4 text-muted fw-normal">
-                  Đặt lịch online
-                </dt>
-                <dd className="col-sm-8 mb-2">
-                  {offer.supportsBooking ? 'Có' : 'Không'}
-                </dd>
-
-                <dt className="col-sm-4 text-muted fw-normal">
-                  Coaching 1-1
-                </dt>
-                <dd className="col-sm-8 mb-0">
-                  {offer.supportsPersonalCoaching ? 'Có' : 'Không'}
-                </dd>
               </dl>
+
+              <div className="border-top pt-3 mt-3">
+                <h3 className="small fw-semibold mb-2">Quyền lợi của gói</h3>
+                <MembershipBenefitList
+                  benefitCodes={offer.benefitCodes}
+                  benefits={offer.benefits}
+                  emptyMessage="Gói này không có quyền lợi được cấu hình."
+                />
+              </div>
             </Card.Body>
           </Card>
         </Col>

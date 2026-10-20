@@ -237,11 +237,11 @@ function OfferCard({ offer, info, best }) {
 
       <ul className="sof-feat">
         {features.map((f) => (
-          <li key={f.text} className={f.ok ? '' : 'off'}>
+          <li key={f.code || f.text} className={f.ok ? '' : 'off'}>
             <span className="sof-feat-icon">
               <Icon name={f.ok ? 'check' : 'x'} size={16} />
             </span>
-            {f.text}
+            <span>{f.text}</span>
           </li>
         ))}
       </ul>

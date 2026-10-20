@@ -27,8 +27,11 @@ import {
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { listActiveOffers } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
+import { hasBenefitContract } from '../../../utils/membershipBenefits';
+import { buildFeatures } from '../../public/offers/offerUtils';
 
 function readStringParam(params, name) {
   const v = params.get(name);
@@ -159,14 +162,20 @@ export default function MembershipOfferListPage() {
                   {offer.description}
                 </p>
               ) : null}
-              <div className="d-flex flex-wrap gap-3">
-                <small className="text-muted">
-                  {offer.supportsBooking ? '✓ Đặt lịch online' : '✗ Không hỗ trợ đặt lịch'}
-                </small>
-                <small className="text-muted">
-                  {offer.supportsPersonalCoaching ? '✓ Coaching 1-1' : '✗ Không hỗ trợ Coaching 1-1'}
-                </small>
-              </div>
+              {hasBenefitContract(offer) ? (
+                <MembershipBenefitList
+                  benefitCodes={offer.benefitCodes}
+                  benefits={offer.benefits}
+                />
+              ) : (
+                <ul className="list-unstyled mb-0 d-grid gap-1">
+                  {buildFeatures(offer).map((feature) => (
+                    <li key={feature.code} className="small text-muted">
+                      {feature.ok ? '✓' : '✗'} {feature.text}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Card.Body>
           </Card>
         ))}

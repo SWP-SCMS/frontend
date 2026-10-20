@@ -271,8 +271,13 @@
 }
 
 .scms-mo-permonth {
+  min-height: 1.2rem;
   font-size: 0.8rem;
   color: #047857;
+}
+
+.scms-mo-permonth.empty {
+  visibility: hidden;
 }
 
 .scms-mo-feat {

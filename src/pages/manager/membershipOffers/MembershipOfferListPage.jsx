@@ -1,10 +1,10 @@
 // Manager – Membership Offer list & search (US08).
 //
 // BE: GET /api/v1/manager/membership-offers
-//     -> MembershipOfferResponse[] (no pagination wrapper; plain array)
+//     -> MembershipOfferAdminDetailResponse[] (plain array)
 //   Each item: offerId, planCode, planDisplayName, name, description,
-//   priceAmount (BigInteger), currencyCode, durationDays,
-//   supportsBooking, supportsPersonalCoaching.
+//   priceAmount (BigInteger), currencyCode, durationDays, status,
+//   benefitCodes và benefits.
 //
 // Filters:
 //   - planCode: any configured Membership Plan code | ALL
@@ -104,10 +104,8 @@ export default function MembershipOfferListPage() {
     const q = query.trim().toLowerCase();
     return offers.filter((o) => {
       if (plan && o.planCode !== plan) return false;
-      // status filter is currently FE-only because backend response
-      // does not surface status. We only apply it when explicitly
-      // requested, but no row is filtered out here.
-      if (status && o.status && o.status !== status) return false;
+      // Backend list now returns the same detail shape, including status.
+      if (status && o.status !== status) return false;
       if (q) {
         const hay = `${o.name || ''} ${o.description || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;

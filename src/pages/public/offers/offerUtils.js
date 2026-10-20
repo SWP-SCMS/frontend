@@ -3,6 +3,8 @@
 // Các con số "giá mỗi tháng" và "tiết kiệm" chỉ để tham khảo, tính từ giá và
 // số ngày do BE trả về; giá thanh toán thật luôn là priceAmount của Offer.
 
+import { getMembershipBenefitState } from '../../../utils/membershipBenefits';
+
 // Chỉ hiển thị trên trang công khai những gói có mô tả tối thiểu 3 ký tự.
 // Gói chưa nhập mô tả (hoặc chỉ gõ 1-2 ký tự thử) coi như chưa hoàn thiện nên
 // không đưa cho khách xem. Đây là bộ lọc hiển thị; muốn gói hiện lên thì nhập
@@ -67,17 +69,30 @@ export function findBestSavingsOfferId(pricing) {
   return bestId;
 }
 
-// Public Offer hiện chỉ trả hai capability ổn định. Không suy thêm quyền lợi
-// từ mã Plan; BE-GAP-005 theo dõi việc bổ sung benefitCodes đầy đủ.
+// Contract mới dùng danh sách Benefit động. Hai capability cũ chỉ là fallback
+// khi response cũ hoàn toàn chưa có `benefitCodes` và `benefits`.
 export function buildFeatures(offer) {
+  const benefitState = getMembershipBenefitState(offer);
+  if (benefitState.known) {
+    return benefitState.benefits.map((benefit) => ({
+      code: benefit.code,
+      ok: benefit.status !== 'INACTIVE',
+      text: benefit.displayName,
+      description: benefit.description,
+      status: benefit.status,
+    }));
+  }
+
   return [
     {
+      code: 'CLASS_BOOKING',
       ok: Boolean(offer?.supportsBooking),
       text: offer?.supportsBooking
         ? 'Có quyền đặt lớp trực tuyến'
         : 'Chưa gồm quyền đặt lớp trực tuyến',
     },
     {
+      code: 'PERSONAL_COACHING',
       ok: Boolean(offer?.supportsPersonalCoaching),
       text: offer?.supportsPersonalCoaching
         ? 'Có quyền huấn luyện viên cá nhân'

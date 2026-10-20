@@ -252,8 +252,9 @@ export default function MemberCheckoutPage() {
 
           <ul className="mco-feat">
             {buildFeatures(offer).map((f) => (
-              <li key={f.text} className={f.ok ? '' : 'off'}>
-                <span aria-hidden="true">{f.ok ? '✓' : '✕'}</span> {f.text}
+              <li key={f.code || f.text} className={f.ok ? '' : 'off'}>
+                <span aria-hidden="true">{f.ok ? '✓' : '✕'}</span>{' '}
+                <span>{f.text}</span>
               </li>
             ))}
           </ul>

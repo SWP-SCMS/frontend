@@ -19,6 +19,7 @@ import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import MemberServiceDashboardPanels from './MemberServiceDashboardPanels';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import MemberCoachCard from '../../../components/member/MemberCoachCard';
+import { buildFeatures } from '../../public/offers/offerUtils';
 import { listActiveOffers } from '../../../services/membershipService';
 import {
   createMyMembershipOrder,
@@ -186,21 +187,7 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
   const offer = list.find((o) => o.offerId === pickedOfferId) || list[0];
   const busy = Boolean(offer) && busyOfferId === offer.offerId;
 
-  // Public Offer hiện chỉ có hai capability ổn định; hiển thị theo dữ liệu BE.
-  const features = [
-    {
-      ok: offer.supportsBooking,
-      text: offer.supportsBooking
-        ? 'Đặt lịch lớp Yoga / Group'
-        : 'Chưa gồm đặt lịch lớp Yoga / Group',
-    },
-    {
-      ok: offer.supportsPersonalCoaching,
-      text: offer.supportsPersonalCoaching
-        ? 'Huấn luyện viên cá nhân (PT 1-1)'
-        : 'Chưa gồm HLV cá nhân',
-    },
-  ];
+  const features = buildFeatures(offer);
 
   return (
     <div className="scms-md-plan">
@@ -213,32 +200,35 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
           {offer.planDisplayName || offer.planCode}
         </div>
 
-        {hasVariants ? (
-          <div className="scms-md-plan-variants" role="radiogroup"
-            aria-label={`Chọn mức giá gói ${planCode}`}>
-            {list.map((item) => {
-              const active = item.offerId === offer.offerId;
-              return (
-                <button
-                  key={item.offerId}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  className={`scms-md-plan-variant${active ? ' on' : ''}`}
-                  onClick={() => setPickedOfferId(item.offerId)}
-                  disabled={Boolean(blockedReason)}
-                >
-                  <span className="scms-md-plan-variant-days">
-                    {item.durationDays} ngày
-                  </span>
-                  <span className="scms-md-plan-variant-price">
-                    {formatPrice(item.priceAmount, item.currencyCode)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
+        <div
+          className="scms-md-plan-variants"
+          role="radiogroup"
+          aria-label={`Chọn mức giá gói ${planCode}`}
+        >
+          {list.map((item) => {
+            const active = item.offerId === offer.offerId;
+            return (
+              <button
+                key={item.offerId}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                className={`scms-md-plan-variant${active ? ' on' : ''}${
+                  hasVariants ? '' : ' single'
+                }`}
+                onClick={() => setPickedOfferId(item.offerId)}
+                disabled={!hasVariants || Boolean(blockedReason)}
+              >
+                <span className="scms-md-plan-variant-days">
+                  {item.durationDays} ngày
+                </span>
+                <span className="scms-md-plan-variant-price">
+                  {formatPrice(item.priceAmount, item.currencyCode)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="scms-md-plan-offer">{offer.name}</div>
         <div className="scms-md-plan-price">
@@ -250,11 +240,11 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
         ) : null}
         <ul className="scms-md-feat">
           {features.map((f) => (
-            <li key={f.text} className={f.ok ? '' : 'off'}>
+            <li key={f.code || f.text} className={f.ok ? '' : 'off'}>
               <span className={f.ok ? 'yes' : 'no'}>
                 <Icon name={f.ok ? 'checkCircle' : 'xCircle'} />
               </span>
-              {f.text}
+              <span>{f.text}</span>
             </li>
           ))}
         </ul>
