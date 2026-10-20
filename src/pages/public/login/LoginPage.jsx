@@ -71,9 +71,17 @@ export default function LoginPage() {
   // kèm `?changed=1`. Hiện thông báo thành công rồi xoá param — nếu giữ lại
   // thì F5 sẽ báo lại lần nữa, gây hiểu nhầm là vừa đổi xong.
   const passwordChanged = params.get('changed') === '1';
+  const accountVerified = params.get('verified') === '1';
+  const accountRegistered = params.get('registered') === '1';
 
   function dismissPasswordChangedNotice() {
     params.delete('changed');
+    setParams(params, { replace: true });
+  }
+
+  function dismissAccountReadyNotice() {
+    params.delete('verified');
+    params.delete('registered');
     setParams(params, { replace: true });
   }
 
@@ -159,6 +167,18 @@ export default function LoginPage() {
                 <path d="m6 6 12 12" />
               </svg>
             </button>
+          </div>
+        ) : null}
+
+        {accountVerified || accountRegistered ? (
+          <div className="scms-login-notice" role="status">
+            <span className="scms-login-notice-icon" aria-hidden="true">✓</span>
+            <span>
+              {accountVerified
+                ? 'Xác thực email thành công. Bạn có thể đăng nhập ngay.'
+                : 'Tạo tài khoản thành công. Bạn có thể đăng nhập ngay.'}
+            </span>
+            <button type="button" className="scms-login-notice-close" onClick={dismissAccountReadyNotice} aria-label="Đóng thông báo">×</button>
           </div>
         ) : null}
 

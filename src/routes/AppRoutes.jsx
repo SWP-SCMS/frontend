@@ -18,6 +18,7 @@ import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfi
 const HomePage = lazy(() => import('../pages/public/home/HomePage'));
 const LoginPage = lazy(() => import('../pages/public/login/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/public/register/RegisterPage'));
+const VerifyEmailPage = lazy(() => import('../pages/public/auth/VerifyEmailPage'));
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
 const NotFoundPage = lazy(() => import('../pages/public/notFound/NotFoundPage'));
@@ -110,10 +111,16 @@ const ManagerReportsPage = lazy(
 const AuditHistoryPage = lazy(
   () => import('../pages/manager/audit/AuditHistoryPage'),
 );
+const ManagerManualActivationPage = lazy(
+  () => import('../pages/manager/emailVerification/ManualActivationReviewPage'),
+);
 
 // Receptionist – Dashboard
 const ReceptionistDashboardPage = lazy(
   () => import('../pages/receptionist/dashboard/ReceptionistDashboardPage'),
+);
+const ReceptionManualActivationPage = lazy(
+  () => import('../pages/receptionist/emailVerification/ManualActivationPage'),
 );
 
 // Receptionist – Center Check-in (US36)
@@ -329,6 +336,10 @@ export default function AppRoutes() {
           <GuestRoute>{withSuspense(<RegisterPage />)}</GuestRoute>
         }
       />
+      <Route
+        path="/verify-email"
+        element={<GuestRoute>{withSuspense(<VerifyEmailPage />)}</GuestRoute>}
+      />
       <Route path="/offers" element={withSuspense(<OfferListPage />)} />
       <Route
         path="/offers/:offerId"
@@ -477,6 +488,7 @@ export default function AppRoutes() {
         <Route path="profile" element={withSuspense(<StaffProfilePage />)} />
         <Route path="members" element={withSuspense(<ReceptionistMemberListPage />)} />
         <Route path="members/new" element={withSuspense(<ReceptionistMemberCreatePage />)} />
+        <Route path="email-verification" element={withSuspense(<ReceptionManualActivationPage />)} />
         <Route
           path="members/:memberId/bookings"
           element={withSuspense(<ReceptionistMemberBookingPage />)}
@@ -580,6 +592,7 @@ export default function AppRoutes() {
         <Route path="membership-plans/:planCode/edit" element={withSuspense(<MembershipPlanEditPage />)} />
         <Route path="members" element={withSuspense(<MemberAccountListPage />)} />
         <Route path="coach-assignments" element={withSuspense(<CoachAssignmentQueuePage />)} />
+        <Route path="email-verification" element={withSuspense(<ManagerManualActivationPage />)} />
         <Route path="members/:accountId" element={withSuspense(<MemberAccountDetailPage />)} />
         <Route path="members/:accountId/edit" element={withSuspense(<MemberAccountEditPage />)} />
         <Route path="disciplines" element={withSuspense(<DisciplineListPage />)} />

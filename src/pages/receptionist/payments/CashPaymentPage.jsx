@@ -74,6 +74,8 @@ const CONFLICT_MESSAGES = {
     'Tài khoản hội viên không ở trạng thái ACTIVE nên không thể thu tiền.',
   MEMBER_NOT_FOUND: 'Không tìm thấy hội viên.',
   OFFER_NOT_ACTIVE: 'Gói tập đã ngừng bán, vui lòng chọn gói khác.',
+  MEMBERSHIP_OFFER_NOT_AVAILABLE:
+    'Gói tập hoặc loại gói vừa ngừng hoạt động. Vui lòng tải lại và chọn gói khác.',
 };
 
 const MEMBER_STATUS_LABELS = {
@@ -386,6 +388,10 @@ export default function CashPaymentPage() {
         getReceptionPendingOrder(memberId)
           .then((order) => setPendingOrder(order ?? null))
           .catch(() => {});
+      }
+      if (code === 'MEMBERSHIP_OFFER_NOT_AVAILABLE') {
+        setOfferId('');
+        listActiveOffers().then(setOffers).catch(() => setOffers([]));
       }
       setError(err);
     } finally {

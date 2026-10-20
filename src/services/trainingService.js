@@ -92,6 +92,23 @@ export async function updateCoachTrainingPlan(
   return data;
 }
 
+export async function listCoachTrainingPlanVersions(memberAccountId, planId) {
+  const { data } = await api.get(
+    `/coach/members/${encodeURIComponent(memberAccountId)}/training-plans/${encodeURIComponent(planId)}/versions`,
+  );
+  if (!Array.isArray(data)) {
+    throw new TypeError('Invalid training plan version response');
+  }
+  return data;
+}
+
+export async function archiveCoachTrainingPlan(memberAccountId, planId) {
+  const { data } = await api.post(
+    `/coach/members/${encodeURIComponent(memberAccountId)}/training-plans/${encodeURIComponent(planId)}/archive`,
+  );
+  return data;
+}
+
 export async function createCoachTrainingResult(memberAccountId, payload) {
   const { data } = await api.post(
     `/coach/members/${encodeURIComponent(memberAccountId)}/training-results`,

@@ -44,6 +44,8 @@ const ERROR_MESSAGES = {
   PENDING_MEMBERSHIP_ORDER_EXISTS:
     'Bạn đang có một đơn chờ thanh toán. Hãy hoàn tất đơn đó trước.',
   MEMBERSHIP_OFFER_NOT_FOUND: 'Gói tập này không còn được bán.',
+  MEMBERSHIP_OFFER_NOT_AVAILABLE:
+    'Gói tập hoặc loại gói này vừa ngừng hoạt động. Vui lòng chọn gói khác.',
   MEMBER_NOT_ACTIVE:
     'Tài khoản của bạn không ở trạng thái cho phép mua gói tập.',
   PAYMENT_CONFLICT:

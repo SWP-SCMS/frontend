@@ -9,11 +9,10 @@
 // We treat any non-2xx as a "not found" surface — actual code mapping is
 // handled by extractErrorMessage + backend contract.
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import PublicShell from '../../../components/layout/PublicShell';
-import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getOfferById } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
 import { useAuth } from '../../../context/useAuth';
@@ -26,27 +25,41 @@ export default function OfferDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const load = useCallback(async (signal) => {
     setLoading(true);
     setError(null);
-    getOfferById(offerId)
-      .then((data) => {
-        if (cancelled) return;
-        setOffer(data);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    setOffer(null);
+    try {
+      const data = await getOfferById(offerId);
+      if (!signal?.aborted) setOffer(data);
+    } catch (err) {
+      if (!signal?.aborted) setError(err);
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, [offerId]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    load(controller.signal);
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [offerId]);
+  }, [load]);
+
+  const errorCode = error?.response?.data?.code;
+  const errorStatus = error?.response?.status;
+  const invalidOffer =
+    errorStatus === 400 ||
+    errorStatus === 404 ||
+    errorCode === 'MALFORMED_REQUEST' ||
+    errorCode === 'MEMBERSHIP_OFFER_NOT_FOUND';
+  const errorMessage = invalidOffer
+    ? 'Gói tập không tồn tại, không còn mở bán hoặc đường dẫn không hợp lệ.'
+    : error?.response
+      ? 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.'
+      : 'Không kết nối được máy chủ. Vui lòng kiểm tra mạng và thử lại.';
 
   return (
     <PublicShell>
@@ -61,10 +74,22 @@ export default function OfferDetailPage() {
               <Spinner animation="border" variant="danger" />
             </div>
           ) : error ? (
-            <ErrorAlert
-              error={error}
-              title="Không tìm thấy ưu đãi"
-            />
+            <Alert variant="danger" className="mt-3">
+              <Alert.Heading className="h6 mb-1">
+                {invalidOffer ? 'Không tìm thấy gói tập' : 'Không tải được gói tập'}
+              </Alert.Heading>
+              <p className="mb-3">{errorMessage}</p>
+              <div className="d-flex flex-wrap gap-2">
+                {!invalidOffer ? (
+                  <Button type="button" variant="outline-danger" size="sm" onClick={() => load()}>
+                    Thử lại
+                  </Button>
+                ) : null}
+                <Button as={Link} to="/offers" variant="outline-secondary" size="sm">
+                  Về danh sách gói tập
+                </Button>
+              </div>
+            </Alert>
           ) : offer ? (
             <Card className="border-0 shadow-sm mt-3">
               <Card.Body className="p-4 p-md-5">

@@ -21,6 +21,7 @@ export const APP_SHELL_NAV_ITEMS = {
       items: [
         { to: '/reception/members', label: 'Tra cứu hội viên' },
         { to: '/reception/members/new', label: 'Đăng ký hội viên' },
+        { to: '/reception/email-verification', label: 'Yêu cầu kích hoạt' },
       ],
     },
     {
@@ -56,6 +57,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/manager/staff-accounts', label: 'Nhân viên & Quản lý' },
         { to: '/manager/members', label: 'Hội viên' },
         { to: '/manager/coach-assignments', label: 'Phân công HLV' },
+        { to: '/manager/email-verification', label: 'Duyệt kích hoạt' },
       ],
     },
     {
