@@ -3,12 +3,29 @@ function normalizeCode(value) {
   return value.trim().toUpperCase();
 }
 
+const BENEFIT_DISPLAY_NAMES = {
+  CENTER_ACCESS: 'Ra/vào trung tâm',
+  CLASS_BOOKING: 'Đặt lịch lớp học',
+  MASSAGE_ACCESS: 'Sử dụng dịch vụ massage',
+  OUTDOOR_SPORT_ACCESS: 'Thể thao ngoài trời',
+  PERSONAL_COACHING: 'Huấn luyện viên cá nhân',
+  POOL_ACCESS: 'Sử dụng hồ bơi',
+  TRAINING_FEEDBACK: 'Nhận xét luyện tập',
+  TRAINING_PLAN: 'Kế hoạch luyện tập',
+  TRAINING_RESULT: 'Kết quả luyện tập',
+};
+
 export function formatBenefitCode(value) {
   const code = normalizeCode(value);
   if (!code) return 'Quyền lợi chưa xác định';
+  if (BENEFIT_DISPLAY_NAMES[code]) return BENEFIT_DISPLAY_NAMES[code];
 
   const words = code.toLowerCase().replaceAll('_', ' ').replaceAll('-', ' ');
   return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+export function formatBenefitCodeList(values) {
+  return normalizeBenefitCodes(values).map(formatBenefitCode).join(', ');
 }
 
 export function hasBenefitContract(source) {

@@ -10,8 +10,9 @@
 // Notes:
 //   - List returns a plain array; server sort is fixed (name ASC, id ASC).
 //   - No pagination, no search/filter query params — those are FE-only today.
-//   - Create body shape: { name: string (1..150), description?: string|null }.
-//   - PATCH body shape: subset of { name, description, status } where status ∈
+//   - Create body shape: { name, description?, requiredBenefitCodes? }.
+//   - PATCH body shape: subset of
+//     { name, description, status, requiredBenefitCodes } where status ∈
 //     { 'ACTIVE', 'INACTIVE' }. At least one field MUST be present (else 400).
 //   - There is NO delete endpoint — to retire, PATCH { status: 'INACTIVE' }.
 

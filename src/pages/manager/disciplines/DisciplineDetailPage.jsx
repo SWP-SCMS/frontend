@@ -3,8 +3,8 @@
 // Read-only view of a single discipline. Loads via the dedicated
 // GET /api/v1/manager/disciplines/{disciplineId} endpoint.
 //
-// DisciplineResponse exposes exactly four fields today:
-//   { id, name, description, status }
+// DisciplineResponse exposes:
+//   { id, name, description, status, requiredBenefitCodes }
 // createdAt / updatedAt / version are NOT in the response DTO and are NOT
 // rendered here (per plan §L).
 
@@ -13,6 +13,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { getDiscipline } from '../../../services/disciplineService';
 
 const STATUS_BADGE = {
@@ -122,12 +123,22 @@ export default function DisciplineDetailPage() {
         </Col>
       </Row>
 
-      <Card className="border-0 shadow-sm">
+      <Card className="border-0 shadow-sm mb-3">
         <Card.Body>
           <h2 className="h6 text-uppercase text-muted">Mô tả</h2>
           <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>
             {discipline.description ? discipline.description : '—'}
           </p>
+        </Card.Body>
+      </Card>
+
+      <Card className="border-0 shadow-sm">
+        <Card.Body>
+          <h2 className="h6 text-uppercase text-muted">Quyền lợi bắt buộc</h2>
+          <MembershipBenefitList
+            benefitCodes={discipline.requiredBenefitCodes}
+            emptyMessage="Bộ môn này chỉ yêu cầu quyền đặt lịch lớp học."
+          />
         </Card.Body>
       </Card>
     </div>

@@ -36,6 +36,11 @@ import {
   gymEndOfDayIsoInstant,
   gymLocalDateToIsoInstant,
 } from '../../../utils/gymTime';
+import {
+  findMissingBenefitCodes,
+  formatBenefitCodeList,
+  normalizeBenefitCodes,
+} from '../../../utils/membershipBenefits';
 import './ClassBookingPage.css';
 
 const SESSIONS_PAGE_SIZE = 100; // BE cho phép tối đa 100 / trang
@@ -57,6 +62,8 @@ const STATUS_OPTIONS = [
 
 // Thông báo theo mã lỗi của BE (xử lý theo status / code, không đọc `detail`).
 const BOOKING_ERROR_MESSAGES = {
+  MEMBERSHIP_BENEFIT_REQUIRED:
+    'Gói tập hiện tại chưa đáp ứng quyền lợi của bộ môn này.',
   BOOKING_PLUS_MEMBERSHIP_REQUIRED:
     'Gói tập hiện tại chưa có quyền đặt lớp hoặc chưa đáp ứng quyền lợi của bộ môn này.',
   BOOKING_DUPLICATE: 'Bạn đã đặt buổi tập này rồi.',
@@ -77,6 +84,12 @@ const BOOKING_ERROR_MESSAGES = {
 
 function bookingErrorMessage(err, fallback) {
   const code = err?.response?.data?.code;
+  if (code === 'MEMBERSHIP_BENEFIT_REQUIRED') {
+    const missing = formatBenefitCodeList(err?.response?.data?.missingBenefitCodes);
+    return missing
+      ? `Gói tập còn thiếu quyền lợi: ${missing}.`
+      : BOOKING_ERROR_MESSAGES.MEMBERSHIP_BENEFIT_REQUIRED;
+  }
   if (code && BOOKING_ERROR_MESSAGES[code]) return BOOKING_ERROR_MESSAGES[code];
   if (!err?.response) return 'Không kết nối được máy chủ. Vui lòng thử lại.';
   if (err.response.status === 403) {
@@ -157,14 +170,20 @@ export default function ClassBookingPage() {
   const { user } = useAuth();
   const {
     activeMembership,
+    benefitCodes,
     benefitsKnown,
-    hasBenefit,
     loading: membershipLoading,
+    error: membershipError,
   } = useMemberArea();
 
   const planCode = activeMembership?.planCode ?? activeMembership?.plan_code_snapshot ?? '';
   // Contract cũ chưa có Benefit: không khóa oan, BE xác nhận khi đặt.
-  const bookingAllowed = !benefitsKnown || hasBenefit('CLASS_BOOKING');
+  // Contract mới cho phép kiểm tra đủ quyền theo từng bộ môn ngay trên catalogue.
+  const ownedBenefitCodes = benefitCodes || [];
+  const membershipEligibilityKnown =
+    !membershipLoading &&
+    !membershipError &&
+    (activeMembership == null || benefitsKnown);
 
   // Khoảng ngày (để trống = mọi buổi tập sắp tới).
   const [fromYmd, setFromYmd] = useState('');
@@ -426,19 +445,33 @@ export default function ClassBookingPage() {
           <div className="cbs-day" key={group.ymd}>
             <h3 className="cbs-day-title">{group.label}</h3>
             <div className="cbs-list">
-              {group.items.map((s) => (
-                <SessionItem
-                  key={s.id}
-                  session={s}
-                  booked={Boolean(bookedMap[s.id])}
-                  busy={busyId === s.id}
-                  bookingAllowed={bookingAllowed}
-                  membershipLoading={membershipLoading}
-                  nowMs={nowMs}
-                  onBook={() => openBookConfirm(s)}
-                  onCancel={() => setCancelTarget(s)}
-                />
-              ))}
+              {group.items.map((s) => {
+                const requiredBenefitCodes = normalizeBenefitCodes(
+                  s.requiredBenefitCodes?.length
+                    ? s.requiredBenefitCodes
+                    : ['CLASS_BOOKING'],
+                );
+                const missingBenefitCodes = membershipEligibilityKnown
+                  ? findMissingBenefitCodes(requiredBenefitCodes, ownedBenefitCodes)
+                  : [];
+                return (
+                  <SessionItem
+                    key={s.id}
+                    session={s}
+                    booked={Boolean(bookedMap[s.id])}
+                    busy={busyId === s.id}
+                    bookingAllowed={
+                      !membershipEligibilityKnown || missingBenefitCodes.length === 0
+                    }
+                    requiredBenefitNames={formatBenefitCodeList(requiredBenefitCodes)}
+                    missingBenefitNames={formatBenefitCodeList(missingBenefitCodes)}
+                    membershipLoading={membershipLoading}
+                    nowMs={nowMs}
+                    onBook={() => openBookConfirm(s)}
+                    onCancel={() => setCancelTarget(s)}
+                  />
+                );
+              })}
             </div>
           </div>
         ))}
@@ -783,6 +816,13 @@ function BookingConfirmModal({
               Gói {planCode || '—'} • Xác nhận quyền khi đặt
             </span>
           </InfoRow>
+          <InfoRow icon="plan" label="Quyền lợi yêu cầu:">
+            {formatBenefitCodeList(
+              s?.requiredBenefitCodes?.length
+                ? s.requiredBenefitCodes
+                : ['CLASS_BOOKING'],
+            )}
+          </InfoRow>
           <InfoRow icon="users" label="Số lượng:">
             <span className={avail != null && avail <= 0 ? 'cbs-qty full' : 'cbs-qty'}>
               {s?.bookedCount ?? '—'} / {s?.capacity ?? '—'} -{' '}
@@ -836,6 +876,8 @@ function SessionItem({
   booked,
   busy,
   bookingAllowed,
+  requiredBenefitNames,
+  missingBenefitNames,
   membershipLoading,
   nowMs,
   onBook,
@@ -858,6 +900,9 @@ function SessionItem({
         <div className="cbs-meta">
           {s.coachName || '—'} · {s.roomName || '—'}
         </div>
+        {requiredBenefitNames ? (
+          <div className="cbs-note">Yêu cầu: {requiredBenefitNames}</div>
+        ) : null}
         <div className="cbs-tags">
           <span className="cbs-tag">{CLASS_TYPE_LABEL[s.classType] || '—'}</span>
           {s.disciplineName ? (
@@ -901,7 +946,9 @@ function SessionItem({
               <span className="cbs-note">
                 {membershipLoading
                   ? 'Đang kiểm tra gói tập...'
-                  : 'Gói tập hiện tại chưa có quyền đặt lớp'}
+                  : missingBenefitNames
+                    ? `Còn thiếu: ${missingBenefitNames}`
+                    : 'Gói tập hiện tại chưa đủ quyền đặt lớp'}
               </span>
             ) : null}
           </>
