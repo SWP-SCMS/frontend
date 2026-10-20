@@ -272,10 +272,13 @@ export default function MemberOfferSection({ blockedReason = null }) {
                       <ul className="scms-mo-feat">
                         {buildFeatures(offer).map((feature) => (
                           <li
-                            key={feature.text}
+                            key={feature.code || feature.text}
                             className={feature.ok ? '' : 'off'}
                           >
                             {feature.ok ? '✓' : '–'} {feature.text}
+                            {feature.description ? (
+                              <small>{feature.description}</small>
+                            ) : null}
                           </li>
                         ))}
                       </ul>

@@ -19,6 +19,7 @@ import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import MemberServiceDashboardPanels from './MemberServiceDashboardPanels';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import MemberCoachCard from '../../../components/member/MemberCoachCard';
+import { buildFeatures } from '../../public/offers/offerUtils';
 import { listActiveOffers } from '../../../services/membershipService';
 import {
   createMyMembershipOrder,
@@ -186,21 +187,7 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
   const offer = list.find((o) => o.offerId === pickedOfferId) || list[0];
   const busy = Boolean(offer) && busyOfferId === offer.offerId;
 
-  // Public Offer hiện chỉ có hai capability ổn định; hiển thị theo dữ liệu BE.
-  const features = [
-    {
-      ok: offer.supportsBooking,
-      text: offer.supportsBooking
-        ? 'Đặt lịch lớp Yoga / Group'
-        : 'Chưa gồm đặt lịch lớp Yoga / Group',
-    },
-    {
-      ok: offer.supportsPersonalCoaching,
-      text: offer.supportsPersonalCoaching
-        ? 'Huấn luyện viên cá nhân (PT 1-1)'
-        : 'Chưa gồm HLV cá nhân',
-    },
-  ];
+  const features = buildFeatures(offer);
 
   return (
     <div className="scms-md-plan">
@@ -250,11 +237,14 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
         ) : null}
         <ul className="scms-md-feat">
           {features.map((f) => (
-            <li key={f.text} className={f.ok ? '' : 'off'}>
+            <li key={f.code || f.text} className={f.ok ? '' : 'off'}>
               <span className={f.ok ? 'yes' : 'no'}>
                 <Icon name={f.ok ? 'checkCircle' : 'xCircle'} />
               </span>
-              {f.text}
+              <span>
+                {f.text}
+                {f.description ? <small>{f.description}</small> : null}
+              </span>
             </li>
           ))}
         </ul>

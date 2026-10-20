@@ -7,18 +7,18 @@
 // "gói của tôi" là Membership ACTIVE mới nhất; nếu không còn gói ACTIVE thì
 // hiện trạng thái chưa có gói kèm lối vào trang gói tập.
 //
-// Lưu ý hợp đồng API: endpoint này trả List<Map> nên tên cột là snake_case,
-// khác với phần còn lại của dự án (record camelCase). Mọi trường đọc ở đây
-// đều qua `pick()`, chấp nhận cả hai kiểu tên. Khi backend chuyển sang record
-// camelCase thì chỉ cần rút gọn `pick` xuống còn một tên.
+// Hợp đồng hiện tại trả record camelCase. `pick()` vẫn chấp nhận snake_case để
+// dữ liệu cũ hoặc môi trường chưa cập nhật không làm hỏng giao diện.
 
 import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import MemberOfferSection from './MemberOfferSection';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import { formatDate, formatPrice } from '../../../utils';
+import { hasBenefitContract } from '../../../utils/membershipBenefits';
 import './MyPlanPage.css';
 // Đọc một trường, chấp nhận cả snake_case (BE hiện tại) lẫn camelCase.
 function pick(row, snake, camel) {
@@ -217,6 +217,20 @@ function PlanCard({ membership }) {
           value={STATUS_LABELS[membership.status] || membership.status || '—'}
         />
       </dl>
+
+      <section className="scms-my-plan-benefits" aria-labelledby="current-plan-benefits">
+        <h3 id="current-plan-benefits">Quyền lợi đang có</h3>
+        <MembershipBenefitList
+          benefitCodes={membership.benefitCodes ?? membership.benefit_codes}
+          benefits={membership.benefits}
+          showDescription
+          emptyMessage={
+            hasBenefitContract(membership)
+              ? 'Gói hiện tại không có quyền lợi được cấu hình.'
+              : 'Chưa có dữ liệu quyền lợi từ hệ thống.'
+          }
+        />
+      </section>
 
       <div className="scms-my-plan-actions">
         <a href="#member-offers" className="scms-my-plan-btn ghost">

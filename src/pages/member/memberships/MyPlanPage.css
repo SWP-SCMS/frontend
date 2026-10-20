@@ -253,6 +253,18 @@
   word-break: break-word;
 }
 
+.scms-my-plan-benefits {
+  padding: 1.5rem 0;
+  border-top: 1px solid #f1f5f9;
+}
+
+.scms-my-plan-benefits h3 {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
 /* ----- Nút ----- */
 
 .scms-my-plan-actions {

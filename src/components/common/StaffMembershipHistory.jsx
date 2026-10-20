@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Card, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from './ErrorAlert';
+import MembershipBenefitList from './MembershipBenefitList';
 import {
   getManagerMemberMemberships,
   getReceptionMemberMemberships,
 } from '../../services/staffMembershipService';
 import { formatDateTime } from '../../utils';
+import { hasBenefitContract } from '../../utils/membershipBenefits';
 
 const STATUS_LABELS = {
   ACTIVE: 'Đang hiệu lực',
@@ -90,6 +92,7 @@ export default function StaffMembershipHistory({
                   <th>Gói đã mua</th>
                   <th>Loại gói</th>
                   <th>Trạng thái</th>
+                  <th>Quyền lợi</th>
                   <th>Bắt đầu</th>
                   <th>Kết thúc</th>
                 </tr>
@@ -104,6 +107,17 @@ export default function StaffMembershipHistory({
                         text={STATUS_VARIANTS[membership.status] ? undefined : 'dark'}>
                         {STATUS_LABELS[membership.status] || membership.status || '—'}
                       </Badge>
+                    </td>
+                    <td style={{ minWidth: 220 }}>
+                      <MembershipBenefitList
+                        benefitCodes={membership.benefitCodes}
+                        benefits={membership.benefits}
+                        emptyMessage={
+                          hasBenefitContract(membership)
+                            ? 'Không có quyền lợi'
+                            : 'Chưa có dữ liệu quyền lợi'
+                        }
+                      />
                     </td>
                     <td>{formatDateTime(membership.startsAt)}</td>
                     <td>{formatDateTime(membership.endsAt)}</td>

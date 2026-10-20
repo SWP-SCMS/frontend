@@ -18,6 +18,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { listActiveOffers } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
+import { getMembershipBenefitState } from '../../../utils/membershipBenefits';
 import PublicHeader from '../../../components/layout/PublicHeader';
 import PublicFooter from '../../../components/layout/PublicFooter';
 import Icon from '../../../components/layout/PublicIcon';
@@ -55,9 +56,18 @@ function buildDynamicPlanOverview(offers) {
   });
   return [...grouped.entries()].map(([code, items]) => {
     const sample = items[0];
-    const bullets = [];
-    if (sample.supportsBooking) bullets.push('Đặt lịch lớp trực tuyến');
-    if (sample.supportsPersonalCoaching) bullets.push('Huấn luyện viên cá nhân');
+    const benefitState = getMembershipBenefitState(sample);
+    const bullets = benefitState.known
+      ? benefitState.benefits
+          .filter((benefit) => benefit.status !== 'INACTIVE')
+          .map((benefit) => benefit.displayName)
+      : [];
+    if (!benefitState.known && sample.supportsBooking) {
+      bullets.push('Đặt lịch lớp trực tuyến');
+    }
+    if (!benefitState.known && sample.supportsPersonalCoaching) {
+      bullets.push('Huấn luyện viên cá nhân');
+    }
     if (bullets.length === 0) {
       bullets.push('Quyền lợi áp dụng theo loại gói đã chọn');
     }

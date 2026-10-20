@@ -564,6 +564,17 @@
   color: #94a3b8;
 }
 
+.scms-md-feat li > span:last-child {
+  min-width: 0;
+}
+
+.scms-md-feat li small {
+  display: block;
+  margin-top: 0.15rem;
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
 .scms-md-plan-btn {
   width: 100%;
   margin-top: 1.5rem;

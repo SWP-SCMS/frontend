@@ -1,10 +1,10 @@
 // Manager – Membership Offer list & search (US08).
 //
 // BE: GET /api/v1/manager/membership-offers
-//     -> MembershipOfferResponse[] (no pagination wrapper; plain array)
+//     -> MembershipOfferAdminDetailResponse[] (plain array)
 //   Each item: offerId, planCode, planDisplayName, name, description,
-//   priceAmount (BigInteger), currencyCode, durationDays,
-//   supportsBooking, supportsPersonalCoaching.
+//   priceAmount (BigInteger), currencyCode, durationDays, status,
+//   benefitCodes và benefits.
 //
 // Filters:
 //   - planCode: any configured Membership Plan code | ALL
@@ -25,6 +25,7 @@ import {
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { listMembershipOffersAdmin } from '../../../services/membershipOfferAdminService';
 import { formatPrice } from '../../../utils';
 
@@ -151,6 +152,7 @@ export default function MembershipOfferListPage() {
             <th>Giá</th>
             <th>Thời hạn</th>
             <th>Trạng thái</th>
+            <th>Quyền lợi</th>
             <th className="text-end">Hành động</th>
           </tr>
         </thead>
@@ -191,6 +193,13 @@ export default function MembershipOfferListPage() {
                 >
                   {row.status || '—'}
                 </span>
+              </td>
+              <td style={{ minWidth: 220 }}>
+                <MembershipBenefitList
+                  benefitCodes={row.benefitCodes}
+                  benefits={row.benefits}
+                  emptyMessage="Không có quyền lợi"
+                />
               </td>
               <td className="text-end">
                 <Button

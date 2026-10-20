@@ -13,9 +13,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import PublicShell from '../../../components/layout/PublicShell';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { getOfferById } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
 import { useAuth } from '../../../context/useAuth';
+import { hasBenefitContract } from '../../../utils/membershipBenefits';
+import { buildFeatures } from './offerUtils';
 
 export default function OfferDetailPage() {
   const { offerId } = useParams();
@@ -98,15 +101,27 @@ export default function OfferDetailPage() {
                     <span className="badge bg-dark mb-2">{offer.planCode}</span>
                     <h1 className="fw-bold mb-2">{offer.name}</h1>
                     <p className="text-muted">{offer.description || '—'}</p>
-                    <ul className="mb-0">
-                      {offer.supportsBooking ? (
-                        <li>Đặt lịch Group / Yoga / PT 1-1</li>
-                      ) : null}
-                      {offer.supportsPersonalCoaching ? (
-                        <li>Kèm Personal Coach</li>
-                      ) : null}
-                      <li>Thời hạn: {offer.durationDays} ngày</li>
-                    </ul>
+                    <h2 className="h6 text-uppercase text-muted mt-4">
+                      Quyền lợi
+                    </h2>
+                    {hasBenefitContract(offer) ? (
+                      <MembershipBenefitList
+                        benefitCodes={offer.benefitCodes}
+                        benefits={offer.benefits}
+                        showDescription
+                      />
+                    ) : (
+                      <ul className="mb-0">
+                        {buildFeatures(offer).map((feature) => (
+                          <li key={feature.code}>
+                            {feature.ok ? '✓' : '–'} {feature.text}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="small text-muted mt-3 mb-0">
+                      Thời hạn: {offer.durationDays} ngày
+                    </p>
                   </Col>
                   <Col md={5}>
                     <div className="bg-body-tertiary rounded-3 p-4">
