@@ -25,7 +25,6 @@ import {
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
-import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { listMembershipOffersAdmin } from '../../../services/membershipOfferAdminService';
 import { formatPrice } from '../../../utils';
 
@@ -150,7 +149,6 @@ export default function MembershipOfferListPage() {
             <th>Giá</th>
             <th>Thời hạn</th>
             <th>Trạng thái</th>
-            <th>Quyền lợi</th>
             <th className="text-end">Hành động</th>
           </tr>
         </thead>
@@ -191,13 +189,6 @@ export default function MembershipOfferListPage() {
                 >
                   {row.status || '—'}
                 </span>
-              </td>
-              <td style={{ minWidth: 220 }}>
-                <MembershipBenefitList
-                  benefitCodes={row.benefitCodes}
-                  benefits={row.benefits}
-                  emptyMessage="Không có quyền lợi"
-                />
               </td>
               <td className="text-end">
                 <Button

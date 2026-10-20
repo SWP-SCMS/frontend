@@ -171,7 +171,6 @@ export default function MembershipOfferDetailPage() {
                 <MembershipBenefitList
                   benefitCodes={offer.benefitCodes}
                   benefits={offer.benefits}
-                  showDescription
                   emptyMessage="Gói này không có quyền lợi được cấu hình."
                 />
               </div>

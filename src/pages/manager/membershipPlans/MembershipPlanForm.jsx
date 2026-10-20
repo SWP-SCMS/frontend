@@ -101,15 +101,7 @@ export default function MembershipPlanForm({
                 onChange={() => toggleBenefit(benefit.code)}
                 onBlur={benefitCodesField.onBlur}
                 label={
-                  <span>
-                    <strong>{benefitLabel(benefit)}</strong>
-                    <span className="text-muted ms-2">{benefit.code}</span>
-                    {benefit.description ? (
-                      <span className="d-block small text-muted">
-                        {benefit.description}
-                      </span>
-                    ) : null}
-                  </span>
+                  <strong>{benefitLabel(benefit)}</strong>
                 }
               />
             );

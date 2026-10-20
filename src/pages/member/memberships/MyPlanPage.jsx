@@ -223,7 +223,6 @@ function PlanCard({ membership }) {
         <MembershipBenefitList
           benefitCodes={membership.benefitCodes ?? membership.benefit_codes}
           benefits={membership.benefits}
-          showDescription
           emptyMessage={
             hasBenefitContract(membership)
               ? 'Gói hiện tại không có quyền lợi được cấu hình.'

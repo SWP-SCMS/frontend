@@ -241,14 +241,7 @@ function OfferCard({ offer, info, best }) {
             <span className="sof-feat-icon">
               <Icon name={f.ok ? 'check' : 'x'} size={16} />
             </span>
-            <span>
-              {f.text}
-              {f.description ? (
-                <small className="d-block scms-home-muted">
-                  {f.description}
-                </small>
-              ) : null}
-            </span>
+            <span>{f.text}</span>
           </li>
         ))}
       </ul>

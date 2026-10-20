@@ -271,8 +271,13 @@
 }
 
 .scms-mo-permonth {
+  min-height: 1.2rem;
   font-size: 0.8rem;
   color: #047857;
+}
+
+.scms-mo-permonth.empty {
+  visibility: hidden;
 }
 
 .scms-mo-feat {
@@ -289,13 +294,6 @@
 
 .scms-mo-feat li.off {
   color: #94a3b8;
-}
-
-.scms-mo-feat small {
-  display: block;
-  margin: 0.15rem 0 0 1.1rem;
-  color: #64748b;
-  font-size: 0.72rem;
 }
 
 .scms-mo-btn {

@@ -200,32 +200,35 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
           {offer.planDisplayName || offer.planCode}
         </div>
 
-        {hasVariants ? (
-          <div className="scms-md-plan-variants" role="radiogroup"
-            aria-label={`Chọn mức giá gói ${planCode}`}>
-            {list.map((item) => {
-              const active = item.offerId === offer.offerId;
-              return (
-                <button
-                  key={item.offerId}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  className={`scms-md-plan-variant${active ? ' on' : ''}`}
-                  onClick={() => setPickedOfferId(item.offerId)}
-                  disabled={Boolean(blockedReason)}
-                >
-                  <span className="scms-md-plan-variant-days">
-                    {item.durationDays} ngày
-                  </span>
-                  <span className="scms-md-plan-variant-price">
-                    {formatPrice(item.priceAmount, item.currencyCode)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
+        <div
+          className="scms-md-plan-variants"
+          role="radiogroup"
+          aria-label={`Chọn mức giá gói ${planCode}`}
+        >
+          {list.map((item) => {
+            const active = item.offerId === offer.offerId;
+            return (
+              <button
+                key={item.offerId}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                className={`scms-md-plan-variant${active ? ' on' : ''}${
+                  hasVariants ? '' : ' single'
+                }`}
+                onClick={() => setPickedOfferId(item.offerId)}
+                disabled={!hasVariants || Boolean(blockedReason)}
+              >
+                <span className="scms-md-plan-variant-days">
+                  {item.durationDays} ngày
+                </span>
+                <span className="scms-md-plan-variant-price">
+                  {formatPrice(item.priceAmount, item.currencyCode)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="scms-md-plan-offer">{offer.name}</div>
         <div className="scms-md-plan-price">
@@ -241,10 +244,7 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
               <span className={f.ok ? 'yes' : 'no'}>
                 <Icon name={f.ok ? 'checkCircle' : 'xCircle'} />
               </span>
-              <span>
-                {f.text}
-                {f.description ? <small>{f.description}</small> : null}
-              </span>
+              <span>{f.text}</span>
             </li>
           ))}
         </ul>

@@ -4,7 +4,6 @@ export default function MembershipBenefitList({
   benefitCodes = [],
   benefits = [],
   emptyMessage = 'Chưa có quyền lợi được cấu hình.',
-  showDescription = false,
 }) {
   const normalized = normalizeMembershipBenefits({ benefitCodes, benefits });
 
@@ -35,11 +34,6 @@ export default function MembershipBenefitList({
                 <span className="badge text-bg-secondary ms-2">
                   Ngừng áp dụng
                 </span>
-              ) : null}
-              {showDescription && benefit.description ? (
-                <small className="d-block text-muted mt-1">
-                  {benefit.description}
-                </small>
               ) : null}
             </span>
           </li>

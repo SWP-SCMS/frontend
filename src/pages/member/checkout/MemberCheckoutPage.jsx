@@ -254,12 +254,7 @@ export default function MemberCheckoutPage() {
             {buildFeatures(offer).map((f) => (
               <li key={f.code || f.text} className={f.ok ? '' : 'off'}>
                 <span aria-hidden="true">{f.ok ? '✓' : '✕'}</span>{' '}
-                <span>
-                  {f.text}
-                  {f.description ? (
-                    <small className="d-block mco-muted">{f.description}</small>
-                  ) : null}
-                </span>
+                <span>{f.text}</span>
               </li>
             ))}
           </ul>

@@ -108,7 +108,6 @@ export default function OfferDetailPage() {
                       <MembershipBenefitList
                         benefitCodes={offer.benefitCodes}
                         benefits={offer.benefits}
-                        showDescription
                       />
                     ) : (
                       <ul className="mb-0">

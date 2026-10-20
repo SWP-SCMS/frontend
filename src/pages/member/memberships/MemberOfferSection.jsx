@@ -261,14 +261,23 @@ export default function MemberOfferSection({ blockedReason = null }) {
                         {formatPrice(offer.priceAmount, offer.currencyCode)}
                         <small> / {formatDuration(offer.durationDays)}</small>
                       </div>
-                      {showPerMonth ? (
-                        <div className="scms-mo-permonth">
-                          ≈ {formatPrice(info.perMonth, offer.currencyCode)} / tháng
-                          {info.savings > 0
-                            ? ` · Tiết kiệm ${info.savings}%`
-                            : ''}
-                        </div>
-                      ) : null}
+                      <div
+                        className={`scms-mo-permonth${
+                          showPerMonth ? '' : ' empty'
+                        }`}
+                        aria-hidden={!showPerMonth}
+                      >
+                        {showPerMonth ? (
+                          <>
+                            ≈ {formatPrice(info.perMonth, offer.currencyCode)} / tháng
+                            {info.savings > 0
+                              ? ` · Tiết kiệm ${info.savings}%`
+                              : ''}
+                          </>
+                        ) : (
+                          '\u00a0'
+                        )}
+                      </div>
                       <ul className="scms-mo-feat">
                         {buildFeatures(offer).map((feature) => (
                           <li
@@ -276,9 +285,6 @@ export default function MemberOfferSection({ blockedReason = null }) {
                             className={feature.ok ? '' : 'off'}
                           >
                             {feature.ok ? '✓' : '–'} {feature.text}
-                            {feature.description ? (
-                              <small>{feature.description}</small>
-                            ) : null}
                           </li>
                         ))}
                       </ul>

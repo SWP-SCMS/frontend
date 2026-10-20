@@ -166,7 +166,6 @@ export default function MembershipOfferListPage() {
                 <MembershipBenefitList
                   benefitCodes={offer.benefitCodes}
                   benefits={offer.benefits}
-                  showDescription
                 />
               ) : (
                 <ul className="list-unstyled mb-0 d-grid gap-1">

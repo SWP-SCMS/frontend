@@ -43,7 +43,7 @@ export default function MembershipPlanDetailPage() {
       <Card className="border-0 shadow-sm"><Card.Body>
         <h2 className="h5">Quyền lợi</h2>
         <ul className="mb-0">
-          {plan.benefitCodes?.map((code) => <li key={code}><strong>{benefitLabel(benefitMap.get(code) || { code })}</strong> <span className="text-muted">({code})</span></li>)}
+          {plan.benefitCodes?.map((code) => <li key={code}><strong>{benefitLabel(benefitMap.get(code) || { code })}</strong></li>)}
         </ul>
       </Card.Body></Card>
     </div>
