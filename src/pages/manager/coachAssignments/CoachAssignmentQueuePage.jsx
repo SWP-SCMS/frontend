@@ -2,8 +2,8 @@
 //
 // The candidate endpoint is the eligibility source of truth: every returned
 // Member is ACTIVE and has an ACTIVE Membership with PERSONAL_COACHING. Coach
-// workload is advisory only; backend capacity fields are placeholders and are
-// deliberately not used to block assignment.
+// workload exposes the same capacity rule enforced by the backend. The UI
+// disables full Coaches for early feedback; the mutation remains authoritative.
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -68,6 +68,8 @@ const ERROR_MESSAGES = {
   COACH_ALREADY_ASSIGNED: 'Hội viên đang được phân công cho chính HLV này.',
   COACH_ASSIGNMENT_CONFLICT:
     'Phân công vừa thay đổi ở nơi khác. Danh sách sẽ được tải lại.',
+  COACH_CAPACITY_EXCEEDED:
+    'Huấn luyện viên vừa đạt số hội viên tối đa. Vui lòng chọn HLV khác.',
 };
 
 function formatInstant(value) {
@@ -236,6 +238,10 @@ export default function CoachAssignmentQueuePage() {
       setActionError(submitError);
       if (submitError?.response?.data?.code === 'COACH_ASSIGNMENT_CONFLICT') {
         loadCandidates();
+      }
+      if (submitError?.response?.data?.code === 'COACH_CAPACITY_EXCEEDED') {
+        loadWorkloads();
+        assignForm.setValue('coachAccountId', '');
       }
     } finally {
       setSubmitting(false);
@@ -433,7 +439,7 @@ export default function CoachAssignmentQueuePage() {
               <div className="d-flex justify-content-between align-items-start gap-2 mb-3">
                 <div>
                   <h2 className="h6 fw-bold mb-1">Tải huấn luyện viên</h2>
-                  <p className="small text-muted mb-0">Số hội viên đang phụ trách chỉ để tham khảo.</p>
+                  <p className="small text-muted mb-0">Số hội viên đang phụ trách trên giới hạn được cấu hình.</p>
                 </div>
                 <Button type="button" variant="outline-secondary" size="sm" onClick={loadWorkloads}
                   disabled={workloadsLoading}>
@@ -451,7 +457,9 @@ export default function CoachAssignmentQueuePage() {
                     <div key={coach.coachAccountId} className="border rounded p-2">
                       <div className="d-flex justify-content-between gap-2">
                         <span className="fw-semibold">{coach.fullName || '—'}</span>
-                        <Badge bg="light" text="dark">{coach.activeMemberCount || 0} hội viên</Badge>
+                        <Badge bg={coach.availableForAssignment ? 'light' : 'secondary'} text={coach.availableForAssignment ? 'dark' : undefined}>
+                          {coach.activeMemberCount || 0}/{coach.maximumMemberCount} hội viên
+                        </Badge>
                       </div>
                       <div className="small text-muted text-break">
                         {[coach.phone, coach.email].filter(Boolean).join(' · ') || 'Chưa có liên hệ'}
@@ -501,26 +509,29 @@ export default function CoachAssignmentQueuePage() {
                 <div className="border rounded overflow-hidden">
                   {workloads.map((coach, index) => {
                     const isCurrent = coach.coachAccountId === currentAssignment?.coachAccountId;
+                    const isFull = coach.availableForAssignment === false;
+                    const disabled = isCurrent || isFull;
                     return (
                       <label
                         key={coach.coachAccountId}
-                        className={`d-flex align-items-start gap-2 p-3 ${index ? 'border-top' : ''} ${isCurrent ? 'bg-light text-muted' : ''}`}
-                        style={{ cursor: isCurrent ? 'not-allowed' : 'pointer' }}
+                        className={`d-flex align-items-start gap-2 p-3 ${index ? 'border-top' : ''} ${disabled ? 'bg-light text-muted' : ''}`}
+                        style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
                       >
                         <Form.Check
                           type="radio"
                           value={coach.coachAccountId}
-                          disabled={isCurrent}
+                          disabled={disabled}
                           {...assignForm.register('coachAccountId')}
                         />
                         <span className="flex-grow-1">
                           <span className="d-flex flex-wrap justify-content-between gap-2">
                             <strong>{coach.fullName || '—'}</strong>
-                            <span className="small">{coach.activeMemberCount || 0} hội viên đang phụ trách</span>
+                            <span className="small">{coach.activeMemberCount || 0}/{coach.maximumMemberCount} hội viên đang phụ trách</span>
                           </span>
                           <span className="small d-block">
                             {[coach.phone, coach.email].filter(Boolean).join(' · ') || 'Chưa có liên hệ'}
                             {isCurrent ? ' · HLV hiện tại' : ''}
+                            {isFull && !isCurrent ? ' · Đã đầy' : ''}
                           </span>
                         </span>
                       </label>

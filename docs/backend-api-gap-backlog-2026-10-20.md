@@ -1,8 +1,10 @@
 # Backend API & Contract Gap Backlog
 
 **Ngày kiểm tra:** 20/10/2026  
-**Backend được đối chiếu:** `main` tại `056d00e`  
-**Frontend được đối chiếu:** `feat/phase-4-coach-assignments` tại `bb0e8a1` và working tree hiện tại  
+**Backend được đối chiếu:** local `main` tại `239b72f` (bao gồm remote `main` `70b2da1`)
+
+**Frontend được đối chiếu:** `main` tại `b8dc66c` và working tree hiện tại
+
 **Trạng thái tài liệu:** Living backlog — cập nhật khi phát hiện hoặc khi Backend đóng một gap
 
 ## Mục đích và quy ước
@@ -27,32 +29,41 @@ Trạng thái sử dụng:
 
 | ID | Ưu tiên | Khu vực | Gap | Trạng thái |
 |---|---|---|---|---|
-| BE-GAP-001 | P0 | Email verification | Chưa có email OTP và workflow kích hoạt thủ công Receptionist → Manager | OPEN |
-| BE-GAP-002 | P1 | Training Plan | Coach chưa có API xem lịch sử version | OPEN |
-| BE-GAP-003 | P1 | Training Plan | Có trạng thái `ARCHIVED` nhưng không có API archive | OPEN |
-| BE-GAP-004 | P1 | Training Plan | Response Coach thiếu thời điểm cập nhật/version | OPEN |
+| BE-GAP-001 | P0 | Email verification | Email OTP và workflow kích hoạt thủ công Receptionist → Manager | READY_FOR_FE |
+| BE-GAP-002 | P1 | Training Plan | Coach API xem lịch sử version | READY_FOR_FE |
+| BE-GAP-003 | P1 | Training Plan | API archive giáo án | READY_FOR_FE |
+| BE-GAP-004 | P1 | Training Plan | Response Coach có thời điểm cập nhật/version | READY_FOR_FE |
 | BE-GAP-005 | P1 | Membership/Offer | Membership và public Offer response thiếu đầy đủ Benefit để FE hiển thị quyền lợi/eligibility | OPEN |
-| BE-GAP-006 | P2 | Training Plan | `content` chưa có schema ổn định trong OpenAPI | OPEN |
-| BE-GAP-007 | P2 | Training Plan | Chưa chốt quyền sửa giáo án của assignment cũ | OPEN |
-| BE-GAP-008 | P2 | Training Plan | Update chưa có stale-version/concurrency guard | OPEN |
-| BE-GAP-009 | P2 | Coach assignment | Workload capacity hiện chỉ là placeholder | OPEN |
+| BE-GAP-006 | P2 | Training Plan | `content` schema v1 đã được chốt trong OpenAPI | READY_FOR_FE |
+| BE-GAP-007 | P2 | Training Plan | Đã chốt Coach hiện tại được tiếp quản giáo án assignment cũ | READY_FOR_FE |
+| BE-GAP-008 | P2 | Training Plan | Update có `expectedVersionNumber` và conflict guard | READY_FOR_FE |
+| BE-GAP-009 | P2 | Coach assignment | Workload capacity có cấu hình và enforcement | READY_FOR_FE |
 | BE-GAP-010 | P2 | Membership Offer | Admin API thiếu detail endpoint và display data của Plan | OPEN |
 | BE-GAP-011 | P3 | Membership Plan | Validation error chưa có field-level contract | OPEN |
 | BE-GAP-012 | P3 | Membership Plan | Response chưa cho biết Benefit đã bị khoá | OPEN |
-| BE-GAP-013 | P1 | Membership Order | Vẫn tạo được đơn từ Offer thuộc Plan INACTIVE | OPEN |
+| BE-GAP-013 | P1 | Membership Order | Chặn tạo đơn từ Offer/Plan không còn ACTIVE | READY_FOR_FE |
 | BE-GAP-014 | P1 | Discipline/Booking | API chưa trả và chưa cho cấu hình Benefit bắt buộc theo bộ môn | OPEN |
+| BE-GAP-015 | P1 | Audit | Danh tính actor được lookup động, chưa snapshot theo thời điểm sự kiện | OPEN |
+| BE-GAP-016 | P2 | Staff Profile | Self-profile chưa audit và race trùng identifier có thể trả 500 | OPEN |
+| BE-GAP-017 | P2 | Email verification OpenAPI | Manual activation schema/query params chưa khớp implementation | OPEN |
 
 ---
 
 ## BE-GAP-001 — Email OTP và kích hoạt thủ công
 
 **Ưu tiên:** P0  
-**Trạng thái:** OPEN  
-**Ảnh hưởng FE:** FE chưa thể triển khai `/verify-email`, resend/change-email hoặc UI Receptionist/Manager cho kích hoạt thủ công.
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `70b2da1` (`feat(auth): add email OTP verification flow`)
+
+**Ảnh hưởng FE:** FE có thể triển khai `/verify-email`, resend/change-email và UI Receptionist/Manager cho kích hoạt thủ công.
 
 ### Hiện trạng đã kiểm tra
 
-Backend hiện không có module, migration hoặc controller cho email verification, OTP, verification session, email outbox hay manual activation request. Repository cũng chưa có Spring Mail provider cho luồng này.
+Backend đã có migration V21, email OTP/session/outbox, SMTP provider, DB rate limiter,
+cookie HttpOnly + pending CSRF, cleanup job và workflow Receptionist → Manager.
+Feature flag mặc định vẫn tắt (`EMAIL_VERIFICATION_ENABLED=false`), nên môi trường
+chạy thật phải cấu hình SMTP và key trước khi kiểm thử E2E.
 
 ### Contract cần triển khai
 
@@ -115,7 +126,9 @@ Không rút gọn implementation chỉ dựa trên backlog này.
 ## BE-GAP-002 — Coach chưa xem được lịch sử version giáo án
 
 **Ưu tiên:** P1  
-**Trạng thái:** OPEN
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `ae86738`
 
 ### Hiện trạng
 
@@ -155,7 +168,9 @@ Response tối thiểu:
 ## BE-GAP-003 — Không có API archive giáo án
 
 **Ưu tiên:** P1  
-**Trạng thái:** OPEN
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `ae86738`
 
 ### Hiện trạng
 
@@ -191,7 +206,9 @@ Content-Type: application/json
 ## BE-GAP-004 — TrainingPlanResponse thiếu timestamp cập nhật
 
 **Ưu tiên:** P1  
-**Trạng thái:** OPEN
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `ae86738`
 
 ### Hiện trạng
 
@@ -308,7 +325,9 @@ Backend vẫn phải kiểm tra lại Benefit tại thời điểm mutation; d�
 ## BE-GAP-006 — Training Plan content chưa có schema ổn định
 
 **Ưu tiên:** P2  
-**Trạng thái:** OPEN
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `ae86738`; schema v1 gồm `goal`, `schedule`, `exercises`, `notes`, từ chối unknown field.
 
 ### Hiện trạng
 
@@ -336,7 +355,9 @@ Không chốt schema sẽ khiến FE/web/mobile ghi dữ liệu khác cấu trú
 ## BE-GAP-007 — Chưa chốt quyền sửa Plan từ assignment cũ
 
 **Ưu tiên:** P2  
-**Trạng thái:** OPEN
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `ae86738`; Coach đang được phân công được phép append version mới vào Plan của assignment cũ.
 
 ### Hiện trạng
 
@@ -356,7 +377,9 @@ FE không tự chặn cho đến khi Product/BE chốt rule.
 ## BE-GAP-008 — Update giáo án chưa có stale-version guard
 
 **Ưu tiên:** P2  
-**Trạng thái:** OPEN
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `ae86738`; update bắt buộc `expectedVersionNumber`, conflict trả `TRAINING_PLAN_VERSION_CONFLICT` và `currentVersionNumber`.
 
 ### Hiện trạng
 
@@ -382,7 +405,9 @@ Response conflict nên trả `currentVersionNumber` để FE yêu cầu reload.
 ## BE-GAP-009 — Coach workload capacity là placeholder
 
 **Ưu tiên:** P2  
-**Trạng thái:** OPEN
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `ae86738`; mặc định tối đa 20 Member/Coach, cấu hình bằng `COACH_MAXIMUM_MEMBER_COUNT` và mutation cũng enforce capacity.
 
 ### Hiện trạng
 
@@ -513,7 +538,9 @@ race condition.
 ## BE-GAP-013 — Vẫn tạo được đơn từ Offer thuộc Plan đã INACTIVE
 
 **Ưu tiên:** P1  
-**Trạng thái:** OPEN
+**Trạng thái:** READY_FOR_FE
+
+**Backend xác nhận:** `715ded5`; Member và Receptionist order đều trả `409 MEMBERSHIP_OFFER_NOT_AVAILABLE` khi Offer hoặc Plan không ACTIVE.
 
 ### Hiện trạng
 
@@ -626,6 +653,124 @@ Error payload đề xuất:
 
 Backend vẫn phải kiểm tra lại các quyền này trong transaction khi tạo booking;
 dữ liệu response chỉ phục vụ hiển thị và pre-disable trên FE.
+
+---
+
+## BE-GAP-015 — Danh tính actor trong Audit chưa được snapshot
+
+**Ưu tiên:** P1
+**Trạng thái:** OPEN
+**Phát hiện khi rà lại:** Phase 1 và Phase 2
+
+### Hiện trạng
+
+`audit_events` chỉ lưu `actor_account_id`. Khi trả lịch sử, Backend tải
+`actorName` và `actorRole` từ bản ghi `accounts` hiện tại:
+
+```java
+actor == null ? null : actor.getFullName()
+actor == null ? null : actor.getRole()
+```
+
+Vì vậy tên/vai trò hiển thị trên toàn bộ sự kiện cũ không phải danh tính tại
+thời điểm hành động. Ví dụ nhân viên thực hiện một thao tác, sau đó dùng
+`PATCH /staff/me/profile` đổi tên; các dòng Audit cũ sẽ hiển thị tên mới. Điều
+này làm lịch sử append-only nhưng phần danh tính lại thay đổi theo dữ liệu hiện
+tại.
+
+### Đề nghị
+
+- Bổ sung `actor_name_snapshot` và `actor_role_snapshot` vào `audit_events`.
+- Ghi snapshot trong cùng transaction khi tạo sự kiện.
+- `AuditHistoryResponse.actorName/actorRole` ưu tiên snapshot; chỉ fallback
+  sang account hiện tại cho dữ liệu cũ được tạo trước migration.
+- Backfill dữ liệu cũ bằng danh tính hiện tại nếu có và ghi rõ đây chỉ là
+  best-effort backfill.
+- Thêm integration test: tạo Audit, đổi tên actor, đọc lại Audit vẫn phải trả
+  tên tại thời điểm tạo sự kiện.
+
+### Acceptance criteria
+
+- Đổi tên/email/SĐT hoặc vô hiệu hoá tài khoản không làm thay đổi danh tính
+  trên Audit đã tồn tại.
+- Dữ liệu hệ thống/actor không còn tồn tại vẫn giữ fallback ổn định.
+- FE tiếp tục dùng nguyên contract `actorName`, `actorRole`; không cần tự lưu
+  snapshot.
+
+---
+
+## BE-GAP-016 — Staff self-profile chưa audit và chưa xử lý race trùng identifier
+
+**Ưu tiên:** P2
+**Trạng thái:** OPEN
+**Phát hiện khi rà lại:** Phase 2
+
+### Hiện trạng
+
+`PATCH /staff/me/profile` cho phép Manager, Receptionist và Coach thay đổi
+`fullName`, `phone`, `email`, `birthDate`, trong đó email/SĐT cũng là identifier
+đăng nhập. Tuy nhiên:
+
+- `StaffProfileService` không ghi `AuditEvent`, nên thay đổi identifier nhạy cảm
+  không xuất hiện trong lịch sử quản trị.
+- Service gọi `ensureAvailableForUpdate(...)` rồi `accounts.flush()` nhưng
+  không bắt `DataIntegrityViolationException`. Hai request đồng thời có thể
+  cùng vượt qua bước kiểm tra trước, sau đó một request vi phạm unique index và
+  rơi ra lỗi 500 thay vì contract `EMAIL_ALREADY_EXISTS`,
+  `PHONE_ALREADY_EXISTS` hoặc `IDENTIFIER_ALREADY_EXISTS`.
+- Test hiện tại chỉ kiểm tra happy path ở service, chưa có integration test cho
+  conflict/race và Audit.
+
+### Đề nghị
+
+- Ghi Audit cho thay đổi staff profile, ví dụ
+  `STAFF_SELF_PROFILE_UPDATED / ACCOUNT`, với before/after đã loại bỏ hoặc che
+  dữ liệu không nên log.
+- Bắt `DataIntegrityViolationException` quanh `flush()` và dùng
+  `AccountIdentifierAvailability.fromDatabase(...)` giống các luồng cập nhật
+  account khác.
+- Giữ các error code conflict hiện hành để FE map vào đúng field `email` hoặc
+  `phone`.
+- Thêm integration test cho update thành công, unknown field, duplicate email,
+  duplicate phone và hai request cạnh tranh cùng identifier.
+
+### Acceptance criteria
+
+- Mọi thay đổi staff profile thành công có Audit với actor/target rõ ràng.
+- Unique conflict tuần tự và concurrent đều không trả 500.
+- Thay đổi SĐT/email có hiệu lực cho lần đăng nhập tiếp theo; account UUID,
+  role, status và password không bị thay đổi.
+
+---
+
+## BE-GAP-017 — OpenAPI manual activation chưa khớp implementation
+
+**Ưu tiên:** P2
+
+**Trạng thái:** OPEN
+
+**Phát hiện khi đối chiếu Backend:** `70b2da1`
+
+### Hiện trạng
+
+Implementation `ManualActivationResponse` thực tế trả đầy đủ `reasonCode`,
+`reasonDetail`, `verificationMethod`, `evidenceNote`, `reviewedByAccountId` và
+`decisionNote`. Tuy nhiên schema cùng tên trong
+`openapi/email-verification.yaml` chưa khai báo các field này.
+
+Ngoài ra hai API danh sách của Receptionist và Manager nhận `status`, `page`,
+`size` trong controller nhưng OpenAPI chưa khai báo query parameters và giới
+hạn `size <= 100`.
+
+### Đề nghị
+
+- Đồng bộ schema OpenAPI với record Java thực tế; đánh dấu nullable cho các
+  field chỉ xuất hiện sau khi review.
+- Khai báo `status`, `page`, `size`, default value và enum ở cả hai list API.
+- Bổ sung generated contract test để tránh implementation và spec lệch lại.
+
+FE có thể bắt đầu tích hợp theo implementation đã merge, nhưng chưa chuyển mục
+này sang `RESOLVED` cho tới khi OpenAPI trở thành nguồn contract đầy đủ.
 
 ---
 

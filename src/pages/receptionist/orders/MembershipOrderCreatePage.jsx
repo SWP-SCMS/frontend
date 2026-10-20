@@ -116,7 +116,13 @@ export default function MembershipOrderCreatePage() {
           .then((order) => setPending(order ?? null))
           .catch(() => {});
       }
-      setError(err);
+      if (code === 'MEMBERSHIP_OFFER_NOT_AVAILABLE') {
+        setOfferId('');
+        setError(new Error('Gói tập hoặc loại gói vừa ngừng hoạt động. Vui lòng chọn gói khác.'));
+        listActiveOffers().then(setOffers).catch(() => setOffers([]));
+      } else {
+        setError(err);
+      }
     } finally {
       setSubmitting(false);
     }

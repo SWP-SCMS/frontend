@@ -157,16 +157,35 @@ export default function RegisterPage() {
       // page: fullName trimmed, phone canonical (transform), email
       // trimmed+lowercased, password passed through unchanged (no
       // trim), birthDate as-is.
-      await registerRequest({
+      const response = await registerRequest({
         fullName: data.fullName,
         phone: data.phone,
         email: data.email.toLowerCase(),
         password: data.password,
         birthDate: data.birthDate,
       });
-      // 201 Created, no auto-login — send the user to login with a hint.
-      navigate('/login?registered=1', { replace: true });
+      if (response?.verificationRequired) {
+        navigate('/verify-email', {
+          replace: true,
+          state: {
+            email: data.email.toLowerCase(),
+            ...response,
+          },
+        });
+      } else {
+        navigate('/login?registered=1', { replace: true });
+      }
     } catch (err) {
+      if (err?.response?.data?.code === 'EMAIL_VERIFICATION_PENDING') {
+        navigate('/verify-email', {
+          replace: true,
+          state: {
+            email: data.email.toLowerCase(),
+            ...err.response.data,
+          },
+        });
+        return;
+      }
       // Shared helper: data.errors + EMAIL/PHONE uniqueness.
       // The allowlist MUST match the fields this page actually renders
       // and registers; any backend field outside this list is treated

@@ -18,6 +18,7 @@ import {
   endCoachAssignment,
   getActiveCoachAssignment,
   listCoachAssignmentHistory,
+  listCoachAssignmentWorkloads,
 } from '../../services/coachAssignmentService';
 import { searchStaffAccounts } from '../../services/staffAccountService';
 import { formatGymDate, formatGymTime } from '../../utils/gymTime';
@@ -46,6 +47,8 @@ const ERROR_MESSAGES = {
   COACH_ASSIGNMENT_NOT_FOUND: 'Không còn phân công HLV đang hoạt động để kết thúc.',
   COACH_ASSIGNMENT_CONFLICT:
     'Trạng thái phân công vừa thay đổi. Vui lòng tải lại và thử lại.',
+  COACH_CAPACITY_EXCEEDED:
+    'Huấn luyện viên vừa đạt số hội viên tối đa. Vui lòng chọn HLV khác.',
 };
 
 function businessMessage(error) {
@@ -110,16 +113,23 @@ export default function MemberCoachAssignmentCard({
     setCoachesError(null);
     assignForm.reset({ coachAccountId: '', reason: '' });
     setShowAssign(true);
-    if (coaches.length > 0 || coachesLoading) return;
+    if (coachesLoading) return;
     setCoachesLoading(true);
     try {
-      const page = await searchStaffAccounts({
-        role: ROLES.COACH,
-        status: ACCOUNT_STATUS.ACTIVE,
-        page: 0,
-        size: 100,
-      });
-      setCoaches(page?.content || []);
+      const [page, workloads] = await Promise.all([
+        searchStaffAccounts({
+          role: ROLES.COACH,
+          status: ACCOUNT_STATUS.ACTIVE,
+          page: 0,
+          size: 100,
+        }),
+        listCoachAssignmentWorkloads(),
+      ]);
+      const workloadById = new Map(workloads.map((item) => [item.coachAccountId, item]));
+      setCoaches((page?.content || []).map((coach) => ({
+        ...coach,
+        workload: workloadById.get(coach.accountId) || null,
+      })));
     } catch (error) {
       setCoachesError(error);
     } finally {
@@ -285,8 +295,13 @@ export default function MemberCoachAssignmentCard({
                   {coachesLoading ? 'Đang tải…' : '-- Chọn huấn luyện viên --'}
                 </option>
                 {coaches.map((coach) => (
-                  <option key={coach.accountId} value={coach.accountId}>
+                  <option
+                    key={coach.accountId}
+                    value={coach.accountId}
+                    disabled={coach.workload?.availableForAssignment === false}
+                  >
                     {coach.fullName} · {coach.phone || coach.email || coach.accountId}
+                    {coach.workload ? ` · ${coach.workload.activeMemberCount}/${coach.workload.maximumMemberCount} hội viên${coach.workload.availableForAssignment ? '' : ' · Đã đầy'}` : ''}
                   </option>
                 ))}
               </Form.Select>

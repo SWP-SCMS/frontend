@@ -63,9 +63,8 @@ export async function listCoachAssignmentCandidates({
   return data;
 }
 
-// Workload is informational only. maximumMemberCount and
-// availableForAssignment are backend placeholders, so callers must not use
-// either field to disable or reject an assignment.
+// Capacity is enforced by the backend during assign/reassign. The response is
+// used for early UI feedback only; a concurrent mutation can still be rejected.
 export async function listCoachAssignmentWorkloads() {
   const { data } = await api.get('/manager/coaches/assignment-workloads');
   return Array.isArray(data) ? data : [];

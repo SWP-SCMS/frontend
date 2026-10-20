@@ -28,7 +28,7 @@ export const HOMEPAGE_COPY = {
   planEyebrow: 'Bảng gói tập niêm yết',
   planTitle: 'Gói tập thiết kế riêng cho mục tiêu của bạn',
   planSubtitle:
-    'Hai gói tập cố định minh bạch, quyền lợi rõ ràng, không phát sinh chi phí. Lựa chọn mức độ đồng hành phù hợp nhất với hành trình rèn luyện của bạn.',
+    'Các gói tập đang mở bán được cập nhật trực tiếp từ hệ thống, với mức giá và quyền lợi minh bạch. Lựa chọn mức độ đồng hành phù hợp nhất với hành trình rèn luyện của bạn.',
 
   spaceEyebrow: 'Không gian thực tế',
   spaceTitle: 'Không gian truyền cảm hứng bứt phá',

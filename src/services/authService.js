@@ -58,6 +58,30 @@ export async function registerRequest(payload) {
   return data;
 }
 
+export async function verifyEmailRequest({ email, otp }) {
+  const { data } = await authApi.post('/auth/email-verification/verify', {
+    email,
+    otp,
+  });
+  return data;
+}
+
+export async function resendVerificationEmailRequest({ email }) {
+  const { data } = await authApi.post('/auth/email-verification/resend', {
+    email,
+  });
+  return data;
+}
+
+export async function changePendingEmailRequest({ newEmail, csrfToken }) {
+  const { data } = await authApi.post(
+    '/auth/email-verification/change-email',
+    { newEmail },
+    { headers: { 'X-Pending-CSRF': csrfToken } },
+  );
+  return data;
+}
+
 // POST /api/v1/auth/change-password
 // Expected: 204 No Content.
 // BR-ACC-24: đổi mật khẩu cần người dùng đã đăng nhập, nên phải gửi kèm

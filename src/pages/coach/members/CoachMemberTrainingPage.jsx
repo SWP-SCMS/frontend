@@ -19,8 +19,10 @@ import TrainingContent from '../../../components/common/TrainingContent';
 import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
 import {
   createCoachTrainingPlan,
+  archiveCoachTrainingPlan,
   listCoachTrainingFeedback,
   listCoachTrainingPlans,
+  listCoachTrainingPlanVersions,
   listCoachTrainingResults,
   updateCoachTrainingPlan,
 } from '../../../services/trainingService';
@@ -61,6 +63,8 @@ const TRAINING_PLAN_ERROR_MESSAGES = {
     'Chỉ giáo án đang hoạt động mới có thể được cập nhật.',
   TRAINING_PLAN_VERSION_NOT_FOUND:
     'Giáo án chưa có phiên bản hợp lệ để cập nhật.',
+  TRAINING_PLAN_VERSION_CONFLICT:
+    'Giáo án đã được cập nhật ở nơi khác. Nội dung bạn nhập vẫn được giữ; hãy tải lại dữ liệu trước khi lưu tiếp.',
 };
 
 const trainingPlanSchema = z.object({
@@ -69,10 +73,14 @@ const trainingPlanSchema = z.object({
     .trim()
     .min(1, 'Vui lòng nhập tên giáo án.')
     .max(200, 'Tên giáo án không được vượt quá 200 ký tự.'),
-  goal: z.string(),
-  schedule: z.string(),
-  exercises: z.string(),
-  notes: z.string(),
+  goal: z.string().max(4000, 'Mục tiêu không được vượt quá 4000 ký tự.'),
+  schedule: z.string().max(4000, 'Lịch tập không được vượt quá 4000 ký tự.'),
+  exercises: z.string().superRefine((value, context) => {
+    const rows = value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+    if (rows.length > 100) context.addIssue({ code: 'custom', message: 'Tối đa 100 bài tập.' });
+    if (rows.some((item) => item.length > 500)) context.addIssue({ code: 'custom', message: 'Mỗi bài tập tối đa 500 ký tự.' });
+  }),
+  notes: z.string().max(4000, 'Ghi chú không được vượt quá 4000 ký tự.'),
 });
 
 const EMPTY_PLAN_FORM = {
@@ -115,61 +123,14 @@ function planToForm(plan) {
   };
 }
 
-function buildPlanContent(form, previousContent) {
-  const content =
-    previousContent &&
-    typeof previousContent === 'object' &&
-    !Array.isArray(previousContent)
-      ? { ...previousContent }
-      : {};
-
-  function setText(key, aliases, value) {
-    const normalized = value.trim();
-    const existingKey = [key, ...aliases].find((candidate) =>
-      Object.prototype.hasOwnProperty.call(content, candidate),
-    );
-    const existingValue = existingKey ? content[existingKey] : undefined;
-
-    for (const alias of aliases) delete content[alias];
-    if (!normalized) {
-      delete content[key];
-    } else if (existingKey && value === fieldToText(existingValue)) {
-      content[key] = existingValue;
-    } else {
-      content[key] = normalized;
-    }
+function buildPlanContent(form) {
+  const content = {};
+  for (const key of ['goal', 'schedule', 'notes']) {
+    const value = form[key].trim();
+    if (value) content[key] = value;
   }
-
-  setText('goal', [], form.goal);
-  setText('schedule', [], form.schedule);
-  setText('notes', ['note'], form.notes);
-
-  const existingExerciseKey = Object.prototype.hasOwnProperty.call(
-    content,
-    'exercises',
-  )
-    ? 'exercises'
-    : Object.prototype.hasOwnProperty.call(content, 'exercise')
-      ? 'exercise'
-      : null;
-  const existingExercises = existingExerciseKey
-    ? content[existingExerciseKey]
-    : undefined;
-  delete content.exercise;
-  if (!form.exercises.trim()) {
-    delete content.exercises;
-  } else if (
-    existingExerciseKey &&
-    form.exercises === fieldToText(existingExercises)
-  ) {
-    content.exercises = existingExercises;
-  } else {
-    content.exercises = form.exercises
-      .split(/\r?\n/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
+  const exercises = form.exercises.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  if (exercises.length) content.exercises = exercises;
   return content;
 }
 
@@ -191,6 +152,10 @@ export default function CoachMemberTrainingPage({ kind }) {
   const [saveError, setSaveError] = useState(null);
   const [businessError, setBusinessError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [versions, setVersions] = useState(null);
+  const [versionsPlan, setVersionsPlan] = useState(null);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [archivingId, setArchivingId] = useState(null);
 
   const {
     register,
@@ -249,8 +214,9 @@ export default function CoachMemberTrainingPage({ kind }) {
     setBusinessError('');
     const payload = {
       title: form.title.trim(),
-      content: buildPlanContent(form, selectedPlan?.content),
+      content: buildPlanContent(form),
     };
+    if (modalMode === 'edit') payload.expectedVersionNumber = selectedPlan.versionNumber;
 
     try {
       if (modalMode === 'edit') {
@@ -278,6 +244,21 @@ export default function CoachMemberTrainingPage({ kind }) {
       if (message) setBusinessError(message);
       else setSaveError(err);
     }
+  }
+
+  async function openVersions(plan) {
+    setVersionsPlan(plan); setVersions(null); setVersionsLoading(true); setError(null);
+    try { setVersions(await listCoachTrainingPlanVersions(memberAccountId, plan.id)); }
+    catch (err) { setError(err); setVersionsPlan(null); }
+    finally { setVersionsLoading(false); }
+  }
+
+  async function archivePlan(plan) {
+    if (!window.confirm(`Lưu trữ giáo án “${plan.title}”? Giáo án sẽ không thể khôi phục.`)) return;
+    setArchivingId(plan.id); setError(null);
+    try { await archiveCoachTrainingPlan(memberAccountId, plan.id); setSuccessMessage('Đã lưu trữ giáo án.'); await load(); }
+    catch (err) { setError(err); }
+    finally { setArchivingId(null); }
   }
 
   return (
@@ -332,17 +313,15 @@ export default function CoachMemberTrainingPage({ kind }) {
                   {displayTime(item) ? <span className="small text-muted">{displayTime(item)}</span> : null}
                 </div>
                 {isPlanPage ? (
-                  <Button
-                    size="sm"
-                    variant="outline-danger"
-                    disabled={item.status !== 'ACTIVE'}
-                    onClick={() => openEditModal(item)}
-                  >
-                    Cập nhật
-                  </Button>
+                  <div className="d-flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline-secondary" onClick={() => openVersions(item)}>Lịch sử</Button>
+                    <Button size="sm" variant="outline-danger" disabled={item.status !== 'ACTIVE'} onClick={() => openEditModal(item)}>Cập nhật</Button>
+                    <Button size="sm" variant="danger" disabled={item.status !== 'ACTIVE' || archivingId === item.id} onClick={() => archivePlan(item)}>{archivingId === item.id ? 'Đang lưu trữ…' : 'Lưu trữ'}</Button>
+                  </div>
                 ) : null}
               </div>
               <TrainingContent value={item.content ?? item} />
+              {isPlanPage ? <div className="small text-muted mt-2">Cập nhật: {item.updatedAt ? displayTime(item) : '—'} · Version tạo lúc: {item.versionCreatedAt ? `${formatGymDate(item.versionCreatedAt)} · ${formatGymTime(item.versionCreatedAt)}` : '—'} · Schema v{item.contentSchemaVersion || 1}</div> : null}
             </Card.Body>
           </Card>
         ))
@@ -394,7 +373,9 @@ export default function CoachMemberTrainingPage({ kind }) {
                 rows={2}
                 {...register('goal')}
                 placeholder="Mục tiêu huấn luyện của hội viên"
+                isInvalid={Boolean(errors.goal)}
               />
+              <Form.Control.Feedback type="invalid">{errors.goal?.message}</Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="training-plan-schedule">
@@ -404,7 +385,9 @@ export default function CoachMemberTrainingPage({ kind }) {
                 rows={2}
                 {...register('schedule')}
                 placeholder="Ví dụ: Thứ 2, 4, 6 — 60 phút/buổi"
+                isInvalid={Boolean(errors.schedule)}
               />
+              <Form.Control.Feedback type="invalid">{errors.schedule?.message}</Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="training-plan-exercises">
@@ -414,7 +397,9 @@ export default function CoachMemberTrainingPage({ kind }) {
                 rows={5}
                 {...register('exercises')}
                 placeholder={'Mỗi dòng một bài tập, ví dụ:\nSquat — 3 hiệp × 10 lần\nPlank — 3 hiệp × 45 giây'}
+                isInvalid={Boolean(errors.exercises)}
               />
+              <Form.Control.Feedback type="invalid">{errors.exercises?.message}</Form.Control.Feedback>
               <Form.Text className="text-muted">
                 Nhập mỗi bài tập trên một dòng.
               </Form.Text>
@@ -427,7 +412,9 @@ export default function CoachMemberTrainingPage({ kind }) {
                 rows={3}
                 {...register('notes')}
                 placeholder="Lưu ý về kỹ thuật, cường độ hoặc sức khỏe"
+                isInvalid={Boolean(errors.notes)}
               />
+              <Form.Control.Feedback type="invalid">{errors.notes?.message}</Form.Control.Feedback>
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
@@ -445,6 +432,11 @@ export default function CoachMemberTrainingPage({ kind }) {
             </Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={Boolean(versionsPlan)} onHide={() => setVersionsPlan(null)} size="lg" centered>
+        <Modal.Header closeButton><Modal.Title>Lịch sử — {versionsPlan?.title}</Modal.Title></Modal.Header>
+        <Modal.Body>{versionsLoading ? <div className="text-center py-4"><Spinner variant="danger" /></div> : (versions || []).map((version) => <Card key={version.id} className="mb-3"><Card.Body><div className="d-flex justify-content-between mb-2"><strong>Phiên bản {version.versionNumber}</strong><span className="small text-muted">{formatGymDate(version.createdAt)} · {formatGymTime(version.createdAt)}</span></div><div className="small text-muted mb-2">Người tạo: {version.createdByAccountId}</div><TrainingContent value={version.content} /></Card.Body></Card>)}</Modal.Body>
       </Modal>
     </div>
   );
