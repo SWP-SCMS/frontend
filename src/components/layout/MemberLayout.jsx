@@ -9,7 +9,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Modal } from 'react-bootstrap';
 import { useAuth } from '../../context/useAuth';
-import { getMyMemberships } from '../../services/membershipService';
+import {
+  getMyMemberships,
+  listActiveOffers,
+} from '../../services/membershipService';
+import { getMembershipBenefitState } from '../../utils/membershipBenefits';
 import { MemberAreaContext } from './MemberAreaContext';
 import MemberSidebar from './MemberSidebar';
 import MemberHeader from './MemberHeader';
@@ -22,6 +26,7 @@ export default function MemberLayout({ children }) {
   const navigate = useNavigate();
 
   const [memberships, setMemberships] = useState([]);
+  const [activeOffers, setActiveOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const unreadCount = useNotificationUnreadCount();
@@ -47,6 +52,20 @@ export default function MemberLayout({ children }) {
   useEffect(() => {
     loadMemberships();
   }, [loadMemberships]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listActiveOffers()
+      .then((offers) => {
+        if (!cancelled) setActiveOffers(offers);
+      })
+      .catch(() => {
+        if (!cancelled) setActiveOffers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // BR-MEM-04/05: Membership hết hạn chuyển sang EXPIRED và không dùng lại.
   // Chỉ Membership ACTIVE mới được coi là "đang có gói".
@@ -79,6 +98,36 @@ export default function MemberLayout({ children }) {
     [benefitsKnown, error, hasBenefit, loading],
   );
 
+  // Hiển thị tên gói tối thiểu đang mở bán có Benefit tương ứng. Thông tin
+  // được suy ra từ contract Offer động, không ghi cứng Benefit -> Plan.
+  const requiredPlanByBenefit = useMemo(() => {
+    const planRank = { BASIC: 0, PLUS: 1, PREMIUM: 2 };
+    const candidates = [...activeOffers].sort((left, right) => {
+      const leftCode = String(left.planCode || '').toUpperCase();
+      const rightCode = String(right.planCode || '').toUpperCase();
+      const rankDifference =
+        (planRank[leftCode] ?? Number.MAX_SAFE_INTEGER) -
+        (planRank[rightCode] ?? Number.MAX_SAFE_INTEGER);
+      if (rankDifference !== 0) return rankDifference;
+      return Number(left.priceAmount || 0) - Number(right.priceAmount || 0);
+    });
+
+    const labels = new Map();
+    candidates.forEach((offer) => {
+      const label = offer.planDisplayName || offer.planCode;
+      if (!label) return;
+      getMembershipBenefitState(offer).benefitCodes.forEach((code) => {
+        if (!labels.has(code)) labels.set(code, label);
+      });
+    });
+    return labels;
+  }, [activeOffers]);
+
+  const getRequiredPlanLabel = useCallback(
+    (benefitCode) => requiredPlanByBenefit.get(benefitCode) || null,
+    [requiredPlanByBenefit],
+  );
+
   const areaValue = useMemo(
     () => ({
       memberships,
@@ -88,6 +137,7 @@ export default function MemberLayout({ children }) {
       benefitsKnown,
       hasBenefit,
       isBenefitLocked,
+      getRequiredPlanLabel,
       loading,
       error,
       reload: loadMemberships,
@@ -99,6 +149,7 @@ export default function MemberLayout({ children }) {
       benefitsKnown,
       hasBenefit,
       isBenefitLocked,
+      getRequiredPlanLabel,
       loading,
       error,
       loadMemberships,
@@ -136,7 +187,8 @@ export default function MemberLayout({ children }) {
           statusText={statusText}
           items={MEMBER_SIDEBAR_ITEMS}
           isBenefitLocked={isBenefitLocked}
-          onLockedClick={(item) => setBenefitNoticeFor(item.label)}
+          getRequiredPlanLabel={getRequiredPlanLabel}
+          onLockedClick={setBenefitNoticeFor}
           onRequestLogout={requestLogout}
         />
 
@@ -156,11 +208,16 @@ export default function MemberLayout({ children }) {
           centered
         >
           <Modal.Header closeButton>
-            <Modal.Title className="h5">Gói tập chưa có quyền phù hợp</Modal.Title>
+            <Modal.Title className="h5">Tính năng chưa có trong gói</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            Gói tập hiện tại chưa có quyền sử dụng dịch vụ &quot;
-            {benefitNoticeFor}&quot;.
+            Gói tập hiện tại chưa bao gồm tính năng &quot;
+            {benefitNoticeFor?.label}&quot;.
+            {getRequiredPlanLabel(benefitNoticeFor?.requiredBenefit)
+              ? ` Tính năng này có trong gói ${getRequiredPlanLabel(
+                  benefitNoticeFor.requiredBenefit,
+                )}.`
+              : ''}
           </Modal.Body>
           <Modal.Footer>
             <Button
@@ -176,7 +233,7 @@ export default function MemberLayout({ children }) {
                 navigate('/member/plan');
               }}
             >
-              Xem gói tập
+              Xem các gói tập
             </Button>
           </Modal.Footer>
         </Modal>

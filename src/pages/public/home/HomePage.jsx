@@ -63,16 +63,38 @@ function buildDynamicPlanOverview(offers) {
     const bullets = benefitState.known
       ? groupMembershipBenefits(sample)
           .filter((item) => item.status !== 'INACTIVE')
-          .map((item) => item.displayName)
+          .map((item) => ({
+            key: item.key,
+            text: item.displayName,
+            children:
+              item.kind === 'group'
+                ? item.benefits.map((benefit) => ({
+                    code: benefit.code,
+                    text: benefit.displayName,
+                  }))
+                : [],
+          }))
       : [];
     if (!benefitState.known && sample.supportsBooking) {
-      bullets.push('Đặt lịch lớp trực tuyến');
+      bullets.push({
+        key: 'CLASS_BOOKING',
+        text: 'Đặt lịch lớp trực tuyến',
+        children: [],
+      });
     }
     if (!benefitState.known && sample.supportsPersonalCoaching) {
-      bullets.push('Huấn luyện viên cá nhân');
+      bullets.push({
+        key: 'PERSONAL_COACHING',
+        text: 'Huấn luyện viên cá nhân',
+        children: [],
+      });
     }
     if (bullets.length === 0) {
-      bullets.push('Quyền lợi áp dụng theo loại gói đã chọn');
+      bullets.push({
+        key: 'PLAN_BENEFITS',
+        text: 'Quyền lợi áp dụng theo loại gói đã chọn',
+        children: [],
+      });
     }
     return {
       code,
@@ -276,12 +298,26 @@ export default function HomePage() {
                           <span className="scms-home-muted small">{info.unit}</span>
                         </div>
                         <ul className="list-unstyled d-flex flex-column gap-3 mb-0">
-                          {plan.bullets.map((b) => (
-                            <li key={b} className="d-flex gap-2 small">
+                          {plan.bullets.map((benefit) => (
+                            <li key={benefit.key} className="d-flex gap-2 small">
                               <span className="scms-home-check">
                                 <Icon name="check" size={18} />
                               </span>
-                              <span>{b}</span>
+                              {benefit.children.length > 0 ? (
+                                <details className="scms-home-benefit-group">
+                                  <summary>
+                                    <span>{benefit.text}</span>
+                                    <Icon name="chevronDown" size={15} />
+                                  </summary>
+                                  <ul>
+                                    {benefit.children.map((child) => (
+                                      <li key={child.code}>{child.text}</li>
+                                    ))}
+                                  </ul>
+                                </details>
+                              ) : (
+                                <span>{benefit.text}</span>
+                              )}
                             </li>
                           ))}
                         </ul>
