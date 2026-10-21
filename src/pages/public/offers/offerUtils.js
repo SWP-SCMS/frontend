@@ -3,7 +3,10 @@
 // Các con số "giá mỗi tháng" và "tiết kiệm" chỉ để tham khảo, tính từ giá và
 // số ngày do BE trả về; giá thanh toán thật luôn là priceAmount của Offer.
 
-import { getMembershipBenefitState } from '../../../utils/membershipBenefits';
+import {
+  getMembershipBenefitState,
+  groupMembershipBenefits,
+} from '../../../utils/membershipBenefits';
 
 // Chỉ hiển thị trên trang công khai những gói có mô tả tối thiểu 3 ký tự.
 // Gói chưa nhập mô tả (hoặc chỉ gõ 1-2 ký tự thử) coi như chưa hoàn thiện nên
@@ -74,12 +77,19 @@ export function findBestSavingsOfferId(pricing) {
 export function buildFeatures(offer) {
   const benefitState = getMembershipBenefitState(offer);
   if (benefitState.known) {
-    return benefitState.benefits.map((benefit) => ({
-      code: benefit.code,
-      ok: benefit.status !== 'INACTIVE',
-      text: benefit.displayName,
-      description: benefit.description,
-      status: benefit.status,
+    return groupMembershipBenefits(offer).map((item) => ({
+      code: item.key,
+      ok: item.status !== 'INACTIVE',
+      text: item.displayName,
+      status: item.status,
+      kind: item.kind,
+      children:
+        item.kind === 'group'
+          ? item.benefits.map((benefit) => ({
+              code: benefit.code,
+              text: benefit.displayName,
+            }))
+          : [],
     }));
   }
 

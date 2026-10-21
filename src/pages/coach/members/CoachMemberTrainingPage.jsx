@@ -65,6 +65,8 @@ const TRAINING_PLAN_ERROR_MESSAGES = {
     'Giáo án chưa có phiên bản hợp lệ để cập nhật.',
   TRAINING_PLAN_VERSION_CONFLICT:
     'Giáo án đã được cập nhật ở nơi khác. Nội dung bạn nhập vẫn được giữ; hãy tải lại dữ liệu trước khi lưu tiếp.',
+  ACTIVE_TRAINING_PLAN_CHANGED:
+    'Giáo án đang hoạt động đã thay đổi. Nội dung bạn nhập vẫn được giữ; hãy kiểm tra lại trước khi xác nhận thay thế.',
 };
 
 const trainingPlanSchema = z.object({
@@ -156,6 +158,8 @@ export default function CoachMemberTrainingPage({ kind }) {
   const [versionsPlan, setVersionsPlan] = useState(null);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [archivingId, setArchivingId] = useState(null);
+  const [replacementPrompt, setReplacementPrompt] = useState(null);
+  const [replacementSubmitting, setReplacementSubmitting] = useState(false);
 
   const {
     register,
@@ -189,6 +193,7 @@ export default function CoachMemberTrainingPage({ kind }) {
     setModalMode('create');
     setSaveError(null);
     setBusinessError('');
+    setReplacementPrompt(null);
     reset(EMPTY_PLAN_FORM);
   }
 
@@ -197,21 +202,24 @@ export default function CoachMemberTrainingPage({ kind }) {
     setModalMode('edit');
     setSaveError(null);
     setBusinessError('');
+    setReplacementPrompt(null);
     reset(planToForm(plan));
   }
 
   function closeModal() {
-    if (isSubmitting) return;
+    if (isSubmitting || replacementSubmitting) return;
     setModalMode(null);
     setSelectedPlan(null);
     setSaveError(null);
     setBusinessError('');
+    setReplacementPrompt(null);
     reset(EMPTY_PLAN_FORM);
   }
 
   async function onSavePlan(form) {
     setSaveError(null);
     setBusinessError('');
+    setReplacementPrompt(null);
     const payload = {
       title: form.title.trim(),
       content: buildPlanContent(form),
@@ -237,12 +245,55 @@ export default function CoachMemberTrainingPage({ kind }) {
       if (completedMode === 'create' && page !== 0) setPage(0);
       else await load();
     } catch (err) {
+      if (modalMode === 'create' && err?.response?.data?.code === 'ACTIVE_TRAINING_PLAN_EXISTS') {
+        const problem = err.response.data;
+        setReplacementPrompt({
+          payload,
+          activePlanId: problem.activePlanId,
+          activePlanTitle: problem.activePlanTitle,
+          currentVersionNumber: problem.currentVersionNumber,
+        });
+        return;
+      }
       applyServerErrors(err, setFieldError, {
         fields: ['title'],
       });
       const message = trainingPlanErrorMessage(err);
       if (message) setBusinessError(message);
       else setSaveError(err);
+    }
+  }
+
+  async function confirmReplacePlan() {
+    if (!replacementPrompt) return;
+    setReplacementSubmitting(true);
+    setSaveError(null);
+    setBusinessError('');
+    try {
+      await createCoachTrainingPlan(memberAccountId, {
+        ...replacementPrompt.payload,
+        replaceActivePlanId: replacementPrompt.activePlanId,
+        expectedActivePlanVersion: replacementPrompt.currentVersionNumber,
+      });
+      setSuccessMessage('Đã tạo giáo án mới và lưu trữ giáo án cũ.');
+      setReplacementPrompt(null);
+      setModalMode(null);
+      setSelectedPlan(null);
+      reset(EMPTY_PLAN_FORM);
+      if (page !== 0) setPage(0);
+      else await load();
+    } catch (err) {
+      const message = trainingPlanErrorMessage(err);
+      if (err?.response?.data?.code === 'ACTIVE_TRAINING_PLAN_CHANGED') {
+        setReplacementPrompt(null);
+        setBusinessError(message);
+      } else if (message) {
+        setBusinessError(message);
+      } else {
+        setSaveError(err);
+      }
+    } finally {
+      setReplacementSubmitting(false);
     }
   }
 
@@ -347,6 +398,35 @@ export default function CoachMemberTrainingPage({ kind }) {
               </Alert>
             ) : null}
             {businessError ? <Alert variant="danger">{businessError}</Alert> : null}
+            {replacementPrompt ? (
+              <Alert variant="warning">
+                <div className="fw-semibold mb-1">Hội viên đang có một giáo án hoạt động</div>
+                <div className="mb-3">
+                  Giáo án “{replacementPrompt.activePlanTitle || 'Không có tên'}” sẽ được lưu trữ
+                  và giáo án mới sẽ trở thành giáo án đang hoạt động.
+                </div>
+                <div className="d-flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="danger"
+                    disabled={replacementSubmitting}
+                    onClick={confirmReplacePlan}
+                  >
+                    {replacementSubmitting ? 'Đang thay thế…' : 'Xác nhận thay thế'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline-secondary"
+                    disabled={replacementSubmitting}
+                    onClick={() => setReplacementPrompt(null)}
+                  >
+                    Giữ giáo án hiện tại
+                  </Button>
+                </div>
+              </Alert>
+            ) : null}
             <ErrorAlert
               error={saveError}
               title={modalMode === 'edit' ? 'Không cập nhật được giáo án' : 'Không tạo được giáo án'}
@@ -359,6 +439,7 @@ export default function CoachMemberTrainingPage({ kind }) {
                 {...register('title')}
                 maxLength={200}
                 placeholder="Ví dụ: Tăng sức bền trong 4 tuần"
+                disabled={Boolean(replacementPrompt)}
                 isInvalid={Boolean(errors.title)}
               />
               <Form.Control.Feedback type="invalid">
@@ -373,6 +454,7 @@ export default function CoachMemberTrainingPage({ kind }) {
                 rows={2}
                 {...register('goal')}
                 placeholder="Mục tiêu huấn luyện của hội viên"
+                disabled={Boolean(replacementPrompt)}
                 isInvalid={Boolean(errors.goal)}
               />
               <Form.Control.Feedback type="invalid">{errors.goal?.message}</Form.Control.Feedback>
@@ -385,6 +467,7 @@ export default function CoachMemberTrainingPage({ kind }) {
                 rows={2}
                 {...register('schedule')}
                 placeholder="Ví dụ: Thứ 2, 4, 6 — 60 phút/buổi"
+                disabled={Boolean(replacementPrompt)}
                 isInvalid={Boolean(errors.schedule)}
               />
               <Form.Control.Feedback type="invalid">{errors.schedule?.message}</Form.Control.Feedback>
@@ -397,6 +480,7 @@ export default function CoachMemberTrainingPage({ kind }) {
                 rows={5}
                 {...register('exercises')}
                 placeholder={'Mỗi dòng một bài tập, ví dụ:\nSquat — 3 hiệp × 10 lần\nPlank — 3 hiệp × 45 giây'}
+                disabled={Boolean(replacementPrompt)}
                 isInvalid={Boolean(errors.exercises)}
               />
               <Form.Control.Feedback type="invalid">{errors.exercises?.message}</Form.Control.Feedback>
@@ -412,16 +496,17 @@ export default function CoachMemberTrainingPage({ kind }) {
                 rows={3}
                 {...register('notes')}
                 placeholder="Lưu ý về kỹ thuật, cường độ hoặc sức khỏe"
+                disabled={Boolean(replacementPrompt)}
                 isInvalid={Boolean(errors.notes)}
               />
               <Form.Control.Feedback type="invalid">{errors.notes?.message}</Form.Control.Feedback>
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="outline-secondary" onClick={closeModal} disabled={isSubmitting}>
+            <Button variant="outline-secondary" onClick={closeModal} disabled={isSubmitting || replacementSubmitting}>
               Hủy
             </Button>
-            <Button variant="danger" type="submit" disabled={isSubmitting}>
+            <Button variant="danger" type="submit" disabled={isSubmitting || replacementSubmitting || Boolean(replacementPrompt)}>
               {isSubmitting ? (
                 <><Spinner animation="border" size="sm" className="me-2" />Đang lưu…</>
               ) : modalMode === 'edit' ? (

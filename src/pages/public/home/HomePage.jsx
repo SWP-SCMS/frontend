@@ -18,7 +18,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { listActiveOffers } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
-import { getMembershipBenefitState } from '../../../utils/membershipBenefits';
+import {
+  getMembershipBenefitState,
+  groupMembershipBenefits,
+} from '../../../utils/membershipBenefits';
 import PublicHeader from '../../../components/layout/PublicHeader';
 import PublicFooter from '../../../components/layout/PublicFooter';
 import Icon from '../../../components/layout/PublicIcon';
@@ -58,9 +61,9 @@ function buildDynamicPlanOverview(offers) {
     const sample = items[0];
     const benefitState = getMembershipBenefitState(sample);
     const bullets = benefitState.known
-      ? benefitState.benefits
-          .filter((benefit) => benefit.status !== 'INACTIVE')
-          .map((benefit) => benefit.displayName)
+      ? groupMembershipBenefits(sample)
+          .filter((item) => item.status !== 'INACTIVE')
+          .map((item) => item.displayName)
       : [];
     if (!benefitState.known && sample.supportsBooking) {
       bullets.push('Đặt lịch lớp trực tuyến');

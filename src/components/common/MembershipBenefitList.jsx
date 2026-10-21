@@ -1,23 +1,23 @@
-import { normalizeMembershipBenefits } from '../../utils/membershipBenefits';
+import { groupMembershipBenefits } from '../../utils/membershipBenefits';
 
 export default function MembershipBenefitList({
   benefitCodes = [],
   benefits = [],
   emptyMessage = 'Chưa có quyền lợi được cấu hình.',
 }) {
-  const normalized = normalizeMembershipBenefits({ benefitCodes, benefits });
+  const items = groupMembershipBenefits({ benefitCodes, benefits });
 
-  if (normalized.length === 0) {
+  if (items.length === 0) {
     return <p className="mb-0 text-muted">{emptyMessage}</p>;
   }
 
   return (
     <ul className="list-unstyled mb-0 d-grid gap-2">
-      {normalized.map((benefit) => {
-        const inactive = benefit.status === 'INACTIVE';
+      {items.map((item) => {
+        const inactive = item.status === 'INACTIVE';
         return (
           <li
-            key={benefit.code}
+            key={item.key}
             className={`d-flex align-items-start gap-2${
               inactive ? ' text-muted' : ''
             }`}
@@ -29,7 +29,23 @@ export default function MembershipBenefitList({
               {inactive ? '○' : '✓'}
             </span>
             <span>
-              <span>{benefit.displayName}</span>
+              {item.kind === 'group' ? (
+                <details>
+                  <summary>
+                    {item.displayName}{' '}
+                    <span className="text-muted">
+                      ({item.benefits.length} quyền lợi)
+                    </span>
+                  </summary>
+                  <ul className="mt-2 mb-0 ps-3">
+                    {item.benefits.map((benefit) => (
+                      <li key={benefit.code}>{benefit.displayName}</li>
+                    ))}
+                  </ul>
+                </details>
+              ) : (
+                <span>{item.displayName}</span>
+              )}
               {inactive ? (
                 <span className="badge text-bg-secondary ms-2">
                   Ngừng áp dụng
