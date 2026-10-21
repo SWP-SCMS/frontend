@@ -225,6 +225,45 @@
   color: #6b7280;
 }
 
+.sof-feat-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.sof-feat-group summary {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.sof-feat-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.sof-feat-group summary svg {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.sof-feat-group[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.sof-feat-group ul {
+  list-style: disc;
+  margin: 0.55rem 0 0;
+  padding-left: 1.1rem;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+}
+
+.sof-feat-group ul li {
+  display: list-item;
+  margin-top: 0.3rem;
+}
+
 .sof-actions {
   margin-top: auto;
   display: flex;

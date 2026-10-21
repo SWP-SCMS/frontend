@@ -68,6 +68,12 @@ const NotificationPage = lazy(
 const StaffProfilePage = lazy(
   () => import('../pages/common/StaffProfilePage'),
 );
+const StaffChangeEmailPage = lazy(
+  () => import('../pages/common/StaffChangeEmailPage'),
+);
+const StaffChangePasswordPage = lazy(
+  () => import('../pages/common/StaffChangePasswordPage'),
+);
 
 // Coach – Dashboard / Lịch phụ trách / Hồ sơ
 const CoachDashboardPage = lazy(
@@ -486,6 +492,8 @@ export default function AppRoutes() {
         <Route path="dashboard" element={withSuspense(<ReceptionistDashboardPage />)} />
         <Route path="notifications" element={withSuspense(<NotificationPage />)} />
         <Route path="profile" element={withSuspense(<StaffProfilePage />)} />
+        <Route path="profile/email" element={withSuspense(<StaffChangeEmailPage />)} />
+        <Route path="profile/password" element={withSuspense(<StaffChangePasswordPage />)} />
         <Route path="members" element={withSuspense(<ReceptionistMemberListPage />)} />
         <Route path="members/new" element={withSuspense(<ReceptionistMemberCreatePage />)} />
         <Route path="email-verification" element={withSuspense(<ReceptionManualActivationPage />)} />
@@ -548,6 +556,8 @@ export default function AppRoutes() {
           element={withSuspense(<CoachSessionMemberTrainingPage />)}
         />
         <Route path="profile" element={withSuspense(<CoachProfilePage />)} />
+        <Route path="profile/email" element={withSuspense(<StaffChangeEmailPage />)} />
+        <Route path="profile/password" element={withSuspense(<StaffChangePasswordPage />)} />
         <Route path="members" element={withSuspense(<CoachAssignedMemberListPage />)} />
         <Route path="members/:memberAccountId" element={withSuspense(<CoachMemberProfilePage />)} />
         <Route path="members/:memberAccountId/training-plans" element={withSuspense(<CoachMemberTrainingPage kind="plans" />)} />
@@ -627,6 +637,8 @@ export default function AppRoutes() {
         <Route path="audit-events" element={withSuspense(<AuditHistoryPage />)} />
         <Route path="notifications" element={withSuspense(<NotificationPage />)} />
         <Route path="profile" element={withSuspense(<StaffProfilePage />)} />
+        <Route path="profile/email" element={withSuspense(<StaffChangeEmailPage />)} />
+        <Route path="profile/password" element={withSuspense(<StaffChangePasswordPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
       </Route>
 

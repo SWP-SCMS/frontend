@@ -5,6 +5,7 @@ import { useController } from 'react-hook-form';
 import { listMembershipBenefits } from '../../../services/membershipPlanService';
 import {
   formatBenefitCode,
+  groupMembershipBenefits,
   normalizeBenefitCodes,
 } from '../../../utils/membershipBenefits';
 
@@ -55,6 +56,10 @@ export default function DisciplineBenefitField({ control, error }) {
       ),
     );
   }, [catalog, selectedCodes]);
+  const optionGroups = useMemo(
+    () => groupMembershipBenefits({ benefits: options }),
+    [options],
+  );
 
   function toggle(code) {
     field.onChange(
@@ -102,29 +107,38 @@ export default function DisciplineBenefitField({ control, error }) {
         ) : null}
 
         {!loading && !loadError
-          ? options.map((benefit) => {
-              const checked = selectedCodes.includes(benefit.code);
-              const inactive = benefit.status === 'INACTIVE';
-              return (
-                <Form.Check
-                  key={benefit.code}
-                  id={`discipline-benefit-${benefit.code}`}
-                  className="mb-2"
-                  checked={checked}
-                  disabled={inactive && !checked}
-                  onBlur={field.onBlur}
-                  onChange={() => toggle(benefit.code)}
-                  label={
-                    <span>
-                      <strong>{benefit.displayName || formatBenefitCode(benefit.code)}</strong>
-                      {inactive ? (
-                        <Badge bg="secondary" className="ms-2">Ngừng áp dụng</Badge>
-                      ) : null}
-                    </span>
-                  }
-                />
-              );
-            })
+          ? optionGroups.map((item) => (
+              <div key={item.key} className={item.kind === 'group' ? 'mb-3' : ''}>
+                {item.kind === 'group' ? (
+                  <div className="small text-uppercase text-muted fw-semibold mb-2">
+                    {item.displayName}
+                  </div>
+                ) : null}
+                {item.benefits.map((benefit) => {
+                  const checked = selectedCodes.includes(benefit.code);
+                  const inactive = benefit.status === 'INACTIVE';
+                  return (
+                    <Form.Check
+                      key={benefit.code}
+                      id={`discipline-benefit-${benefit.code}`}
+                      className="mb-2"
+                      checked={checked}
+                      disabled={inactive && !checked}
+                      onBlur={field.onBlur}
+                      onChange={() => toggle(benefit.code)}
+                      label={
+                        <span>
+                          <strong>{benefit.displayName || formatBenefitCode(benefit.code)}</strong>
+                          {inactive ? (
+                            <Badge bg="secondary" className="ms-2">Ngừng áp dụng</Badge>
+                          ) : null}
+                        </span>
+                      }
+                    />
+                  );
+                })}
+              </div>
+            ))
           : null}
       </div>
       {error ? <div className="invalid-feedback d-block">{error.message}</div> : null}

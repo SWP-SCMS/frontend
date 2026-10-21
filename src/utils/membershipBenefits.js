@@ -58,7 +58,7 @@ export function normalizeMembershipBenefits(source) {
   const orderedCodes = normalizeBenefitCodes(source.benefitCodes);
   const detailsByCode = new Map();
 
-  for (const benefit of rawBenefits) {
+  for (const [index, benefit] of rawBenefits.entries()) {
     const code = normalizeCode(benefit?.code);
     if (!code) continue;
 
@@ -79,20 +79,100 @@ export function normalizeMembershipBenefits(source) {
         typeof benefit.status === 'string' && benefit.status.trim()
           ? benefit.status.trim().toUpperCase()
           : null,
+      displayOrder: Number.isInteger(benefit.displayOrder)
+        ? benefit.displayOrder
+        : null,
+      groupCode: normalizeCode(benefit.groupCode) || null,
+      groupDisplayName:
+        typeof benefit.groupDisplayName === 'string' &&
+        benefit.groupDisplayName.trim()
+          ? benefit.groupDisplayName.trim()
+          : null,
+      groupDisplayOrder: Number.isInteger(benefit.groupDisplayOrder)
+        ? benefit.groupDisplayOrder
+        : null,
+      sourceIndex: index,
     });
 
     if (!orderedCodes.includes(code)) orderedCodes.push(code);
   }
 
-  return orderedCodes.map(
+  return orderedCodes
+    .map(
     (code) =>
       detailsByCode.get(code) || {
         code,
         displayName: formatBenefitCode(code),
         description: null,
         status: null,
+        displayOrder: null,
+        groupCode: null,
+        groupDisplayName: null,
+        groupDisplayOrder: null,
+        sourceIndex: orderedCodes.indexOf(code),
       },
-  );
+    )
+    .sort((left, right) => {
+      const leftOrder = left.groupDisplayOrder ?? left.displayOrder;
+      const rightOrder = right.groupDisplayOrder ?? right.displayOrder;
+      if (leftOrder == null && rightOrder == null) {
+        return left.sourceIndex - right.sourceIndex;
+      }
+      if (leftOrder == null) return 1;
+      if (rightOrder == null) return -1;
+      if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+      if (
+        left.groupCode &&
+        left.groupCode === right.groupCode &&
+        left.displayOrder !== right.displayOrder
+      ) {
+        return (left.displayOrder ?? 0) - (right.displayOrder ?? 0);
+      }
+      return left.code.localeCompare(right.code);
+    })
+    .map(({ sourceIndex: _sourceIndex, ...benefit }) => benefit);
+}
+
+export function groupMembershipBenefits(source) {
+  const benefits = normalizeMembershipBenefits(source);
+  const groups = new Map();
+
+  for (const benefit of benefits) {
+    if (!benefit.groupCode || !benefit.groupDisplayName) continue;
+    if (!groups.has(benefit.groupCode)) groups.set(benefit.groupCode, []);
+    groups.get(benefit.groupCode).push(benefit);
+  }
+
+  const emittedGroups = new Set();
+  const items = [];
+  for (const benefit of benefits) {
+    const grouped = benefit.groupCode
+      ? groups.get(benefit.groupCode) || []
+      : [];
+    if (grouped.length < 2) {
+      items.push({
+        kind: 'benefit',
+        key: benefit.code,
+        displayName: benefit.displayName,
+        status: benefit.status,
+        benefits: [benefit],
+      });
+      continue;
+    }
+    if (emittedGroups.has(benefit.groupCode)) continue;
+    emittedGroups.add(benefit.groupCode);
+    items.push({
+      kind: 'group',
+      key: `group:${benefit.groupCode}`,
+      code: benefit.groupCode,
+      displayName: benefit.groupDisplayName,
+      status: grouped.every((item) => item.status === 'INACTIVE')
+        ? 'INACTIVE'
+        : 'ACTIVE',
+      benefits: grouped,
+    });
+  }
+  return items;
 }
 
 export function getMembershipBenefitState(source) {

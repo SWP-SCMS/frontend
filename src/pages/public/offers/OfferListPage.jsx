@@ -241,7 +241,21 @@ function OfferCard({ offer, info, best }) {
             <span className="sof-feat-icon">
               <Icon name={f.ok ? 'check' : 'x'} size={16} />
             </span>
-            <span>{f.text}</span>
+            {f.kind === 'group' ? (
+              <details className="sof-feat-group">
+                <summary>
+                  <span>{f.text}</span>
+                  <Icon name="chevronDown" size={15} />
+                </summary>
+                <ul>
+                  {f.children.map((child) => (
+                    <li key={child.code}>{child.text}</li>
+                  ))}
+                </ul>
+              </details>
+            ) : (
+              <span>{f.text}</span>
+            )}
           </li>
         ))}
       </ul>

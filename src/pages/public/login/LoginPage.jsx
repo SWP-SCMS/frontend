@@ -7,6 +7,7 @@
 //     intended destination (state.from) or role-based home.
 //   - `?changed=1` means "đổi mật khẩu thành công, phiên cũ đã kết thúc" —
 //     báo người dùng trước khi họ điền form. Xem MemberChangePasswordPage.
+//   - `?emailChanged=1` means staff verified a new email and must sign in again.
 
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
@@ -71,11 +72,13 @@ export default function LoginPage() {
   // kèm `?changed=1`. Hiện thông báo thành công rồi xoá param — nếu giữ lại
   // thì F5 sẽ báo lại lần nữa, gây hiểu nhầm là vừa đổi xong.
   const passwordChanged = params.get('changed') === '1';
+  const emailChanged = params.get('emailChanged') === '1';
   const accountVerified = params.get('verified') === '1';
   const accountRegistered = params.get('registered') === '1';
 
   function dismissPasswordChangedNotice() {
     params.delete('changed');
+    params.delete('emailChanged');
     setParams(params, { replace: true });
   }
 
@@ -146,7 +149,7 @@ export default function LoginPage() {
           onClose={() => setError(null)}
         />
 
-        {passwordChanged ? (
+        {passwordChanged || emailChanged ? (
           <div className="scms-login-notice" role="status">
             <span className="scms-login-notice-icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" {...iconProps}>
@@ -154,7 +157,9 @@ export default function LoginPage() {
               </svg>
             </span>
             <span>
-              Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.
+              {emailChanged
+                ? 'Đổi email thành công. Vui lòng đăng nhập lại bằng email mới.'
+                : 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.'}
             </span>
             <button
               type="button"

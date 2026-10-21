@@ -2,6 +2,7 @@ import { Button, Form, Spinner } from 'react-bootstrap';
 import { useController } from 'react-hook-form';
 
 import { benefitLabel, PLAN_STATUS_OPTIONS } from './membershipPlanUi';
+import { groupMembershipBenefits } from '../../../utils/membershipBenefits';
 
 export default function MembershipPlanForm({
   benefits,
@@ -19,6 +20,7 @@ export default function MembershipPlanForm({
     control,
   });
   const selectedBenefitCodes = benefitCodesField.value || [];
+  const benefitItems = groupMembershipBenefits({ benefits });
 
   function toggleBenefit(code) {
     benefitCodesField.onChange(
@@ -89,23 +91,30 @@ export default function MembershipPlanForm({
           </div>
         ) : null}
         <div className="border rounded p-3">
-          {benefits.map((benefit) => {
-            const disabled = benefitsLocked || benefit.status !== 'ACTIVE';
-            return (
-              <Form.Check
-                key={benefit.code}
-                className="mb-2"
-                id={`benefit-${benefit.code}`}
-                checked={selectedBenefitCodes.includes(benefit.code)}
-                disabled={disabled}
-                onChange={() => toggleBenefit(benefit.code)}
-                onBlur={benefitCodesField.onBlur}
-                label={
-                  <strong>{benefitLabel(benefit)}</strong>
-                }
-              />
-            );
-          })}
+          {benefitItems.map((item) => (
+            <div key={item.key} className={item.kind === 'group' ? 'mb-3' : ''}>
+              {item.kind === 'group' ? (
+                <div className="small text-uppercase text-muted fw-semibold mb-2">
+                  {item.displayName}
+                </div>
+              ) : null}
+              {item.benefits.map((benefit) => {
+                const disabled = benefitsLocked || benefit.status !== 'ACTIVE';
+                return (
+                  <Form.Check
+                    key={benefit.code}
+                    className="mb-2"
+                    id={`benefit-${benefit.code}`}
+                    checked={selectedBenefitCodes.includes(benefit.code)}
+                    disabled={disabled}
+                    onChange={() => toggleBenefit(benefit.code)}
+                    onBlur={benefitCodesField.onBlur}
+                    label={<strong>{benefitLabel(benefit)}</strong>}
+                  />
+                );
+              })}
+            </div>
+          ))}
           {benefits.length === 0 ? (
             <span className="text-muted">Chưa có quyền lợi khả dụng.</span>
           ) : null}

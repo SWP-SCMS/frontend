@@ -3,9 +3,10 @@ import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { getMembershipPlan, listMembershipBenefits } from '../../../services/membershipPlanService';
 import { formatDate } from '../../../utils';
-import { benefitLabel, PLAN_STATUS_BADGE } from './membershipPlanUi';
+import { PLAN_STATUS_BADGE } from './membershipPlanUi';
 
 export default function MembershipPlanDetailPage() {
   const { planCode } = useParams();
@@ -24,7 +25,11 @@ export default function MembershipPlanDetailPage() {
   if (loading) return <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>;
   if (error || !plan) return <ErrorAlert error={error} title="Không tải được loại gói" />;
 
-  const benefitMap = new Map(benefits.map((benefit) => [benefit.code, benefit]));
+  const responseBenefits = Array.isArray(plan.benefits) && plan.benefits.length
+    ? plan.benefits
+    : plan.benefitCodes
+        ?.map((code) => benefits.find((benefit) => benefit.code === code))
+        .filter(Boolean);
   return (
     <div>
       <Link to="/manager/membership-plans" className="small text-decoration-none">← Quay lại danh sách</Link>
@@ -42,9 +47,10 @@ export default function MembershipPlanDetailPage() {
       </Card.Body></Card>
       <Card className="border-0 shadow-sm"><Card.Body>
         <h2 className="h5">Quyền lợi</h2>
-        <ul className="mb-0">
-          {plan.benefitCodes?.map((code) => <li key={code}><strong>{benefitLabel(benefitMap.get(code) || { code })}</strong></li>)}
-        </ul>
+        <MembershipBenefitList
+          benefitCodes={plan.benefitCodes}
+          benefits={responseBenefits}
+        />
       </Card.Body></Card>
     </div>
   );

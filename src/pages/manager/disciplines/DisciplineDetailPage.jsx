@@ -15,6 +15,7 @@ import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { getDiscipline } from '../../../services/disciplineService';
+import { listMembershipBenefits } from '../../../services/membershipPlanService';
 
 const STATUS_BADGE = {
   ACTIVE: 'bg-success-subtle text-success-emphasis',
@@ -24,6 +25,7 @@ const STATUS_BADGE = {
 export default function DisciplineDetailPage() {
   const { disciplineId } = useParams();
   const [discipline, setDiscipline] = useState(null);
+  const [benefits, setBenefits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -31,8 +33,12 @@ export default function DisciplineDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getDiscipline(disciplineId);
+      const [data, catalog] = await Promise.all([
+        getDiscipline(disciplineId),
+        listMembershipBenefits(),
+      ]);
       setDiscipline(data);
+      setBenefits(catalog);
     } catch (err) {
       setError(err);
     } finally {
@@ -137,6 +143,9 @@ export default function DisciplineDetailPage() {
           <h2 className="h6 text-uppercase text-muted">Quyền lợi bắt buộc</h2>
           <MembershipBenefitList
             benefitCodes={discipline.requiredBenefitCodes}
+            benefits={benefits.filter((benefit) =>
+              discipline.requiredBenefitCodes?.includes(benefit.code),
+            )}
             emptyMessage="Bộ môn này chỉ yêu cầu quyền đặt lịch lớp học."
           />
         </Card.Body>
