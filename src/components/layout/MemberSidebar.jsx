@@ -9,18 +9,30 @@ import { NavLink } from 'react-router-dom';
 import BrandLogo from '../common/BrandLogo';
 import Icon from './MemberIcon';
 
-function SidebarItem({ item, isBenefitLocked, onLockedClick }) {
+function SidebarItem({
+  item,
+  isBenefitLocked,
+  getRequiredPlanLabel,
+  onLockedClick,
+}) {
   if (isBenefitLocked(item.requiredBenefit)) {
+    const requiredPlanLabel = getRequiredPlanLabel(item.requiredBenefit);
     return (
       <button
         type="button"
         className="scms-ml-navitem locked"
         onClick={() => onLockedClick(item)}
-        title="Gói tập hiện tại chưa có quyền sử dụng"
+        title={
+          requiredPlanLabel
+            ? `Tính năng có trong gói ${requiredPlanLabel}`
+            : 'Gói tập hiện tại chưa bao gồm tính năng này'
+        }
       >
         <Icon name={item.icon} />
         {item.label}
-        <span className="scms-ml-benefit">Quyền lợi</span>
+        <span className="scms-ml-benefit">
+          {requiredPlanLabel || 'Theo gói'}
+        </span>
       </button>
     );
   }
@@ -57,6 +69,7 @@ export default function MemberSidebar({
   statusText,
   items,
   isBenefitLocked = () => false,
+  getRequiredPlanLabel = () => null,
   onLockedClick = () => {},
   onRequestLogout,
 }) {
@@ -77,6 +90,7 @@ export default function MemberSidebar({
                     key={item.label}
                     item={item}
                     isBenefitLocked={isBenefitLocked}
+                    getRequiredPlanLabel={getRequiredPlanLabel}
                     onLockedClick={onLockedClick}
                   />
                 ))}

@@ -436,6 +436,41 @@
   color: var(--h-red);
 }
 
+.scms-home-benefit-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.scms-home-benefit-group summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.scms-home-benefit-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.scms-home-benefit-group summary svg {
+  flex: 0 0 auto;
+  transition: transform 0.18s ease;
+}
+
+.scms-home-benefit-group[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.scms-home-benefit-group ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1rem;
+  color: var(--h-muted);
+}
+
 .scms-home-space {
   position: relative;
   display: flex;

@@ -124,15 +124,35 @@ export const MEMBER_SIDEBAR_ITEMS = [
         icon: 'clipboard',
         requiredBenefit: 'CLASS_BOOKING',
       },
-      { to: '/member/class-sessions', label: 'Lịch của tôi', icon: 'calendar' },
+      {
+        to: '/member/class-sessions',
+        label: 'Lịch của tôi',
+        icon: 'calendar',
+        requiredBenefit: 'CLASS_BOOKING',
+      },
     ],
   },
   {
     label: 'Huấn luyện cá nhân',
     items: [
-      { to: '/member/training-plans', label: 'Giáo án tập luyện', icon: 'clipboard' },
-      { to: '/member/training-results', label: 'Kết quả tập luyện', icon: 'dashboard' },
-      { to: '/member/feedback', label: 'Nhận xét HLV', icon: 'profile' },
+      {
+        to: '/member/training-plans',
+        label: 'Giáo án tập luyện',
+        icon: 'clipboard',
+        requiredBenefit: 'TRAINING_PLAN',
+      },
+      {
+        to: '/member/training-results',
+        label: 'Kết quả tập luyện',
+        icon: 'dashboard',
+        requiredBenefit: 'TRAINING_RESULT',
+      },
+      {
+        to: '/member/feedback',
+        label: 'Nhận xét HLV',
+        icon: 'profile',
+        requiredBenefit: 'TRAINING_FEEDBACK',
+      },
     ],
   },
   {

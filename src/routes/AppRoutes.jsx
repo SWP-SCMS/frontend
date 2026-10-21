@@ -11,6 +11,7 @@ import LoadingScreen from '../components/common/LoadingScreen';
 import AppShell from '../components/layout/AppShell';
 import StaffLayout from '../components/layout/StaffLayout';
 import MemberLayout from '../components/layout/MemberLayout';
+import MemberBenefitRouteGuard from '../components/layout/MemberBenefitRouteGuard';
 import CoachLayout from '../components/layout/CoachLayout';
 import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfig';
 
@@ -453,15 +454,20 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
-                <MemberClassSchedulePage />
+                <MemberBenefitRouteGuard
+                  benefitCode="CLASS_BOOKING"
+                  serviceName="Lịch lớp của tôi"
+                >
+                  <MemberClassSchedulePage />
+                </MemberBenefitRouteGuard>
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
         }
       />
-      <Route path="/member/training-plans" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingPlansPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
-      <Route path="/member/training-results" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingResultsPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
-      <Route path="/member/feedback" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingFeedbackPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/training-plans" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_PLAN" serviceName="Giáo án tập luyện">{withSuspense(<MemberTrainingPlansPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/training-results" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_RESULT" serviceName="Kết quả tập luyện">{withSuspense(<MemberTrainingResultsPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/feedback" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_FEEDBACK" serviceName="Nhận xét huấn luyện viên">{withSuspense(<MemberTrainingFeedbackPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/receipts" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberReceiptListPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/receipts/:receiptId" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<ReceiptPage memberMode />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/notifications" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<NotificationPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
