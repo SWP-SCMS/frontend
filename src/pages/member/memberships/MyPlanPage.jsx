@@ -295,6 +295,11 @@ function PlanCard({ membership, kind }) {
       </section>
 
       <div className="scms-my-plan-actions">
+        {isActive ? (
+          <Link to="/member/membership-requests" className="scms-my-plan-btn ghost">
+            Đóng băng / hủy gói
+          </Link>
+        ) : null}
         {!isReserved ? (
           <a href="#member-offers" className="scms-my-plan-btn ghost">
             Nâng cấp / gia hạn

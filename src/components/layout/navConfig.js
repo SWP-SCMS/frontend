@@ -28,6 +28,7 @@ export const APP_SHELL_NAV_ITEMS = {
       label: 'Gói tập và thanh toán',
       items: [
         { to: '/reception/membership-offers', label: 'Gói tập' },
+        { to: '/reception/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/reception/orders/new', label: 'Tạo đơn gói tập' },
         { to: '/reception/payments/reconcile', label: 'Đối soát' },
       ],
@@ -74,6 +75,7 @@ export const APP_SHELL_NAV_ITEMS = {
       items: [
         { to: '/manager/membership-plans', label: 'Loại gói & quyền lợi' },
         { to: '/manager/membership-offers', label: 'Gói tập' },
+        { to: '/manager/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/manager/payments/reconcile', label: 'Đối soát' },
       ],
     },
@@ -159,6 +161,7 @@ export const MEMBER_SIDEBAR_ITEMS = [
     label: 'Gói tập và thanh toán',
     items: [
       { to: '/member/plan', label: 'Gói tập hiện tại', icon: 'dumbbell' },
+      { to: '/member/membership-requests', label: 'Yêu cầu gói tập', icon: 'clipboard' },
       { to: '/member/memberships', label: 'Lịch sử gói tập', icon: 'receipt' },
       { to: '/member/receipts', label: 'Biên lai', icon: 'receipt' },
     ],
