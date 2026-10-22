@@ -11,7 +11,8 @@
 //        GET /payments/{paymentId}/result  cho đến khi PAID.
 //
 // Quy tắc nghiệp vụ (BE kiểm tra lại, FE chỉ chặn sớm để người dùng dễ hiểu):
-//   BR-MEM-08  : đang có Membership ACTIVE thì không mua gói mới.
+//   Membership ACTIVE được mua thêm một lần để gia hạn. Sau thanh toán, gói
+//   mới ở RESERVED và tự kích hoạt khi gói hiện tại hết hạn.
 //   BR-ORD-07  : tối đa 1 đơn PENDING_PAYMENT. Hội viên không tự hủy đơn được
 //                (chỉ Lễ tân / Quản lý), nên phải hoàn tất đơn đó hoặc nhờ lễ tân.
 //   BR-PAY-03  : QR đúng số tiền + nội dung chuyển khoản của Order.
@@ -39,8 +40,8 @@ const POLL_INTERVAL_MS = 5000;
 
 // Thông báo theo mã lỗi / trạng thái của BE (xử lý theo status và code).
 const ERROR_MESSAGES = {
-  ACTIVE_MEMBERSHIP_EXISTS:
-    'Bạn đang có gói tập còn hiệu lực nên chưa thể mua gói mới.',
+  MEMBERSHIP_RENEWAL_ALREADY_EXISTS:
+    'Bạn đã có một gói gia hạn đang chờ kích hoạt hoặc một đơn gia hạn đang chờ thanh toán.',
   PENDING_MEMBERSHIP_ORDER_EXISTS:
     'Bạn đang có một đơn chờ thanh toán. Hãy hoàn tất đơn đó trước.',
   MEMBERSHIP_OFFER_NOT_FOUND: 'Gói tập này không còn được bán.',
@@ -77,6 +78,8 @@ export default function MemberCheckoutPage() {
   const {
     activeMembership,
     hasActiveMembership,
+    reservedMembership,
+    hasReservedMembership,
     loading: membershipLoading,
     reload: reloadMemberships,
   } = useMemberArea();
@@ -264,8 +267,10 @@ export default function MemberCheckoutPage() {
             <strong>{formatPrice(offer.priceAmount, offer.currencyCode)}</strong>
           </div>
           <div className="mco-note">
-            Phương thức: <strong>Chuyển khoản ngân hàng</strong>. Gói tập có hiệu
-            lực sau khi thanh toán được xác nhận.
+            Phương thức: <strong>Chuyển khoản ngân hàng</strong>.{' '}
+            {hasActiveMembership
+              ? 'Đây là gói gia hạn: sau khi thanh toán được xác nhận, gói sẽ chờ và tự kích hoạt khi gói hiện tại kết thúc.'
+              : 'Gói tập có hiệu lực sau khi thanh toán được xác nhận.'}
           </div>
         </section>
 
@@ -276,7 +281,10 @@ export default function MemberCheckoutPage() {
               <div className="mco-icon ok" aria-hidden="true">✓</div>
               <h2 className="mco-h2">Thanh toán thành công</h2>
               <p className="mco-muted">
-                Cảm ơn bạn! Gói <strong>{offer.name}</strong> đã được kích hoạt
+                Cảm ơn bạn! Gói <strong>{offer.name}</strong>{' '}
+                {result?.fulfillmentMode === 'RESERVED'
+                  ? 'đã được ghi nhận là gói kế tiếp và sẽ tự kích hoạt khi gói hiện tại kết thúc'
+                  : 'đã được kích hoạt'}
                 {result?.paidAt ? ` lúc ${formatDateTime(result.paidAt)}` : ''}.
               </p>
               <div className="mco-actions">
@@ -288,12 +296,16 @@ export default function MemberCheckoutPage() {
                 </Link>
               </div>
             </div>
-          ) : hasActiveMembership ? (
+          ) : hasReservedMembership ? (
             <div className="mco-state">
-              <h2 className="mco-h2">Bạn đang có gói tập còn hiệu lực</h2>
+              <h2 className="mco-h2">Bạn đã có gói gia hạn</h2>
               <p className="mco-muted">
-                Gói {planCode || 'hiện tại'} của bạn vẫn đang hoạt động. Bạn chỉ
-                mua gói mới sau khi gói hiện tại hết hạn.
+                Gói{' '}
+                {reservedMembership?.planCode ||
+                  reservedMembership?.plan_code_snapshot ||
+                  'kế tiếp'}{' '}
+                đang chờ kích hoạt. Mỗi hội viên chỉ được có một gói chờ tại một
+                thời điểm.
               </p>
               <div className="mco-actions">
                 <Link to="/member/plan" className="mco-btn primary">
@@ -353,7 +365,9 @@ export default function MemberCheckoutPage() {
                   ? 'Đang tạo yêu cầu thanh toán...'
                   : pending
                     ? 'Tiếp tục thanh toán'
-                    : 'Xác nhận & thanh toán'}
+                    : hasActiveMembership
+                      ? `Gia hạn sau gói ${planCode || 'hiện tại'}`
+                      : 'Xác nhận & thanh toán'}
               </button>
             </div>
           )}

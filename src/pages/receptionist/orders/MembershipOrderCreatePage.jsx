@@ -17,7 +17,8 @@
 //     live Offer, so the summary can't drift from what was ordered.
 //   - 409 PENDING_MEMBERSHIP_ORDER_EXISTS means the member already has an
 //     unpaid order; we surface the resume view instead of a raw error.
-//   - 409 ACTIVE_MEMBERSHIP_EXISTS means they already have a live membership.
+//   - ACTIVE membership may create one RESERVED renewal. A second renewal is
+//     rejected with MEMBERSHIP_RENEWAL_ALREADY_EXISTS.
 //   - 404/409 also cover MEMBER_NOT_FOUND and MEMBER_NOT_ACTIVE (suspended or
 //     inactive members cannot order).
 
@@ -110,7 +111,10 @@ export default function MembershipOrderCreatePage() {
       setPending(order);
     } catch (err) {
       const code = err?.response?.data?.code;
-      if (code === 'PENDING_MEMBERSHIP_ORDER_EXISTS') {
+      if (
+        code === 'PENDING_MEMBERSHIP_ORDER_EXISTS' ||
+        code === 'MEMBERSHIP_RENEWAL_ALREADY_EXISTS'
+      ) {
         // Surface the existing order instead of a raw 409.
         getReceptionPendingOrder(memberId)
           .then((order) => setPending(order ?? null))
@@ -186,6 +190,12 @@ export default function MembershipOrderCreatePage() {
           <div className="small">
             Mã đơn <strong>{created.orderNumber}</strong> — chuyển khoản ngân hàng.
             Hạn thanh toán được tính khi hệ thống tạo mã QR thanh toán.
+            {created.fulfillmentMode === 'RESERVED' ? (
+              <>
+                {' '}Đây là đơn gia hạn; sau khi thanh toán, gói mới sẽ chờ tới
+                khi gói hiện tại kết thúc.
+              </>
+            ) : null}
           </div>
           {/* The order-create contract is bank transfer only: the body is
               exactly { offerId } and the backend rejects extra fields, so

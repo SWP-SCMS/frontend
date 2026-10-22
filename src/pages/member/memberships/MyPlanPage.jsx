@@ -10,6 +10,7 @@
 // Hợp đồng hiện tại trả record camelCase. `pick()` vẫn chấp nhận snake_case để
 // dữ liệu cũ hoặc môi trường chưa cập nhật không làm hỏng giao diện.
 
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
@@ -17,6 +18,7 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import MemberOfferSection from './MemberOfferSection';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
+import { getMyPendingMembershipOrder } from '../../../services/memberService';
 import { formatDate, formatPrice } from '../../../utils';
 import { hasBenefitContract } from '../../../utils/membershipBenefits';
 import './MyPlanPage.css';
@@ -28,11 +30,14 @@ function pick(row, snake, camel) {
 const PLAN_LABELS = {
   BASIC: 'Basic',
   PLUS: 'Plus',
+  PREMIUM: 'Premium',
 };
 
 const STATUS_LABELS = {
+  RESERVED: 'Chờ kích hoạt',
   ACTIVE: 'Đang hoạt động',
   EXPIRED: 'Đã hết hạn',
+  TERMINATED: 'Đã chấm dứt',
 };
 
 // Tính tiến độ dùng gói (0–100) và số ngày còn lại.
@@ -67,8 +72,33 @@ function Detail({ label, value }) {
 }
 
 export default function MyPlanPage() {
-  const { memberships, activeMembership, loading, error, reload } =
-    useMemberArea();
+  const {
+    memberships,
+    activeMembership,
+    reservedMembership,
+    loading,
+    error,
+    reload,
+  } = useMemberArea();
+  const [pendingOrder, setPendingOrder] = useState(null);
+  const [pendingLoading, setPendingLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMyPendingMembershipOrder()
+      .then((order) => {
+        if (!cancelled) setPendingOrder(order);
+      })
+      .catch(() => {
+        // BE vẫn kiểm tra khi tạo đơn; lỗi đọc đơn chờ không nên khóa cả trang.
+      })
+      .finally(() => {
+        if (!cancelled) setPendingLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -105,7 +135,7 @@ export default function MyPlanPage() {
 
       <ErrorAlert error={error} title="Không tải được gói tập" />
 
-      {!activeMembership ? (
+      {!activeMembership && !reservedMembership ? (
         error ? null : (
           <div className="scms-my-plan-notice">
             <h2>
@@ -119,22 +149,34 @@ export default function MyPlanPage() {
           </div>
         )
       ) : (
-        <PlanCard membership={activeMembership} />
+        <div className="scms-my-plan-stack">
+          {activeMembership ? (
+            <PlanCard membership={activeMembership} kind="active" />
+          ) : null}
+          {reservedMembership ? (
+            <PlanCard membership={reservedMembership} kind="reserved" />
+          ) : null}
+        </div>
       )}
 
-      {/* BR-MEM-08: đang có gói ACTIVE thì chưa mua được gói mới. */}
+      {/* ACTIVE vẫn được mua một lần để gia hạn. Chỉ khóa khi đã có gói chờ
+          kích hoạt hoặc còn một đơn chờ thanh toán. */}
       <MemberOfferSection
         blockedReason={
-          activeMembership
-            ? 'Bạn đang có gói tập còn hiệu lực. Bạn có thể đăng ký gói mới sau khi gói hiện tại hết hạn.'
-            : null
+          reservedMembership
+            ? 'Bạn đã có một gói gia hạn đang chờ kích hoạt. Bạn chỉ có thể mua tiếp sau khi gói đó được kích hoạt.'
+            : pendingOrder
+              ? `Bạn đang có đơn ${pendingOrder.orderNumber} chờ thanh toán. Hãy hoàn tất đơn đó trước.`
+              : pendingLoading
+                ? 'Đang kiểm tra đơn chờ thanh toán...'
+                : null
         }
       />
     </div>
   );
 }
 
-function PlanCard({ membership }) {
+function PlanCard({ membership, kind }) {
   const planCode = pick(membership, 'plan_code_snapshot', 'planCode');
   const offerName = pick(membership, 'offer_name_snapshot', 'offerName');
   const priceAmount = pick(membership, 'price_amount_snapshot', 'priceAmount');
@@ -154,12 +196,16 @@ function PlanCard({ membership }) {
 
   const progress = usage(membership);
   const isActive = membership.status === 'ACTIVE';
+  const isReserved = membership.status === 'RESERVED';
+  const benefitTitleId = `plan-benefits-${membership.id || kind}`;
 
   return (
     <div className="scms-my-plan-card">
       <div className="scms-my-plan-head">
         <div>
-          <span className="scms-my-plan-kicker">Gói đang dùng</span>
+          <span className="scms-my-plan-kicker">
+            {isReserved ? 'Gói kế tiếp' : 'Gói đang dùng'}
+          </span>
           <h2 className="scms-my-plan-name">
             {offerName || PLAN_LABELS[planCode] || planCode || '—'}
           </h2>
@@ -168,13 +214,22 @@ function PlanCard({ membership }) {
             {durationDays != null ? ` · ${durationDays} ngày` : ''}
           </p>
         </div>
-        <span className={`scms-my-plan-status${isActive ? ' on' : ''}`}>
+        <span
+          className={`scms-my-plan-status${isActive ? ' on' : ''}${
+            isReserved ? ' reserved' : ''
+          }`}
+        >
           <span className="scms-my-plan-status-dot" aria-hidden="true" />
           {STATUS_LABELS[membership.status] || membership.status || '—'}
         </span>
       </div>
 
-      {progress ? (
+      {isReserved ? (
+        <div className="scms-my-plan-reserved-note">
+          Gói này đã được thanh toán và sẽ tự động kích hoạt ngay sau khi gói
+          hiện tại kết thúc. Ngày bắt đầu và kết thúc sẽ được xác định lúc đó.
+        </div>
+      ) : progress ? (
         <div className="scms-my-plan-progress">
           <div className="scms-my-plan-progress-meta">
             <span>Đã dùng {progress.percent}%</span>
@@ -201,8 +256,14 @@ function PlanCard({ membership }) {
       ) : null}
 
       <dl className="scms-my-dl">
-        <Detail label="Ngày bắt đầu" value={formatDate(startsAt)} />
-        <Detail label="Ngày kết thúc" value={formatDate(endsAt)} />
+        <Detail
+          label="Ngày bắt đầu"
+          value={isReserved ? 'Chờ kích hoạt' : formatDate(startsAt)}
+        />
+        <Detail
+          label="Ngày kết thúc"
+          value={isReserved ? 'Chưa xác định' : formatDate(endsAt)}
+        />
         <Detail
           label="Thời hạn"
           value={durationDays != null ? `${durationDays} ngày` : '—'}
@@ -218,8 +279,10 @@ function PlanCard({ membership }) {
         />
       </dl>
 
-      <section className="scms-my-plan-benefits" aria-labelledby="current-plan-benefits">
-        <h3 id="current-plan-benefits">Quyền lợi đang có</h3>
+      <section className="scms-my-plan-benefits" aria-labelledby={benefitTitleId}>
+        <h3 id={benefitTitleId}>
+          {isReserved ? 'Quyền lợi sẽ được kích hoạt' : 'Quyền lợi đang có'}
+        </h3>
         <MembershipBenefitList
           benefitCodes={membership.benefitCodes ?? membership.benefit_codes}
           benefits={membership.benefits}
@@ -232,9 +295,11 @@ function PlanCard({ membership }) {
       </section>
 
       <div className="scms-my-plan-actions">
-        <a href="#member-offers" className="scms-my-plan-btn ghost">
-          Nâng cấp / gia hạn
-        </a>
+        {!isReserved ? (
+          <a href="#member-offers" className="scms-my-plan-btn ghost">
+            Nâng cấp / gia hạn
+          </a>
+        ) : null}
         <Link to="/member/memberships" className="scms-my-plan-btn">
           Xem lịch sử thanh toán
         </Link>

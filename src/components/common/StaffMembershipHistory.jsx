@@ -11,13 +11,17 @@ import { formatDateTime } from '../../utils';
 import { hasBenefitContract } from '../../utils/membershipBenefits';
 
 const STATUS_LABELS = {
+  RESERVED: 'Chờ kích hoạt',
   ACTIVE: 'Đang hiệu lực',
   EXPIRED: 'Đã hết hạn',
+  TERMINATED: 'Đã chấm dứt',
 };
 
 const STATUS_VARIANTS = {
+  RESERVED: 'primary',
   ACTIVE: 'success',
   EXPIRED: 'secondary',
+  TERMINATED: 'danger',
 };
 
 export default function StaffMembershipHistory({

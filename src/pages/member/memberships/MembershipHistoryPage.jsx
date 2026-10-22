@@ -5,8 +5,8 @@
 //   id, order_id, plan_code_snapshot, offer_name_snapshot, price_amount_snapshot,
 //   currency_code_snapshot, duration_days_snapshot, status, starts_at, ends_at
 //
-// BR-MEM-04/05: Membership hết hạn chuyển EXPIRED và không dùng lại, nên lịch
-// sử ở đây là bản ghi bất biến — chỉ hiển thị, không thao tác.
+// RESERVED là gói gia hạn đã thanh toán, chưa có startsAt/endsAt cho tới khi
+// gói ACTIVE hiện tại hết hạn và backend tự kích hoạt.
 //
 // Hợp đồng hiện tại trả record camelCase. `pick()` vẫn chấp nhận snake_case để
 // dữ liệu cũ hoặc môi trường chưa cập nhật không làm hỏng giao diện.
@@ -32,13 +32,16 @@ const PLAN_LABELS = {
   PLUS: 'Plus',
 };
 
-// Membership.status chỉ có ACTIVE / EXPIRED (BR-MEM-04/05).
+// Contract vòng đời gói tập hiện tại.
 const STATUS_LABELS = {
+  RESERVED: 'Chờ kích hoạt',
   ACTIVE: 'Đang hoạt động',
   EXPIRED: 'Đã hết hạn',
+  TERMINATED: 'Đã chấm dứt',
 };
 
-function formatPeriod(startsAt, endsAt) {
+function formatPeriod(startsAt, endsAt, status) {
+  if (status === 'RESERVED') return 'Sau khi gói hiện tại kết thúc';
   const from = formatDate(startsAt);
   const to = formatDate(endsAt);
   if (from === '—' && to === '—') return '—';
@@ -152,7 +155,7 @@ export default function MembershipHistoryPage() {
                   );
                   const startsAt = pick(row, 'starts_at', 'startsAt');
                   const endsAt = pick(row, 'ends_at', 'endsAt');
-                  const isActive = row.status === 'ACTIVE';
+                  const statusClass = String(row.status || '').toLowerCase();
 
                   return (
                     <tr key={row.id ?? `${offerName}-${startsAt}`}>
@@ -169,7 +172,7 @@ export default function MembershipHistoryPage() {
                         </div>
                       </td>
                       <td className="scms-mh-period" data-label="Thời hạn">
-                        {formatPeriod(startsAt, endsAt)}
+                        {formatPeriod(startsAt, endsAt, row.status)}
                       </td>
                       <td className="scms-mh-price" data-label="Giá">
                         {formatPrice(priceAmount, currencyCode || 'VND')}
@@ -187,7 +190,7 @@ export default function MembershipHistoryPage() {
                       </td>
                       <td data-label="Trạng thái">
                         <span
-                          className={`scms-mh-status${isActive ? ' on' : ''}`}
+                          className={`scms-mh-status ${statusClass}`}
                         >
                           {STATUS_LABELS[row.status] || row.status || '—'}
                         </span>
