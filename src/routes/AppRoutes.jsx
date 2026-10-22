@@ -20,6 +20,9 @@ const HomePage = lazy(() => import('../pages/public/home/HomePage'));
 const LoginPage = lazy(() => import('../pages/public/login/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/public/register/RegisterPage'));
 const VerifyEmailPage = lazy(() => import('../pages/public/auth/VerifyEmailPage'));
+const ForgotPasswordPage = lazy(
+  () => import('../pages/public/auth/ForgotPasswordPage'),
+);
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
 const NotFoundPage = lazy(() => import('../pages/public/notFound/NotFoundPage'));
@@ -347,6 +350,10 @@ export default function AppRoutes() {
         path="/verify-email"
         element={<GuestRoute>{withSuspense(<VerifyEmailPage />)}</GuestRoute>}
       />
+      <Route
+        path="/forgot-password"
+        element={<GuestRoute>{withSuspense(<ForgotPasswordPage />)}</GuestRoute>}
+      />
       <Route path="/offers" element={withSuspense(<OfferListPage />)} />
       <Route
         path="/offers/:offerId"
@@ -431,6 +438,18 @@ export default function AppRoutes() {
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
                 <MemberChangePasswordPage />
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/profile/email"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<StaffChangeEmailPage />)}
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>

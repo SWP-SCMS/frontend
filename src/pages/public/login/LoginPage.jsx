@@ -72,12 +72,14 @@ export default function LoginPage() {
   // kèm `?changed=1`. Hiện thông báo thành công rồi xoá param — nếu giữ lại
   // thì F5 sẽ báo lại lần nữa, gây hiểu nhầm là vừa đổi xong.
   const passwordChanged = params.get('changed') === '1';
+  const passwordReset = params.get('reset') === '1';
   const emailChanged = params.get('emailChanged') === '1';
   const accountVerified = params.get('verified') === '1';
   const accountRegistered = params.get('registered') === '1';
 
   function dismissPasswordChangedNotice() {
     params.delete('changed');
+    params.delete('reset');
     params.delete('emailChanged');
     setParams(params, { replace: true });
   }
@@ -149,7 +151,7 @@ export default function LoginPage() {
           onClose={() => setError(null)}
         />
 
-        {passwordChanged || emailChanged ? (
+        {passwordChanged || passwordReset || emailChanged ? (
           <div className="scms-login-notice" role="status">
             <span className="scms-login-notice-icon" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" {...iconProps}>
@@ -159,7 +161,9 @@ export default function LoginPage() {
             <span>
               {emailChanged
                 ? 'Đổi email thành công. Vui lòng đăng nhập lại bằng email mới.'
-                : 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.'}
+                : passwordReset
+                  ? 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.'
+                  : 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.'}
             </span>
             <button
               type="button"
@@ -213,9 +217,12 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-4">
-            <label className="scms-login-label" htmlFor="login-password">
-              Mật khẩu xác thực <span className="text-danger">*</span>
-            </label>
+            <div className="scms-login-label-row">
+              <label className="scms-login-label mb-0" htmlFor="login-password">
+                Mật khẩu xác thực <span className="text-danger">*</span>
+              </label>
+              <Link to="/forgot-password">Quên mật khẩu?</Link>
+            </div>
             <div className="scms-login-field">
               <span className="scms-login-field-icon" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 24 24" {...iconProps}>
