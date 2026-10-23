@@ -142,11 +142,14 @@ export async function buildReceiptPdf({
   });
   line();
 
-  text('Order ID', margin, { size: 8, gap: 3 });
-  text(receipt.orderId || '—', margin, { size: 8, gap: 3 });
-  text('Payment ID', margin, { size: 8, gap: 3 });
-  text(receipt.paymentId || '—', margin, { size: 8, gap: 3 });
-  text('Receipt ID', margin, { size: 8, gap: 8 });
+  text('Order number', margin, { size: 8 });
+  text(receipt.orderNumber || '—', pageWidth - margin, { size: 8, align: 'right', gap: 3 });
+  if (receipt.paymentReference) {
+    text('Payment reference', margin, { size: 8 });
+    text(receipt.paymentReference, pageWidth - margin, { size: 8, align: 'right', gap: 8 });
+  } else {
+    y += 5;
+  }
 
   doc.setFontSize(8);
   doc.setTextColor(110);

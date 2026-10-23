@@ -35,7 +35,6 @@ import {
   cancelSession,
   getManagerSessionDetail,
 } from '../../../services/classSessionService';
-import { getMemberAccount } from '../../../services/memberAccountService';
 import { listManagerSessionWaitlist } from '../../../services/waitlistService';
 
 const GYM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
@@ -162,7 +161,6 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [waitlistRows, setWaitlistRows] = useState([]);
-  const [waitlistMembers, setWaitlistMembers] = useState({});
   const [waitlistLoading, setWaitlistLoading] = useState(true);
   const [waitlistError, setWaitlistError] = useState(null);
 
@@ -307,20 +305,8 @@ export default function SessionDetailPage() {
     try {
       const rows = await listManagerSessionWaitlist(sessionId);
       setWaitlistRows(rows);
-      const ids = [...new Set(rows.map((row) => row.memberId).filter(Boolean))];
-      const members = await Promise.all(
-        ids.map(async (id) => {
-          try {
-            return [id, await getMemberAccount(id)];
-          } catch {
-            return [id, null];
-          }
-        }),
-      );
-      setWaitlistMembers(Object.fromEntries(members));
     } catch (err) {
       setWaitlistRows([]);
-      setWaitlistMembers({});
       setWaitlistError(err);
     } finally {
       setWaitlistLoading(false);
@@ -550,22 +536,19 @@ export default function SessionDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {waitlistRows.map((entry) => {
-                  const member = waitlistMembers[entry.memberId];
-                  return (
+                {waitlistRows.map((entry) => (
                     <tr key={entry.id}>
                       <td>{entry.position ?? '—'}</td>
                       <td>
-                        <div className="fw-semibold">{member?.fullName || '—'}</div>
+                        <div className="fw-semibold">{entry.memberFullName || 'Hội viên'}</div>
                         <div className="small text-muted">
-                          {member?.memberId || entry.memberId || '—'}
+                          {entry.memberCode || 'Chưa có mã hội viên'}
                         </div>
                       </td>
                       <td>{entry.status || '—'}</td>
                       <td>{entry.source || '—'}</td>
                     </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </Table>
           )}

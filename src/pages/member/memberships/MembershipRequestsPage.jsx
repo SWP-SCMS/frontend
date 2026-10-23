@@ -6,8 +6,10 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 import {
   createMyFreezeRequest,
   createMyTerminationRequest,
+  endMyFreezeEarly,
   listMyFreezeRequests,
   listMyTerminationRequests,
+  withdrawMyFreezeRequest,
   withdrawMyTerminationRequest,
 } from '../../../services/membershipRequestService';
 import { formatDate, formatPrice } from '../../../utils';
@@ -26,7 +28,11 @@ const FREEZE_STATUS = {
   PENDING: ['Chờ duyệt', 'warning'],
   APPROVED_PENDING_PAYMENT: ['Chờ thanh toán phí', 'info'],
   SCHEDULED: ['Đã lên lịch', 'success'],
+  ACTIVE: ['Đang đóng băng', 'primary'],
+  COMPLETED: ['Đã hoàn tất', 'secondary'],
+  OBSOLETE: ['Không còn hiệu lực', 'secondary'],
   REJECTED: ['Bị từ chối', 'danger'],
+  WITHDRAWN: ['Đã rút', 'secondary'],
 };
 
 const ERROR_MESSAGES = {
@@ -35,6 +41,8 @@ const ERROR_MESSAGES = {
   MEMBERSHIP_TERMINATION_INVALID_TRANSITION: 'Yêu cầu hủy gói không còn ở trạng thái có thể rút.',
   MEMBERSHIP_FREEZE_ALREADY_PENDING: 'Bạn đã có một yêu cầu đóng băng gói đang mở.',
   MEMBERSHIP_FREEZE_INVALID_PERIOD: 'Khoảng thời gian đóng băng không hợp lệ.',
+  MEMBERSHIP_FREEZE_INVALID_TRANSITION: 'Yêu cầu đóng băng không còn ở trạng thái có thể xử lý.',
+  MEMBERSHIP_FREEZE_CHANGED: 'Yêu cầu vừa được cập nhật. Vui lòng tải lại.',
 };
 
 function messageOf(error, fallback) {
@@ -62,6 +70,7 @@ export default function MembershipRequestsPage() {
   const [actionError, setActionError] = useState(null);
   const [busyKey, setBusyKey] = useState(null);
   const [withdrawTarget, setWithdrawTarget] = useState(null);
+  const [freezeAction, setFreezeAction] = useState(null);
   const [termination, setTermination] = useState({ mode: 'END_OF_CYCLE', reason: '' });
   const [freeze, setFreeze] = useState({ startDate: '', endDate: '', reason: '' });
 
@@ -90,7 +99,7 @@ export default function MembershipRequestsPage() {
   );
   const hasOpenFreeze = useMemo(
     () => freezeRows.some((row) =>
-      ['PENDING', 'APPROVED_PENDING_PAYMENT', 'SCHEDULED'].includes(row.status)),
+      ['PENDING', 'APPROVED_PENDING_PAYMENT', 'SCHEDULED', 'ACTIVE'].includes(row.status)),
     [freezeRows],
   );
 
@@ -155,6 +164,29 @@ export default function MembershipRequestsPage() {
       await load();
     } catch (error) {
       setActionError(new Error(messageOf(error, 'Không thể gửi yêu cầu đóng băng gói.')));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function submitFreezeAction() {
+    if (!freezeAction) return;
+    const row = freezeAction.row;
+    setBusyKey(row.id);
+    setActionError(null);
+    setNotice(null);
+    try {
+      if (freezeAction.action === 'withdraw') {
+        await withdrawMyFreezeRequest(row.id);
+        setNotice('Đã rút yêu cầu đóng băng gói tập.');
+      } else {
+        await endMyFreezeEarly(row.id, row.version);
+        setNotice('Đã kết thúc thời gian đóng băng sớm.');
+      }
+      setFreezeAction(null);
+      await load();
+    } catch (error) {
+      setActionError(new Error(messageOf(error, 'Không thể cập nhật yêu cầu đóng băng.')));
     } finally {
       setBusyKey(null);
     }
@@ -258,7 +290,7 @@ export default function MembershipRequestsPage() {
                   {hasOpenFreeze ? 'Đang có yêu cầu mở' : busyKey === 'freeze-create' ? 'Đang gửi...' : 'Gửi yêu cầu đóng băng'}
                 </Button>
               </Form>
-              <RequestTable type="freeze" rows={freezeRows} busyKey={busyKey} />
+              <RequestTable type="freeze" rows={freezeRows} busyKey={busyKey} onFreezeAction={setFreezeAction} />
             </Card.Body>
           </Card>
         </div>
@@ -306,11 +338,35 @@ export default function MembershipRequestsPage() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <Modal show={Boolean(freezeAction)} onHide={() => setFreezeAction(null)} centered backdrop="static">
+        <Modal.Header closeButton={busyKey !== freezeAction?.row?.id}>
+          <Modal.Title className="h5">
+            {freezeAction?.action === 'withdraw' ? 'Rút yêu cầu đóng băng' : 'Kết thúc đóng băng sớm'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-2">
+            {freezeAction?.action === 'withdraw'
+              ? 'Bạn có chắc muốn rút yêu cầu đóng băng đang chờ duyệt?'
+              : 'Bạn có chắc muốn kết thúc thời gian đóng băng ngay bây giờ?'}
+          </p>
+          <div className="small text-muted">
+            {formatDate(freezeAction?.row?.startDate)} – {formatDate(freezeAction?.row?.endDate)}
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" disabled={busyKey === freezeAction?.row?.id} onClick={() => setFreezeAction(null)}>Quay lại</Button>
+          <Button variant="danger" disabled={busyKey === freezeAction?.row?.id} onClick={submitFreezeAction}>
+            {busyKey === freezeAction?.row?.id ? 'Đang xử lý...' : 'Xác nhận'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
 
-function RequestTable({ type, rows, busyKey, onWithdraw }) {
+function RequestTable({ type, rows, busyKey, onWithdraw, onFreezeAction }) {
   if (!rows.length) return <p className="text-muted small mt-4 mb-0">Chưa có yêu cầu nào.</p>;
   const termination = type === 'termination';
   return (
@@ -323,7 +379,7 @@ function RequestTable({ type, rows, busyKey, onWithdraw }) {
             <th>Lý do</th>
             {!termination ? <th>Phí</th> : null}
             <th>Trạng thái</th>
-            {termination ? <th className="text-end">Thao tác</th> : null}
+            <th className="text-end">Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -338,15 +394,19 @@ function RequestTable({ type, rows, busyKey, onWithdraw }) {
               <td className="scms-membership-request-reason-cell">{row.reason}</td>
               {!termination ? <td>{row.feeAmount == null ? 'Chưa xác định' : formatPrice(row.feeAmount, 'VND')}</td> : null}
               <td><StatusBadge status={row.status} map={termination ? TERMINATION_STATUS : FREEZE_STATUS} /></td>
-              {termination ? (
-                <td className="text-end">
-                  {row.status === 'PENDING' ? (
+              <td className="text-end">
+                {termination ? (
+                  row.status === 'PENDING' ? (
                     <Button size="sm" variant="outline-secondary" disabled={busyKey === row.id} onClick={() => onWithdraw(row)}>
                       {busyKey === row.id ? 'Đang rút...' : 'Rút yêu cầu'}
                     </Button>
-                  ) : '—'}
-                </td>
-              ) : null}
+                  ) : '—'
+                ) : row.status === 'PENDING' ? (
+                  <Button size="sm" variant="outline-secondary" disabled={busyKey === row.id} onClick={() => onFreezeAction({ action: 'withdraw', row })}>Rút yêu cầu</Button>
+                ) : row.status === 'ACTIVE' ? (
+                  <Button size="sm" variant="outline-danger" disabled={busyKey === row.id} onClick={() => onFreezeAction({ action: 'end-early', row })}>Kết thúc sớm</Button>
+                ) : '—'}
+              </td>
             </tr>
           ))}
         </tbody>

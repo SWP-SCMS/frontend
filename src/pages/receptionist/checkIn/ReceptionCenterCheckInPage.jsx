@@ -77,6 +77,8 @@ const CENTER_CHECK_IN_TIME_FORMATTER = new Intl.DateTimeFormat('vi-VN', {
 });
 
 const CHECK_IN_BUSINESS_ERRORS = {
+  MEMBERSHIP_FROZEN:
+    'Gói tập của hội viên đang được đóng băng nên chưa thể check-in trung tâm.',
   CENTER_VISIT_MEMBER_NOT_ACTIVE:
     'Tài khoản hội viên phải ở trạng thái ACTIVE mới có thể check-in trung tâm.',
   CENTER_VISIT_PROFILE_IMAGE_REQUIRED:

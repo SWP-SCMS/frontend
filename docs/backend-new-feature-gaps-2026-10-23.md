@@ -15,7 +15,7 @@ Mục đích: tổng hợp các thiếu sót backend được phát hiện trong
 
 ## NEW-BE-GAP-001 — Chưa thể rút yêu cầu đóng băng gói tập
 
-**Trạng thái:** `OPEN`  
+**Trạng thái:** `OPEN`
 **Liên quan:** MF-006 — Membership freeze request workflow
 
 ### Hiện trạng
@@ -669,3 +669,99 @@ Response lỗi `SHARED_ROOM_CAPACITY_EXCEEDED` nên trả thêm dữ liệu đ�
 - Hiển thị `usageMode` trong danh sách và chi tiết Room bằng nhãn dễ hiểu, không lộ enum kỹ thuật.
 - Tại form tạo/sửa session, hiển thị sức chứa còn khả dụng của khu vực trong khoảng giờ đã chọn nếu backend cung cấp dữ liệu availability.
 - Xử lý ba error code trên bằng thông báo tiếng Việt và giữ nguyên dữ liệu form để Manager điều chỉnh.
+
+---
+
+## NEW-BE-GAP-011 — Danh sách hoàn tiền thiếu mã nghiệp vụ và thông tin nhận diện hội viên
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Luồng hoàn tiền tiền mặt cho gói đã chấm dứt hoặc gói đặt trước bị hủy
+
+### Hiện trạng
+
+`RefundRequestResponse` hiện chỉ trả các khóa nội bộ dạng UUID:
+
+```text
+paymentId
+orderId
+membershipId
+receiptId
+memberAccountId
+```
+
+Hai API danh sách dưới đây vì vậy không cung cấp đủ dữ liệu để nhân viên nhận diện yêu cầu theo ngôn ngữ nghiệp vụ:
+
+```text
+GET /reception/refund-requests
+GET /manager/refund-requests
+```
+
+FE tạm thời hiển thị UUID theo quyết định của nhóm để không chặn việc kiểm thử workflow. Đây không phải trạng thái UX cuối cùng.
+
+### Contract đề xuất
+
+Bổ sung tối thiểu vào `RefundRequestResponse`:
+
+```json
+{
+  "memberCode": "MB-100001",
+  "memberFullName": "Nguyễn Văn A",
+  "orderNumber": "ORD-20261023-0001",
+  "paymentReference": "PAY-20261023-0001",
+  "receiptNumber": "RCP-20261023-0001"
+}
+```
+
+Các UUID vẫn được giữ để FE gửi mutation và làm React key, nhưng không dùng làm nhãn chính sau khi có các display field trên.
+
+### Acceptance criteria
+
+- Danh sách hoàn tiền của Lễ tân và Quản lý hiển thị tên cùng mã hội viên.
+- Nhân viên phân biệt được đơn hàng, giao dịch và biên lai bằng mã nghiệp vụ, không cần đọc UUID.
+- Tất cả response create/approve/disburse/finalize/reject trả cùng bộ display field với response danh sách.
+- Các display field là snapshot hoặc được resolve nhất quán; dữ liệu lịch sử không biến mất khi tài khoản hay bản ghi nguồn thay đổi trạng thái.
+- UUID chỉ còn được sử dụng nội bộ cho API path, optimistic locking và liên kết dữ liệu.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Ưu tiên `memberFullName`, `memberCode`, `orderNumber`, `paymentReference`, `receiptNumber` trên các bảng và modal hoàn tiền.
+- Loại bỏ toàn bộ UUID đang được hiển thị tạm thời.
+- Không cần thay đổi endpoint mutation hoặc cơ chế `expectedVersion`.
+
+---
+
+## NEW-BE-GAP-012 — Workflow hoàn tiền chưa thông báo cho nhân viên phụ trách bước kế tiếp
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Workflow hoàn tiền nhiều bước giữa Lễ tân và Quản lý
+
+### Hiện trạng
+
+`MembershipRefundService.write(...)` hiện ghi mọi notification `MEMBERSHIP_REFUND_*` cho `memberAccountId`. Vì vậy Member nhận được lịch sử thay đổi, nhưng nhân viên cần thực hiện bước kế tiếp không được thông báo:
+
+- Khi Lễ tân tạo yêu cầu `REQUESTED`, Manager không nhận thông báo cần duyệt bước đầu.
+- Khi Manager chuyển yêu cầu sang `FIRST_APPROVED`, Lễ tân không nhận thông báo cần giao tiền mặt.
+- Khi Lễ tân chuyển yêu cầu sang `CASH_DISBURSED`, Manager không nhận thông báo cần xác nhận cuối.
+- Khi Manager từ chối hoặc hoàn tất, Member vẫn cần nhận thông báo như hiện tại.
+
+FE đã có route nhận notification cho `/reception/refunds` và `/manager/refunds`, nhưng các route này chỉ phát huy tác dụng khi backend gửi notification đúng recipient.
+
+### Notification routing đề xuất
+
+| Event | Member | Manager | Receptionist |
+|---|---:|---:|---:|
+| `MEMBERSHIP_REFUND_REQUESTED` | Có | Có | Không |
+| `MEMBERSHIP_REFUND_FIRST_APPROVED` | Có | Không | Có |
+| `MEMBERSHIP_REFUND_CASH_DISBURSED` | Có | Có | Không |
+| `MEMBERSHIP_REFUND_COMPLETED` | Có | Không | Có nếu cần đối soát |
+| `MEMBERSHIP_REFUND_REJECTED` | Có | Không | Có nếu Lễ tân là người tạo |
+
+Payload cho staff nên chứa tối thiểu `refundRequestId`, `memberCode`, `memberFullName`, `status` và `approvedAmount` khi đã có.
+
+### Acceptance criteria
+
+- Manager đang hoạt động nhận thông báo khi có yêu cầu mới và khi tiền mặt đã được giao.
+- Lễ tân đang hoạt động nhận thông báo khi yêu cầu được duyệt bước đầu và cần giao tiền.
+- Member tiếp tục nhận mọi thay đổi trạng thái của yêu cầu thuộc gói mình.
+- Notification chỉ được phát sau transition thành công và không bị trùng khi retry/idempotent replay.
+- Bấm notification của staff điều hướng đúng màn hình hoàn tiền theo vai trò.

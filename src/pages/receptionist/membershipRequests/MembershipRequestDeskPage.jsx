@@ -7,6 +7,7 @@ import {
   collectFreezeCashPayment,
   createReceptionFreezeRequest,
   createReceptionTerminationRequest,
+  endReceptionFreezeEarly,
   listReceptionFreezeRequests,
   listReceptionTerminationRequests,
 } from '../../../services/membershipRequestService';
@@ -21,6 +22,8 @@ const STATUS_LABELS = {
   OBSOLETE: ['Không còn hiệu lực', 'secondary'],
   APPROVED_PENDING_PAYMENT: ['Chờ thu phí', 'info'],
   SCHEDULED: ['Đã lên lịch', 'success'],
+  ACTIVE: ['Đang đóng băng', 'primary'],
+  COMPLETED: ['Đã hoàn tất', 'secondary'],
 };
 
 function statusBadge(status) {
@@ -58,6 +61,7 @@ export default function MembershipRequestDeskPage() {
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState(null);
+  const [endEarlyTarget, setEndEarlyTarget] = useState(null);
   const [termination, setTermination] = useState({ mode: 'END_OF_CYCLE', reason: '' });
   const [freeze, setFreeze] = useState({ startDate: '', endDate: '', reason: '' });
 
@@ -154,10 +158,23 @@ export default function MembershipRequestDeskPage() {
     try {
       const receipt = await collectFreezeCashPayment(paymentTarget.id, paymentTarget.version);
       setPaymentTarget(null);
-      setNotice(`Đã thu ${formatPrice(receipt.amount, receipt.currencyCode)}. Mã thanh toán: ${receipt.paymentId}`);
+      setNotice(`Đã thu ${formatPrice(receipt.amount, receipt.currencyCode)} và lên lịch đóng băng.`);
       await loadFor(memberCode);
     } catch (requestError) {
       setError(new Error(messageOf(requestError, 'Không thể ghi nhận thanh toán phí đóng băng.')));
+    } finally { setBusy(false); }
+  }
+
+  async function endFreezeEarly() {
+    if (!endEarlyTarget) return;
+    setBusy(true); setError(null); setNotice(null);
+    try {
+      await endReceptionFreezeEarly(endEarlyTarget.id, endEarlyTarget.version);
+      setEndEarlyTarget(null);
+      setNotice('Đã kết thúc thời gian đóng băng sớm cho hội viên.');
+      await loadFor(memberCode);
+    } catch (requestError) {
+      setError(new Error(messageOf(requestError, 'Không thể kết thúc đóng băng sớm.')));
     } finally { setBusy(false); }
   }
 
@@ -216,7 +233,7 @@ export default function MembershipRequestDeskPage() {
             <Form.Group className="col-lg-5"><Form.Label>Lý do</Form.Label><Form.Control maxLength={1000} value={freeze.reason} onChange={(event) => setFreeze((value) => ({ ...value, reason: event.target.value }))} /></Form.Group>
             <div className="col-lg-3"><Button className="w-100" type="submit" variant="danger" disabled={busy}>Tạo yêu cầu hộ</Button></div>
           </Form>
-          <RequestTable kind="freeze" rows={freezeRows} onPayment={setPaymentTarget} />
+          <RequestTable kind="freeze" rows={freezeRows} onPayment={setPaymentTarget} onEndEarly={setEndEarlyTarget} />
         </Card.Body></Card>
       </> : null}
 
@@ -229,12 +246,21 @@ export default function MembershipRequestDeskPage() {
         </Modal.Body>
         <Modal.Footer><Button variant="outline-secondary" disabled={busy} onClick={() => setPaymentTarget(null)}>Quay lại</Button><Button variant="danger" disabled={busy} onClick={collectPayment}>{busy ? 'Đang ghi nhận...' : 'Xác nhận đã thu tiền'}</Button></Modal.Footer>
       </Modal>
+
+      <Modal show={Boolean(endEarlyTarget)} onHide={() => !busy && setEndEarlyTarget(null)} centered backdrop="static">
+        <Modal.Header closeButton={!busy}><Modal.Title className="h5">Kết thúc đóng băng sớm</Modal.Title></Modal.Header>
+        <Modal.Body>
+          <p>Xác nhận kết thúc thời gian đóng băng hiện tại của hội viên?</p>
+          <div className="small text-muted">{formatDate(endEarlyTarget?.startDate)} – {formatDate(endEarlyTarget?.endDate)}</div>
+        </Modal.Body>
+        <Modal.Footer><Button variant="outline-secondary" disabled={busy} onClick={() => setEndEarlyTarget(null)}>Quay lại</Button><Button variant="danger" disabled={busy} onClick={endFreezeEarly}>{busy ? 'Đang xử lý...' : 'Xác nhận kết thúc'}</Button></Modal.Footer>
+      </Modal>
     </div>
   );
 }
 
-function RequestTable({ kind, rows, onPayment }) {
+function RequestTable({ kind, rows, onPayment, onEndEarly }) {
   const termination = kind === 'termination';
   if (!rows.length) return <p className="small text-muted mt-4 mb-0">Chưa có yêu cầu.</p>;
-  return <div className="table-responsive mt-4"><Table hover className="align-middle mb-0"><thead><tr><th>Ngày gửi</th><th>Nội dung</th><th>Lý do</th>{!termination ? <th>Phí</th> : null}<th>Trạng thái</th>{!termination ? <th className="text-end">Thanh toán</th> : null}</tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td>{formatDateTime(row.createdAt)}</td><td>{termination ? row.mode === 'IMMEDIATE' ? 'Hủy ngay' : 'Cuối chu kỳ' : `${formatDate(row.startDate)} – ${formatDate(row.endDate)}`}</td><td>{row.reason}</td>{!termination ? <td>{row.feeAmount == null ? '—' : formatPrice(row.feeAmount, 'VND')}</td> : null}<td>{statusBadge(row.status)}</td>{!termination ? <td className="text-end">{row.status === 'APPROVED_PENDING_PAYMENT' ? <Button size="sm" variant="outline-danger" onClick={() => onPayment(row)}>Thu tiền mặt</Button> : '—'}</td> : null}</tr>)}</tbody></Table></div>;
+  return <div className="table-responsive mt-4"><Table hover className="align-middle mb-0"><thead><tr><th>Ngày gửi</th><th>Nội dung</th><th>Lý do</th>{!termination ? <th>Phí</th> : null}<th>Trạng thái</th>{!termination ? <th className="text-end">Thao tác</th> : null}</tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td>{formatDateTime(row.createdAt)}</td><td>{termination ? row.mode === 'IMMEDIATE' ? 'Hủy ngay' : 'Cuối chu kỳ' : `${formatDate(row.startDate)} – ${formatDate(row.endDate)}`}</td><td>{row.reason}</td>{!termination ? <td>{row.feeAmount == null ? '—' : formatPrice(row.feeAmount, 'VND')}</td> : null}<td>{statusBadge(row.status)}</td>{!termination ? <td className="text-end">{row.status === 'APPROVED_PENDING_PAYMENT' ? <Button size="sm" variant="outline-danger" onClick={() => onPayment(row)}>Thu tiền mặt</Button> : row.status === 'ACTIVE' ? <Button size="sm" variant="outline-danger" onClick={() => onEndEarly(row)}>Kết thúc sớm</Button> : '—'}</td> : null}</tr>)}</tbody></Table></div>;
 }

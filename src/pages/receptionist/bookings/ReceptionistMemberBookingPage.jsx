@@ -81,6 +81,7 @@ const STATUS_BADGE = {
 };
 
 const BOOKING_ERROR_MESSAGES = {
+  MEMBERSHIP_FROZEN: 'Gói tập của hội viên đang được đóng băng nên chưa thể đặt buổi tập.',
   VALIDATION_ERROR: 'Thông tin gửi lên chưa hợp lệ. Vui lòng kiểm tra lại.',
   MALFORMED_REQUEST: 'Yêu cầu đặt lịch không đúng định dạng.',
   BOOKING_ACTOR_NOT_ACTIVE_RECEPTIONIST:
@@ -1126,9 +1127,8 @@ export default function ReceptionistMemberBookingPage() {
                   <tr key={entry.id}>
                     <td>{entry.position ?? '—'}</td>
                     <td>
-                      {entry.memberId === accountId
-                        ? `${profile.fullName || profile.memberId} (${profile.memberId})`
-                        : entry.memberId}
+                      <div className="fw-semibold">{entry.memberFullName || (entry.memberId === accountId ? profile.fullName : 'Hội viên')}</div>
+                      <div className="small text-muted">{entry.memberCode || (entry.memberId === accountId ? profile.memberId : 'Chưa có mã hội viên')}</div>
                     </td>
                     <td>{entry.status || '—'}</td>
                   </tr>

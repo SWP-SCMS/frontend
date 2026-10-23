@@ -40,6 +40,20 @@ export async function createMyFreezeRequest(payload) {
   return data;
 }
 
+export async function withdrawMyFreezeRequest(requestId) {
+  await api.delete(
+    `/members/me/membership-freeze-requests/${encodeURIComponent(requestId)}`,
+  );
+}
+
+export async function endMyFreezeEarly(requestId, expectedVersion) {
+  const { data } = await api.post(
+    `/members/me/membership-freeze-requests/${encodeURIComponent(requestId)}/end-early`,
+    { expectedVersion },
+  );
+  return data;
+}
+
 export async function listManagerTerminationRequests(page = 0, size = 50) {
   const { data } = await api.get('/manager/membership-termination-requests', {
     params: pageParams(page, size),
@@ -113,6 +127,14 @@ export async function createReceptionFreezeRequest(memberCode, payload) {
 export async function collectFreezeCashPayment(requestId, expectedVersion) {
   const { data } = await api.post(
     `/reception/membership-freeze-requests/${encodeURIComponent(requestId)}/cash-payment`,
+    { expectedVersion },
+  );
+  return data;
+}
+
+export async function endReceptionFreezeEarly(requestId, expectedVersion) {
+  const { data } = await api.post(
+    `/reception/membership-freeze-requests/${encodeURIComponent(requestId)}/end-early`,
     { expectedVersion },
   );
   return data;

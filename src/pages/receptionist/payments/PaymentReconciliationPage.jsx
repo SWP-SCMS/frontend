@@ -270,14 +270,14 @@ export default function PaymentReconciliationPage() {
             return (
               <tr key={row.paymentId}>
                 <td>
-                  <code className="small">{row.paymentId}</code>
+                  <code className="small">{row.paymentReference || 'Chưa có reference'}</code>
                 </td>
                 <td>
                   <div className="fw-semibold">
-                    {row.memberName || row.memberAccountId || '—'}
+                    {row.memberName || '—'}
                   </div>
                   <div className="text-muted small">
-                    {row.orderNumber || row.orderId}
+                    {[row.memberCode, row.orderNumber].filter(Boolean).join(' · ') || '—'}
                   </div>
                 </td>
                 <td>{formatPrice(row.amount, row.currencyCode || 'VND')}</td>
@@ -434,15 +434,15 @@ export default function PaymentReconciliationPage() {
               <dl className="row small mb-3">
                 <dt className="col-sm-3 text-muted fw-normal">Mã giao dịch</dt>
                 <dd className="col-sm-9 mb-1">
-                  <code>{active.paymentId}</code>
+                  <code>{active.paymentReference || 'Chưa có reference'}</code>
                 </dd>
                 <dt className="col-sm-3 text-muted fw-normal">Hội viên</dt>
                 <dd className="col-sm-9 mb-1">
-                  {active.memberName || active.memberAccountId || '—'}
+                  {active.memberName || '—'}{active.memberCode ? ` (${active.memberCode})` : ''}
                 </dd>
                 <dt className="col-sm-3 text-muted fw-normal">Đơn</dt>
                 <dd className="col-sm-9 mb-1">
-                  {active.orderNumber || active.orderId}
+                  {active.orderNumber || '—'}
                 </dd>
                 <dt className="col-sm-3 text-muted fw-normal">Số tiền</dt>
                 <dd className="col-sm-9 mb-0">
@@ -606,12 +606,8 @@ export default function PaymentReconciliationPage() {
         <div className="mt-3">
           <Alert variant="success" className="small mb-0">
             Trạng thái hiện tại: <strong>{result.status}</strong>
-            {result.membershipId ? (
-              <>
-                {' '}
-                · Membership: <code>{result.membershipId}</code>
-              </>
-            ) : null}
+            {result.orderNumber ? <> · Đơn: <strong>{result.orderNumber}</strong></> : null}
+            {result.paymentReference ? <> · Giao dịch: <strong>{result.paymentReference}</strong></> : null}
             {result.receiptId ? (
               <>
                 {' '}

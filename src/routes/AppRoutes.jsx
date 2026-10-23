@@ -330,6 +330,12 @@ const PaymentReconciliationPage = lazy(
 const CashPaymentPage = lazy(
   () => import('../pages/receptionist/payments/CashPaymentPage'),
 );
+const RefundRequestDeskPage = lazy(
+  () => import('../pages/receptionist/refunds/RefundRequestDeskPage'),
+);
+const RefundReviewPage = lazy(
+  () => import('../pages/manager/refunds/RefundReviewPage'),
+);
 
 // Printable receipt (US20 follow-up). The backend authorises
 // GET /receipts/* is narrowed per receipt: MANAGER may read any;
@@ -576,6 +582,7 @@ export default function AppRoutes() {
         <Route path="orders/new" element={withSuspense(<CashPaymentPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
         <Route path="payments/cash" element={withSuspense(<CashPaymentPage />)} />
+        <Route path="refunds" element={withSuspense(<RefundRequestDeskPage />)} />
       </Route>
 
       {/* Receipt view/print. Route permits Receptionist and Manager; backend
@@ -713,6 +720,7 @@ export default function AppRoutes() {
         <Route path="profile/email" element={withSuspense(<StaffChangeEmailPage />)} />
         <Route path="profile/password" element={withSuspense(<StaffChangePasswordPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
+        <Route path="refunds" element={withSuspense(<RefundReviewPage />)} />
       </Route>
 
       {/* ---------- Catch-all ---------- */}

@@ -10,10 +10,10 @@
 // Notes:
 //   - List returns a plain array; server sort is fixed (name ASC, id ASC).
 //   - No pagination, no search/filter query params — those are FE-only today.
-//   - Create body shape: { name, capacity }. name is trimmed server-side;
+//   - Create body shape: { name, capacity, usageMode }. name is trimmed server-side;
 //     capacity must be a positive integer. status is NOT accepted on
 //     create (new rooms are always ACTIVE server-side).
-//   - PATCH body shape: subset of { name, capacity, status }. At least one
+//   - PATCH body shape: subset of { name, capacity, status, usageMode }. At least one
 //     field MUST be present (else 400 VALIDATION_ERROR, field=request).
 //   - There is NO delete endpoint — to retire, PATCH { status: 'INACTIVE' }.
 

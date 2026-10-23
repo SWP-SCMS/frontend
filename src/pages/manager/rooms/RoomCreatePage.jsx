@@ -29,6 +29,7 @@ const roomCreateSchema = z.object({
     .number({ invalid_type_error: 'Sức chứa phải là số nguyên dương.' })
     .int('Sức chứa phải là số nguyên dương.')
     .positive('Sức chứa phải lớn hơn 0.'),
+  usageMode: z.enum(['EXCLUSIVE', 'SHARED']),
 });
 
 export default function RoomCreatePage() {
@@ -45,6 +46,7 @@ export default function RoomCreatePage() {
     defaultValues: {
       name: '',
       capacity: '',
+      usageMode: 'EXCLUSIVE',
     },
   });
 
@@ -54,13 +56,14 @@ export default function RoomCreatePage() {
       const created = await createRoom({
         name: data.name.trim(),
         capacity: data.capacity,
+        usageMode: data.usageMode,
       });
       navigate(`/manager/rooms/${created.id}`, { replace: true });
     } catch (err) {
       // Shared helper: data.errors[field].
       // Allowlist MUST match the fields this page renders / registers.
       const handled = applyServerErrors(err, setError, {
-        fields: ['name', 'capacity'],
+        fields: ['name', 'capacity', 'usageMode'],
       });
 
       const code = err?.response?.data?.code;
@@ -118,6 +121,16 @@ export default function RoomCreatePage() {
           <Form.Control.Feedback type="invalid">
             {errors.name?.message}
           </Form.Control.Feedback>
+        </Form.Group>
+
+        <Form.Group className="mt-3" controlId="create-usage-mode">
+          <Form.Label>Chế độ sử dụng *</Form.Label>
+          <Form.Select {...register('usageMode')} isInvalid={Boolean(errors.usageMode)}>
+            <option value="EXCLUSIVE">Dùng riêng — mỗi khung giờ chỉ có một buổi tập</option>
+            <option value="SHARED">Dùng chung — nhiều buổi tập được dùng nếu còn đủ sức chứa</option>
+          </Form.Select>
+          <Form.Text className="text-muted">Phòng dùng chung tính tổng sức chứa của các buổi tập trùng giờ.</Form.Text>
+          <Form.Control.Feedback type="invalid">{errors.usageMode?.message}</Form.Control.Feedback>
         </Form.Group>
 
         <Form.Group className="mt-3" controlId="create-capacity">
