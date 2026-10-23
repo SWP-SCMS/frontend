@@ -27,6 +27,7 @@ function messageFor(error, fallback) {
   const known = {
     COACH_LEAVE_NOT_PENDING: 'Yêu cầu này không còn ở trạng thái chờ duyệt.',
     COACH_LEAVE_NOT_FOUND: 'Không tìm thấy yêu cầu nghỉ.',
+    COACH_LEAVE_HAS_AFFECTED_SESSIONS: 'Cần xử lý hết các buổi tập bị ảnh hưởng trước khi duyệt đơn nghỉ.',
   };
   return known[problem?.code] || problem?.detail || fallback;
 }
@@ -136,7 +137,7 @@ export default function CoachLeaveReviewPage() {
                         )}
                       </td>
                       <td><StatusBadge value={row.status} /></td>
-                      <td className="text-end">{row.status === 'PENDING' ? <div className="d-flex justify-content-end gap-2"><Button size="sm" variant="outline-success" onClick={() => openDecision(row, 'approve')}>Duyệt</Button><Button size="sm" variant="outline-danger" onClick={() => openDecision(row, 'reject')}>Từ chối</Button></div> : '—'}</td>
+                      <td className="text-end">{row.status === 'PENDING' ? <div className="d-flex justify-content-end gap-2"><Button size="sm" variant="outline-success" disabled={Boolean(row.affectedSessionIds?.length)} title={row.affectedSessionIds?.length ? 'Hãy xử lý hết các buổi tập bị ảnh hưởng trước.' : undefined} onClick={() => openDecision(row, 'approve')}>Duyệt</Button><Button size="sm" variant="outline-danger" onClick={() => openDecision(row, 'reject')}>Từ chối</Button></div> : '—'}</td>
                     </tr>
                   );
                 })}</tbody>
@@ -150,7 +151,7 @@ export default function CoachLeaveReviewPage() {
         <Modal.Header closeButton={!busy}><Modal.Title className="h5">{decision?.action === 'approve' ? 'Duyệt yêu cầu nghỉ' : 'Từ chối yêu cầu nghỉ'}</Modal.Title></Modal.Header>
         <Modal.Body>
           <p>Xác nhận {decision?.action === 'approve' ? 'duyệt' : 'từ chối'} yêu cầu của <strong>{selectedCoach?.fullName || 'huấn luyện viên này'}</strong>?</p>
-          {decision?.action === 'approve' && decision?.row.affectedSessionIds?.length ? <Alert variant="warning" className="small">Có {decision.row.affectedSessionIds.length} buổi tập bị ảnh hưởng. Sau khi duyệt, hãy mở từng buổi để phân công lại hoặc dời lịch.</Alert> : null}
+          {decision?.action === 'approve' && decision?.row.affectedSessionIds?.length ? <Alert variant="warning" className="small">Có {decision.row.affectedSessionIds.length} buổi tập bị ảnh hưởng. Hãy phân công lại hoặc dời lịch toàn bộ trước khi duyệt.</Alert> : null}
           <Form.Group>
             <Form.Label>Ghi chú phản hồi</Form.Label>
             <Form.Control as="textarea" rows={3} maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} />

@@ -59,6 +59,7 @@ const assignSchema = z.object({
 });
 
 const ERROR_MESSAGES = {
+  MEMBERSHIP_FROZEN: 'Gói tập của hội viên đang được đóng băng nên chưa thể phân công huấn luyện viên.',
   MEMBER_NOT_FOUND: 'Không tìm thấy hội viên cần phân công.',
   MEMBER_NOT_ACTIVE: 'Hội viên không còn ở trạng thái hoạt động.',
   COACH_NOT_FOUND: 'Không tìm thấy huấn luyện viên đã chọn.',

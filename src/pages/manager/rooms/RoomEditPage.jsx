@@ -48,6 +48,7 @@ const roomEditSchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE'], {
     message: 'Trạng thái không hợp lệ.',
   }),
+  usageMode: z.enum(['EXCLUSIVE', 'SHARED']),
 });
 
 function roomToForm(r) {
@@ -55,6 +56,7 @@ function roomToForm(r) {
     name: r?.name || '',
     capacity: r?.capacity != null ? r.capacity : '',
     status: r?.status || 'ACTIVE',
+    usageMode: r?.usageMode || 'EXCLUSIVE',
   };
 }
 
@@ -91,6 +93,7 @@ export default function RoomEditPage() {
       name: '',
       capacity: '',
       status: 'ACTIVE',
+      usageMode: 'EXCLUSIVE',
     },
   });
 
@@ -126,6 +129,9 @@ export default function RoomEditPage() {
     }
     if (data.status !== original?.status) {
       patch.status = data.status;
+    }
+    if (data.usageMode !== original?.usageMode) {
+      patch.usageMode = data.usageMode;
     }
     return patch;
   }
@@ -197,7 +203,7 @@ export default function RoomEditPage() {
       } else if (fieldErrors && typeof fieldErrors === 'object') {
         // Shared helper: per-field errors restricted to the rendered editable fields.
         sharedHandled = applyServerErrors(err, setError, {
-          fields: ['name', 'capacity', 'status'],
+          fields: ['name', 'capacity', 'status', 'usageMode'],
         });
       }
 
@@ -278,6 +284,16 @@ export default function RoomEditPage() {
           <Form.Control.Feedback type="invalid">
             {errors.name?.message}
           </Form.Control.Feedback>
+        </Form.Group>
+
+        <Form.Group className="mt-3" controlId="edit-usage-mode">
+          <Form.Label>Chế độ sử dụng *</Form.Label>
+          <Form.Select {...register('usageMode')} isInvalid={Boolean(errors.usageMode)}>
+            <option value="EXCLUSIVE">Dùng riêng — mỗi khung giờ chỉ có một buổi tập</option>
+            <option value="SHARED">Dùng chung — nhiều buổi tập được dùng nếu còn đủ sức chứa</option>
+          </Form.Select>
+          <Form.Text className="text-muted">Khi dùng chung, hệ thống cộng sức chứa của tất cả buổi tập trùng giờ.</Form.Text>
+          <Form.Control.Feedback type="invalid">{errors.usageMode?.message}</Form.Control.Feedback>
         </Form.Group>
 
         <Form.Group className="mt-3" controlId="edit-capacity">

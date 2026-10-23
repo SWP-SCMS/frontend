@@ -25,6 +25,32 @@ const TYPE_LABELS = {
   ACCOUNT_CREATED: 'Tài khoản đã được tạo',
   MEMBER_SUSPENDED: 'Tài khoản đã bị tạm khóa',
   MEMBER_REACTIVATED: 'Tài khoản đã được mở lại',
+  MEMBERSHIP_FREEZE_REVIEW_REQUIRED: 'Có yêu cầu đóng băng cần duyệt',
+  MEMBERSHIP_FREEZE_PAYMENT_REQUIRED: 'Có yêu cầu đóng băng cần thu phí',
+  MEMBERSHIP_FREEZE_PENDING: 'Đã tạo yêu cầu đóng băng',
+  MEMBERSHIP_FREEZE_APPROVED_PENDING_PAYMENT: 'Yêu cầu đóng băng đã được duyệt',
+  MEMBERSHIP_FREEZE_SCHEDULED: 'Đã lên lịch đóng băng',
+  MEMBERSHIP_FREEZE_ACTIVE: 'Gói tập đã bắt đầu đóng băng',
+  MEMBERSHIP_FREEZE_COMPLETED: 'Đã hoàn tất đóng băng gói tập',
+  MEMBERSHIP_FREEZE_ENDED_EARLY: 'Đã kết thúc đóng băng sớm',
+  MEMBERSHIP_FREEZE_WITHDRAWN: 'Yêu cầu đóng băng đã được rút',
+  MEMBERSHIP_TERMINATION_REVIEW_REQUIRED: 'Có yêu cầu hủy gói cần duyệt',
+  MEMBERSHIP_TERMINATION_REQUESTED: 'Đã tạo yêu cầu hủy gói',
+  MEMBERSHIP_TERMINATION_APPROVED: 'Yêu cầu hủy gói đã được duyệt',
+  MEMBERSHIP_TERMINATION_REJECTED: 'Yêu cầu hủy gói bị từ chối',
+  MEMBERSHIP_TERMINATION_WITHDRAWN: 'Yêu cầu hủy gói đã được rút',
+  MEMBERSHIP_TERMINATION_EXECUTED: 'Gói tập đã được hủy',
+  COACH_LEAVE_REQUESTED: 'Có yêu cầu nghỉ của huấn luyện viên',
+  COACH_LEAVE_WITHDRAWN: 'Huấn luyện viên đã rút yêu cầu nghỉ',
+  COACH_LEAVE_APPROVED: 'Yêu cầu nghỉ đã được duyệt',
+  COACH_LEAVE_REJECTED: 'Yêu cầu nghỉ bị từ chối',
+  WAITLIST_PROMOTED: 'Bạn đã được chuyển từ hàng chờ sang lịch đặt',
+  WAITLIST_CANCELLED: 'Hàng chờ của buổi tập đã bị hủy',
+  MEMBERSHIP_REFUND_REQUESTED: 'Đã tạo yêu cầu hoàn tiền',
+  MEMBERSHIP_REFUND_FIRST_APPROVED: 'Yêu cầu hoàn tiền đã được duyệt bước đầu',
+  MEMBERSHIP_REFUND_CASH_DISBURSED: 'Đã ghi nhận giao tiền hoàn',
+  MEMBERSHIP_REFUND_COMPLETED: 'Yêu cầu hoàn tiền đã hoàn tất',
+  MEMBERSHIP_REFUND_REJECTED: 'Yêu cầu hoàn tiền bị từ chối',
 };
 
 const TARGET_LABELS = {
@@ -33,6 +59,10 @@ const TARGET_LABELS = {
   COACH_ASSIGNMENT: 'Phân công huấn luyện viên',
   PAYMENT: 'Thanh toán',
   MEMBERSHIP: 'Gói tập',
+  MEMBERSHIP_FREEZE_REQUEST: 'Yêu cầu đóng băng',
+  MEMBERSHIP_TERMINATION_REQUEST: 'Yêu cầu hủy gói',
+  COACH_LEAVE_REQUEST: 'Yêu cầu nghỉ HLV',
+  REFUND_REQUEST: 'Yêu cầu hoàn tiền',
 };
 
 function humanize(value) {
@@ -70,6 +100,11 @@ function notificationDestination(item, pathname) {
       return '/member/dashboard#my-coach';
     }
     if (type === 'PAYMENT_PAID') return '/member/receipts';
+    if (type?.startsWith('MEMBERSHIP_FREEZE_') || type?.startsWith('MEMBERSHIP_TERMINATION_')) {
+      return '/member/membership-requests';
+    }
+    if (type?.startsWith('MEMBERSHIP_REFUND_')) return '/member/receipts';
+    if (['WAITLIST_PROMOTED', 'WAITLIST_CANCELLED'].includes(type)) return '/member/class-sessions';
     if (['ACCOUNT_CREATED', 'MEMBER_SUSPENDED', 'MEMBER_REACTIVATED'].includes(type)) {
       return '/member/profile';
     }
@@ -87,8 +122,17 @@ function notificationDestination(item, pathname) {
     return '/coach/dashboard';
   }
 
-  if (role === 'reception') return '/reception/dashboard';
-  if (role === 'manager') return '/manager/dashboard';
+  if (role === 'reception') {
+    if (type === 'MEMBERSHIP_FREEZE_PAYMENT_REQUIRED') return '/reception/membership-requests';
+    return '/reception/dashboard';
+  }
+  if (role === 'manager') {
+    if (type?.startsWith('MEMBERSHIP_FREEZE_') || type?.startsWith('MEMBERSHIP_TERMINATION_')) {
+      return '/manager/membership-requests';
+    }
+    if (type?.startsWith('COACH_LEAVE_')) return '/manager/coach-leave-requests';
+    return '/manager/dashboard';
+  }
   return null;
 }
 

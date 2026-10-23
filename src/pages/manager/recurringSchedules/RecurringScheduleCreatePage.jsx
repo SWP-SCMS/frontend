@@ -377,6 +377,7 @@ export default function RecurringScheduleCreatePage() {
     } catch (err) {
       const fieldErrors = err?.response?.data?.errors;
       const code = err?.response?.data?.code;
+      const problem = err?.response?.data || {};
 
       // Shared helper: per-field errors restricted to the
       // rendered editable fields. `classId` is NOT in the
@@ -462,6 +463,7 @@ export default function RecurringScheduleCreatePage() {
           pageLocalHandled = true;
           break;
         case 'SESSION_CAPACITY_EXCEEDS_ROOM':
+        case 'ROOM_CAPACITY_BELOW_SESSION_CAPACITY':
           if (!hasFieldMessage(fieldErrors, 'capacity')) {
             setError('capacity', {
               type: 'server',
@@ -469,6 +471,17 @@ export default function RecurringScheduleCreatePage() {
                 'Sức chứa mỗi buổi tập không được vượt quá sức chứa của phòng.',
             });
           }
+          pageLocalHandled = true;
+          break;
+        case 'ROOM_TIME_CONFLICT':
+          setError('roomId', { type: 'server', message: 'Phòng dùng riêng đã có buổi tập trùng giờ trong lịch lặp.' });
+          pageLocalHandled = true;
+          break;
+        case 'SHARED_ROOM_CAPACITY_EXCEEDED':
+          setError('roomId', {
+            type: 'server',
+            message: `Phòng dùng chung không đủ chỗ ở một khung giờ: đang dùng ${problem.occupiedCapacity ?? '—'}/${problem.roomCapacity ?? '—'}, cần thêm ${problem.requestedCapacity ?? '—'} chỗ.`,
+          });
           pageLocalHandled = true;
           break;
         default:

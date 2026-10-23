@@ -3,7 +3,7 @@ import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-b
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import { getMemberAccount } from '../../../services/memberAccountService';
+import { searchMemberAccounts } from '../../../services/memberAccountService';
 import {
   createManagerDirectTermination,
   decideFreezeRequest,
@@ -22,6 +22,8 @@ const LABELS = {
   OBSOLETE: ['Không còn hiệu lực', 'secondary'],
   APPROVED_PENDING_PAYMENT: ['Chờ thu phí', 'info'],
   SCHEDULED: ['Đã lên lịch', 'success'],
+  ACTIVE: ['Đang đóng băng', 'primary'],
+  COMPLETED: ['Đã hoàn tất', 'secondary'],
 };
 
 function statusBadge(status) {
@@ -45,7 +47,6 @@ function errorMessage(error, fallback) {
 export default function MembershipRequestReviewPage() {
   const [terminationRows, setTerminationRows] = useState([]);
   const [freezeRows, setFreezeRows] = useState([]);
-  const [memberSummaries, setMemberSummaries] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [actionError, setActionError] = useState(null);
@@ -53,6 +54,9 @@ export default function MembershipRequestReviewPage() {
   const [decision, setDecision] = useState(null);
   const [busy, setBusy] = useState(false);
   const [direct, setDirect] = useState({ memberAccountId: '', mode: 'END_OF_CYCLE', reason: '' });
+  const [directQuery, setDirectQuery] = useState('');
+  const [directResults, setDirectResults] = useState([]);
+  const [directSearching, setDirectSearching] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,20 +68,6 @@ export default function MembershipRequestReviewPage() {
       ]);
       setTerminationRows(terminations.content || []);
       setFreezeRows(freezes.content || []);
-      const ids = [...new Set([
-        ...(terminations.content || []).map((row) => row.memberAccountId),
-        ...(freezes.content || []).map((row) => row.memberAccountId),
-      ].filter(Boolean))];
-      const summaries = await Promise.all(
-        ids.map(async (id) => {
-          try {
-            return [id, await getMemberAccount(id)];
-          } catch {
-            return [id, null];
-          }
-        }),
-      );
-      setMemberSummaries(Object.fromEntries(summaries));
     } catch (error) {
       setLoadError(error);
     } finally {
@@ -116,7 +106,7 @@ export default function MembershipRequestReviewPage() {
   async function submitDirect(event) {
     event.preventDefault();
     if (!direct.memberAccountId.trim() || !direct.reason.trim()) {
-      setActionError(new Error('Vui lòng nhập Account ID và lý do.'));
+      setActionError(new Error('Vui lòng chọn hội viên và nhập lý do.'));
       return;
     }
     setBusy(true);
@@ -136,9 +126,26 @@ export default function MembershipRequestReviewPage() {
     }
   }
 
-  const decisionMember = decision
-    ? memberSummaries[decision.row.memberAccountId]
-    : null;
+  async function searchDirectMember() {
+    const query = directQuery.trim();
+    if (!query) {
+      setActionError(new Error('Vui lòng nhập mã hội viên, họ tên, số điện thoại hoặc email.'));
+      return;
+    }
+    setDirectSearching(true);
+    setActionError(null);
+    try {
+      const result = await searchMemberAccounts({ query, status: 'ACTIVE', page: 0, size: 20 });
+      const rows = result.content || [];
+      setDirectResults(rows);
+      setDirect((value) => ({ ...value, memberAccountId: rows.length === 1 ? rows[0].accountId : '' }));
+      if (!rows.length) setActionError(new Error('Không tìm thấy hội viên đang hoạt động phù hợp.'));
+    } catch (error) {
+      setActionError(new Error(errorMessage(error, 'Không thể tìm hội viên.')));
+    } finally {
+      setDirectSearching(false);
+    }
+  }
 
   return (
     <div>
@@ -156,11 +163,20 @@ export default function MembershipRequestReviewPage() {
       <Card className="border-0 shadow-sm mb-4">
         <Card.Body className="p-4">
           <h2 className="h5 fw-bold">Hủy trực tiếp theo quyết định quản lý</h2>
-          <p className="small text-muted">Dùng Account ID của hội viên. Thao tác này tạo và duyệt yêu cầu trong cùng một lần.</p>
+          <p className="small text-muted">Tìm và chọn hội viên. Thao tác này tạo và duyệt yêu cầu trong cùng một lần.</p>
           <Form onSubmit={submitDirect} className="row g-3 align-items-end">
             <Form.Group className="col-lg-4">
-              <Form.Label>Member Account ID</Form.Label>
-              <Form.Control value={direct.memberAccountId} onChange={(event) => setDirect((value) => ({ ...value, memberAccountId: event.target.value }))} />
+              <Form.Label>Tìm hội viên</Form.Label>
+              <div className="d-flex gap-2">
+                <Form.Control value={directQuery} onChange={(event) => setDirectQuery(event.target.value)} placeholder="MB-100001, họ tên, SĐT hoặc email" />
+                <Button type="button" variant="outline-danger" disabled={directSearching} onClick={searchDirectMember}>{directSearching ? 'Đang tìm...' : 'Tìm'}</Button>
+              </div>
+              {directResults.length ? (
+                <Form.Select className="mt-2" value={direct.memberAccountId} onChange={(event) => setDirect((value) => ({ ...value, memberAccountId: event.target.value }))}>
+                  <option value="">Chọn hội viên</option>
+                  {directResults.map((member) => <option key={member.accountId} value={member.accountId}>{member.fullName || 'Hội viên'} — {member.memberId || 'Chưa có mã'}</option>)}
+                </Form.Select>
+              ) : null}
             </Form.Group>
             <Form.Group className="col-lg-2">
               <Form.Label>Thời điểm hủy</Form.Label>
@@ -180,8 +196,8 @@ export default function MembershipRequestReviewPage() {
 
       {loading ? <div className="py-5 text-center"><Spinner animation="border" variant="danger" /></div> : (
         <>
-          <ReviewTable title="Yêu cầu hủy gói" kind="termination" rows={terminationRows} memberSummaries={memberSummaries} onDecision={openDecision} />
-          <ReviewTable title="Yêu cầu đóng băng" kind="freeze" rows={freezeRows} memberSummaries={memberSummaries} onDecision={openDecision} />
+          <ReviewTable title="Yêu cầu hủy gói" kind="termination" rows={terminationRows} onDecision={openDecision} />
+          <ReviewTable title="Yêu cầu đóng băng" kind="freeze" rows={freezeRows} onDecision={openDecision} />
         </>
       )}
 
@@ -192,11 +208,10 @@ export default function MembershipRequestReviewPage() {
         <Modal.Body>
           <p className="mb-2">
             Xác nhận {decision?.action === 'approve' ? 'duyệt' : 'từ chối'} yêu cầu của hội viên{' '}
-            <strong>{decisionMember?.fullName || 'Không tải được tên'}</strong>?
+            <strong>{decision?.row.memberFullName || 'Hội viên'}</strong>?
           </p>
           <div className="small text-muted mb-3">
-            {decisionMember?.memberId || 'Chưa có mã hội viên'}
-            {decision?.row.memberAccountId ? ` · ${decision.row.memberAccountId}` : ''}
+            {decision?.row.memberId || 'Chưa có mã hội viên'}
           </div>
           {decision?.kind === 'freeze' && decision?.action === 'approve' ? (
             <Alert variant="info" className="small mt-3 mb-0">Sau khi duyệt, hệ thống tính phí; lễ tân phải thu phí để lịch đóng băng có hiệu lực.</Alert>
@@ -213,7 +228,7 @@ export default function MembershipRequestReviewPage() {
   );
 }
 
-function ReviewTable({ title, kind, rows, memberSummaries, onDecision }) {
+function ReviewTable({ title, kind, rows, onDecision }) {
   const termination = kind === 'termination';
   return (
     <Card className="border-0 shadow-sm mb-4">
@@ -223,15 +238,13 @@ function ReviewTable({ title, kind, rows, memberSummaries, onDecision }) {
           <div className="table-responsive">
             <Table hover className="align-middle mb-0">
               <thead><tr><th>Hội viên</th><th>Ngày gửi</th><th>Nội dung</th><th>Lý do</th>{!termination ? <th>Phí</th> : null}<th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
-              <tbody>{rows.map((row) => {
-                const member = memberSummaries[row.memberAccountId];
-                return (
+              <tbody>{rows.map((row) => (
                 <tr key={row.id}>
                   <td>
                     <Link to={`/manager/members/${row.memberAccountId}`} className="fw-semibold text-decoration-none">
-                      {member?.fullName || 'Không tải được tên'}
+                      {row.memberFullName || 'Hội viên'}
                     </Link>
-                    <div className="small text-muted">{member?.memberId || row.memberAccountId}</div>
+                    <div className="small text-muted">{row.memberId || 'Chưa có mã hội viên'}</div>
                   </td>
                   <td>{formatDateTime(row.createdAt)}</td>
                   <td>{termination ? row.mode === 'IMMEDIATE' ? 'Hủy ngay' : 'Cuối chu kỳ' : `${formatDate(row.startDate)} – ${formatDate(row.endDate)}`}</td>
@@ -242,7 +255,7 @@ function ReviewTable({ title, kind, rows, memberSummaries, onDecision }) {
                     {row.status === 'PENDING' ? <div className="d-flex justify-content-end gap-2"><Button size="sm" variant="outline-success" onClick={() => onDecision(kind, 'approve', row)}>Duyệt</Button><Button size="sm" variant="outline-danger" onClick={() => onDecision(kind, 'reject', row)}>Từ chối</Button></div> : '—'}
                   </td>
                 </tr>
-              );})}</tbody>
+              ))}</tbody>
             </Table>
           </div>
         )}

@@ -68,6 +68,7 @@ const STATUS_OPTIONS = [
 
 // Thông báo theo mã lỗi của BE (xử lý theo status / code, không đọc `detail`).
 const BOOKING_ERROR_MESSAGES = {
+  MEMBERSHIP_FROZEN: 'Gói tập đang được đóng băng nên chưa thể đặt buổi tập.',
   MEMBERSHIP_BENEFIT_REQUIRED:
     'Gói tập hiện tại chưa đáp ứng quyền lợi của bộ môn này.',
   BOOKING_PLUS_MEMBERSHIP_REQUIRED:

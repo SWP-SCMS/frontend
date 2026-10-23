@@ -192,7 +192,6 @@ function PlanCard({ membership, kind }) {
   );
   const startsAt = pick(membership, 'starts_at', 'startsAt');
   const endsAt = pick(membership, 'ends_at', 'endsAt');
-  const orderId = pick(membership, 'order_id', 'orderId');
 
   const progress = usage(membership);
   const isActive = membership.status === 'ACTIVE';
@@ -272,7 +271,6 @@ function PlanCard({ membership, kind }) {
           label="Giá đã thanh toán"
           value={formatPrice(priceAmount, currencyCode || 'VND')}
         />
-        <Detail label="Mã đơn" value={orderId || '—'} />
         <Detail
           label="Trạng thái"
           value={STATUS_LABELS[membership.status] || membership.status || '—'}

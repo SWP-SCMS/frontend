@@ -380,6 +380,7 @@ export default function SessionAssignmentEditPage() {
     } catch (err) {
       const fieldErrors = err?.response?.data?.errors;
       const code = err?.response?.data?.code;
+      const problem = err?.response?.data || {};
 
       // Per-field errors restricted to the rendered editable fields.
       // capacity is intentionally NOT in the allowlist (capacity is
@@ -431,6 +432,7 @@ export default function SessionAssignmentEditPage() {
           pageLocalHandled = true;
           break;
         case 'SESSION_CAPACITY_EXCEEDS_ROOM':
+        case 'ROOM_CAPACITY_BELOW_SESSION_CAPACITY':
           // BE-supplied field hint is `capacity`, but capacity is
           // NOT a rendered form field on US30. Map to roomId so the
           // manager picks another Room.
@@ -441,6 +443,17 @@ export default function SessionAssignmentEditPage() {
                 'Sức chứa của phòng này nhỏ hơn sức chứa buổi tập. Vui lòng chọn phòng khác.',
             });
           }
+          pageLocalHandled = true;
+          break;
+        case 'ROOM_TIME_CONFLICT':
+          setError('roomId', { type: 'server', message: 'Phòng dùng riêng đã có buổi tập trùng giờ. Vui lòng chọn phòng khác.' });
+          pageLocalHandled = true;
+          break;
+        case 'SHARED_ROOM_CAPACITY_EXCEEDED':
+          setError('roomId', {
+            type: 'server',
+            message: `Phòng dùng chung không còn đủ chỗ: đang dùng ${problem.occupiedCapacity ?? '—'}/${problem.roomCapacity ?? '—'}, buổi tập cần ${problem.requestedCapacity ?? '—'} chỗ.`,
+          });
           pageLocalHandled = true;
           break;
         case 'SESSION_CONFLICT':

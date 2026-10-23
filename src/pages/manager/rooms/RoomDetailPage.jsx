@@ -4,7 +4,7 @@
 // GET /api/v1/manager/rooms/{roomId} endpoint.
 //
 // RoomResponse exposes exactly these fields today:
-//   { id, name, capacity, status }
+//   { id, name, capacity, status, usageMode }
 // createdAt / updatedAt / version are NOT in the response DTO.
 
 import { useCallback, useEffect, useState } from 'react';
@@ -124,7 +124,7 @@ export default function RoomDetailPage() {
       ) : null}
 
       <Row className="g-3 mb-3">
-        <Col md={6}>
+        <Col md={4}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
               <h2 className="h6 text-uppercase text-muted">Sức chứa</h2>
@@ -134,7 +134,20 @@ export default function RoomDetailPage() {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={6}>
+        <Col md={4}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Body>
+              <h2 className="h6 text-uppercase text-muted">Chế độ sử dụng</h2>
+              <p className="mb-1 fw-semibold">{room.usageMode === 'SHARED' ? 'Dùng chung' : 'Dùng riêng'}</p>
+              <p className="text-muted small mb-0">
+                {room.usageMode === 'SHARED'
+                  ? 'Cho phép nhiều buổi tập trùng giờ nếu tổng sức chứa không vượt quá sức chứa phòng.'
+                  : 'Mỗi khung giờ chỉ được xếp một buổi tập.'}
+              </p>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
               <h2 className="h6 text-uppercase text-muted">Trạng thái</h2>

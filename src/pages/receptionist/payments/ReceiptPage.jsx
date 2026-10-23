@@ -167,6 +167,8 @@ export default function ReceiptPage({ memberMode = false }) {
               <DetailRow label="Hội viên" value={memberName} />
               <DetailRow label="Mã hội viên" value={memberCode} />
               <DetailRow label="Gói tập" value={offerName} />
+              <DetailRow label="Mã đơn" value={receipt.orderNumber} />
+              {receipt.paymentReference ? <DetailRow label="Mã giao dịch" value={receipt.paymentReference} mono /> : null}
               <DetailRow label="Phương thức" value={paymentMethodLabel(receipt.paymentMethod)} />
 
               <div className="border-top border-bottom my-3 py-3 text-center">

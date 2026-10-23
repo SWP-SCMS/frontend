@@ -129,6 +129,7 @@ export default function RoomListPage() {
           <tr>
             <th>Tên phòng</th>
             <th>Sức chứa</th>
+            <th>Chế độ sử dụng</th>
             <th>Trạng thái</th>
             <th className="text-end">Hành động</th>
           </tr>
@@ -144,6 +145,7 @@ export default function RoomListPage() {
                   {row.name || '—'}
                 </Link>
               </td>
+              <td>{row.usageMode === 'SHARED' ? 'Dùng chung' : 'Dùng riêng'}</td>
               <td>
                 {row.capacity != null ? (
                   <span>{row.capacity}</span>
