@@ -23,7 +23,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Alert, Button, Card, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,6 +35,8 @@ import {
   cancelSession,
   getManagerSessionDetail,
 } from '../../../services/classSessionService';
+import { getMemberAccount } from '../../../services/memberAccountService';
+import { listManagerSessionWaitlist } from '../../../services/waitlistService';
 
 const GYM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
@@ -159,6 +161,10 @@ export default function SessionDetailPage() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [waitlistRows, setWaitlistRows] = useState([]);
+  const [waitlistMembers, setWaitlistMembers] = useState({});
+  const [waitlistLoading, setWaitlistLoading] = useState(true);
+  const [waitlistError, setWaitlistError] = useState(null);
 
   // US30 — render a one-time success Alert when the Assignment Edit
   // page redirected here with `state.assignmentUpdated === true`.
@@ -294,6 +300,36 @@ export default function SessionDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadWaitlist = useCallback(async () => {
+    setWaitlistLoading(true);
+    setWaitlistError(null);
+    try {
+      const rows = await listManagerSessionWaitlist(sessionId);
+      setWaitlistRows(rows);
+      const ids = [...new Set(rows.map((row) => row.memberId).filter(Boolean))];
+      const members = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            return [id, await getMemberAccount(id)];
+          } catch {
+            return [id, null];
+          }
+        }),
+      );
+      setWaitlistMembers(Object.fromEntries(members));
+    } catch (err) {
+      setWaitlistRows([]);
+      setWaitlistMembers({});
+      setWaitlistError(err);
+    } finally {
+      setWaitlistLoading(false);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    loadWaitlist();
+  }, [loadWaitlist]);
 
   if (loading) {
     return (
@@ -476,6 +512,65 @@ export default function SessionDetailPage() {
           </Card>
         </Col>
       </Row>
+
+      <Card className="border-0 shadow-sm mb-3">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
+            <div>
+              <h2 className="h5 fw-bold mb-1">Hàng chờ</h2>
+              <p className="small text-muted mb-0">
+                Danh sách theo thứ tự FIFO của buổi tập này.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline-secondary"
+              size="sm"
+              onClick={loadWaitlist}
+              disabled={waitlistLoading}
+            >
+              Tải lại
+            </Button>
+          </div>
+          <ErrorAlert error={waitlistError} title="Không tải được hàng chờ" />
+          {waitlistLoading ? (
+            <div className="text-center py-3">
+              <Spinner animation="border" size="sm" variant="danger" />
+            </div>
+          ) : waitlistRows.length === 0 ? (
+            <p className="text-muted mb-0">Chưa có hội viên nào trong hàng chờ.</p>
+          ) : (
+            <Table responsive hover className="align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Vị trí</th>
+                  <th>Hội viên</th>
+                  <th>Trạng thái</th>
+                  <th>Nguồn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {waitlistRows.map((entry) => {
+                  const member = waitlistMembers[entry.memberId];
+                  return (
+                    <tr key={entry.id}>
+                      <td>{entry.position ?? '—'}</td>
+                      <td>
+                        <div className="fw-semibold">{member?.fullName || '—'}</div>
+                        <div className="small text-muted">
+                          {member?.memberId || entry.memberId || '—'}
+                        </div>
+                      </td>
+                      <td>{entry.status || '—'}</td>
+                      <td>{entry.source || '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          )}
+        </Card.Body>
+      </Card>
 
       {isCancelled ? (
         <Card className="border-0 shadow-sm">

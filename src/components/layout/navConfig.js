@@ -139,6 +139,12 @@ export const MEMBER_SIDEBAR_ITEMS = [
     label: 'Huấn luyện cá nhân',
     items: [
       {
+        to: '/member/pt-booking',
+        label: 'Đặt lịch PT 1-1',
+        icon: 'calendar',
+        requiredBenefit: 'PERSONAL_COACHING',
+      },
+      {
         to: '/member/training-plans',
         label: 'Giáo án tập luyện',
         icon: 'clipboard',

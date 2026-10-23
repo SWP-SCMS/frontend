@@ -511,6 +511,23 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/member/pt-booking"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                <MemberBenefitRouteGuard
+                  benefitCode="PERSONAL_COACHING"
+                  serviceName="Đặt lịch PT 1-1"
+                >
+                  {withSuspense(<ClassBookingPage ptOnly />)}
+                </MemberBenefitRouteGuard>
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
       <Route path="/member/training-plans" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_PLAN" serviceName="Giáo án tập luyện">{withSuspense(<MemberTrainingPlansPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/training-results" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_RESULT" serviceName="Kết quả tập luyện">{withSuspense(<MemberTrainingResultsPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/feedback" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_FEEDBACK" serviceName="Nhận xét huấn luyện viên">{withSuspense(<MemberTrainingFeedbackPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />

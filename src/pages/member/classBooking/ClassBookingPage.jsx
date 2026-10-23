@@ -23,6 +23,12 @@ import { useAuth } from '../../../context/useAuth';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import { listMemberClassSessions } from '../../../services/memberClassSessionService';
+import { listMemberPtSessions } from '../../../services/ptSessionService';
+import {
+  joinMyWaitlist,
+  leaveMyWaitlist,
+  listMyWaitlists,
+} from '../../../services/waitlistService';
 import {
   bookClassSession,
   cancelMyBooking,
@@ -80,6 +86,11 @@ const BOOKING_ERROR_MESSAGES = {
     'Chỉ được hủy lịch trước giờ bắt đầu ít nhất 2 giờ.',
   BOOKING_NOT_BOOKED: 'Lịch này không còn ở trạng thái đã đặt.',
   BOOKING_NOT_FOUND: 'Không tìm thấy lịch đã đặt.',
+  SESSION_NOT_FULL: 'Buổi tập vừa có chỗ trống. Hãy đặt lịch trực tiếp.',
+  WAITLIST_DUPLICATE: 'Bạn đã ở trong hàng chờ của buổi tập này.',
+  WAITLIST_NOT_FOUND: 'Bạn không còn ở trong hàng chờ của buổi tập này.',
+  PT_COACH_ASSIGNMENT_MISMATCH:
+    'Bạn chỉ có thể đăng ký PT 1-1 với huấn luyện viên cá nhân đang được phân công.',
 };
 
 function bookingErrorMessage(err, fallback) {
@@ -99,23 +110,27 @@ function bookingErrorMessage(err, fallback) {
 }
 
 // Tải mọi trang của khoảng ngày (BE giới hạn 100 buổi / trang).
-async function fetchAllSessions({ fromIso, toIso }) {
-  const all = [];
-  let page = 0;
-  for (;;) {
-    const data = await listMemberClassSessions({
-      from: fromIso,
-      to: toIso,
-      page,
-      size: SESSIONS_PAGE_SIZE,
-    });
-    const content = Array.isArray(data?.content) ? data.content : [];
-    all.push(...content);
-    const totalPages = typeof data?.totalPages === 'number' ? data.totalPages : 0;
-    if (content.length === 0 || page + 1 >= totalPages) break;
-    page += 1;
+async function fetchAllSessions({ fromIso, toIso, ptOnly = false }) {
+  async function fetchSource(loader) {
+    const rows = [];
+    let page = 0;
+    for (;;) {
+      const data = await loader({
+        from: fromIso,
+        to: toIso,
+        page,
+        size: SESSIONS_PAGE_SIZE,
+      });
+      const content = Array.isArray(data?.content) ? data.content : [];
+      rows.push(...content);
+      const totalPages = typeof data?.totalPages === 'number' ? data.totalPages : 0;
+      if (content.length === 0 || page + 1 >= totalPages) break;
+      page += 1;
+    }
+    return rows;
   }
-  return all;
+
+  return fetchSource(ptOnly ? listMemberPtSessions : listMemberClassSessions);
 }
 
 // Khóa dùng để lọc: ưu tiên id, không có thì dùng tên.
@@ -166,7 +181,7 @@ function FilterIcon() {
   );
 }
 
-export default function ClassBookingPage() {
+export default function ClassBookingPage({ ptOnly = false }) {
   const { user } = useAuth();
   const {
     activeMembership,
@@ -201,6 +216,8 @@ export default function ClassBookingPage() {
   const [error, setError] = useState(null);
   const [bookedMap, setBookedMap] = useState({}); // sessionId -> bookingId
   const [bookingsError, setBookingsError] = useState(null);
+  const [waitlistMap, setWaitlistMap] = useState({});
+  const [waitlistsError, setWaitlistsError] = useState(null);
 
   // Hành động.
   const [busyId, setBusyId] = useState(null);
@@ -243,7 +260,7 @@ export default function ClassBookingPage() {
       if (!silent) setLoading(true);
       setError(null);
       try {
-        const rows = await fetchAllSessions(rangeIso);
+        const rows = await fetchAllSessions({ ...rangeIso, ptOnly });
         if (requestId === requestRef.current) setSessions(rows);
       } catch (err) {
         if (requestId === requestRef.current) setError(err);
@@ -251,7 +268,7 @@ export default function ClassBookingPage() {
         if (requestId === requestRef.current) setLoading(false);
       }
     },
-    [rangeInvalid, rangeIso],
+    [ptOnly, rangeInvalid, rangeIso],
   );
 
   useEffect(() => {
@@ -275,6 +292,26 @@ export default function ClassBookingPage() {
   useEffect(() => {
     loadBookings();
   }, [loadBookings]);
+
+  const loadWaitlists = useCallback(async () => {
+    try {
+      const rows = await listMyWaitlists();
+      const map = {};
+      for (const entry of rows) {
+        if (entry?.sessionId && entry.status === 'WAITING') {
+          map[entry.sessionId] = entry;
+        }
+      }
+      setWaitlistMap(map);
+      setWaitlistsError(null);
+    } catch (err) {
+      setWaitlistsError(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadWaitlists();
+  }, [loadWaitlists]);
 
   // ----- Dữ liệu cho bộ lọc -----
   const disciplines = useMemo(
@@ -407,6 +444,49 @@ export default function ClassBookingPage() {
     }
   }
 
+  async function handleJoinWaitlist(session) {
+    setActionError(null);
+    setNotice(null);
+    setBusyId(session.id);
+    try {
+      const entry = await joinMyWaitlist(session.id);
+      setWaitlistMap((current) => ({ ...current, [session.id]: entry }));
+      setNotice(
+        `Đã vào hàng chờ "${session.className}"${entry?.position ? ` ở vị trí ${entry.position}` : ''}.`,
+      );
+    } catch (err) {
+      setActionError({ message: bookingErrorMessage(err, 'Không thể vào hàng chờ.') });
+      if (err?.response?.status === 409) {
+        await Promise.allSettled([
+          loadSessions({ silent: true }),
+          loadWaitlists(),
+        ]);
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleLeaveWaitlist(session) {
+    setActionError(null);
+    setNotice(null);
+    setBusyId(session.id);
+    try {
+      await leaveMyWaitlist(session.id);
+      setWaitlistMap((current) => {
+        const next = { ...current };
+        delete next[session.id];
+        return next;
+      });
+      setNotice(`Đã rời hàng chờ "${session.className}".`);
+    } catch (err) {
+      setActionError({ message: bookingErrorMessage(err, 'Không thể rời hàng chờ.') });
+      await loadWaitlists();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   // ----- Hiển thị -----
   let body;
   if (loading) {
@@ -459,6 +539,7 @@ export default function ClassBookingPage() {
                     key={s.id}
                     session={s}
                     booked={Boolean(bookedMap[s.id])}
+                    waitlistEntry={waitlistMap[s.id]}
                     busy={busyId === s.id}
                     bookingAllowed={
                       !membershipEligibilityKnown || missingBenefitCodes.length === 0
@@ -469,6 +550,8 @@ export default function ClassBookingPage() {
                     nowMs={nowMs}
                     onBook={() => openBookConfirm(s)}
                     onCancel={() => setCancelTarget(s)}
+                    onJoinWaitlist={() => handleJoinWaitlist(s)}
+                    onLeaveWaitlist={() => handleLeaveWaitlist(s)}
                   />
                 );
               })}
@@ -497,15 +580,20 @@ export default function ClassBookingPage() {
   return (
     <div className="cbs">
       <header className="cbs-top">
-        <MemberBreadcrumb current="Đăng ký lớp" />
-        <h1 className="cbs-title">Đăng ký lớp</h1>
+        <MemberBreadcrumb current={ptOnly ? 'Đặt lịch PT 1-1' : 'Đăng ký lớp'} />
+        <h1 className="cbs-title">
+          {ptOnly ? 'Đặt lịch PT 1-1' : 'Đăng ký lớp'}
+        </h1>
         <p className="cbs-sub">
-          Chọn buổi tập sắp tới và đặt lịch. Gói tập cần có quyền đặt lớp phù
-          hợp với bộ môn.
+          {ptOnly
+            ? 'Chọn buổi PT với huấn luyện viên cá nhân đang được phân công cho bạn.'
+            : 'Chọn buổi tập sắp tới và đặt lịch. Gói tập cần có quyền đặt lớp phù hợp với bộ môn.'}
         </p>
       </header>
 
-      <h2 className="cbs-heading">Đặt lịch tập</h2>
+      <h2 className="cbs-heading">
+        {ptOnly ? 'Lịch PT đang mở' : 'Đặt lịch tập'}
+      </h2>
 
       {/* ----- Bảng lọc / sắp xếp ----- */}
       <div className="cbs-filter">
@@ -620,6 +708,10 @@ export default function ClassBookingPage() {
       <ErrorAlert
         error={bookingsError}
         title="Không tải được các lịch bạn đã đặt"
+      />
+      <ErrorAlert
+        error={waitlistsError}
+        title="Không tải được hàng chờ của bạn"
       />
 
       {body}
@@ -874,6 +966,7 @@ function BookingConfirmModal({
 function SessionItem({
   session,
   booked,
+  waitlistEntry,
   busy,
   bookingAllowed,
   requiredBenefitNames,
@@ -882,6 +975,8 @@ function SessionItem({
   nowMs,
   onBook,
   onCancel,
+  onJoinWaitlist,
+  onLeaveWaitlist,
 }) {
   const s = session;
   const avail = typeof s.availableCapacity === 'number' ? s.availableCapacity : null;
@@ -932,17 +1027,35 @@ function SessionItem({
               <span className="cbs-note">Chỉ hủy được trước giờ tập 2 giờ</span>
             ) : null}
           </>
+        ) : waitlistEntry ? (
+          <>
+            <span className="cbs-tag gray">
+              Đang chờ{waitlistEntry.position ? ` · vị trí ${waitlistEntry.position}` : ''}
+            </span>
+            <button
+              type="button"
+              className="cbs-btn cancel"
+              disabled={busy}
+              onClick={onLeaveWaitlist}
+            >
+              {busy ? 'Đang xử lý...' : 'Rời hàng chờ'}
+            </button>
+          </>
         ) : (
           <>
             <button
               type="button"
               className="cbs-btn"
-              disabled={busy || full || membershipLoading || !bookingAllowed}
-              onClick={onBook}
+              disabled={busy || membershipLoading || !bookingAllowed}
+              onClick={full ? onJoinWaitlist : onBook}
             >
-              {busy ? 'Đang đặt...' : full ? 'Hết chỗ' : 'Đặt lịch'}
+              {busy
+                ? 'Đang xử lý...'
+                : full
+                  ? 'Vào hàng chờ'
+                  : 'Đặt lịch'}
             </button>
-            {(membershipLoading || !bookingAllowed) && !full ? (
+            {membershipLoading || !bookingAllowed ? (
               <span className="cbs-note">
                 {membershipLoading
                   ? 'Đang kiểm tra gói tập...'
