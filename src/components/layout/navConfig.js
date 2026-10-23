@@ -31,6 +31,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/reception/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/reception/orders/new', label: 'Tạo đơn gói tập' },
         { to: '/reception/payments/reconcile', label: 'Đối soát' },
+        { to: '/reception/refunds', label: 'Hoàn tiền' },
       ],
     },
     {
@@ -77,6 +78,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/manager/membership-plans', label: 'Loại gói & quyền lợi' },
         { to: '/manager/membership-offers', label: 'Gói tập' },
         { to: '/manager/membership-requests', label: 'Yêu cầu gói tập' },
+        { to: '/manager/refunds', label: 'Duyệt hoàn tiền' },
         { to: '/manager/payments/reconcile', label: 'Đối soát' },
       ],
     },

@@ -49,6 +49,7 @@ function iconForRoute(to) {
   if (to.startsWith('/manager/reports') || to === '/manager/audit-events') return 'reports';
   // Payment reconciliation (both Manager and Receptionist)
   if (to.includes('/payments/reconcile')) return 'reconcile';
+  if (to.includes('/refunds')) return 'reconcile';
   return 'dashboard';
 }
 

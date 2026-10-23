@@ -124,9 +124,11 @@ function notificationDestination(item, pathname) {
 
   if (role === 'reception') {
     if (type === 'MEMBERSHIP_FREEZE_PAYMENT_REQUIRED') return '/reception/membership-requests';
+    if (type?.startsWith('MEMBERSHIP_REFUND_')) return '/reception/refunds';
     return '/reception/dashboard';
   }
   if (role === 'manager') {
+    if (type?.startsWith('MEMBERSHIP_REFUND_')) return '/manager/refunds';
     if (type?.startsWith('MEMBERSHIP_FREEZE_') || type?.startsWith('MEMBERSHIP_TERMINATION_')) {
       return '/manager/membership-requests';
     }
