@@ -29,8 +29,8 @@ export async function getOfferById(offerId) {
 }
 
 // GET /api/v1/members/me/memberships — lịch sử Membership của chính Member
-// (mới nhất trước). Mỗi phần tử có `status` là ACTIVE hoặc EXPIRED.
-// Lưu ý: BE trả tên cột dạng snake_case (plan_code_snapshot, starts_at, ends_at...).
+// (mới nhất trước). `status`: RESERVED | ACTIVE | EXPIRED | TERMINATED.
+// RESERVED chưa có startsAt/endsAt; thời hạn chỉ được chốt khi tự kích hoạt.
 export async function getMyMemberships() {
   const { data } = await api.get('/members/me/memberships');
   return Array.isArray(data) ? data : [];

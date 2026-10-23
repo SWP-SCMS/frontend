@@ -10,14 +10,17 @@ import { ROLES } from '../../constants';
 import { useAuth } from '../../context/useAuth';
 import { emailSchema } from '../../schemas/fragments';
 import {
-  beginStaffEmailChange,
-  cancelStaffEmailChange,
-  getMyStaffProfile,
-  resendStaffEmailChange,
-  verifyStaffEmailChange,
-} from '../../services/staffProfileService';
+  beginAccountEmailChange,
+  cancelAccountEmailChange,
+  getAccountEmailChangeStatus,
+  resendAccountEmailChange,
+  verifyAccountEmailChange,
+} from '../../services/accountEmailService';
+import { getMyStaffProfile } from '../../services/staffProfileService';
+import { getMyProfile } from '../../services/memberService';
 
 const PROFILE_PATHS = {
+  [ROLES.MEMBER]: '/member/profile',
   [ROLES.MANAGER]: '/manager/profile',
   [ROLES.RECEPTIONIST]: '/reception/profile',
   [ROLES.COACH]: '/coach/profile',
@@ -61,7 +64,7 @@ export default function StaffChangeEmailPage() {
   const [serverError, setServerError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [clockNow, setClockNow] = useState(Date.now());
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const [verifiedEmail, setVerifiedEmail] = useState(null);
 
   const emailForm = useForm({
@@ -86,13 +89,16 @@ export default function StaffChangeEmailPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const profile = await getMyStaffProfile();
+      const [profile, status] = await Promise.all([
+        role === ROLES.MEMBER ? getMyProfile() : getMyStaffProfile(),
+        getAccountEmailChangeStatus(),
+      ]);
       setCurrentEmail(profile.email || '');
-      if (profile.pendingEmailChange) {
+      if (status.pending) {
         applyMeta({
-          maskedEmail: profile.pendingEmailMasked,
-          otpExpiresAt: profile.pendingEmailOtpExpiresAt,
-          resendAvailableAt: profile.pendingEmailResendAvailableAt,
+          maskedEmail: status.maskedEmail,
+          otpExpiresAt: status.otpExpiresAt,
+          resendAvailableAt: status.resendAvailableAt,
         });
       }
     } catch (err) {
@@ -100,7 +106,7 @@ export default function StaffChangeEmailPage() {
     } finally {
       setLoading(false);
     }
-  }, [applyMeta]);
+  }, [applyMeta, role]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -113,7 +119,7 @@ export default function StaffChangeEmailPage() {
     setServerError(null);
     setNotice(null);
     try {
-      const response = await beginStaffEmailChange({ newEmail: data.newEmail.trim().toLowerCase(), currentPassword: data.currentPassword });
+      const response = await beginAccountEmailChange({ newEmail: data.newEmail.trim().toLowerCase(), currentPassword: data.currentPassword });
       applyMeta(response);
       emailForm.reset();
       otpForm.reset();
@@ -132,7 +138,7 @@ export default function StaffChangeEmailPage() {
     setServerError(null);
     setNotice(null);
     try {
-      const response = await verifyStaffEmailChange({ otp: data.otp });
+      const response = await verifyAccountEmailChange({ otp: data.otp });
       setVerifiedEmail(response.email || meta?.maskedEmail || 'email mới');
     } catch (err) {
       if (err?.response?.data?.code === 'INVALID_OR_EXPIRED_OTP') {
@@ -151,7 +157,7 @@ export default function StaffChangeEmailPage() {
     setServerError(null);
     setNotice(null);
     try {
-      applyMeta(await resendStaffEmailChange());
+      applyMeta(await resendAccountEmailChange());
       otpForm.reset();
       setNotice('Đã gửi lại mã OTP.');
     } catch (err) {
@@ -168,7 +174,7 @@ export default function StaffChangeEmailPage() {
     setServerError(null);
     setNotice(null);
     try {
-      await cancelStaffEmailChange();
+      await cancelAccountEmailChange();
       setMeta(null);
       otpForm.reset();
       setNotice('Đã hủy yêu cầu đổi email.');

@@ -274,6 +274,8 @@ export default function MemberDashboardPage() {
   const {
     activeMembership,
     hasActiveMembership,
+    reservedMembership,
+    hasReservedMembership,
     loading: membershipLoading,
     error: membershipError,
     reload: reloadMemberships,
@@ -334,8 +336,8 @@ export default function MemberDashboardPage() {
       );
     } catch (err) {
       // Luôn hiển thị lỗi BE trả về, ví dụ:
-      //   BR-MEM-08: đã có Membership ACTIVE (ACTIVE_MEMBERSHIP_EXISTS)
-      //   BR-ORD-07: đã có đơn PENDING_PAYMENT (PENDING_MEMBERSHIP_ORDER_EXISTS)
+      //   đã có gói gia hạn RESERVED (MEMBERSHIP_RENEWAL_ALREADY_EXISTS)
+      //   đã có đơn PENDING_PAYMENT (PENDING_MEMBERSHIP_ORDER_EXISTS)
       setActionError({
         message: problemMessage(err, 'Không tạo được đơn mua gói.'),
       });
@@ -349,9 +351,10 @@ export default function MemberDashboardPage() {
     }
   }
 
-  // BR-MEM-08 và BR-ORD-07: chặn nút mua. BE vẫn kiểm tra lại (BR-SEC-04).
+  // ACTIVE vẫn được mua thêm một gói gia hạn. Chỉ khóa khi đã có RESERVED
+  // hoặc còn đơn PENDING_PAYMENT; BE vẫn kiểm tra lại khi tạo đơn.
   let blockedReason = null;
-  if (hasActiveMembership) blockedReason = 'Bạn đang có gói tập còn hiệu lực.';
+  if (hasReservedMembership) blockedReason = 'Bạn đã có gói gia hạn chờ kích hoạt.';
   else if (pendingOrder) blockedReason = 'Bạn đang có một đơn chờ thanh toán.';
   else if (membershipLoading || pendingLoading) blockedReason = 'Đang tải...';
 
@@ -367,6 +370,12 @@ export default function MemberDashboardPage() {
     const plan =
       activeMembership.planCode || activeMembership.plan_code_snapshot || '';
     badgeText = `Gói ${plan} đang hoạt động`;
+  } else if (!membershipLoading && hasReservedMembership) {
+    const plan =
+      reservedMembership.planCode ||
+      reservedMembership.plan_code_snapshot ||
+      '';
+    badgeText = plan ? `Gói ${plan} đang chờ kích hoạt` : 'Có gói đang chờ kích hoạt';
   } else if (!membershipLoading) badgeText = 'Chưa kích hoạt gói tập';
 
   // Lộ trình: có gói tập thì đang ở bước 3, chưa có thì ở bước 2.
@@ -430,10 +439,33 @@ export default function MemberDashboardPage() {
                 · {pendingOrder.durationDays} ngày · Mã đơn{' '}
                 {pendingOrder.orderNumber} · Tạo lúc{' '}
                 {formatDateTime(pendingOrder.createdAt)}. Chức năng thanh toán
-                chuyển khoản sẽ được bổ sung ở bước tiếp theo.
+                chuyển khoản đang chờ bạn hoàn tất.
               </p>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {reservedMembership ? (
+        <div className="scms-md-banner pending">
+          <div className="scms-md-banner-main">
+            <div className="scms-md-banner-icon">
+              <Icon name="clock" size={24} />
+            </div>
+            <div>
+              <h3>Gói gia hạn đã sẵn sàng</h3>
+              <p>
+                {reservedMembership.offerName ||
+                  reservedMembership.offer_name_snapshot ||
+                  reservedMembership.planCode ||
+                  'Gói kế tiếp'}{' '}
+                sẽ tự động kích hoạt sau khi gói hiện tại kết thúc.
+              </p>
+            </div>
+          </div>
+          <Link to="/member/plan" className="scms-md-btn-dark">
+            Xem chi tiết
+          </Link>
         </div>
       ) : null}
 

@@ -26,7 +26,7 @@ export async function createSepayPayment(orderId) {
 
 // GET /api/v1/payments/{paymentId}/result
 // Trả về: { paymentId, orderId, status (PENDING | PAID | FAILED), method,
-//   membershipId, receiptId, paidAt }
+//   membershipId, receiptId, paidAt, fulfillmentMode (IMMEDIATE | RESERVED) }
 export async function getPaymentResult(paymentId) {
   const { data } = await api.get(`/payments/${paymentId}/result`);
   return data;

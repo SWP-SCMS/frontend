@@ -67,10 +67,14 @@ export default function MemberLayout({ children }) {
     };
   }, []);
 
-  // BR-MEM-04/05: Membership hết hạn chuyển sang EXPIRED và không dùng lại.
-  // Chỉ Membership ACTIVE mới được coi là "đang có gói".
+  // Membership ACTIVE cấp quyền sử dụng hiện tại. Membership RESERVED là gói
+  // gia hạn đã thanh toán và sẽ được BE tự kích hoạt khi gói hiện tại hết hạn.
   const activeMembership = useMemo(
     () => memberships.find((m) => m.status === 'ACTIVE') || null,
+    [memberships],
+  );
+  const reservedMembership = useMemo(
+    () => memberships.find((m) => m.status === 'RESERVED') || null,
     [memberships],
   );
 
@@ -133,6 +137,8 @@ export default function MemberLayout({ children }) {
       memberships,
       activeMembership,
       hasActiveMembership: activeMembership != null,
+      reservedMembership,
+      hasReservedMembership: reservedMembership != null,
       benefitCodes,
       benefitsKnown,
       hasBenefit,
@@ -145,6 +151,7 @@ export default function MemberLayout({ children }) {
     [
       memberships,
       activeMembership,
+      reservedMembership,
       benefitCodes,
       benefitsKnown,
       hasBenefit,
@@ -174,6 +181,10 @@ export default function MemberLayout({ children }) {
   else if (!loading && activeMembership) {
     const plan = activeMembership.plan_code_snapshot || activeMembership.planCode;
     statusText = plan ? `Gói ${plan} đang hoạt động` : 'Đang có gói tập';
+  } else if (!loading && reservedMembership) {
+    const plan =
+      reservedMembership.plan_code_snapshot || reservedMembership.planCode;
+    statusText = plan ? `Gói ${plan} đang chờ kích hoạt` : 'Có gói đang chờ kích hoạt';
   } else if (!loading) statusText = 'Chưa kích hoạt gói tập';
 
   const requestLogout = () => setConfirmOpen(true);

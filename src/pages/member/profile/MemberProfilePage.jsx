@@ -361,11 +361,6 @@ export default function MemberProfilePage() {
     const phone = normalizePhone(data.phone || '');
     if (phone !== (original?.phone || '')) patch.phone = phone;
 
-    const email = (data.email || '').trim().toLowerCase();
-    if (email !== (original?.email || '').toLowerCase()) {
-      patch.email = email;
-    }
-
     if (data.birthDate !== (original?.birthDate || '')) {
       patch.birthDate = data.birthDate;
     }
@@ -685,10 +680,14 @@ export default function MemberProfilePage() {
                   className="scms-mp-input"
                   type="email"
                   {...register('email')}
-                  placeholder="ten@mien.vn"
+                  readOnly
                   autoComplete="email"
                   aria-invalid={Boolean(errors.email)}
                 />
+                <div className="scms-mp-hint" style={{ marginTop: 6 }}>
+                  Muốn dùng email khác?{' '}
+                  <Link to="/member/profile/email">Xác thực và đổi email</Link>
+                </div>
                 {errors.email ? (
                   <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
                     {errors.email.message}

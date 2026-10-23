@@ -28,6 +28,7 @@ export const APP_SHELL_NAV_ITEMS = {
       label: 'Gói tập và thanh toán',
       items: [
         { to: '/reception/membership-offers', label: 'Gói tập' },
+        { to: '/reception/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/reception/orders/new', label: 'Tạo đơn gói tập' },
         { to: '/reception/payments/reconcile', label: 'Đối soát' },
       ],
@@ -66,6 +67,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/manager/disciplines', label: 'Bộ môn' },
         { to: '/manager/classes', label: 'Lớp học' },
         { to: '/manager/class-sessions', label: 'Buổi tập' },
+        { to: '/manager/coach-leave-requests', label: 'Duyệt nghỉ HLV' },
         { to: '/manager/rooms', label: 'Phòng tập' },
       ],
     },
@@ -74,6 +76,7 @@ export const APP_SHELL_NAV_ITEMS = {
       items: [
         { to: '/manager/membership-plans', label: 'Loại gói & quyền lợi' },
         { to: '/manager/membership-offers', label: 'Gói tập' },
+        { to: '/manager/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/manager/payments/reconcile', label: 'Đối soát' },
       ],
     },
@@ -136,6 +139,12 @@ export const MEMBER_SIDEBAR_ITEMS = [
     label: 'Huấn luyện cá nhân',
     items: [
       {
+        to: '/member/pt-booking',
+        label: 'Đặt lịch PT 1-1',
+        icon: 'calendar',
+        requiredBenefit: 'PERSONAL_COACHING',
+      },
+      {
         to: '/member/training-plans',
         label: 'Giáo án tập luyện',
         icon: 'clipboard',
@@ -159,6 +168,7 @@ export const MEMBER_SIDEBAR_ITEMS = [
     label: 'Gói tập và thanh toán',
     items: [
       { to: '/member/plan', label: 'Gói tập hiện tại', icon: 'dumbbell' },
+      { to: '/member/membership-requests', label: 'Yêu cầu gói tập', icon: 'clipboard' },
       { to: '/member/memberships', label: 'Lịch sử gói tập', icon: 'receipt' },
       { to: '/member/receipts', label: 'Biên lai', icon: 'receipt' },
     ],

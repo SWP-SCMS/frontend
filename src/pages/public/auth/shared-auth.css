@@ -48,6 +48,25 @@
   margin-bottom: 0.35rem;
 }
 
+.scms-login-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.scms-login-label-row a {
+  color: #f87171;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.scms-login-label-row a:hover {
+  text-decoration: underline;
+}
+
 .scms-login-field {
   position: relative;
 }

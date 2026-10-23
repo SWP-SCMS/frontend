@@ -25,6 +25,12 @@ import {
   listReceptionClassSessions,
   listReceptionMemberBookings,
 } from '../../../services/receptionistBookingService';
+import { listReceptionPtSessions } from '../../../services/ptSessionService';
+import {
+  joinReceptionMemberWaitlist,
+  leaveReceptionMemberWaitlist,
+  listReceptionSessionWaitlist,
+} from '../../../services/waitlistService';
 import { getReceptionMemberProfile } from '../../../services/receptionistService';
 import { getReceptionMemberMemberships } from '../../../services/staffMembershipService';
 import {
@@ -98,6 +104,11 @@ const BOOKING_ERROR_MESSAGES = {
   BOOKING_NOT_BOOKED: 'Lịch này không còn ở trạng thái đã đặt.',
   BOOKING_CANCELLATION_WINDOW_CLOSED:
     'Chỉ được hủy lịch trước giờ bắt đầu ít nhất 2 giờ.',
+  SESSION_NOT_FULL: 'Buổi tập vừa có chỗ trống. Hãy đặt lịch trực tiếp.',
+  WAITLIST_DUPLICATE: 'Hội viên đã ở trong hàng chờ của buổi tập này.',
+  WAITLIST_NOT_FOUND: 'Hội viên không còn ở trong hàng chờ của buổi tập này.',
+  PT_COACH_ASSIGNMENT_MISMATCH:
+    'Hội viên chỉ có thể đăng ký PT 1-1 với huấn luyện viên cá nhân đang được phân công.',
 };
 
 const filterSchema = z
@@ -177,6 +188,19 @@ function pageRows(pageData) {
   return Array.isArray(pageData?.content) ? pageData.content : [];
 }
 
+async function fetchAllReceptionSessions(loader, params) {
+  const rows = [];
+  let page = 0;
+  for (;;) {
+    const data = await loader({ ...params, page, size: 100 });
+    const content = pageRows(data);
+    rows.push(...content);
+    if (content.length === 0 || page + 1 >= (data?.totalPages || 0)) break;
+    page += 1;
+  }
+  return rows;
+}
+
 function PageControls({ page, totalPages, disabled, onChange }) {
   if (!totalPages || totalPages <= 1) return null;
   return (
@@ -245,6 +269,11 @@ export default function ReceptionistMemberBookingPage() {
   const [cancelling, setCancelling] = useState(false);
   const [actionError, setActionError] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [waitlistTarget, setWaitlistTarget] = useState(null);
+  const [waitlistRows, setWaitlistRows] = useState([]);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [waitlistError, setWaitlistError] = useState(null);
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const profileRequestRef = useRef(0);
@@ -331,17 +360,37 @@ export default function ReceptionistMemberBookingPage() {
     if (!silent) setSessionsLoading(true);
     setSessionsError(null);
     try {
-      const data = await listReceptionClassSessions({
+      const params = {
         from: appliedSessionFilters.fromDate
           ? gymLocalDateToIsoInstant(appliedSessionFilters.fromDate, '00:00')
           : undefined,
         to: appliedSessionFilters.toDate
           ? gymEndOfDayIsoInstant(appliedSessionFilters.toDate)
           : undefined,
-        page: sessionPage,
-        size: SESSION_PAGE_SIZE,
-      });
-      if (requestId === sessionsRequestRef.current) setSessionsPageData(data);
+      };
+      const [classes, ptSessions] = await Promise.all([
+        fetchAllReceptionSessions(listReceptionClassSessions, params),
+        fetchAllReceptionSessions(listReceptionPtSessions, params),
+      ]);
+      const allRows = [
+        ...new Map([...classes, ...ptSessions].map((row) => [row.id, row])).values(),
+      ].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+      const totalPages = Math.ceil(allRows.length / SESSION_PAGE_SIZE);
+      const safePage = totalPages > 0 ? Math.min(sessionPage, totalPages - 1) : 0;
+      const content = allRows.slice(
+        safePage * SESSION_PAGE_SIZE,
+        (safePage + 1) * SESSION_PAGE_SIZE,
+      );
+      if (requestId === sessionsRequestRef.current) {
+        if (safePage !== sessionPage) setSessionPage(safePage);
+        setSessionsPageData({
+          content,
+          page: safePage,
+          size: SESSION_PAGE_SIZE,
+          totalElements: allRows.length,
+          totalPages,
+        });
+      }
     } catch (error) {
       if (requestId === sessionsRequestRef.current) setSessionsError(error);
     } finally {
@@ -496,6 +545,53 @@ export default function ReceptionistMemberBookingPage() {
       if (shouldRefreshAfterActionError(error)) await refreshAuthoritativeData();
     } finally {
       setCancelling(false);
+    }
+  }
+
+  async function openWaitlistModal(session) {
+    setWaitlistTarget(session);
+    setWaitlistRows([]);
+    setWaitlistError(null);
+    setWaitlistLoading(true);
+    try {
+      setWaitlistRows(await listReceptionSessionWaitlist(session.id));
+    } catch (error) {
+      setWaitlistError(error);
+    } finally {
+      setWaitlistLoading(false);
+    }
+  }
+
+  function closeWaitlistModal() {
+    if (waitlistSubmitting) return;
+    setWaitlistTarget(null);
+    setWaitlistRows([]);
+    setWaitlistError(null);
+  }
+
+  async function toggleMemberWaitlist() {
+    if (!accountId || !waitlistTarget) return;
+    const waiting = waitlistRows.find(
+      (entry) => entry.memberId === accountId && entry.status === 'WAITING',
+    );
+    setWaitlistSubmitting(true);
+    setWaitlistError(null);
+    try {
+      if (waiting) {
+        await leaveReceptionMemberWaitlist(accountId, waitlistTarget.id);
+        setNotice(`Đã rời hàng chờ cho hội viên ${profile.memberId}.`);
+      } else {
+        await joinReceptionMemberWaitlist(accountId, waitlistTarget.id);
+        setNotice(`Đã thêm hội viên ${profile.memberId} vào hàng chờ.`);
+      }
+      setWaitlistRows(await listReceptionSessionWaitlist(waitlistTarget.id));
+      await loadSessions({ silent: true });
+    } catch (error) {
+      setWaitlistError({
+        message: knownBookingError(error) || 'Không cập nhật được hàng chờ.',
+      });
+    } finally {
+      setWaitlistSubmitting(false);
     }
   }
 
@@ -682,11 +778,16 @@ export default function ReceptionistMemberBookingPage() {
                       !full &&
                       !membershipsLoading &&
                       !benefitBlocked;
+                    const waitlistSelectable =
+                      mutationsAllowed &&
+                      full &&
+                      !membershipsLoading &&
+                      !benefitBlocked;
                     let unavailableTitle;
                     if (!mutationsAllowed) {
                       unavailableTitle = 'Hội viên không ở trạng thái ACTIVE';
                     } else if (full) {
-                      unavailableTitle = 'Buổi tập đã hết chỗ';
+                      unavailableTitle = 'Xem hoặc cập nhật hàng chờ';
                     } else if (membershipsLoading) {
                       unavailableTitle = 'Đang kiểm tra quyền lợi gói tập';
                     } else if (benefitBlocked) {
@@ -723,14 +824,18 @@ export default function ReceptionistMemberBookingPage() {
                         <td className="text-end">
                           <Button
                             type="button"
-                            variant={selectable ? 'danger' : 'outline-secondary'}
+                            variant={selectable || waitlistSelectable ? 'danger' : 'outline-secondary'}
                             size="sm"
-                            disabled={!selectable}
-                            onClick={() => openBookModal(session)}
+                            disabled={full ? !waitlistSelectable : !selectable}
+                            onClick={() =>
+                              full
+                                ? openWaitlistModal(session)
+                                : openBookModal(session)
+                            }
                             title={unavailableTitle}
                           >
                             {full
-                              ? 'Hết chỗ'
+                              ? 'Xem hàng chờ'
                               : membershipsLoading
                                 ? 'Đang kiểm tra'
                               : benefitBlocked
@@ -987,6 +1092,80 @@ export default function ReceptionistMemberBookingPage() {
           </Button>
           <Button type="button" variant="danger" onClick={confirmCancel} disabled={cancelling}>
             {cancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={Boolean(waitlistTarget)} onHide={closeWaitlistModal} centered size="lg">
+        <Modal.Header closeButton={!waitlistSubmitting}>
+          <Modal.Title className="h5">Hàng chờ buổi tập</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-1 fw-semibold">{waitlistTarget?.className || '—'}</p>
+          <p className="small text-muted">
+            {waitlistTarget
+              ? dateTimeText(waitlistTarget.startTime, waitlistTarget.endTime)
+              : '—'}
+          </p>
+          <ErrorAlert error={waitlistError} title="Không cập nhật được hàng chờ" />
+          {waitlistLoading ? (
+            <LoadingBlock />
+          ) : waitlistRows.length === 0 ? (
+            <p className="text-muted mb-0">Chưa có hội viên nào trong hàng chờ.</p>
+          ) : (
+            <Table responsive size="sm" className="align-middle">
+              <thead>
+                <tr>
+                  <th>Vị trí</th>
+                  <th>Hội viên</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {waitlistRows.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{entry.position ?? '—'}</td>
+                    <td>
+                      {entry.memberId === accountId
+                        ? `${profile.fullName || profile.memberId} (${profile.memberId})`
+                        : entry.memberId}
+                    </td>
+                    <td>{entry.status || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            type="button"
+            variant="outline-secondary"
+            onClick={closeWaitlistModal}
+            disabled={waitlistSubmitting}
+          >
+            Đóng
+          </Button>
+          <Button
+            type="button"
+            variant={
+              waitlistRows.some(
+                (entry) => entry.memberId === accountId && entry.status === 'WAITING',
+              )
+                ? 'outline-danger'
+                : 'danger'
+            }
+            onClick={toggleMemberWaitlist}
+            disabled={waitlistLoading || waitlistSubmitting}
+          >
+            {waitlistSubmitting
+              ? 'Đang xử lý...'
+              : waitlistRows.some(
+                    (entry) =>
+                      entry.memberId === accountId && entry.status === 'WAITING',
+                  )
+                ? 'Rời hàng chờ cho hội viên'
+                : 'Thêm hội viên vào hàng chờ'}
           </Button>
         </Modal.Footer>
       </Modal>

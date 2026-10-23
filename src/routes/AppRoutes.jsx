@@ -20,6 +20,9 @@ const HomePage = lazy(() => import('../pages/public/home/HomePage'));
 const LoginPage = lazy(() => import('../pages/public/login/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/public/register/RegisterPage'));
 const VerifyEmailPage = lazy(() => import('../pages/public/auth/VerifyEmailPage'));
+const ForgotPasswordPage = lazy(
+  () => import('../pages/public/auth/ForgotPasswordPage'),
+);
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
 const NotFoundPage = lazy(() => import('../pages/public/notFound/NotFoundPage'));
@@ -38,6 +41,9 @@ const MembershipHistoryPage = lazy(
   () => import('../pages/member/memberships/MembershipHistoryPage'),
 );
 const MyPlanPage = lazy(() => import('../pages/member/memberships/MyPlanPage'));
+const MembershipRequestsPage = lazy(
+  () => import('../pages/member/memberships/MembershipRequestsPage'),
+);
 // Member – thanh toán gói tập (chuyển khoản SePay)
 const MemberCheckoutPage = lazy(
   () => import('../pages/member/checkout/MemberCheckoutPage'),
@@ -83,6 +89,9 @@ const CoachDashboardPage = lazy(
 const CoachSchedulePage = lazy(
   () => import('../pages/coach/schedule/CoachSchedulePage'),
 );
+const CoachLeaveRequestsPage = lazy(
+  () => import('../pages/coach/leave/CoachLeaveRequestsPage'),
+);
 const CoachSessionDetailPage = lazy(
   () => import('../pages/coach/schedule/CoachSessionDetailPage'),
 );
@@ -112,6 +121,12 @@ const CoachMemberTrainingPage = lazy(
 const ManagerDashboardPage = lazy(
   () => import('../pages/manager/dashboard/ManagerDashboardPage'),
 );
+const MembershipRequestReviewPage = lazy(
+  () => import('../pages/manager/membershipRequests/MembershipRequestReviewPage'),
+);
+const CoachLeaveReviewPage = lazy(
+  () => import('../pages/manager/coachLeave/CoachLeaveReviewPage'),
+);
 const ManagerReportsPage = lazy(
   () => import('../pages/manager/reports/ManagerReportsPage'),
 );
@@ -125,6 +140,9 @@ const ManagerManualActivationPage = lazy(
 // Receptionist – Dashboard
 const ReceptionistDashboardPage = lazy(
   () => import('../pages/receptionist/dashboard/ReceptionistDashboardPage'),
+);
+const MembershipRequestDeskPage = lazy(
+  () => import('../pages/receptionist/membershipRequests/MembershipRequestDeskPage'),
 );
 const ReceptionManualActivationPage = lazy(
   () => import('../pages/receptionist/emailVerification/ManualActivationPage'),
@@ -347,6 +365,10 @@ export default function AppRoutes() {
         path="/verify-email"
         element={<GuestRoute>{withSuspense(<VerifyEmailPage />)}</GuestRoute>}
       />
+      <Route
+        path="/forgot-password"
+        element={<GuestRoute>{withSuspense(<ForgotPasswordPage />)}</GuestRoute>}
+      />
       <Route path="/offers" element={withSuspense(<OfferListPage />)} />
       <Route
         path="/offers/:offerId"
@@ -425,12 +447,36 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/member/membership-requests"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<MembershipRequestsPage />)}
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/member/profile/password"
         element={
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
                 <MemberChangePasswordPage />
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/profile/email"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<StaffChangeEmailPage />)}
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
@@ -459,6 +505,23 @@ export default function AppRoutes() {
                   serviceName="Lịch lớp của tôi"
                 >
                   <MemberClassSchedulePage />
+                </MemberBenefitRouteGuard>
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/pt-booking"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                <MemberBenefitRouteGuard
+                  benefitCode="PERSONAL_COACHING"
+                  serviceName="Đặt lịch PT 1-1"
+                >
+                  {withSuspense(<ClassBookingPage ptOnly />)}
                 </MemberBenefitRouteGuard>
               </MemberLayout>
             </RoleRoute>
@@ -509,6 +572,7 @@ export default function AppRoutes() {
         />
         <Route path="members/:memberId" element={withSuspense(<ReceptionistMemberDetailPage />)} />
         <Route path="membership-offers" element={withSuspense(<ReceptionistMembershipOfferListPage />)} />
+        <Route path="membership-requests" element={withSuspense(<MembershipRequestDeskPage />)} />
         <Route path="orders/new" element={withSuspense(<CashPaymentPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
         <Route path="payments/cash" element={withSuspense(<CashPaymentPage />)} />
@@ -545,6 +609,7 @@ export default function AppRoutes() {
         <Route index element={<Navigate to="/coach/dashboard" replace />} />
         <Route path="dashboard" element={withSuspense(<CoachDashboardPage />)} />
         <Route path="schedule" element={withSuspense(<CoachSchedulePage />)} />
+        <Route path="leave-requests" element={withSuspense(<CoachLeaveRequestsPage />)} />
         <Route
           path="schedule/:sessionId"
           element={withSuspense(<CoachSessionDetailPage />)}
@@ -599,6 +664,8 @@ export default function AppRoutes() {
         <Route path="staff-accounts/:accountId" element={withSuspense(<StaffAccountDetailPage />)} />
         <Route path="staff-accounts/:accountId/edit" element={withSuspense(<StaffAccountEditPage />)} />
         <Route path="membership-offers" element={withSuspense(<MembershipOfferListPage />)} />
+        <Route path="membership-requests" element={withSuspense(<MembershipRequestReviewPage />)} />
+        <Route path="coach-leave-requests" element={withSuspense(<CoachLeaveReviewPage />)} />
         <Route path="membership-offers/new" element={withSuspense(<MembershipOfferCreatePage />)} />
         <Route path="membership-offers/:offerId" element={withSuspense(<MembershipOfferDetailPage />)} />
         <Route path="membership-offers/:offerId/edit" element={withSuspense(<MembershipOfferEditPage />)} />

@@ -67,7 +67,9 @@ import './ReceiptPage.css';
 // Business 409s from the backend, mapped to counter-ready wording.
 const CONFLICT_MESSAGES = {
   ACTIVE_MEMBERSHIP_EXISTS:
-    'Hội viên đang có gói tập còn hiệu lực, không cần mua thêm.',
+    'Không thể tạo đơn theo hợp đồng cũ. Hãy tải lại trang và thử luồng gia hạn.',
+  MEMBERSHIP_RENEWAL_ALREADY_EXISTS:
+    'Hội viên đã có một gói gia hạn chờ kích hoạt hoặc một đơn gia hạn đang chờ thanh toán.',
   PENDING_MEMBERSHIP_ORDER_EXISTS:
     'Hội viên đang có đơn chưa thanh toán. Vui lòng xử lý đơn đó trước.',
   MEMBER_NOT_ACTIVE:
@@ -597,6 +599,9 @@ export default function CashPaymentPage() {
                   <Alert variant="success" className="small">
                     Đã nhận thanh toán
                     {sepayResult.paidAt ? ` lúc ${formatDateTime(sepayResult.paidAt)}` : ''}.
+                    {sepayResult.fulfillmentMode === 'RESERVED'
+                      ? ' Gói mới đã được xếp chờ và sẽ tự kích hoạt khi gói hiện tại kết thúc.'
+                      : ' Gói tập đã được kích hoạt.'}
                     {sepayResult.receiptId ? (
                       <>
                         {' '}
@@ -739,10 +744,15 @@ export default function CashPaymentPage() {
       {receipt ? (
         <Alert variant="success">
           <Alert.Heading className="h6 mb-2">
-            Đã thu tiền và kích hoạt gói tập
+            {receipt.fulfillmentMode === 'RESERVED'
+              ? 'Đã thu tiền và ghi nhận gói gia hạn'
+              : 'Đã thu tiền và kích hoạt gói tập'}
           </Alert.Heading>
           <p className="small mb-3">
-            Giao dịch hoàn tất tức thì. Bàn giao hội viên kèm biên lai bên dưới.
+            {receipt.fulfillmentMode === 'RESERVED'
+              ? 'Gói mới đang chờ và sẽ tự kích hoạt khi gói hiện tại kết thúc.'
+              : 'Giao dịch hoàn tất tức thì.'}{' '}
+            Bàn giao hội viên kèm biên lai bên dưới.
           </p>
           {/* The receipt preview is rendered inline instead of dumping raw
               UUIDs at the receptionist: this is the document the customer
@@ -1080,7 +1090,7 @@ export default function CashPaymentPage() {
                                 label="Tiền mặt"
                               />
                               <div className="text-muted small mt-1">
-                                Xác nhận đã nhận tiền, kích hoạt gói và xuất biên lai ngay.
+                                Xác nhận đã nhận tiền, tạo gói phù hợp với vòng đời hiện tại và xuất biên lai ngay.
                               </div>
                             </Card.Body>
                           </Card>
@@ -1091,13 +1101,16 @@ export default function CashPaymentPage() {
                     <Alert variant="light" className="border small text-muted mt-3 mb-3">
                       {paymentMethod === PAYMENT_METHOD.CASH ? (
                         <>
-                          Xác nhận này ghi nhận đã nhận đủ tiền mặt, kích hoạt gói tập
-                          và xuất biên lai ngay. Nếu chưa thực tế nhận tiền, đừng xác nhận.
+                          Xác nhận này ghi nhận đã nhận đủ tiền mặt, tạo gói tập
+                          và xuất biên lai ngay. Nếu hội viên đang có gói ACTIVE,
+                          gói mới sẽ ở trạng thái chờ kích hoạt. Nếu chưa thực tế
+                          nhận tiền, đừng xác nhận.
                         </>
                       ) : (
                         <>
                           Hệ thống sẽ tạo đơn chuyển khoản ở trạng thái chờ thanh toán.
-                          Gói tập chỉ được kích hoạt sau khi khoản thanh toán được xác nhận.
+                          Sau khi thanh toán được xác nhận, gói sẽ kích hoạt ngay
+                          hoặc chờ gói hiện tại kết thúc nếu đây là đơn gia hạn.
                         </>
                       )}
                     </Alert>
@@ -1159,8 +1172,8 @@ export default function CashPaymentPage() {
           />
 
           <Alert variant="light" className="border small text-muted mb-0">
-            Chuyển khoản tạo đơn chờ thanh toán; tiền mặt hoàn tất giao dịch,
-            kích hoạt gói và xuất biên lai ngay.
+            Chuyển khoản tạo đơn chờ thanh toán; tiền mặt hoàn tất giao dịch và
+            xuất biên lai ngay. Gói gia hạn sẽ chờ gói hiện tại kết thúc.
           </Alert>
         </Col>
       </Row>

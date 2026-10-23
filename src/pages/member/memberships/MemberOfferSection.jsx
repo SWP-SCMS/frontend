@@ -4,8 +4,8 @@
 // API: GET /membership-offers (công khai, chỉ trả Offer ACTIVE).
 // Nút "Đăng ký" đi tới /member/checkout/:offerId (tạo đơn + thanh toán).
 //
-// BR-MEM-08: Member đang có Membership ACTIVE thì chưa mua được gói mới. Khi
-// đó nút bị khóa kèm lời giải thích (`blockedReason`); BE vẫn kiểm tra lại.
+// Member có Membership ACTIVE vẫn được mua một gói gia hạn. Nút chỉ bị khóa
+// khi caller phát hiện gói RESERVED hoặc đơn PENDING_PAYMENT hiện hữu.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';

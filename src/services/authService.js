@@ -90,3 +90,25 @@ export async function changePendingEmailRequest({ newEmail, csrfToken }) {
 export async function changePasswordRequest({ currentPassword, newPassword }) {
   await api.post('/auth/change-password', { currentPassword, newPassword });
 }
+
+// Public email-OTP password reset. The verified reset session is kept only in
+// an HttpOnly cookie, so all three calls must use authApi with credentials.
+export async function requestPasswordReset(email) {
+  const { data } = await authApi.post('/auth/password-reset/request', { email });
+  return data;
+}
+
+export async function verifyPasswordReset({ email, otp }) {
+  const { data } = await authApi.post('/auth/password-reset/verify', {
+    email,
+    otp,
+  });
+  return data;
+}
+
+export async function confirmPasswordReset({ newPassword, confirmPassword }) {
+  await authApi.post('/auth/password-reset/confirm', {
+    newPassword,
+    confirmPassword,
+  });
+}
