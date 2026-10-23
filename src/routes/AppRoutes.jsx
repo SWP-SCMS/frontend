@@ -89,6 +89,9 @@ const CoachDashboardPage = lazy(
 const CoachSchedulePage = lazy(
   () => import('../pages/coach/schedule/CoachSchedulePage'),
 );
+const CoachLeaveRequestsPage = lazy(
+  () => import('../pages/coach/leave/CoachLeaveRequestsPage'),
+);
 const CoachSessionDetailPage = lazy(
   () => import('../pages/coach/schedule/CoachSessionDetailPage'),
 );
@@ -120,6 +123,9 @@ const ManagerDashboardPage = lazy(
 );
 const MembershipRequestReviewPage = lazy(
   () => import('../pages/manager/membershipRequests/MembershipRequestReviewPage'),
+);
+const CoachLeaveReviewPage = lazy(
+  () => import('../pages/manager/coachLeave/CoachLeaveReviewPage'),
 );
 const ManagerReportsPage = lazy(
   () => import('../pages/manager/reports/ManagerReportsPage'),
@@ -586,6 +592,7 @@ export default function AppRoutes() {
         <Route index element={<Navigate to="/coach/dashboard" replace />} />
         <Route path="dashboard" element={withSuspense(<CoachDashboardPage />)} />
         <Route path="schedule" element={withSuspense(<CoachSchedulePage />)} />
+        <Route path="leave-requests" element={withSuspense(<CoachLeaveRequestsPage />)} />
         <Route
           path="schedule/:sessionId"
           element={withSuspense(<CoachSessionDetailPage />)}
@@ -641,6 +648,7 @@ export default function AppRoutes() {
         <Route path="staff-accounts/:accountId/edit" element={withSuspense(<StaffAccountEditPage />)} />
         <Route path="membership-offers" element={withSuspense(<MembershipOfferListPage />)} />
         <Route path="membership-requests" element={withSuspense(<MembershipRequestReviewPage />)} />
+        <Route path="coach-leave-requests" element={withSuspense(<CoachLeaveReviewPage />)} />
         <Route path="membership-offers/new" element={withSuspense(<MembershipOfferCreatePage />)} />
         <Route path="membership-offers/:offerId" element={withSuspense(<MembershipOfferDetailPage />)} />
         <Route path="membership-offers/:offerId/edit" element={withSuspense(<MembershipOfferEditPage />)} />

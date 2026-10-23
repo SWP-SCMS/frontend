@@ -67,6 +67,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/manager/disciplines', label: 'Bộ môn' },
         { to: '/manager/classes', label: 'Lớp học' },
         { to: '/manager/class-sessions', label: 'Buổi tập' },
+        { to: '/manager/coach-leave-requests', label: 'Duyệt nghỉ HLV' },
         { to: '/manager/rooms', label: 'Phòng tập' },
       ],
     },
