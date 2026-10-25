@@ -242,7 +242,7 @@ export default function RefundRequestDeskPage() {
         <Card.Body className="p-4">
           <h2 className="h5 fw-bold">Tạo yêu cầu hoàn tiền</h2>
           <Alert variant="warning" className="small">
-            Backend hiện chưa trả mã đơn, mã giao dịch và tên hội viên trong danh sách hoàn tiền. UUID được hiển thị tạm thời để kiểm thử workflow.
+            Danh sách hoàn tiền hiện chưa có mã đơn, mã giao dịch và tên hội viên. Mã hệ thống được hiển thị tạm thời để kiểm tra quy trình.
           </Alert>
           <Form onSubmit={createRequest} className="row g-3">
             <Form.Group className="col-lg-3">

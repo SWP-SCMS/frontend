@@ -26,6 +26,7 @@ function iconForRoute(to) {
   if (to === '/manager/dashboard' || to === '/reception/dashboard') return 'dashboard';
   if (to.endsWith('/profile')) return 'user';
   if (to.includes('/notifications')) return 'bell';
+  if (to === '/reception/check-in') return 'reconcile';
   if (to === '/reception/center-visits') return 'members';
   // Staff / accounts management (Manager only)
   if (to.startsWith('/manager/staff-accounts')) return 'staff';
@@ -33,6 +34,8 @@ function iconForRoute(to) {
   if (to === '/reception/members') return 'members';
   if (to === '/manager/members' || to.startsWith('/manager/members/')) return 'members';
   if (to === '/reception/members/new') return 'member-new';
+  if (to.includes('/email-verification')) return 'member-new';
+  if (to.startsWith('/manager/coach-assignments')) return 'staff';
   // Discipline management (Manager only — US23)
   if (to.startsWith('/manager/disciplines')) return 'discipline';
   // Class management (Manager only — US24)
@@ -45,6 +48,8 @@ function iconForRoute(to) {
   if (to === '/reception/orders/new') return 'order-new';
   // Membership offers (both Manager and Receptionist)
   if (to.includes('/membership-offers')) return 'offer';
+  if (to.includes('/membership-plans')) return 'offer';
+  if (to.includes('/membership-requests')) return 'reconcile';
   // Reports (Manager only)
   if (to.startsWith('/manager/reports') || to === '/manager/audit-events') return 'reports';
   // Payment reconciliation (both Manager and Receptionist)

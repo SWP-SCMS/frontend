@@ -154,8 +154,7 @@ export default function RevenueReportPage() {
       <header className="mb-3">
         <h1 className="h3 fw-bold mb-1">Báo cáo doanh thu</h1>
         <p className="text-muted mb-0">
-          Tổng hợp doanh thu gói tập và tình hình Membership (BR-RPT-01,
-          BR-RPT-02).
+          Tổng hợp doanh thu gói tập và tình hình sử dụng gói của hội viên.
         </p>
       </header>
 
@@ -269,7 +268,7 @@ export default function RevenueReportPage() {
               <Card className="border-0 shadow-sm h-100">
                 <Card.Body>
                   <div className="text-muted small">
-                    Doanh thu gói tập (PAID)
+                    Doanh thu gói tập đã thanh toán
                   </div>
                   <div className="h4 fw-bold mb-0">
                     {formatPrice(revenue, 'VND')}
@@ -284,7 +283,7 @@ export default function RevenueReportPage() {
               <Card className="border-0 shadow-sm h-100">
                 <Card.Body>
                   <div className="text-muted small">
-                    Membership đang hiệu lực
+                    Gói hội viên đang hiệu lực
                   </div>
                   <div className="h4 fw-bold mb-0">{active}</div>
                   <div className="text-muted small mt-1">
@@ -298,7 +297,7 @@ export default function RevenueReportPage() {
               <Card className="border-0 shadow-sm h-100">
                 <Card.Body>
                   <div className="text-muted small">
-                    Membership đã hết hạn
+                    Gói hội viên đã hết hạn
                   </div>
                   <div className="h4 fw-bold mb-0">{expired}</div>
                   <div className="text-muted small mt-1">
@@ -336,7 +335,7 @@ export default function RevenueReportPage() {
                     {avgTicket == null ? '—' : formatPrice(avgTicket, 'VND')}
                   </div>
                   <div className="text-muted small mt-1">
-                    Chỉ tính các giao dịch PAID.
+                    Chỉ tính các giao dịch đã thanh toán.
                   </div>
                 </Card.Body>
               </Card>
@@ -351,7 +350,7 @@ export default function RevenueReportPage() {
                     {pending} / {failed}
                   </div>
                   <div className="text-muted small mt-1">
-                    Không tính vào doanh thu (BR-RPT-02).
+                    Không tính vào doanh thu.
                   </div>
                 </Card.Body>
               </Card>
@@ -400,7 +399,7 @@ export default function RevenueReportPage() {
                       <th className="text-end">{totalPayments}</th>
                       <th className="text-end">100%</th>
                       <th className="text-muted small">
-                        Doanh thu tính trên {paid} giao dịch PAID.
+                        Doanh thu tính trên {paid} giao dịch đã thanh toán.
                       </th>
                     </tr>
                   </tfoot>
@@ -414,8 +413,8 @@ export default function RevenueReportPage() {
             {includeTestData
               ? ' · Đang tính cả dữ liệu test'
               : ' · Đã loại dữ liệu test'}
-            . Doanh thu chỉ gồm giao dịch PAID; PENDING và FAILED được
-            loại trừ theo BR-RPT-02.
+            . Doanh thu chỉ gồm các giao dịch đã thanh toán; giao dịch đang chờ
+            hoặc thất bại không được tính.
           </p>
         </>
       )}

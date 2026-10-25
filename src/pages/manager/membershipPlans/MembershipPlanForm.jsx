@@ -143,7 +143,7 @@ export default function MembershipPlanForm({
           disabled={submitting}
           onClick={onCancel}
         >
-          Huỷ
+          Hủy
         </Button>
       </div>
     </Form>

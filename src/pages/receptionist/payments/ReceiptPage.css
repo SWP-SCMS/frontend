@@ -108,11 +108,41 @@
      "scms-sidebar">, the mobile Offcanvas and the site <footer>. The receipt
      page marks its own toolbar with .no-print. */
   .scms-sidebar,
+  .scms-sd-sidebar,
+  .scms-sd-header,
+  .scms-ml-sidebar,
+  .scms-ml-header,
   .navbar,
   .offcanvas,
   footer,
   .no-print {
     display: none !important;
+  }
+
+  .scms-sd-body,
+  .scms-ml-body {
+    padding-left: 0 !important;
+  }
+
+  .scms-sd-main,
+  .scms-ml-main {
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-print-area,
+  .receipt-print-area * {
+    visibility: visible;
+  }
+
+  .receipt-print-area {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
   }
 
   .flex-grow-1,

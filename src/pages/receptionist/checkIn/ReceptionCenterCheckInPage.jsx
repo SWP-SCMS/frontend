@@ -9,6 +9,7 @@ import {
   Spinner,
 } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -25,6 +26,12 @@ import { normalizePhone } from '../../../utils';
 const STATUS_BADGE = {
   [ACCOUNT_STATUS.ACTIVE]: 'bg-success-subtle text-success-emphasis',
   [ACCOUNT_STATUS.SUSPENDED]: 'bg-warning-subtle text-warning-emphasis',
+};
+
+const STATUS_LABELS = {
+  [ACCOUNT_STATUS.ACTIVE]: 'Đang hoạt động',
+  [ACCOUNT_STATUS.SUSPENDED]: 'Tạm khóa',
+  [ACCOUNT_STATUS.INACTIVE]: 'Ngưng hoạt động',
 };
 
 const memberSearchSchema = z
@@ -80,7 +87,7 @@ const CHECK_IN_BUSINESS_ERRORS = {
   MEMBERSHIP_FROZEN:
     'Gói tập của hội viên đang được đóng băng nên chưa thể check-in trung tâm.',
   CENTER_VISIT_MEMBER_NOT_ACTIVE:
-    'Tài khoản hội viên phải ở trạng thái ACTIVE mới có thể check-in trung tâm.',
+    'Tài khoản hội viên phải đang hoạt động mới có thể check-in trung tâm.',
   CENTER_VISIT_PROFILE_IMAGE_REQUIRED:
     'Hội viên cần có ảnh hồ sơ trước khi check-in trung tâm.',
   CENTER_VISIT_MEMBERSHIP_REQUIRED:
@@ -107,6 +114,8 @@ export default function ReceptionCenterCheckInPage() {
   const {
     register: registerSearch,
     handleSubmit: handleSearchSubmit,
+    reset: resetSearch,
+    setFocus: setSearchFocus,
     formState: {
       errors: searchFieldErrors,
       isSubmitting: searchSubmitting,
@@ -188,6 +197,10 @@ export default function ReceptionCenterCheckInPage() {
       checkInIdempotencyKeyRef.current = null;
       setCheckInSuccess({ result, fullName: selectedMember.fullName });
       resetCheckIn({ identityVerified: false });
+      resetSearch({ criterion: 'memberId', query: '' });
+      setSelectedMember(null);
+      setSearched(false);
+      setTimeout(() => setSearchFocus('query'), 0);
     } catch (err) {
       const code = err?.response?.data?.code;
       if (code === 'IDENTITY_VERIFICATION_REQUIRED') {
@@ -204,6 +217,10 @@ export default function ReceptionCenterCheckInPage() {
       checkInRequestInFlightRef.current = false;
     }
   }
+
+  const checkInBlocked = selectedMember
+    ? selectedMember.status !== ACCOUNT_STATUS.ACTIVE || !selectedMember.profileImageUrl
+    : true;
 
   return (
     <div>
@@ -334,7 +351,7 @@ export default function ReceptionCenterCheckInPage() {
                   <span
                     className={`badge ${STATUS_BADGE[selectedMember.status] || 'bg-light text-dark'}`}
                   >
-                    {selectedMember.status || '—'}
+                    {STATUS_LABELS[selectedMember.status] || selectedMember.status || '—'}
                   </span>
                 </div>
 
@@ -348,20 +365,28 @@ export default function ReceptionCenterCheckInPage() {
                   <dt className="col-sm-4 text-muted fw-normal">
                     Trạng thái tài khoản
                   </dt>
-                  <dd className="col-sm-8">{selectedMember.status || '—'}</dd>
+                  <dd className="col-sm-8">
+                    {STATUS_LABELS[selectedMember.status] || selectedMember.status || '—'}
+                  </dd>
                 </dl>
 
                 {selectedMember.status === ACCOUNT_STATUS.SUSPENDED ? (
                   <Alert variant="warning">
-                    Tài khoản đang tạm khoá. Backend sẽ từ chối check-in cho đến
-                    khi tài khoản trở lại trạng thái ACTIVE.
+                    Tài khoản đang tạm khóa nên chưa thể check-in. Quản lý cần
+                    mở lại tài khoản trước khi hội viên sử dụng trung tâm.
                   </Alert>
                 ) : null}
 
                 {!selectedMember.profileImageUrl ? (
                   <Alert variant="warning">
-                    Hội viên chưa có ảnh hồ sơ. Backend yêu cầu ảnh hồ sơ trước
-                    khi check-in trung tâm.
+                    Hội viên chưa có ảnh hồ sơ nên chưa thể check-in.{' '}
+                    <Alert.Link
+                      as={Link}
+                      to={`/reception/members/${selectedMember.memberId}`}
+                    >
+                      Mở hồ sơ hội viên
+                    </Alert.Link>
+                    {' '}để bổ sung ảnh.
                   </Alert>
                 ) : null}
 
@@ -386,7 +411,7 @@ export default function ReceptionCenterCheckInPage() {
                     id="identityVerified"
                     label="Tôi đã đối chiếu hội viên với ảnh hồ sơ"
                     className="mb-3"
-                    disabled={checkInSubmitting}
+                    disabled={checkInSubmitting || checkInBlocked}
                     isInvalid={Boolean(checkInFieldErrors.identityVerified)}
                     feedback={checkInFieldErrors.identityVerified?.message}
                     feedbackType="invalid"
@@ -395,7 +420,7 @@ export default function ReceptionCenterCheckInPage() {
                   <Button
                     type="submit"
                     variant="danger"
-                    disabled={checkInSubmitting}
+                    disabled={checkInSubmitting || checkInBlocked}
                   >
                     {checkInSubmitting ? (
                       <>

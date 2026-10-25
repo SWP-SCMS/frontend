@@ -17,6 +17,13 @@ import { ROLE_LABELS } from '../../../constants';
 
 const DASHBOARD_LINKS = [
   {
+    title: 'Check-in trung tâm',
+    description:
+      'Tra cứu hội viên, kiểm tra điều kiện và ghi nhận lượt vào trung tâm.',
+    to: '/reception/check-in',
+    cta: 'Mở check-in',
+  },
+  {
     title: 'Tra cứu hội viên',
     description:
       'Tìm chính xác một hội viên bằng mã hội viên hoặc số điện thoại, rồi xem và cập nhật hồ sơ.',
@@ -42,6 +49,13 @@ const DASHBOARD_LINKS = [
     description: 'Xem các gói tập đang được bán tại trung tâm.',
     to: '/reception/membership-offers',
     cta: 'Xem gói tập',
+  },
+  {
+    title: 'Đối soát chuyển khoản',
+    description:
+      'Kiểm tra các giao dịch chuyển khoản chưa khớp và xác nhận kết quả thanh toán.',
+    to: '/reception/payments/reconcile',
+    cta: 'Mở đối soát',
   },
 ];
 

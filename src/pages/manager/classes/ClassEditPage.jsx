@@ -67,8 +67,8 @@ function normalizeWriteTypes(values) {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'ACTIVE — đang hoạt động.' },
-  { value: 'INACTIVE', label: 'INACTIVE — đã ngưng hoạt động.' },
+  { value: 'ACTIVE', label: 'Đang hoạt động' },
+  { value: 'INACTIVE', label: 'Ngưng hoạt động' },
 ];
 
 // Page-local edit schema. disciplineId is intentionally NOT in the
@@ -290,7 +290,7 @@ export default function ClassEditPage() {
       const classTypeUnsupported = code === 'CLASS_TYPE_UNSUPPORTED';
       if (code === 'CLASS_HAS_ACTIVE_SESSIONS') {
         setFormLevelError(
-          'Không thể ngưng hoạt động lớp khi vẫn còn buổi tập đang diễn ra hoặc đã lên lịch. Backend không tự hủy các buổi này; vui lòng xử lý chúng trước rồi thử lại.',
+          'Không thể ngưng hoạt động lớp khi vẫn còn buổi tập đang diễn ra hoặc đã lên lịch. Các buổi này không tự động bị hủy; vui lòng xử lý chúng trước rồi thử lại.',
         );
         setBlockingSessions(extractAffectedSessions(problem));
         pageLocalHandled = true;
@@ -479,7 +479,7 @@ export default function ClassEditPage() {
                 ))}
               </Form.Select>
               <Form.Text className="text-muted">
-                Thay đổi từ ACTIVE sang INACTIVE để ngưng hoạt động. Đây
+                Chọn “Ngưng hoạt động” để ngừng sử dụng lớp. Đây
                 là thao tác có thể đảo ngược, không phải xoá.
               </Form.Text>
               <Form.Control.Feedback type="invalid">
@@ -523,7 +523,7 @@ export default function ClassEditPage() {
             }}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
           <Button
             type="button"

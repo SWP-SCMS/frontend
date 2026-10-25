@@ -735,7 +735,7 @@ export default function ReceptionistMemberBookingPage() {
 
           {membershipsError ? (
             <Alert variant="warning" className="py-2">
-              Không tải được quyền lợi hiện tại của hội viên. Backend sẽ kiểm tra lại khi xác nhận đặt lịch.
+              Không tải được quyền lợi hiện tại của hội viên. Hệ thống sẽ kiểm tra lại khi xác nhận đặt lịch.
             </Alert>
           ) : null}
 
@@ -786,7 +786,7 @@ export default function ReceptionistMemberBookingPage() {
                       !benefitBlocked;
                     let unavailableTitle;
                     if (!mutationsAllowed) {
-                      unavailableTitle = 'Hội viên không ở trạng thái ACTIVE';
+                      unavailableTitle = 'Tài khoản hội viên không hoạt động';
                     } else if (full) {
                       unavailableTitle = 'Xem hoặc cập nhật hàng chờ';
                     } else if (membershipsLoading) {

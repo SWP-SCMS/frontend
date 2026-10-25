@@ -158,6 +158,7 @@ export default function CoachMemberTrainingPage({ kind }) {
   const [versionsPlan, setVersionsPlan] = useState(null);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [archivingId, setArchivingId] = useState(null);
+  const [archiveTarget, setArchiveTarget] = useState(null);
   const [replacementPrompt, setReplacementPrompt] = useState(null);
   const [replacementSubmitting, setReplacementSubmitting] = useState(false);
 
@@ -304,10 +305,15 @@ export default function CoachMemberTrainingPage({ kind }) {
     finally { setVersionsLoading(false); }
   }
 
-  async function archivePlan(plan) {
-    if (!window.confirm(`Lưu trữ giáo án “${plan.title}”? Giáo án sẽ không thể khôi phục.`)) return;
-    setArchivingId(plan.id); setError(null);
-    try { await archiveCoachTrainingPlan(memberAccountId, plan.id); setSuccessMessage('Đã lưu trữ giáo án.'); await load(); }
+  async function confirmArchivePlan() {
+    if (!archiveTarget) return;
+    setArchivingId(archiveTarget.id); setError(null);
+    try {
+      await archiveCoachTrainingPlan(memberAccountId, archiveTarget.id);
+      setSuccessMessage('Đã lưu trữ giáo án.');
+      setArchiveTarget(null);
+      await load();
+    }
     catch (err) { setError(err); }
     finally { setArchivingId(null); }
   }
@@ -367,7 +373,7 @@ export default function CoachMemberTrainingPage({ kind }) {
                   <div className="d-flex flex-wrap gap-2">
                     <Button size="sm" variant="outline-secondary" onClick={() => openVersions(item)}>Lịch sử</Button>
                     <Button size="sm" variant="outline-danger" disabled={item.status !== 'ACTIVE'} onClick={() => openEditModal(item)}>Cập nhật</Button>
-                    <Button size="sm" variant="danger" disabled={item.status !== 'ACTIVE' || archivingId === item.id} onClick={() => archivePlan(item)}>{archivingId === item.id ? 'Đang lưu trữ…' : 'Lưu trữ'}</Button>
+                    <Button size="sm" variant="danger" disabled={item.status !== 'ACTIVE' || archivingId === item.id} onClick={() => setArchiveTarget(item)}>{archivingId === item.id ? 'Đang lưu trữ…' : 'Lưu trữ'}</Button>
                   </div>
                 ) : null}
               </div>
@@ -377,10 +383,13 @@ export default function CoachMemberTrainingPage({ kind }) {
           </Card>
         ))
       )}
-      <div className="d-flex justify-content-between mt-3">
-        <Button size="sm" variant="outline-danger" disabled={loading || page <= 0} onClick={() => setPage((value) => value - 1)}>‹ Trang trước</Button>
-        <Button size="sm" variant="outline-danger" disabled={loading || !result || page + 1 >= result.totalPages} onClick={() => setPage((value) => value + 1)}>Trang sau ›</Button>
-      </div>
+      {(result?.totalPages || 0) > 1 ? (
+        <div className="d-flex justify-content-between mt-3">
+          <Button size="sm" variant="outline-danger" disabled={loading || page <= 0} onClick={() => setPage((value) => value - 1)}>‹ Trang trước</Button>
+          <span className="small text-muted align-self-center">Trang {page + 1}/{result.totalPages}</span>
+          <Button size="sm" variant="outline-danger" disabled={loading || page + 1 >= result.totalPages} onClick={() => setPage((value) => value + 1)}>Trang sau ›</Button>
+        </div>
+      ) : null}
       <Link to={`/coach/members/${memberAccountId}`} className="d-inline-block mt-3">← Quay lại hồ sơ hội viên</Link>
 
       <Modal show={Boolean(modalMode)} onHide={closeModal} centered size="lg">
@@ -522,6 +531,29 @@ export default function CoachMemberTrainingPage({ kind }) {
       <Modal show={Boolean(versionsPlan)} onHide={() => setVersionsPlan(null)} size="lg" centered>
         <Modal.Header closeButton><Modal.Title>Lịch sử — {versionsPlan?.title}</Modal.Title></Modal.Header>
         <Modal.Body>{versionsLoading ? <div className="text-center py-4"><Spinner variant="danger" /></div> : (versions || []).map((version) => <Card key={version.id} className="mb-3"><Card.Body><div className="d-flex justify-content-between mb-2"><strong>Phiên bản {version.versionNumber}</strong><span className="small text-muted">{formatGymDate(version.createdAt)} · {formatGymTime(version.createdAt)}</span></div><div className="small text-muted mb-2">Người tạo: {version.createdByAccountId}</div><TrainingContent value={version.content} /></Card.Body></Card>)}</Modal.Body>
+      </Modal>
+
+      <Modal
+        show={Boolean(archiveTarget)}
+        onHide={() => !archivingId && setArchiveTarget(null)}
+        centered
+        backdrop="static"
+      >
+        <Modal.Header closeButton={!archivingId}>
+          <Modal.Title className="h5">Lưu trữ giáo án</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Xác nhận lưu trữ giáo án <strong>“{archiveTarget?.title}”</strong>?
+          Giáo án đã lưu trữ sẽ không thể khôi phục.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" disabled={Boolean(archivingId)} onClick={() => setArchiveTarget(null)}>
+            Quay lại
+          </Button>
+          <Button variant="danger" disabled={Boolean(archivingId)} onClick={confirmArchivePlan}>
+            {archivingId ? 'Đang lưu trữ…' : 'Xác nhận lưu trữ'}
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );

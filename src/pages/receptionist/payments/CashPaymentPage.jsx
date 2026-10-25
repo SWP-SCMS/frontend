@@ -73,7 +73,7 @@ const CONFLICT_MESSAGES = {
   PENDING_MEMBERSHIP_ORDER_EXISTS:
     'Hội viên đang có đơn chưa thanh toán. Vui lòng xử lý đơn đó trước.',
   MEMBER_NOT_ACTIVE:
-    'Tài khoản hội viên không ở trạng thái ACTIVE nên không thể thu tiền.',
+    'Tài khoản hội viên không hoạt động nên không thể thu tiền.',
   MEMBER_NOT_FOUND: 'Không tìm thấy hội viên.',
   OFFER_NOT_ACTIVE: 'Gói tập đã ngừng bán, vui lòng chọn gói khác.',
   MEMBERSHIP_OFFER_NOT_AVAILABLE:
@@ -118,6 +118,7 @@ export default function CashPaymentPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [cashConfirmOpen, setCashConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState(null);
   const [transferOrder, setTransferOrder] = useState(null);
@@ -340,8 +341,7 @@ export default function CashPaymentPage() {
     setError(null);
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function submitPayment() {
     if (!offerId) {
       setError(new Error('Vui lòng chọn một gói tập.'));
       return;
@@ -399,6 +399,24 @@ export default function CashPaymentPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!offerId) {
+      setError(new Error('Vui lòng chọn một gói tập.'));
+      return;
+    }
+    if (paymentMethod === PAYMENT_METHOD.CASH) {
+      setCashConfirmOpen(true);
+      return;
+    }
+    submitPayment();
+  }
+
+  async function confirmCashPayment() {
+    setCashConfirmOpen(false);
+    await submitPayment();
   }
 
   const conflictCode = error?.response?.data?.code;
@@ -511,7 +529,7 @@ export default function CashPaymentPage() {
                       variant="outline-secondary"
                       onClick={handleClearMember}
                     >
-                      Xoá
+                      Xóa
                     </Button>
                   ) : null}
                 </Col>
@@ -758,7 +776,7 @@ export default function CashPaymentPage() {
               UUIDs at the receptionist: this is the document the customer
               receives, and it has to be readable — and printable — from the
               screen they are already on. */}
-          <div className="receipt-preview bg-white rounded border p-3 mb-3">
+          <div className="receipt-preview receipt-print-area bg-white rounded border p-3 mb-3">
             <div className="text-center mb-2">
               <div className="fw-bold">BIÊN LAI THU TIỀN</div>
               <div className="text-muted small">SWP GYM — Trung tâm quản lý hội viên</div>
@@ -885,7 +903,7 @@ export default function CashPaymentPage() {
               size="sm"
               onClick={() => setCancelling(true)}
             >
-              Huỷ đơn chờ thanh toán
+              Hủy đơn chờ thanh toán
             </Button>
             <Button
               as={Link}
@@ -909,7 +927,7 @@ export default function CashPaymentPage() {
         backdrop={submittingCancel ? 'static' : true}
       >
         <Modal.Header closeButton>
-          <Modal.Title className="h6">Huỷ đơn {pendingOrder?.orderNumber}</Modal.Title>
+          <Modal.Title className="h6">Hủy đơn {pendingOrder?.orderNumber}</Modal.Title>
         </Modal.Header>
         <Form
           onSubmit={(e) => {
@@ -919,7 +937,7 @@ export default function CashPaymentPage() {
         >
           <Modal.Body>
             <p className="small mb-3">
-              Đơn này đang ở trạng thái chờ thanh toán chuyển khoản. Huỷ đơn sẽ chuyển
+              Đơn này đang ở trạng thái chờ thanh toán chuyển khoản. Hủy đơn sẽ chuyển
               nó sang <strong>EXPIRED</strong> và vô hiệu hoá các khoản thanh toán
               đang chờ, sau đó bạn có thể tạo giao dịch mới. Thao tác được ghi
               vào nhật ký hệ thống và không thể hoàn tác.
@@ -965,7 +983,7 @@ export default function CashPaymentPage() {
               {submittingCancel ? (
                 <Spinner animation="border" size="sm" />
               ) : (
-                'Huỷ đơn'
+                'Hủy đơn'
               )}
             </Button>
           </Modal.Footer>
@@ -975,6 +993,58 @@ export default function CashPaymentPage() {
       {conflictMessage ? (
         <Alert variant="warning">{conflictMessage}</Alert>
       ) : null}
+
+      <Modal
+        show={cashConfirmOpen}
+        onHide={() => !submitting && setCashConfirmOpen(false)}
+        centered
+        backdrop="static"
+      >
+        <Modal.Header closeButton={!submitting}>
+          <Modal.Title className="h5">Xác nhận thu tiền mặt</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-3">
+            Chỉ xác nhận sau khi đã nhận đủ tiền mặt từ hội viên.
+          </p>
+          <dl className="row mb-0">
+            <dt className="col-4 text-muted fw-normal">Hội viên</dt>
+            <dd className="col-8">
+              <strong>{member?.fullName || '—'}</strong>
+              <div className="small text-muted">{memberId || '—'}</div>
+            </dd>
+            <dt className="col-4 text-muted fw-normal">Gói tập</dt>
+            <dd className="col-8">{selectedOffer?.name || '—'}</dd>
+            <dt className="col-4 text-muted fw-normal">Số tiền</dt>
+            <dd className="col-8 fw-bold text-danger">
+              {selectedOffer
+                ? formatPrice(selectedOffer.priceAmount, selectedOffer.currencyCode)
+                : '—'}
+            </dd>
+          </dl>
+          <Alert variant="warning" className="small mb-0 mt-3">
+            Thao tác này sẽ kích hoạt hoặc ghi nhận gói gia hạn và tạo biên lai ngay.
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            type="button"
+            variant="outline-secondary"
+            disabled={submitting}
+            onClick={() => setCashConfirmOpen(false)}
+          >
+            Quay lại
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            disabled={submitting || !selectedOffer}
+            onClick={confirmCashPayment}
+          >
+            {submitting ? 'Đang xử lý…' : 'Xác nhận đã nhận đủ tiền'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {error && !conflictMessage ? (
         <ErrorAlert error={error} title="Không tạo được đơn gói tập" onClose={() => setError(null)} />
@@ -1102,7 +1172,7 @@ export default function CashPaymentPage() {
                       {paymentMethod === PAYMENT_METHOD.CASH ? (
                         <>
                           Xác nhận này ghi nhận đã nhận đủ tiền mặt, tạo gói tập
-                          và xuất biên lai ngay. Nếu hội viên đang có gói ACTIVE,
+                          và xuất biên lai ngay. Nếu hội viên đang có gói hoạt động,
                           gói mới sẽ ở trạng thái chờ kích hoạt. Nếu chưa thực tế
                           nhận tiền, đừng xác nhận.
                         </>
@@ -1120,7 +1190,7 @@ export default function CashPaymentPage() {
                     {isSuspended || blockedByPendingOrder ? (
                       <p className="text-danger small mb-2">
                         {isSuspended
-                          ? 'Tài khoản không ACTIVE nên không thể tạo đơn.'
+                          ? 'Tài khoản không hoạt động nên không thể tạo đơn.'
                           : 'Không thể tạo đơn mới khi hội viên còn đơn chờ thanh toán.'}
                       </p>
                     ) : null}

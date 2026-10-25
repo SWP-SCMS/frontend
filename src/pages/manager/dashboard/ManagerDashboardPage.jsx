@@ -7,7 +7,7 @@ import { useAuth } from '../../../context/useAuth';
 import { getManagerDashboard } from '../../../services/managerReportingService';
 import { formatPrice } from '../../../utils';
 
-function Metric({ label, value, note, to }) {
+function Metric({ label, value, note, to, actionLabel = 'Mở danh sách' }) {
   return (
     <Col md={6} xl={3}>
       <Card className="border-0 shadow-sm h-100">
@@ -18,7 +18,7 @@ function Metric({ label, value, note, to }) {
           {to ? (
             <div className="mt-auto">
               <Button as={Link} to={to} size="sm" variant="outline-danger">
-                Mở danh sách
+                {actionLabel}
               </Button>
             </div>
           ) : null}
@@ -80,6 +80,7 @@ export default function ManagerDashboardPage() {
               value={formatPrice(data.membershipRevenue?.paidRevenue, 'VND')}
               note={`${data.membershipRevenue?.paidPayments || 0} giao dịch thành công`}
               to="/manager/reports/revenue"
+              actionLabel="Xem báo cáo"
             />
             <Metric
               label="Lượt đặt còn hiệu lực"
@@ -92,6 +93,7 @@ export default function ManagerDashboardPage() {
               value={data.centerVisits?.openVisits}
               note="Hội viên hiện vẫn được ghi nhận trong trung tâm"
               to="/manager/reports"
+              actionLabel="Xem báo cáo"
             />
           </Row>
 

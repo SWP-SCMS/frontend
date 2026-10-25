@@ -29,8 +29,8 @@ import { listClasses } from '../../../services/sportClassService';
 
 const STATUS_FILTERS = [
   { value: '', label: 'Tất cả' },
-  { value: 'ACTIVE', label: 'ACTIVE' },
-  { value: 'INACTIVE', label: 'INACTIVE' },
+  { value: 'ACTIVE', label: 'Đang hoạt động' },
+  { value: 'INACTIVE', label: 'Ngưng hoạt động' },
 ];
 
 const STATUS_BADGE = {
@@ -137,7 +137,7 @@ export default function ClassListPage() {
           message={
             classes.length === 0
               ? 'Chưa có lớp học nào. Bấm "Tạo lớp" để bắt đầu.'
-              : 'Thử bỏ bộ lọc hoặc đổi từ khoá tìm kiếm.'
+              : 'Thử bỏ bộ lọc hoặc đổi từ khóa tìm kiếm.'
           }
         />
       );
@@ -234,7 +234,7 @@ export default function ClassListPage() {
                 type="button"
                 variant="outline-secondary"
                 onClick={handleClearSearch}
-                aria-label="Xoá tìm kiếm"
+                aria-label="Xóa tìm kiếm"
               >
                 ✕
               </Button>

@@ -73,6 +73,7 @@ export default function MemberChangePasswordPage() {
 
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [serverError, setServerError] = useState(null);
 
   const {
@@ -181,21 +182,30 @@ export default function MemberChangePasswordPage() {
             </Form.Control.Feedback>
           </InputGroup>
           <Form.Text className="text-muted">
-            Tối thiểu 8 ký tự và tối đa 72 byte UTF-8.
+            Tối thiểu 8 ký tự và không quá 72 ký tự.
           </Form.Text>
         </Form.Group>
 
         <Form.Group className="mb-4" controlId="cp-confirm">
           <Form.Label>Xác nhận mật khẩu mới</Form.Label>
-          <Form.Control
-            type="password"
-            {...register('confirmPassword')}
-            autoComplete="new-password"
-            isInvalid={Boolean(errors.confirmPassword)}
-          />
-          <Form.Control.Feedback type="invalid">
-            {errors.confirmPassword?.message}
-          </Form.Control.Feedback>
+          <InputGroup>
+            <Form.Control
+              type={showConfirm ? 'text' : 'password'}
+              {...register('confirmPassword')}
+              autoComplete="new-password"
+              isInvalid={Boolean(errors.confirmPassword)}
+            />
+            <Button
+              variant="outline-secondary"
+              type="button"
+              onClick={() => setShowConfirm((s) => !s)}
+            >
+              {showConfirm ? 'Ẩn' : 'Hiện'}
+            </Button>
+            <Form.Control.Feedback type="invalid">
+              {errors.confirmPassword?.message}
+            </Form.Control.Feedback>
+          </InputGroup>
         </Form.Group>
 
         <div className="d-flex gap-2">

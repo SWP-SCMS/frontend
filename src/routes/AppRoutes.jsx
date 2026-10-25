@@ -8,12 +8,12 @@ import ProtectedRoute from './ProtectedRoute';
 import GuestRoute from './GuestRoute';
 import RoleRoute from './RoleRoute';
 import LoadingScreen from '../components/common/LoadingScreen';
-import AppShell from '../components/layout/AppShell';
 import StaffLayout from '../components/layout/StaffLayout';
 import MemberLayout from '../components/layout/MemberLayout';
 import MemberBenefitRouteGuard from '../components/layout/MemberBenefitRouteGuard';
 import CoachLayout from '../components/layout/CoachLayout';
 import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfig';
+import { useAuth } from '../context/useAuth';
 
 // Public pages
 const HomePage = lazy(() => import('../pages/public/home/HomePage'));
@@ -26,6 +26,22 @@ const ForgotPasswordPage = lazy(
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
 const NotFoundPage = lazy(() => import('../pages/public/notFound/NotFoundPage'));
+const ForbiddenPage = lazy(() => import('../pages/public/forbidden/ForbiddenPage'));
+
+function StaffReceiptRoute() {
+  const { role } = useAuth();
+  const labels = STAFF_LABELS[role];
+
+  return (
+    <StaffLayout
+      sidebarLabel={labels?.sidebarLabel}
+      sidebarItems={APP_SHELL_NAV_ITEMS[role] || []}
+      roleLabel={labels?.roleLabel}
+    >
+      {withSuspense(<ReceiptPage />)}
+    </StaffLayout>
+  );
+}
 
 // Member-only
 const MemberDashboardPage = lazy(
@@ -592,9 +608,7 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <RoleRoute allow={[ROLES.RECEPTIONIST, ROLES.MANAGER]}>
-              <AppShell>
-                <ReceiptPage />
-              </AppShell>
+              <StaffReceiptRoute />
             </RoleRoute>
           </ProtectedRoute>
         }
@@ -724,6 +738,10 @@ export default function AppRoutes() {
       </Route>
 
       {/* ---------- Catch-all ---------- */}
+      <Route
+        path="/forbidden"
+        element={<ProtectedRoute>{withSuspense(<ForbiddenPage />)}</ProtectedRoute>}
+      />
       <Route path="*" element={withSuspense(<NotFoundPage />)} />
     </Routes>
   );

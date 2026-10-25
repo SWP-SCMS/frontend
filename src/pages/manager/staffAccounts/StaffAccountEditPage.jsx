@@ -214,13 +214,12 @@ export default function StaffAccountEditPage() {
         Chỉnh sửa tài khoản
       </h1>
       <p className="text-muted mb-4">
-        {account.fullName || '—'} · {ROLE_LABELS[account.role] || account.role} ·{' '}
-        Account ID <code className="small">{account.accountId}</code>
+        {account.fullName || '—'} · {ROLE_LABELS[account.role] || account.role}
       </p>
 
       {isInactive ? (
         <div className="alert alert-warning py-2">
-          Tài khoản đang ở trạng thái INACTIVE. Vẫn có thể cập nhật thông tin, nhưng tài
+          Tài khoản đang ngưng hoạt động. Vẫn có thể cập nhật thông tin, nhưng tài
           khoản sẽ không đăng nhập được cho đến khi được tạo mới.
         </div>
       ) : null}
@@ -263,7 +262,8 @@ export default function StaffAccountEditPage() {
                 isInvalid={Boolean(errors.phone)}
               />
               <Form.Text className="text-muted">
-                Để trống nếu không muốn thay đổi số điện thoại.
+                Số điện thoại được dùng để đăng nhập và khôi phục mật khẩu. Để
+                trống nếu không muốn thay đổi.
               </Form.Text>
               <Form.Control.Feedback type="invalid">
                 {errors.phone?.message}
@@ -314,12 +314,14 @@ export default function StaffAccountEditPage() {
             </Col>
             <Col md={6}>
               <div className="text-muted small">Trạng thái hiện tại</div>
-              <div className="fw-semibold">{account.status || '—'}</div>
+              <div className="fw-semibold">
+                {account.status === 'ACTIVE' ? 'Đang hoạt động' : 'Ngưng hoạt động'}
+              </div>
             </Col>
           </Row>
           <p className="small text-muted mt-2 mb-0">
-            Theo BR-ACC-05 / BR-LIM-02: vai trò cố định suốt vòng đời tài khoản. Để
-            thay đổi, chuyển tài khoản sang INACTIVE và tạo tài khoản mới.
+            Vai trò không thể thay đổi sau khi tạo. Nếu cần một vai trò khác, hãy
+            ngưng hoạt động tài khoản này và tạo tài khoản mới.
           </p>
           <p className="small text-muted mt-1 mb-0">
             Ngày tạo: {formatDate(account.createdAt) || '—'}
@@ -348,7 +350,7 @@ export default function StaffAccountEditPage() {
             }}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
           <Button
             type="button"

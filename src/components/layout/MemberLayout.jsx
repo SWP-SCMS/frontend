@@ -29,7 +29,7 @@ export default function MemberLayout({ children }) {
   const [activeOffers, setActiveOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const unreadCount = useNotificationUnreadCount();
+  const { unreadCount, notifications } = useNotificationUnreadCount();
 
   // Hộp thoại xác nhận trước khi đăng xuất.
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -207,6 +207,7 @@ export default function MemberLayout({ children }) {
           <MemberHeader
             user={user}
             unreadCount={unreadCount}
+            notifications={notifications}
             onRequestLogout={requestLogout}
           />
 

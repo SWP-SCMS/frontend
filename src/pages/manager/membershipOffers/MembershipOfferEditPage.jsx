@@ -33,8 +33,8 @@ import {
 } from '../../../utils/decimalInteger';
 
 const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'ACTIVE' },
-  { value: 'INACTIVE', label: 'INACTIVE' },
+  { value: 'ACTIVE', label: 'Đang bán' },
+  { value: 'INACTIVE', label: 'Ngừng bán' },
 ];
 
 // Page-local edit schema — same field set as Create. The wire payload
@@ -349,7 +349,7 @@ export default function MembershipOfferEditPage() {
             onClick={() => navigate(`/manager/membership-offers/${offerId}`)}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
         </div>
       </Form>

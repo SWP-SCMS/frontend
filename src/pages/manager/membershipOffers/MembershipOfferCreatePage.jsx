@@ -36,8 +36,8 @@ import {
 } from '../../../utils/decimalInteger';
 
 const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'ACTIVE' },
-  { value: 'INACTIVE', label: 'INACTIVE' },
+  { value: 'ACTIVE', label: 'Đang bán' },
+  { value: 'INACTIVE', label: 'Ngừng bán' },
 ];
 
 // Page-local schema.
@@ -181,7 +181,7 @@ export default function MembershipOfferCreatePage() {
               {plansLoading ? <Form.Text>Đang tải loại gói…</Form.Text> : null}
               {!plansLoading && plans.length === 0 ? (
                 <Form.Text className="text-danger d-block">
-                  Chưa có loại gói ACTIVE.{' '}
+                  Chưa có loại gói đang hoạt động.{' '}
                   <Link to="/manager/membership-plans/new">Tạo loại gói</Link>
                 </Form.Text>
               ) : null}
@@ -204,7 +204,7 @@ export default function MembershipOfferCreatePage() {
                 ))}
               </Form.Select>
               <Form.Text className="text-muted">
-                ACTIVE sẽ hiển thị ngay cho hội viên; INACTIVE được giấu khỏi
+                Gói đang bán sẽ hiển thị cho hội viên; gói ngừng bán sẽ được ẩn khỏi
                 trang công khai.
               </Form.Text>
               <Form.Control.Feedback type="invalid">
@@ -296,7 +296,7 @@ export default function MembershipOfferCreatePage() {
             onClick={() => navigate('/manager/membership-offers')}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
         </div>
       </Form>

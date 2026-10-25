@@ -126,7 +126,7 @@ export default function MembershipOfferListPage() {
           message={
             offers.length === 0
               ? 'Chưa có gói tập nào đang hoạt động.'
-              : 'Thử bỏ bộ lọc hoặc đổi từ khoá tìm kiếm.'
+              : 'Thử bỏ bộ lọc hoặc đổi từ khóa tìm kiếm.'
           }
         />
       );
@@ -214,7 +214,7 @@ export default function MembershipOfferListPage() {
                 type="button"
                 variant="outline-secondary"
                 onClick={handleClearSearch}
-                aria-label="Xoá tìm kiếm"
+                aria-label="Xóa tìm kiếm"
               >
                 ✕
               </Button>

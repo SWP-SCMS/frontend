@@ -139,7 +139,7 @@ export default function StaffAccountListPage() {
       return (
         <EmptyState
           title="Không có tài khoản phù hợp"
-          message="Thử bỏ bộ lọc hoặc đổi từ khoá tìm kiếm."
+          message="Thử bỏ bộ lọc hoặc đổi từ khóa tìm kiếm."
         />
       );
     }
@@ -222,7 +222,7 @@ export default function StaffAccountListPage() {
               Tìm
             </Button>
             {searchInput ? (
-              <Button type="button" variant="outline-secondary" onClick={handleClearSearch} aria-label="Xoá tìm kiếm">
+              <Button type="button" variant="outline-secondary" onClick={handleClearSearch} aria-label="Xóa tìm kiếm">
                 ✕
               </Button>
             ) : null}

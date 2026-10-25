@@ -9,10 +9,10 @@
 // Component chỉ render — không tải dữ liệu, không gọi API.
 
 import { Dropdown } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
 import StaffIcon from './StaffIcon';
+import NotificationBellContent from './NotificationBellContent';
 
-export default function StaffHeader({ user, roleLabel, unreadCount = 0, notificationPath, onRequestLogout }) {
+export default function StaffHeader({ user, roleLabel, unreadCount = 0, notifications = [], notificationPath, onRequestLogout }) {
   const hasUnread = unreadCount > 0;
   return (
     <header className="scms-sd-header">
@@ -30,13 +30,12 @@ export default function StaffHeader({ user, roleLabel, unreadCount = 0, notifica
               {hasUnread ? <span className="scms-sd-bell-dot" aria-hidden="true"></span> : null}
             </Dropdown.Toggle>
             <Dropdown.Menu className="scms-sd-bell-menu">
-              <div className="scms-sd-bell-head">Thông báo</div>
-              <div className="scms-sd-bell-empty">
-                {hasUnread ? `Bạn có ${unreadCount} thông báo mới.` : 'Chưa có thông báo nào.'}
-              </div>
-              <Dropdown.Item as={Link} to={notificationPath} className="small text-danger">
-                Xem tất cả thông báo
-              </Dropdown.Item>
+              <NotificationBellContent
+                notifications={notifications}
+                unreadCount={unreadCount}
+                notificationPath={notificationPath}
+                classPrefix="scms-sd"
+              />
             </Dropdown.Menu>
           </Dropdown>
         ) : null}

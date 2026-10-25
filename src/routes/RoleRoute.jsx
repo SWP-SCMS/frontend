@@ -4,13 +4,14 @@
 // member). Always pair with <ProtectedRoute /> as the outer guard.
 
 import { Navigate, useLocation } from 'react-router-dom';
+import LoadingScreen from '../components/common/LoadingScreen';
 import { useAuth } from '../context/useAuth';
 
 export default function RoleRoute({ allow, children }) {
   const { isAuthenticated, isReady, role } = useAuth();
   const location = useLocation();
 
-  if (!isReady) return null;
+  if (!isReady) return <LoadingScreen label="Đang kiểm tra quyền truy cập" />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
@@ -20,13 +21,13 @@ export default function RoleRoute({ allow, children }) {
   // have flushed by the time we render this route. Showing `/` for a
   // logged-in user with no role would be wrong — show a splash instead.
   if (!role) {
-    return null;
+    return <LoadingScreen label="Đang tải thông tin tài khoản" />;
   }
 
   const allowed = Array.isArray(allow) ? allow : [allow];
   if (!allowed.includes(role)) {
     // Authenticated but wrong role -> send to a role-appropriate home.
-    return <Navigate to="/" replace />;
+    return <Navigate to="/forbidden" replace state={{ from: location.pathname }} />;
   }
 
   return children;

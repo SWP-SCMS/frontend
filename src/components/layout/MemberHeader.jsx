@@ -10,10 +10,10 @@
 // API dùng chung; menu dẫn đến trang thông báo đầy đủ để đọc và cập nhật.
 
 import { Dropdown } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
 import Icon from './MemberIcon';
+import NotificationBellContent from './NotificationBellContent';
 
-export default function MemberHeader({ user, unreadCount = 0, onRequestLogout }) {
+export default function MemberHeader({ user, unreadCount = 0, notifications = [], onRequestLogout }) {
   const hasUnread = unreadCount > 0;
 
   return (
@@ -32,15 +32,12 @@ export default function MemberHeader({ user, unreadCount = 0, onRequestLogout })
           ) : null}
         </Dropdown.Toggle>
         <Dropdown.Menu className="scms-ml-bell-menu">
-          <div className="scms-ml-bell-head">Thông báo</div>
-          <div className="scms-ml-bell-empty">
-            {hasUnread
-              ? `Bạn có ${unreadCount} thông báo mới.`
-              : 'Chưa có thông báo nào.'}
-          </div>
-          <Dropdown.Item as={Link} to="/member/notifications" className="small text-danger">
-            Xem tất cả thông báo
-          </Dropdown.Item>
+          <NotificationBellContent
+            notifications={notifications}
+            unreadCount={unreadCount}
+            notificationPath="/member/notifications"
+            classPrefix="scms-ml"
+          />
         </Dropdown.Menu>
       </Dropdown>
 

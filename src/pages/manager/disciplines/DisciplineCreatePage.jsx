@@ -108,7 +108,7 @@ export default function DisciplineCreatePage() {
 
       <h1 className="h3 fw-bold mt-2 mb-1">Tạo bộ môn mới</h1>
       <p className="text-muted mb-4">
-        Bộ môn mới được tạo với trạng thái ACTIVE.
+        Bộ môn mới sẽ ở trạng thái đang hoạt động.
       </p>
 
       <ErrorAlert
@@ -166,7 +166,7 @@ export default function DisciplineCreatePage() {
             onClick={() => navigate('/manager/disciplines')}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
         </div>
       </Form>
