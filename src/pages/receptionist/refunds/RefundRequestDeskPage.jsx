@@ -2,17 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import { getReceptionMemberReceipts } from '../../../services/receptionistService';
 import {
   createReceptionRefundRequest,
   listReceptionRefundRequests,
+  listRefundEligibleSources,
   recordRefundCashDisbursement,
 } from '../../../services/refundService';
-import { getReceptionMemberMemberships } from '../../../services/staffMembershipService';
 import { formatDateTime, formatPrice } from '../../../utils';
 
 const PAGE_SIZE = 20;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const STATUS = {
   REQUESTED: ['Chờ duyệt bước đầu', 'warning'],
@@ -108,27 +106,15 @@ export default function RefundRequestDeskPage() {
     setSourceLoading(true);
     setError(null);
     try {
-      const [receipts, memberships] = await Promise.all([
-        getReceptionMemberReceipts(memberCode),
-        getReceptionMemberMemberships(memberCode),
-      ]);
-      const membershipsByOrder = new Map(
-        memberships
-          .filter((membership) => ['TERMINATED', 'RESERVED'].includes(membership.status))
-          .map((membership) => [membership.orderId, membership]),
-      );
-      const candidates = (receipts || [])
-        .filter((receipt) => receipt.paymentMethod === 'CASH')
-        .map((receipt) => ({ receipt, membership: membershipsByOrder.get(receipt.orderId) }))
-        .filter((candidate) => candidate.membership);
+      const candidates = await listRefundEligibleSources(memberCode);
       setSourceCandidates(candidates);
       if (candidates.length === 1) selectRefundSource(candidates[0]);
       if (!candidates.length) {
-        setError(new Error('Không tìm thấy thanh toán tiền mặt do bạn xử lý gắn với gói đã chấm dứt hoặc gói đặt trước. Bạn vẫn có thể nhập UUID thủ công.'));
+        setError(new Error('Hội viên hiện không có nguồn hoàn tiền đủ điều kiện.'));
       }
     } catch (requestError) {
       setSourceCandidates([]);
-      setError(new Error(messageOf(requestError, 'Không tải được giao dịch và lịch sử gói của hội viên.')));
+      setError(new Error(messageOf(requestError, 'Không tải được nguồn hoàn tiền đủ điều kiện.')));
     } finally {
       setSourceLoading(false);
     }
@@ -138,8 +124,9 @@ export default function RefundRequestDeskPage() {
     setForm((current) => ({
       ...current,
       memberCode: current.memberCode.trim().toUpperCase(),
-      paymentId: candidate.receipt.paymentId,
-      membershipId: candidate.membership.id,
+      paymentId: candidate.paymentId,
+      membershipId: candidate.membershipId,
+      requestedAmount: String(candidate.suggestedAmount || ''),
     }));
   }
 
@@ -155,8 +142,8 @@ export default function RefundRequestDeskPage() {
       setError(new Error('Mã hội viên phải có dạng MB-100001.'));
       return;
     }
-    if (!UUID_PATTERN.test(paymentId) || !UUID_PATTERN.test(membershipId)) {
-      setError(new Error('Payment ID và Membership ID phải là UUID hợp lệ.'));
+    if (!paymentId || !membershipId) {
+      setError(new Error('Vui lòng chọn một nguồn hoàn tiền đủ điều kiện.'));
       return;
     }
     if (!/^[1-9][0-9]*$/.test(amountText)) {
@@ -241,9 +228,6 @@ export default function RefundRequestDeskPage() {
       <Card className="border-0 shadow-sm mb-4">
         <Card.Body className="p-4">
           <h2 className="h5 fw-bold">Tạo yêu cầu hoàn tiền</h2>
-          <Alert variant="warning" className="small">
-            Danh sách hoàn tiền hiện chưa có mã đơn, mã giao dịch và tên hội viên. Mã hệ thống được hiển thị tạm thời để kiểm tra quy trình.
-          </Alert>
           <Form onSubmit={createRequest} className="row g-3">
             <Form.Group className="col-lg-3">
               <Form.Label>Mã hội viên *</Form.Label>
@@ -254,32 +238,24 @@ export default function RefundRequestDeskPage() {
             </Form.Group>
             {sourceCandidates.length ? (
               <Form.Group className="col-12">
-                <Form.Label>Thanh toán đủ điều kiện sơ bộ</Form.Label>
+                <Form.Label>Nguồn hoàn tiền đủ điều kiện</Form.Label>
                 <Form.Select
                   value={form.paymentId && form.membershipId ? `${form.paymentId}|${form.membershipId}` : ''}
                   onChange={(event) => {
-                    const candidate = sourceCandidates.find(({ receipt, membership }) => `${receipt.paymentId}|${membership.id}` === event.target.value);
+                    const candidate = sourceCandidates.find((item) => `${item.paymentId}|${item.membershipId}` === event.target.value);
                     if (candidate) selectRefundSource(candidate);
                   }}
                 >
                   <option value="">Chọn thanh toán và gói tập</option>
-                  {sourceCandidates.map(({ receipt, membership }) => (
-                    <option key={`${receipt.paymentId}-${membership.id}`} value={`${receipt.paymentId}|${membership.id}`}>
-                      {receipt.receiptNumber || receipt.paymentId} · {membership.offerName || receipt.offerName || 'Gói tập'} · {TYPE[membership.status === 'RESERVED' ? 'RESERVED_CANCELLATION' : 'TERMINATED_MEMBERSHIP']} · {formatPrice(receipt.amount, receipt.currency || 'VND')}
+                  {sourceCandidates.map((candidate) => (
+                    <option key={`${candidate.paymentId}-${candidate.membershipId}`} value={`${candidate.paymentId}|${candidate.membershipId}`}>
+                      {candidate.receiptNumber} · {candidate.offerName} · {TYPE[candidate.type] || candidate.type} · đề xuất {formatPrice(candidate.suggestedAmount, candidate.currency || 'VND')}
                     </option>
                   ))}
                 </Form.Select>
-                <Form.Text className="text-muted">Danh sách chỉ gồm biên lai tiền mặt do tài khoản Lễ tân hiện tại xử lý. Backend vẫn kiểm tra điều kiện chính thức khi gửi.</Form.Text>
+                <Form.Text className="text-muted">Nguồn và mức đề xuất được backend tính tại thời điểm tra cứu; hệ thống sẽ kiểm tra lại khi gửi.</Form.Text>
               </Form.Group>
             ) : null}
-            <Form.Group className="col-lg-4">
-              <Form.Label>Payment ID *</Form.Label>
-              <Form.Control value={form.paymentId} onChange={(event) => updateForm('paymentId', event.target.value)} placeholder="UUID thanh toán tiền mặt" className="font-monospace" />
-            </Form.Group>
-            <Form.Group className="col-lg-4">
-              <Form.Label>Membership ID *</Form.Label>
-              <Form.Control value={form.membershipId} onChange={(event) => updateForm('membershipId', event.target.value)} placeholder="UUID gói tập" className="font-monospace" />
-            </Form.Group>
             <Form.Group className="col-lg-3">
               <Form.Label>Số tiền yêu cầu *</Form.Label>
               <Form.Control type="number" min="1" step="1" inputMode="numeric" value={form.requestedAmount} onChange={(event) => updateForm('requestedAmount', event.target.value)} />
@@ -307,11 +283,12 @@ export default function RefundRequestDeskPage() {
           ) : (
             <div className="table-responsive">
               <Table hover className="align-middle mb-0">
-                <thead><tr><th>Ngày gửi</th><th>Hội viên</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
+                <thead><tr><th>Ngày gửi</th><th>Hội viên</th><th>Nguồn hoàn</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
                 <tbody>{rows.map((row) => (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.requestedAt)}</td>
-                    <td><code className="small">{row.memberAccountId}</code></td>
+                    <td><div className="fw-semibold">{row.memberFullName || 'Hội viên'}</div><div className="small text-muted">{row.memberCode || '—'}</div></td>
+                    <td><div>{row.receiptNumber || 'Chưa có số biên lai'}</div><div className="small text-muted">Đơn {row.orderNumber || '—'}</div></td>
                     <td>{TYPE[row.type] || row.type || '—'}</td>
                     <td>
                       <div>Yêu cầu: <strong>{formatPrice(row.requestedAmount, 'VND')}</strong></div>
@@ -341,7 +318,8 @@ export default function RefundRequestDeskPage() {
         <Modal.Header closeButton={!submitting}><Modal.Title className="h5">Xác nhận giao tiền hoàn</Modal.Title></Modal.Header>
         <Modal.Body>
           <dl className="row small">
-            <dt className="col-5">Hội viên</dt><dd className="col-7"><code>{cashTarget?.memberAccountId}</code></dd>
+            <dt className="col-5">Hội viên</dt><dd className="col-7">{cashTarget?.memberFullName || 'Hội viên'}<div className="small text-muted">{cashTarget?.memberCode || '—'}</div></dd>
+            <dt className="col-5">Nguồn hoàn</dt><dd className="col-7">{cashTarget?.receiptNumber || '—'}<div className="small text-muted">Đơn {cashTarget?.orderNumber || '—'}</div></dd>
             <dt className="col-5">Số tiền được duyệt</dt><dd className="col-7 fw-bold text-danger">{formatPrice(cashTarget?.approvedAmount, 'VND')}</dd>
           </dl>
           <Alert variant="warning" className="small">Chỉ xác nhận sau khi đã giao đủ tiền mặt cho hội viên. Quản lý vẫn phải xác nhận bước cuối.</Alert>

@@ -53,16 +53,13 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import { getManagerSessionDetail, updateSessionAssignment } from '../../../services/classSessionService';
-import { listRooms } from '../../../services/roomService';
-import { searchStaffAccounts } from '../../../services/staffAccountService';
+import {
+  getManagerSessionDetail,
+  listAvailableSessionCoaches,
+  updateSessionAssignment,
+} from '../../../services/classSessionService';
+import { discoverRoomAvailability } from '../../../services/roomService';
 import { applyServerErrors } from '../../../utils/serverErrors';
-
-// Maximum page size the BE accepts for /manager/staff-accounts
-// (StaffAccountController validation: 1 <= size <= 100). The walk
-// uses this size for every page request; it is independent of how
-// many total pages exist.
-const COACH_PAGE_SIZE = 100;
 
 const GYM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
@@ -90,30 +87,6 @@ function formatGymTime(iso) {
     minute: '2-digit',
     hour12: false,
   });
-}
-
-// ----- Coach complete-pagination loader (no MAX_PAGES) -----
-
-async function fetchAllActiveCoaches() {
-  const aggregated = [];
-  let page = 0;
-  while (true) {
-    const result = await searchStaffAccounts({
-      role: 'COACH',
-      status: 'ACTIVE',
-      page,
-      size: COACH_PAGE_SIZE,
-    });
-    const content = Array.isArray(result?.content) ? result.content : [];
-    aggregated.push(...content);
-    const totalElements = Number(result?.totalElements) || aggregated.length;
-    const totalPages = Number(result?.totalPages) || 0;
-    if (aggregated.length >= totalElements) break;
-    if (content.length === 0) break;
-    if (totalPages > 0 && page + 1 >= totalPages) break;
-    page += 1;
-  }
-  return aggregated;
 }
 
 // ----- Return-state helpers (preserve US29 originating URL) -----
@@ -182,6 +155,7 @@ export default function SessionAssignmentEditPage() {
   // ----- Form / submit state -----
   const [serverError, setServerError] = useState(null);
   const [formLevelConflict, setFormLevelConflict] = useState(null);
+  const [incompatibleMembers, setIncompatibleMembers] = useState(null);
   const [noChanges, setNoChanges] = useState(false);
 
   const {
@@ -220,12 +194,18 @@ export default function SessionAssignmentEditPage() {
     loadDetail();
   }, [loadDetail]);
 
-  // ----- Rooms loader -----
+  // ----- Rooms availability loader -----
   useEffect(() => {
+    if (!sessionDetail?.startTime || !sessionDetail?.endTime || !sessionDetail?.capacity) return undefined;
     let cancelled = false;
     setRoomsLoading(true);
     setRoomsError(null);
-    listRooms()
+    discoverRoomAvailability({
+      startTime: sessionDetail.startTime,
+      endTime: sessionDetail.endTime,
+      requestedCapacity: sessionDetail.capacity,
+      excludeSessionId: sessionId,
+    })
       .then((result) => {
         if (cancelled) return;
         setRooms(Array.isArray(result) ? result : []);
@@ -240,14 +220,15 @@ export default function SessionAssignmentEditPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [sessionDetail, sessionId]);
 
-  // ----- ACTIVE Coaches loader (complete pagination) -----
+  // ----- Coaches available for this session -----
   useEffect(() => {
+    if (!sessionId) return undefined;
     let cancelled = false;
     setCoachesLoading(true);
     setCoachesError(null);
-    fetchAllActiveCoaches()
+    listAvailableSessionCoaches(sessionId)
       .then((result) => {
         if (cancelled) return;
         setCoaches(result);
@@ -262,7 +243,7 @@ export default function SessionAssignmentEditPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [sessionId]);
 
   // ----- Derived option lists -----
 
@@ -274,21 +255,21 @@ export default function SessionAssignmentEditPage() {
   const roomOptions = useMemo(() => {
     return activeRooms
       .map((r) => ({
-        value: r.id,
+        value: r.roomId || r.id,
         label: r.name || '—',
         capacity: typeof r.capacity === 'number' ? r.capacity : null,
+        availableCapacity: r.availableCapacity,
+        available: r.available !== false,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [activeRooms]);
 
-  // If the currently-assigned Coach is missing from the ACTIVE
-  // walk results (e.g. deactivated between detail load and this
-  // load), preserve it as a synthetic current option so we never
-  // silently lose the existing assignment.
+  // Preserve the current assignment if it disappears because data changed
+  // between loading the detail and the availability projection.
   const coachOptions = useMemo(() => {
     const base = coaches.map((acc) => ({
-      value: acc.accountId,
-      label: acc.fullName || acc.email || '—',
+      value: acc.coachAccountId,
+      label: acc.fullName || acc.phone || '—',
       inactive: false,
     }));
     const currentCoachId = sessionDetail?.coachId;
@@ -358,6 +339,7 @@ export default function SessionAssignmentEditPage() {
   async function onSubmit(data) {
     setServerError(null);
     setFormLevelConflict(null);
+    setIncompatibleMembers(null);
     setNoChanges(false);
 
     if (!isEditableSession) {
@@ -463,6 +445,13 @@ export default function SessionAssignmentEditPage() {
           setFormLevelConflict(
             'Huấn luyện viên hoặc phòng tập đã có buổi tập khác trùng giờ. Vui lòng chọn lại.',
           );
+          pageLocalHandled = true;
+          break;
+        case 'PT_SESSION_ASSIGNMENT_HAS_INCOMPATIBLE_MEMBERS':
+          setIncompatibleMembers({
+            bookings: Array.isArray(problem.affectedBookings) ? problem.affectedBookings : [],
+            waitlists: Array.isArray(problem.affectedWaitlists) ? problem.affectedWaitlists : [],
+          });
           pageLocalHandled = true;
           break;
         case 'SESSION_NOT_FOUND':
@@ -627,6 +616,24 @@ export default function SessionAssignmentEditPage() {
       {formLevelConflict ? (
         <div className="alert alert-warning py-2 mb-3">{formLevelConflict}</div>
       ) : null}
+      {incompatibleMembers ? (
+        <Alert variant="warning" className="mb-3">
+          <div className="fw-semibold mb-2">
+            Chưa thể đổi HLV cho buổi PT này.
+          </div>
+          <p className="small mb-2">
+            Những hội viên dưới đây chưa được phân công cho HLV mới. Hãy xử lý phân công HLV của họ trước rồi thử lại.
+          </p>
+          <ul className="small mb-0">
+            {incompatibleMembers.bookings.map((item) => (
+              <li key={`booking-${item.bookingId}`}>{item.memberFullName} ({item.memberCode}) · Đã đặt lịch</li>
+            ))}
+            {incompatibleMembers.waitlists.map((item) => (
+              <li key={`waitlist-${item.waitlistId}`}>{item.memberFullName} ({item.memberCode}) · Đang trong hàng chờ</li>
+            ))}
+          </ul>
+        </Alert>
+      ) : null}
       {noChanges ? (
         <div className="alert alert-warning py-2 mb-3">
           Không có thay đổi để lưu.
@@ -655,9 +662,8 @@ export default function SessionAssignmentEditPage() {
             ))}
           </Form.Select>
           <Form.Text className="text-muted">
-            Chỉ các huấn luyện viên đang hoạt động mới được chọn. Nếu huấn
-            luyện viên hiện tại đã ngưng hoạt động, hệ thống sẽ hiển thị
-            tên kèm nhãn “(đã ngưng hoạt động)”.
+            Chỉ hiển thị huấn luyện viên đang hoạt động, không trùng lịch và
+            không có lịch nghỉ được duyệt trong thời gian của buổi tập.
           </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.coachId?.message}
@@ -679,9 +685,11 @@ export default function SessionAssignmentEditPage() {
                   : '— Chọn phòng tập —'}
             </option>
             {roomOptions.map((o) => (
-              <option key={o.value} value={o.value}>
+              <option key={o.value} value={o.value} disabled={!o.available}>
                 {o.label}
                 {o.capacity != null ? ` (Sức chứa: ${o.capacity})` : ''}
+                {o.availableCapacity != null ? ` · Còn ${o.availableCapacity} chỗ` : ''}
+                {!o.available ? ' · Không khả dụng' : ''}
               </option>
             ))}
           </Form.Select>

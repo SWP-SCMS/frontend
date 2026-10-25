@@ -47,6 +47,7 @@ import {
   formatBenefitCodeList,
   normalizeBenefitCodes,
 } from '../../../utils/membershipBenefits';
+import { reasonLabel } from '../../../utils/notificationUi';
 import './ClassBookingPage.css';
 
 const SESSIONS_PAGE_SIZE = 100; // BE cho phép tối đa 100 / trang
@@ -218,6 +219,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
   const [bookedMap, setBookedMap] = useState({}); // sessionId -> bookingId
   const [bookingsError, setBookingsError] = useState(null);
   const [waitlistMap, setWaitlistMap] = useState({});
+  const [terminalWaitlistMap, setTerminalWaitlistMap] = useState({});
   const [waitlistsError, setWaitlistsError] = useState(null);
 
   // Hành động.
@@ -298,12 +300,17 @@ export default function ClassBookingPage({ ptOnly = false }) {
     try {
       const rows = await listMyWaitlists();
       const map = {};
+      const terminalMap = {};
       for (const entry of rows) {
         if (entry?.sessionId && entry.status === 'WAITING') {
           map[entry.sessionId] = entry;
+        } else if (entry?.sessionId && !terminalMap[entry.sessionId]) {
+          // API trả bản ghi mới nhất trước; chỉ giữ kết quả gần nhất của mỗi buổi.
+          terminalMap[entry.sessionId] = entry;
         }
       }
       setWaitlistMap(map);
+      setTerminalWaitlistMap(terminalMap);
       setWaitlistsError(null);
     } catch (err) {
       setWaitlistsError(err);
@@ -541,6 +548,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
                     session={s}
                     booked={Boolean(bookedMap[s.id])}
                     waitlistEntry={waitlistMap[s.id]}
+                    terminalWaitlistEntry={terminalWaitlistMap[s.id]}
                     busy={busyId === s.id}
                     bookingAllowed={
                       !membershipEligibilityKnown || missingBenefitCodes.length === 0
@@ -968,6 +976,7 @@ function SessionItem({
   session,
   booked,
   waitlistEntry,
+  terminalWaitlistEntry,
   busy,
   bookingAllowed,
   requiredBenefitNames,
@@ -1063,6 +1072,11 @@ function SessionItem({
                   : missingBenefitNames
                     ? `Còn thiếu: ${missingBenefitNames}`
                     : 'Gói tập hiện tại chưa đủ quyền đặt lớp'}
+              </span>
+            ) : null}
+            {terminalWaitlistEntry?.terminalReasonCode ? (
+              <span className="cbs-note">
+                Lần chờ gần nhất: {reasonLabel(terminalWaitlistEntry.terminalReasonCode)}
               </span>
             ) : null}
           </>

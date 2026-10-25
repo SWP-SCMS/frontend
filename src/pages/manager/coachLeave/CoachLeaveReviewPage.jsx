@@ -7,7 +7,6 @@ import {
   listManagerCoachLeaveRequests,
   reviewCoachLeaveRequest,
 } from '../../../services/coachLeaveService';
-import { getStaffAccount } from '../../../services/staffAccountService';
 import { formatDateTime } from '../../../utils';
 
 const STATUS = {
@@ -34,7 +33,6 @@ function messageFor(error, fallback) {
 
 export default function CoachLeaveReviewPage() {
   const [rows, setRows] = useState([]);
-  const [coaches, setCoaches] = useState({});
   const [status, setStatus] = useState('PENDING');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -50,12 +48,6 @@ export default function CoachLeaveReviewPage() {
     try {
       const result = await listManagerCoachLeaveRequests(status);
       setRows(result);
-      const coachIds = [...new Set(result.map((row) => row.coachId).filter(Boolean))];
-      const summaries = await Promise.all(coachIds.map(async (id) => {
-        try { return [id, await getStaffAccount(id)]; }
-        catch { return [id, null]; }
-      }));
-      setCoaches(Object.fromEntries(summaries));
     } catch (error) {
       setLoadError(error);
     } finally {
@@ -88,7 +80,7 @@ export default function CoachLeaveReviewPage() {
     }
   }
 
-  const selectedCoach = decision ? coaches[decision.row.coachId] : null;
+  const selectedCoach = decision?.row || null;
 
   return (
     <div>
@@ -122,10 +114,9 @@ export default function CoachLeaveReviewPage() {
               <Table hover className="align-middle mb-0">
                 <thead><tr><th>Huấn luyện viên</th><th>Ngày gửi</th><th>Thời gian nghỉ</th><th>Lý do</th><th>Buổi bị ảnh hưởng</th><th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
                 <tbody>{rows.map((row) => {
-                  const coach = coaches[row.coachId];
                   return (
                     <tr key={row.id}>
-                      <td><Link className="fw-semibold text-decoration-none" to={`/manager/staff-accounts/${row.coachId}`}>{coach?.fullName || 'Không tải được tên'}</Link><div className="small text-muted">{coach?.phone || row.coachId}</div></td>
+                      <td><Link className="fw-semibold text-decoration-none" to={`/manager/staff-accounts/${row.coachId}`}>{row.coachFullName || 'Huấn luyện viên'}</Link><div className="small text-muted">{row.coachPhone || '—'}</div></td>
                       <td>{formatDateTime(row.createdAt)}</td>
                       <td>{formatDateTime(row.startTime)}<br /><span className="text-muted">đến {formatDateTime(row.endTime)}</span></td>
                       <td style={{ minWidth: 180 }}>{row.reason}{row.reviewNote ? <div className="small text-muted mt-1">Phản hồi: {row.reviewNote}</div> : null}</td>
@@ -150,7 +141,7 @@ export default function CoachLeaveReviewPage() {
       <Modal show={Boolean(decision)} onHide={() => !busy && setDecision(null)} centered backdrop="static">
         <Modal.Header closeButton={!busy}><Modal.Title className="h5">{decision?.action === 'approve' ? 'Duyệt yêu cầu nghỉ' : 'Từ chối yêu cầu nghỉ'}</Modal.Title></Modal.Header>
         <Modal.Body>
-          <p>Xác nhận {decision?.action === 'approve' ? 'duyệt' : 'từ chối'} yêu cầu của <strong>{selectedCoach?.fullName || 'huấn luyện viên này'}</strong>?</p>
+          <p>Xác nhận {decision?.action === 'approve' ? 'duyệt' : 'từ chối'} yêu cầu của <strong>{selectedCoach?.coachFullName || 'huấn luyện viên này'}</strong>?</p>
           {decision?.action === 'approve' && decision?.row.affectedSessionIds?.length ? <Alert variant="warning" className="small">Có {decision.row.affectedSessionIds.length} buổi tập bị ảnh hưởng. Hãy phân công lại hoặc dời lịch toàn bộ trước khi duyệt.</Alert> : null}
           <Form.Group>
             <Form.Label>Ghi chú phản hồi</Form.Label>

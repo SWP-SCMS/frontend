@@ -90,6 +90,32 @@ function sameIds(left, right) {
   return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
+function resolutionPayload(resolution) {
+  return {
+    sessionId: resolution.sessionId,
+    action: resolution.action,
+    targetRoomId: resolution.action === 'MOVE' ? resolution.targetRoomId : null,
+    startTime: resolution.action === 'RESCHEDULE'
+      ? gymLocalDateToIsoInstant(resolution.startDate, resolution.startClock)
+      : null,
+    endTime: resolution.action === 'RESCHEDULE'
+      ? gymLocalDateToIsoInstant(resolution.endDate, resolution.endClock)
+      : null,
+    reason: resolution.reason.trim() || null,
+  };
+}
+
+function matchesBulkResolution(resolution, bulkResolution) {
+  if (resolution.action !== bulkResolution.action) return false;
+  if (resolution.action === 'MOVE') {
+    return resolution.targetRoomId === bulkResolution.targetRoomId;
+  }
+  if (resolution.action === 'CANCEL') {
+    return (resolution.reason.trim() || null) === bulkResolution.reason;
+  }
+  return false;
+}
+
 const ROOM_ERROR_MESSAGES = {
   ROOM_SUSPENSION_CHANGED:
     'Khoảng tạm ngưng vừa được cập nhật ở nơi khác. Dữ liệu đã được tải lại; vui lòng xem trước lại trước khi xác nhận.',
@@ -135,6 +161,7 @@ export default function RoomImpactPage() {
   const [bulkTargetRoomId, setBulkTargetRoomId] = useState('');
   const [bulkReason, setBulkReason] = useState('');
   const [bulkError, setBulkError] = useState('');
+  const [appliedBulkResolution, setAppliedBulkResolution] = useState(null);
 
   const {
     register,
@@ -201,24 +228,16 @@ export default function RoomImpactPage() {
         : gymLocalDateToIsoInstant(values.endDate, values.endClock),
       permanentDisable,
       reason: values.reason.trim() || null,
-      resolutions: [],
     };
     if (includeResolutions) {
-      payload.resolutions = values.resolutions.map((resolution) => ({
-        sessionId: resolution.sessionId,
-        action: resolution.action,
-        targetRoomId:
-          resolution.action === 'MOVE' ? resolution.targetRoomId : null,
-        startTime:
-          resolution.action === 'RESCHEDULE'
-            ? gymLocalDateToIsoInstant(resolution.startDate, resolution.startClock)
-            : null,
-        endTime:
-          resolution.action === 'RESCHEDULE'
-            ? gymLocalDateToIsoInstant(resolution.endDate, resolution.endClock)
-            : null,
-        reason: resolution.reason.trim() || null,
-      }));
+      if (appliedBulkResolution) {
+        payload.bulkResolution = appliedBulkResolution;
+        payload.resolutionOverrides = values.resolutions
+          .filter((resolution) => !matchesBulkResolution(resolution, appliedBulkResolution))
+          .map(resolutionPayload);
+      } else {
+        payload.resolutions = values.resolutions.map(resolutionPayload);
+      }
     }
     return payload;
   }
@@ -234,6 +253,7 @@ export default function RoomImpactPage() {
       setBulkTargetRoomId('');
       setBulkReason('');
       setBulkError('');
+      setAppliedBulkResolution(null);
       reset({
         ...values,
         resolutions: result.sessions.map(emptyResolution),
@@ -330,6 +350,7 @@ export default function RoomImpactPage() {
           ...values,
           resolutions: fresh.sessions.map(emptyResolution),
         });
+        setAppliedBulkResolution(null);
         setNotice(
           'Danh sách buổi bị ảnh hưởng đã thay đổi. Vui lòng chọn lại cách xử lý và xác nhận.',
         );
@@ -341,7 +362,12 @@ export default function RoomImpactPage() {
           expectedEndTime: extensionSuspension.endTime,
           endTime: payload.endTime,
           reason: values.reason.trim(),
-          resolutions: payload.resolutions,
+          ...(payload.bulkResolution
+            ? {
+                bulkResolution: payload.bulkResolution,
+                resolutionOverrides: payload.resolutionOverrides,
+              }
+            : { resolutions: payload.resolutions }),
         });
       } else {
         await applyRoomImpact(roomId, impactPayload(values, true));
@@ -396,6 +422,11 @@ export default function RoomImpactPage() {
       reason: bulkAction === 'CANCEL' ? bulkReason.trim() : '',
     }));
     setValue('resolutions', updated, { shouldDirty: true, shouldValidate: true });
+    setAppliedBulkResolution({
+      action: bulkAction,
+      targetRoomId: bulkAction === 'MOVE' ? bulkTargetRoomId : null,
+      reason: bulkAction === 'CANCEL' ? bulkReason.trim() : null,
+    });
     clearErrors('resolutions');
     setBulkError('');
     setNotice(
@@ -506,6 +537,7 @@ export default function RoomImpactPage() {
                           onChange={(event) => {
                             setBulkAction(event.target.value);
                             setBulkError('');
+                            setAppliedBulkResolution(null);
                           }}
                         >
                           <option value="">-- Chọn --</option>
@@ -516,7 +548,7 @@ export default function RoomImpactPage() {
                       {bulkAction === 'MOVE' ? (
                         <Col md={5}>
                           <Form.Label className="small">Phòng đích</Form.Label>
-                          <Form.Select size="sm" value={bulkTargetRoomId} onChange={(event) => setBulkTargetRoomId(event.target.value)}>
+                          <Form.Select size="sm" value={bulkTargetRoomId} onChange={(event) => { setBulkTargetRoomId(event.target.value); setAppliedBulkResolution(null); }}>
                             <option value="">-- Chọn phòng đích --</option>
                             {targetRooms.map((target) => (
                               <option key={target.id} value={target.id}>{target.name} ({target.capacity} chỗ)</option>
@@ -527,7 +559,7 @@ export default function RoomImpactPage() {
                       {bulkAction === 'CANCEL' ? (
                         <Col md={5}>
                           <Form.Label className="small">Lý do hủy chung</Form.Label>
-                          <Form.Control size="sm" maxLength={1000} value={bulkReason} onChange={(event) => setBulkReason(event.target.value)} />
+                          <Form.Control size="sm" maxLength={1000} value={bulkReason} onChange={(event) => { setBulkReason(event.target.value); setAppliedBulkResolution(null); }} />
                         </Col>
                       ) : null}
                       <Col md="auto">
@@ -537,6 +569,11 @@ export default function RoomImpactPage() {
                       </Col>
                     </Row>
                     {bulkError ? <div className="text-danger small mt-2">{bulkError}</div> : null}
+                    {appliedBulkResolution ? (
+                      <div className="text-success small mt-2">
+                        Đã bật xử lý hàng loạt; các dòng chỉnh khác sẽ được gửi riêng dưới dạng ngoại lệ.
+                      </div>
+                    ) : null}
                   </Card.Body>
                 </Card>
 

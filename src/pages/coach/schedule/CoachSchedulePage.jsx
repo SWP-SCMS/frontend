@@ -3,9 +3,7 @@
 //
 // Dữ liệu:
 //   - GET /coach/class-sessions?from&to : các buổi trong tuần (BE lọc theo Coach)
-//   - GET /coach/class-sessions/{id}    : lấy tên lớp, phòng, loại lớp, cho
-//     từng thẻ (danh sách chưa có các trường này). Mỗi tuần chỉ vài
-//     buổi nên gọi song song.
+//   - Danh sách đã trả sẵn tên lớp, phòng, loại lớp và số lượt đặt.
 // Bấm một thẻ để xem chi tiết + điểm danh (CoachSessionInfoModal).
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -14,10 +12,7 @@ import { Badge, Button, Card, Form, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
-import {
-  getCoachSession,
-  listCoachSessions,
-} from '../../../services/coachScheduleService';
+import { listCoachSessions } from '../../../services/coachScheduleService';
 import {
   GYM_TIME_ZONE,
   ISO_DATE_RE,
@@ -83,19 +78,8 @@ export default function CoachSchedulePage() {
     try {
       const res = await listCoachSessions({ from, to, size: 100 });
       const list = res.content ?? [];
-      // Bổ sung tên lớp / phòng từ API chi tiết; lỗi một buổi thì giữ dữ liệu cơ bản.
-      const details = await Promise.all(
-        list.map((s) => getCoachSession(s.id).catch(() => null)),
-      );
       if (isStale()) return;
-      setSessions(
-        list.map((s, i) => ({
-          ...s,
-          className: details[i]?.className,
-          classType: details[i]?.classType,
-          roomName: details[i]?.roomName,
-        })),
-      );
+      setSessions(list);
     } catch (err) {
       if (!isStale()) setError(err);
     } finally {

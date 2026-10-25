@@ -34,11 +34,28 @@ const TYPE_LABELS = {
   COACH_LEAVE_REJECTED: 'Yêu cầu nghỉ bị từ chối',
   WAITLIST_PROMOTED: 'Bạn đã được chuyển từ hàng chờ sang lịch đặt',
   WAITLIST_CANCELLED: 'Hàng chờ của buổi tập đã bị hủy',
+  WAITLIST_SKIPPED: 'Bạn đã được bỏ qua khi xét hàng chờ',
+  WAITLIST_EXPIRED: 'Hàng chờ của buổi tập đã hết hạn',
+  PT_BOOKING_CANCELLED: 'Lịch PT đã bị hủy do thay đổi phân công huấn luyện viên',
+  PT_WAITLIST_CANCELLED: 'Hàng chờ PT đã bị hủy do thay đổi phân công huấn luyện viên',
   MEMBERSHIP_REFUND_REQUESTED: 'Đã tạo yêu cầu hoàn tiền',
   MEMBERSHIP_REFUND_FIRST_APPROVED: 'Yêu cầu hoàn tiền đã được duyệt bước đầu',
   MEMBERSHIP_REFUND_CASH_DISBURSED: 'Đã ghi nhận giao tiền hoàn',
   MEMBERSHIP_REFUND_COMPLETED: 'Yêu cầu hoàn tiền đã hoàn tất',
   MEMBERSHIP_REFUND_REJECTED: 'Yêu cầu hoàn tiền bị từ chối',
+};
+
+const REASON_LABELS = {
+  MEMBER_NOT_ACTIVE: 'Tài khoản hội viên không còn hoạt động',
+  MEMBERSHIP_FROZEN: 'Gói tập đang được đóng băng',
+  SESSION_NOT_BOOKABLE: 'Buổi tập không còn nhận đặt lịch',
+  MEMBERSHIP_BENEFIT_REQUIRED: 'Gói tập không còn đủ quyền lợi yêu cầu',
+  BOOKING_DUPLICATE: 'Bạn đã có lịch đặt cho buổi tập này',
+  BOOKING_TIME_CONFLICT: 'Bạn đã có lịch tập khác trùng giờ',
+  PT_COACH_ASSIGNMENT_MISMATCH: 'Phân công huấn luyện viên PT đã thay đổi',
+  BOOKING_CONFLICT: 'Chỗ trống đã được người khác đặt trước',
+  SESSION_STARTED: 'Buổi tập đã bắt đầu',
+  COACH_ASSIGNMENT_CHANGED: 'Phân công huấn luyện viên đã thay đổi',
 };
 
 function humanize(value) {
@@ -51,4 +68,13 @@ export function notificationSummary(item) {
   const payload = item?.payload || {};
   return payload.message || TYPE_LABELS[item?.notificationType] ||
     humanize(item?.notificationType) || 'Thông báo hệ thống';
+}
+
+export function reasonLabel(reasonCode) {
+  return REASON_LABELS[reasonCode] || humanize(reasonCode);
+}
+
+export function notificationDetail(item) {
+  const reasonCode = item?.payload?.reasonCode;
+  return reasonCode ? `Lý do: ${reasonLabel(reasonCode)}` : '';
 }

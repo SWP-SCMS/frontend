@@ -16,6 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import EmptyState from '../../../components/common/EmptyState';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
+import ReceptionActiveMembershipSummary from '../../../components/common/ReceptionActiveMembershipSummary';
 import { ACCOUNT_STATUS } from '../../../constants';
 import {
   createReceptionCenterVisit,
@@ -218,8 +219,14 @@ export default function ReceptionCenterCheckInPage() {
     }
   }
 
+  const activeMembership = selectedMember?.activeMembership || null;
+  const hasCenterAccess = activeMembership?.benefitCodes?.includes('CENTER_ACCESS');
   const checkInBlocked = selectedMember
-    ? selectedMember.status !== ACCOUNT_STATUS.ACTIVE || !selectedMember.profileImageUrl
+    ? selectedMember.status !== ACCOUNT_STATUS.ACTIVE ||
+      !selectedMember.profileImageUrl ||
+      !activeMembership ||
+      activeMembership.frozen ||
+      !hasCenterAccess
     : true;
 
   return (
@@ -369,6 +376,17 @@ export default function ReceptionCenterCheckInPage() {
                     {STATUS_LABELS[selectedMember.status] || selectedMember.status || '—'}
                   </dd>
                 </dl>
+
+                <ReceptionActiveMembershipSummary
+                  membership={activeMembership}
+                  memberCode={selectedMember.memberId}
+                />
+
+                {activeMembership && !activeMembership.frozen && !hasCenterAccess ? (
+                  <Alert variant="warning" className="mt-3">
+                    Gói hiện tại không có quyền ra/vào trung tâm nên chưa thể check-in.
+                  </Alert>
+                ) : null}
 
                 {selectedMember.status === ACCOUNT_STATUS.SUSPENDED ? (
                   <Alert variant="warning">

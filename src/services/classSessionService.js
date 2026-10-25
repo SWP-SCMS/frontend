@@ -90,6 +90,14 @@ export async function getManagerSessionDetail(id) {
   return data;
 }
 
+export async function listAvailableSessionCoaches(sessionId) {
+  if (!sessionId) throw new Error('sessionId is required');
+  const { data } = await api.get(
+    `/manager/class-sessions/${encodeURIComponent(sessionId)}/available-coaches`,
+  );
+  return Array.isArray(data) ? data : [];
+}
+
 // PATCH /api/v1/manager/class-sessions/{id}/assignment (US30)
 //
 // Path param:

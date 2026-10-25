@@ -17,6 +17,7 @@ import {
   assignCoach,
   endCoachAssignment,
   getActiveCoachAssignment,
+  getCoachAssignmentImpact,
   listCoachAssignmentHistory,
   listCoachAssignmentWorkloads,
 } from '../../services/coachAssignmentService';
@@ -49,6 +50,10 @@ const ERROR_MESSAGES = {
     'Trạng thái phân công vừa thay đổi. Vui lòng tải lại và thử lại.',
   COACH_CAPACITY_EXCEEDED:
     'Huấn luyện viên vừa đạt số hội viên tối đa. Vui lòng chọn HLV khác.',
+  COACH_ASSIGNMENT_IMPACT_CONFIRMATION_REQUIRED:
+    'Các lịch PT bị ảnh hưởng cần được kiểm tra và xác nhận trước khi tiếp tục.',
+  COACH_ASSIGNMENT_IMPACT_CHANGED:
+    'Danh sách lịch PT bị ảnh hưởng vừa thay đổi. Vui lòng kiểm tra và xác nhận lại.',
 };
 
 function businessMessage(error) {
@@ -58,6 +63,38 @@ function businessMessage(error) {
 function formatInstant(value) {
   if (!value) return '—';
   return `${formatGymDate(value)} · ${formatGymTime(value)}`;
+}
+
+function impactConfirmation(impact) {
+  return {
+    bookingIds: (impact?.bookings || []).map((item) => item.id),
+    waitlistIds: (impact?.waitlists || []).map((item) => item.id),
+  };
+}
+
+function AssignmentImpactSummary({ impact, loading, error }) {
+  if (loading) {
+    return <div className="text-center py-3"><Spinner animation="border" size="sm" variant="danger" /></div>;
+  }
+  if (error) return <ErrorAlert error={error} title="Không kiểm tra được lịch PT bị ảnh hưởng" />;
+  if (!impact || (impact.bookingCount === 0 && impact.waitlistCount === 0)) {
+    return <Alert variant="success">Không có lịch đặt hoặc hàng chờ PT tương lai bị ảnh hưởng.</Alert>;
+  }
+  return (
+    <Alert variant="warning">
+      <div className="fw-semibold mb-2">
+        Thao tác này sẽ hủy {impact.bookingCount || 0} lịch đặt và {impact.waitlistCount || 0} lượt chờ PT.
+      </div>
+      <ul className="mb-0 small">
+        {(impact.bookings || []).map((item) => (
+          <li key={`booking-${item.id}`}>Lịch đặt · {formatInstant(item.sessionStartTime)}</li>
+        ))}
+        {(impact.waitlists || []).map((item) => (
+          <li key={`waitlist-${item.id}`}>Hàng chờ · {formatInstant(item.sessionStartTime)}</li>
+        ))}
+      </ul>
+    </Alert>
+  );
 }
 
 export default function MemberCoachAssignmentCard({
@@ -76,6 +113,9 @@ export default function MemberCoachAssignmentCard({
   const [showEnd, setShowEnd] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState(null);
+  const [impact, setImpact] = useState(null);
+  const [impactLoading, setImpactLoading] = useState(false);
+  const [impactError, setImpactError] = useState(null);
 
   const assignForm = useForm({
     resolver: zodResolver(assignSchema),
@@ -108,11 +148,30 @@ export default function MemberCoachAssignmentCard({
     load();
   }, [load]);
 
+  async function loadImpact() {
+    if (!current) {
+      setImpact(null);
+      setImpactError(null);
+      return;
+    }
+    setImpactLoading(true);
+    setImpactError(null);
+    try {
+      setImpact(await getCoachAssignmentImpact(memberAccountId));
+    } catch (error) {
+      setImpact(null);
+      setImpactError(error);
+    } finally {
+      setImpactLoading(false);
+    }
+  }
+
   async function openAssignModal() {
     setActionError(null);
     setCoachesError(null);
     assignForm.reset({ coachAccountId: '', reason: '' });
     setShowAssign(true);
+    loadImpact();
     if (coachesLoading) return;
     setCoachesLoading(true);
     try {
@@ -141,6 +200,7 @@ export default function MemberCoachAssignmentCard({
     setActionError(null);
     endForm.reset({ reason: '' });
     setShowEnd(true);
+    loadImpact();
   }
 
   async function submitAssignment(values) {
@@ -150,10 +210,18 @@ export default function MemberCoachAssignmentCard({
       await assignCoach(memberAccountId, {
         coachAccountId: values.coachAccountId,
         reason: values.reason.trim() || null,
+        impactConfirmation: current ? impactConfirmation(impact) : null,
       });
       setShowAssign(false);
       await load();
     } catch (error) {
+      const code = error?.response?.data?.code;
+      if (
+        ['COACH_ASSIGNMENT_IMPACT_CONFIRMATION_REQUIRED', 'COACH_ASSIGNMENT_IMPACT_CHANGED'].includes(code)
+        && error?.response?.data?.impact
+      ) {
+        setImpact(error.response.data.impact);
+      }
       setActionError(error);
     } finally {
       setSubmitting(false);
@@ -166,10 +234,18 @@ export default function MemberCoachAssignmentCard({
     try {
       await endCoachAssignment(memberAccountId, {
         reason: values.reason.trim(),
+        impactConfirmation: impactConfirmation(impact),
       });
       setShowEnd(false);
       await load();
     } catch (error) {
+      const code = error?.response?.data?.code;
+      if (
+        ['COACH_ASSIGNMENT_IMPACT_CONFIRMATION_REQUIRED', 'COACH_ASSIGNMENT_IMPACT_CHANGED'].includes(code)
+        && error?.response?.data?.impact
+      ) {
+        setImpact(error.response.data.impact);
+      }
       setActionError(error);
     } finally {
       setSubmitting(false);
@@ -284,6 +360,9 @@ export default function MemberCoachAssignmentCard({
               <ErrorAlert error={actionError} title="Không lưu được phân công HLV" />
             ) : null}
             <ErrorAlert error={coachesError} title="Không tải được danh sách HLV" />
+            {current ? (
+              <AssignmentImpactSummary impact={impact} loading={impactLoading} error={impactError} />
+            ) : null}
             <Form.Group controlId="coach-assignment-coach">
               <Form.Label>Huấn luyện viên *</Form.Label>
               <Form.Select
@@ -327,7 +406,7 @@ export default function MemberCoachAssignmentCard({
             <Button variant="outline-secondary" onClick={() => setShowAssign(false)} disabled={submitting}>
               Đóng
             </Button>
-            <Button type="submit" variant="danger" disabled={submitting || coachesLoading || Boolean(coachesError)}>
+            <Button type="submit" variant="danger" disabled={submitting || coachesLoading || impactLoading || Boolean(coachesError) || Boolean(impactError)}>
               {submitting ? 'Đang lưu…' : current ? 'Xác nhận đổi HLV' : 'Xác nhận phân công'}
             </Button>
           </Modal.Footer>
@@ -347,6 +426,7 @@ export default function MemberCoachAssignmentCard({
             <p className="text-muted small">
               HLV hiện tại: <strong>{current?.coachFullName || '—'}</strong>
             </p>
+            <AssignmentImpactSummary impact={impact} loading={impactLoading} error={impactError} />
             <Form.Group controlId="coach-assignment-end-reason">
               <Form.Label>Lý do *</Form.Label>
               <Form.Control
@@ -365,7 +445,7 @@ export default function MemberCoachAssignmentCard({
             <Button variant="outline-secondary" onClick={() => setShowEnd(false)} disabled={submitting}>
               Đóng
             </Button>
-            <Button type="submit" variant="danger" disabled={submitting}>
+            <Button type="submit" variant="danger" disabled={submitting || impactLoading || Boolean(impactError)}>
               {submitting ? 'Đang xử lý…' : 'Xác nhận kết thúc'}
             </Button>
           </Modal.Footer>

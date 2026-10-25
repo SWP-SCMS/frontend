@@ -40,7 +40,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getClass } from '../../../services/sportClassService';
-import { listRooms } from '../../../services/roomService';
+import { discoverRoomAvailability, listRooms } from '../../../services/roomService';
 import { searchStaffAccounts } from '../../../services/staffAccountService';
 import { createSingleSession } from '../../../services/classSessionService';
 import { applyServerErrors } from '../../../utils/serverErrors';
@@ -221,6 +221,9 @@ export default function SingleSessionCreatePage() {
   const [rooms, setRooms] = useState([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [roomsError, setRoomsError] = useState(null);
+  const [roomAvailability, setRoomAvailability] = useState(null);
+  const [roomAvailabilityLoading, setRoomAvailabilityLoading] = useState(false);
+  const [roomAvailabilityError, setRoomAvailabilityError] = useState(null);
 
   const [coaches, setCoaches] = useState([]);
   const [coachesLoading, setCoachesLoading] = useState(true);
@@ -321,15 +324,61 @@ export default function SingleSessionCreatePage() {
     [rooms],
   );
 
+  const availabilityDate = watch('sessionDate');
+  const availabilityStart = watch('startTime');
+  const availabilityEnd = watch('endTime');
+  const availabilityCapacity = watch('capacity');
+
+  useEffect(() => {
+    const startTime = gymLocalToIsoInstant(availabilityDate, availabilityStart);
+    const endTime = gymLocalToIsoInstant(availabilityDate, availabilityEnd);
+    const requestedCapacity = Number(availabilityCapacity);
+    if (
+      !startTime
+      || !endTime
+      || new Date(endTime) <= new Date(startTime)
+      || !Number.isInteger(requestedCapacity)
+      || requestedCapacity < 1
+    ) {
+      setRoomAvailability(null);
+      setRoomAvailabilityError(null);
+      setRoomAvailabilityLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setRoomAvailabilityLoading(true);
+      setRoomAvailabilityError(null);
+      try {
+        const result = await discoverRoomAvailability({ startTime, endTime, requestedCapacity });
+        if (!cancelled) setRoomAvailability(result);
+      } catch (error) {
+        if (!cancelled) {
+          setRoomAvailability(null);
+          setRoomAvailabilityError(error);
+        }
+      } finally {
+        if (!cancelled) setRoomAvailabilityLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [availabilityDate, availabilityStart, availabilityEnd, availabilityCapacity]);
+
   const roomOptions = useMemo(() => {
-    return activeRooms
+    const source = roomAvailability || activeRooms;
+    return source
       .map((r) => ({
-        value: r.id,
+        value: r.roomId || r.id,
         label: r.name || '—',
         capacity: r.capacity,
+        availableCapacity: r.availableCapacity,
+        available: r.available !== false,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [activeRooms]);
+  }, [activeRooms, roomAvailability]);
 
   const coachOptions = useMemo(() => {
     return coaches
@@ -355,9 +404,9 @@ export default function SingleSessionCreatePage() {
   // Selected room helper text.
   const selectedRoomId = watch('roomId');
   const selectedRoomCapacity = useMemo(() => {
-    const found = activeRooms.find((r) => r.id === selectedRoomId);
+    const found = roomOptions.find((r) => r.value === selectedRoomId);
     return found ? found.capacity : null;
-  }, [activeRooms, selectedRoomId]);
+  }, [roomOptions, selectedRoomId]);
 
   // ---- Submit / reset ----
 
@@ -646,6 +695,9 @@ export default function SingleSessionCreatePage() {
           }
         />
       ) : null}
+      {roomAvailabilityError ? (
+        <ErrorAlert error={roomAvailabilityError} title="Không kiểm tra được phòng khả dụng" />
+      ) : null}
 
       <ErrorAlert
         error={serverError}
@@ -687,7 +739,7 @@ export default function SingleSessionCreatePage() {
           <Form.Select
             {...register('roomId')}
             isInvalid={Boolean(errors.roomId)}
-            disabled={roomsLoading || !classIsActive}
+            disabled={roomsLoading || roomAvailabilityLoading || !classIsActive}
           >
             <option value="">
               {roomsLoading
@@ -697,9 +749,11 @@ export default function SingleSessionCreatePage() {
                   : '— Chọn phòng tập —'}
             </option>
             {roomOptions.map((o) => (
-              <option key={o.value} value={o.value}>
+              <option key={o.value} value={o.value} disabled={!o.available}>
                 {o.label}
                 {o.capacity != null ? ` (Sức chứa: ${o.capacity})` : ''}
+                {o.availableCapacity != null ? ` · Còn ${o.availableCapacity} chỗ` : ''}
+                {!o.available ? ' · Không khả dụng' : ''}
               </option>
             ))}
           </Form.Select>

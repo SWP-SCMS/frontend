@@ -212,7 +212,8 @@ Content-Type: application/problem+json
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-008
 
-**Trạng thái:** `OPEN`  
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã bổ sung API Coach availability; FE đã dùng dữ liệu availability khi phân công session.
 **Liên quan:** MF-008, US23 — xử lý session bị ảnh hưởng bởi lịch nghỉ Coach
 
 ### Hiện trạng
@@ -289,7 +290,8 @@ GET /api/v1/manager/coaches/availability
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-008
 
-**Trạng thái:** `OPEN`  
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã trả thông tin nhận diện Coach trong danh sách; FE hiển thị trực tiếp, không gọi N+1.
 **Liên quan:** MF-008 — màn Manager duyệt nghỉ Coach
 
 ### Hiện trạng
@@ -338,7 +340,8 @@ Bổ sung trực tiếp vào `CoachLeaveResponse`:
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-008
 
-**Trạng thái:** `OPEN`  
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã chặn duyệt yêu cầu nghỉ khi thời gian nghỉ đã bắt đầu; FE hiển thị lỗi nghiệp vụ tương ứng.
 **Liên quan:** MF-008 — lifecycle của yêu cầu nghỉ Coach
 
 ### Hiện trạng
@@ -397,7 +400,8 @@ Content-Type: application/problem+json
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-008
 
-**Trạng thái:** `OPEN`  
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã hỗ trợ Coach hủy lịch nghỉ đã duyệt theo rule đã chốt; FE đã tích hợp thao tác và trạng thái.
 **Liên quan:** MF-008 — lifecycle của yêu cầu nghỉ Coach
 
 ### Hiện trạng
@@ -477,7 +481,8 @@ Bổ sung `CANCELLED` vào `CoachLeaveStatus` và OpenAPI enum.
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-008
 
-**Trạng thái:** `OPEN`  
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã phát notification cho Manager khi đơn nghỉ Coach thay đổi; FE đã định tuyến notification.
 **Liên quan:** MF-008 — notification workflow của yêu cầu nghỉ Coach
 
 ### Hiện trạng
@@ -712,7 +717,8 @@ Response lỗi `SHARED_ROOM_CAPACITY_EXCEEDED` nên trả thêm dữ liệu đ�
 **Phụ trách:** @Nguyễn Thiện
 **Nguồn MF:** MF-007
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã bổ sung mã nghiệp vụ và thông tin nhận diện hội viên; FE dùng display field, giữ UUID cho mutation.
 **Liên quan:** Luồng hoàn tiền tiền mặt cho gói đã chấm dứt hoặc gói đặt trước bị hủy
 
 ### Hiện trạng
@@ -773,7 +779,8 @@ Các UUID vẫn được giữ để FE gửi mutation và làm React key, nhưn
 **Phụ trách:** @Nguyễn Thiện
 **Nguồn MF:** MF-007
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã gửi notification cho nhân viên phụ trách bước hoàn tiền kế tiếp; FE đã định tuyến theo vai trò.
 **Liên quan:** Workflow hoàn tiền nhiều bước giữa Lễ tân và Quản lý
 
 ### Hiện trạng
@@ -814,7 +821,8 @@ Payload cho staff nên chứa tối thiểu `refundRequestId`, `memberCode`, `me
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-002, MF-009, MF-010
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã kiểm tra tác động khi đổi Coach của PT session; FE hiển thị lỗi và danh sách hội viên không tương thích.
 **Liên quan:** MF-002, MF-009, MF-010 — PT 1-1, đổi phân công Session và Waitlist
 
 ### Hiện trạng
@@ -868,7 +876,8 @@ Response nên chứa `affectedBookings` và `affectedWaitlists`, mỗi phần t�
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-002, MF-010
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã cung cấp impact preview/confirmation và xử lý Booking/Waitlist PT; FE đã tích hợp xác nhận trước khi đổi hoặc kết thúc assignment.
 **Liên quan:** MF-002, MF-010 — Coach Assignment và PT 1-1
 
 ### Hiện trạng
@@ -916,7 +925,8 @@ hoặc nằm trong hàng chờ mà chắc chắn sẽ bị `SKIPPED` khi promote
 **Phối hợp:** @Nguyễn Thiện
 **Nguồn MF:** MF-010; liên quan MF-001, MF-006
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã chạy promotion khi Booking bị hủy bởi các lifecycle liên quan; FE dùng trạng thái authoritative sau mutation.
 **Liên quan:** MF-001, MF-006, MF-010 — Termination, Freeze và Waitlist
 
 ### Hiện trạng
@@ -960,7 +970,8 @@ Session có thể đã trống chỗ nhưng người đầu Waitlist vẫn nằm
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-010
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã chủ động expire/skip Waitlist và phát notification; FE đã bổ sung nhãn và điều hướng cho các notification mới.
 **Liên quan:** MF-010 — Waitlist lifecycle
 
 ### Hiện trạng
@@ -997,7 +1008,8 @@ thống chỉ ghi audit mà không gửi notification cho Member.
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-002, MF-009
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã có API Room availability; FE dùng API trong form tạo và đổi session, gồm `excludeSessionId` khi chỉnh sửa.
 **Liên quan:** MF-002, MF-009, NEW-BE-GAP-010 — PT, dời lịch và Room dùng chung
 
 ### Hiện trạng
@@ -1045,7 +1057,8 @@ Mỗi item nên trả `roomId`, `name`, `usageMode`, `capacity`, `occupiedCapaci
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-002, MF-009
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã nhận `sessionCount`; FE cho Manager chọn từ 1 đến 100 buổi, mặc định 30.
 **Mức ưu tiên:** `REQUIRED`
 **Liên quan:** MF-002 và quản lý lịch định kỳ
 
@@ -1084,7 +1097,8 @@ Bổ sung `sessionCount` vào request tạo recurring schedule, với giới h�
 **Phụ trách:** @Nguyễn Thiện
 **Nguồn MF:** MF-007
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã có endpoint nguồn hoàn tiền đủ điều kiện; FE đã dùng discovery thay cho ghép dữ liệu hoặc nhập UUID thủ công.
 **Liên quan:** MF-007 — Refund workflow
 
 ### Hiện trạng
@@ -1131,7 +1145,8 @@ loại.
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-008
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã làm giàu response lịch Coach; FE render trực tiếp read model và đã bỏ các request chi tiết N+1.
 **Liên quan:** Coach Dashboard và Coach Schedule
 
 ### Hiện trạng
@@ -1198,7 +1213,8 @@ aggregate hoặc endpoint summary riêng; FE không được tải chi tiết t�
 **Phụ trách:** @Nguyễn Thiện
 **Nguồn MF:** MF-014
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã trả tóm tắt Membership trong kết quả tra cứu tại quầy; FE hiển thị trực tiếp dữ liệu gói hiện tại.
 **Liên quan:** Receptionist Center Check-in
 
 ### Hiện trạng
@@ -1252,7 +1268,8 @@ Bổ sung tóm tắt Membership hiện tại vào `ReceptionMemberSearchResponse
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-002
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã hỗ trợ query `q`; FE đã thêm tìm kiếm server-side theo mã, tên hoặc số điện thoại.
 **Liên quan:** Coach Assigned Member List
 
 ### Hiện trạng
@@ -1291,7 +1308,8 @@ phân công cho Coach đăng nhập.
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-012
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã trả tên và vai trò người gửi; FE đã khôi phục thông tin này trong danh sách và chi tiết duyệt.
 **Liên quan:** Manager Manual Email Activation Review
 
 ### Hiện trạng
@@ -1331,7 +1349,8 @@ Bổ sung read-only projection vào response danh sách và chi tiết:
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-002
 
-**Trạng thái:** `OPEN`
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE đã bổ sung ngữ cảnh HLV và session; FE hiển thị trên lịch sử kết quả và nhận xét.
 **Liên quan:** Member Training Results / Training Feedback
 
 ### Hiện trạng
@@ -1374,7 +1393,8 @@ Các trường session có thể `null` với nội dung PT tổng quát không 
 **Phụ trách:** @Nhật Khánh
 **Nguồn MF:** MF-009
 
-**Trạng thái:** `OPTIONAL — CẦN CHỐT VỚI TEAM`
+**Trạng thái:** `DONE`
+**Hoàn thành:** Team đã triển khai bulk contract; FE gửi `bulkResolution` và chỉ gửi các dòng chỉnh riêng qua `resolutionOverrides`.
 **Liên quan:** Manager Room Impact
 
 ### Hiện trạng
@@ -1413,9 +1433,105 @@ template nếu mỗi session cần thời gian mới khác nhau.
 - Backend trả lỗi chỉ rõ session nào làm bulk action thất bại.
 - FE vẫn có thể override từng session sau khi chọn cách xử lý chung.
 
-### FE hiện tại
+### FE hoàn thành
 
-- FE đã có thao tác “Áp dụng cho tất cả” cho `MOVE` và `CANCEL` bằng contract
-  `resolutions[]` hiện hữu.
-- Nếu backend bổ sung bulk contract, FE chuyển sang gửi intent bulk và chỉ gửi các dòng
-  được Manager chỉnh riêng làm override.
+- FE gửi `bulkResolution` cho thao tác “Áp dụng cho tất cả” với `MOVE` hoặc `CANCEL`.
+- Các session được Manager chỉnh riêng được gửi qua `resolutionOverrides`; FE không gửi
+  đồng thời `resolutions[]` và `bulkResolution`.
+
+---
+
+## NEW-BE-GAP-026 — Chưa tra cứu được Coach khả dụng trước khi tạo session
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002, MF-008
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Manager Single Session / Recurring Schedule Creation
+
+### Hiện trạng
+
+Backend đã có `GET /api/v1/manager/class-sessions/{sessionId}/available-coaches`, nhưng
+endpoint này chỉ dùng được sau khi session đã tồn tại. Khi tạo một session đơn hoặc lịch
+lặp mới, FE chưa có API để hỏi Coach nào thực sự khả dụng trong khoảng thời gian dự kiến.
+
+Nếu FE tải toàn bộ Coach rồi để Manager chọn, xung đột chỉ được phát hiện lúc submit. Với
+lịch lặp, FE cũng không thể biết Coach có khả dụng cho toàn bộ các occurrence hay không.
+
+### Contract cần bổ sung
+
+Cung cấp endpoint tra cứu không phụ thuộc session đã tồn tại, tối thiểu nhận khoảng thời gian:
+
+```http
+GET /api/v1/manager/coaches/available?startTime=...&endTime=...
+```
+
+Với lịch lặp, contract có thể nhận recurrence pattern và số occurrence hoặc nhận danh sách
+các khoảng thời gian cần kiểm tra. Response chỉ trả Coach hợp lệ cho toàn bộ phạm vi yêu cầu,
+gồm `coachAccountId`, `fullName` và `phone`.
+
+### Quy tắc nghiệp vụ
+
+- Loại Coach có leave đã được duyệt hoặc session khác trùng giờ.
+- Áp dụng cùng một định nghĩa overlap với mutation tạo session.
+- Với PT 1-1, tiếp tục kiểm tra Coach Assignment và các điều kiện PT liên quan.
+- Kết quả discovery chỉ hỗ trợ lựa chọn; mutation vẫn phải kiểm tra lại trong transaction.
+
+### Acceptance criteria
+
+- Form tạo session đơn chỉ hiển thị Coach khả dụng cho thời gian đã chọn.
+- Form lịch lặp xác định được Coach khả dụng cho toàn bộ occurrence trước khi submit.
+- Không cần tải toàn bộ Coach rồi thử từng người hoặc gọi một request trên mỗi occurrence.
+- Nếu availability thay đổi giữa lúc xem và submit, mutation trả lỗi nghiệp vụ rõ ràng.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Tải lại danh sách Coach khi thời gian hoặc recurrence pattern thay đổi.
+- Giữ lựa chọn hiện tại chỉ khi Coach vẫn còn trong danh sách khả dụng.
+- Hiển thị trạng thái đang kiểm tra và empty state khi không có Coach phù hợp.
+
+---
+
+## NEW-BE-GAP-027 — Room Impact chưa trả phòng đích khả dụng cho toàn bộ thao tác xử lý
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-009
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Manager Room Impact Preview / Bulk Resolution
+
+### Hiện trạng
+
+Room Impact preview đã trả các session bị ảnh hưởng và apply API đã hỗ trợ bulk resolution,
+nhưng read model chưa cho biết phòng đích nào khả dụng cho từng session hoặc phòng nào dùng
+được cho toàn bộ nhóm session khi Manager chọn `MOVE` hàng loạt.
+
+FE không gọi API availability riêng cho từng dòng vì sẽ tạo N+1 request. Việc hiển thị toàn
+bộ phòng rồi chờ backend từ chối khi apply khiến Manager phải chọn mù và khó sửa payload lỗi.
+
+### Contract cần bổ sung
+
+Chọn một trong hai hướng, ưu tiên enrich preview:
+
+- Mỗi impacted session có `availableTargetRooms` gồm `roomId`, `roomName`, `capacity`;
+- Đồng thời trả `bulkAvailableTargetRooms` là giao của các phòng hợp lệ trên toàn bộ session
+  có thể áp dụng `MOVE` chung.
+
+Hoặc cung cấp một bulk discovery endpoint nhận các `sessionId` và trả availability theo nhóm
+trong một request. Contract phải xét cả capacity, loại phòng và quy tắc cho phép dùng chung
+phòng theo cấu hình của session/phòng.
+
+### Acceptance criteria
+
+- Manager chỉ chọn được phòng đích hợp lệ cho từng session.
+- “Áp dụng cho tất cả” chỉ hiện các phòng dùng được cho toàn bộ session thuộc bulk action.
+- Preview/discovery thực hiện trong một request, không phát sinh request theo từng dòng.
+- Apply vẫn tái kiểm tra availability và commit atomic để chống dữ liệu thay đổi đồng thời.
+- Khi không có phòng phù hợp, response đủ thông tin để FE hướng Manager sang `RESCHEDULE`
+  hoặc `CANCEL` thay vì thử ngẫu nhiên.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Thay danh sách toàn bộ phòng bằng danh sách phòng khả dụng từ preview/discovery.
+- Tách lựa chọn phòng chung và phòng override theo đúng bulk contract.
+- Hiển thị empty state và hướng xử lý khác khi không có phòng đích hợp lệ.

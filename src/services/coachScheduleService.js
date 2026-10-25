@@ -8,8 +8,8 @@
 //         body { status: 'PRESENT' | 'ABSENT' }
 //
 // Query của danh sách: from, to (ISO Instant), status, page, size.
-// Item danh sách: id, classId, coachId, roomId, startTime, endTime,
-// capacity, status (SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED).
+// Item danh sách đã gồm className, classType, disciplineName, coachName,
+// roomName và bookedCount ngoài dữ liệu lịch cơ bản.
 
 import api from './api';
 
