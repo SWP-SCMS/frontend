@@ -1360,7 +1360,7 @@ function CalendarView({
           role="grid"
           aria-label="Lịch tuần"
         >
-          <div className="msl-cal-table" role="rowgroup">
+          <div className="msl-cal-table">
             <div className="msl-cal-head" role="row">
               {days.map((day) => {
                 const isToday = day.ymd === todayYmd;
@@ -1384,7 +1384,7 @@ function CalendarView({
                 );
               })}
             </div>
-            <div className="msl-cal-body" role="rowgroup">
+            <div className="msl-cal-body" role="row">
               {days.map((day) => {
                 const daySessions = grouped.get(day.ymd) || [];
                 const isToday = day.ymd === todayYmd;

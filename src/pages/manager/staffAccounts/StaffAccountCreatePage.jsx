@@ -109,9 +109,8 @@ export default function StaffAccountCreatePage() {
 
       <h1 className="h3 fw-bold mt-2 mb-1">Tạo tài khoản nhân viên hoặc quản lý</h1>
       <p className="text-muted mb-4">
-        Theo BR-ACC-03: tài khoản mới được tạo ở trạng thái ACTIVE, mật khẩu mặc định là
-        số điện thoại đăng ký. Vai trò được gán cố định cho toàn bộ vòng đời tài khoản
-        (BR-SCP-02).
+        Tài khoản mới sẽ hoạt động ngay và dùng số điện thoại đăng ký làm mật khẩu
+        mặc định. Vai trò đã chọn không thể thay đổi sau khi tạo.
       </p>
 
       <ErrorAlert
@@ -203,7 +202,7 @@ export default function StaffAccountCreatePage() {
           </Form.Control.Feedback>
           <Form.Text className="text-muted">
             Vai trò sẽ không thể thay đổi. Để đổi vai trò, hãy chuyển tài khoản sang
-            INACTIVE và tạo tài khoản mới.
+            trạng thái ngưng hoạt động và tạo tài khoản mới.
           </Form.Text>
         </Form.Group>
 
@@ -224,7 +223,7 @@ export default function StaffAccountCreatePage() {
             onClick={() => navigate('/manager/staff-accounts')}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
         </div>
       </Form>

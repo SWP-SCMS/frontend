@@ -7,7 +7,7 @@
 // Quy tắc: chỉ sửa từ startTime đến endTime + 30 phút (BR-ATT-04..06); ghi
 // PRESENT cần Center Visit (BR-VAL-ATT-02, BE kiểm tra và trả lỗi).
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Form, Spinner, Table } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -71,6 +71,28 @@ export default function CoachSessionAttendancePage() {
   }
 
   const changedCount = Object.keys(draft).length;
+
+  useEffect(() => {
+    function warnUnsaved(event) {
+      if (changedCount === 0) return;
+      event.preventDefault();
+      event.returnValue = '';
+    }
+    window.addEventListener('beforeunload', warnUnsaved);
+    return () => window.removeEventListener('beforeunload', warnUnsaved);
+  }, [changedCount]);
+
+  function markAll(status) {
+    setSaved(false);
+    setDraft(() => {
+      const next = {};
+      for (const member of session?.members ?? []) {
+        const record = attendanceByMember.get(member.memberId);
+        if (record?.id && record.status !== status) next[record.id] = status;
+      }
+      return next;
+    });
+  }
 
   // Học viên bị lỗi khi lưu, kèm tên + mã để Coach biết chính xác là ai.
   const failedMembers = (session?.members ?? [])
@@ -164,6 +186,31 @@ export default function CoachSessionAttendancePage() {
 
           {session.members?.length ? (
             <div className="scms-coach-card mb-3">
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 p-3 border-bottom">
+                <span className="small text-muted">
+                  {changedCount > 0 ? `${changedCount} thay đổi chưa lưu` : 'Chưa có thay đổi'}
+                </span>
+                <div className="d-flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline-success"
+                    disabled={!editable || saving}
+                    onClick={() => markAll('PRESENT')}
+                  >
+                    Tất cả có mặt
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline-secondary"
+                    disabled={!editable || saving}
+                    onClick={() => markAll('ABSENT')}
+                  >
+                    Tất cả vắng
+                  </Button>
+                </div>
+              </div>
               <Table responsive className="align-middle mb-0">
                 <thead>
                   <tr>
@@ -185,20 +232,21 @@ export default function CoachSessionAttendancePage() {
                         <td>{m.memberCode}</td>
                         <td>{m.fullName}</td>
                         <td>
-                          {/* Luôn hiện 2 ô tích; chưa có bản ghi (chưa tới giờ
-                              điểm danh) thì khóa. */}
+                          {/* Hai lựa chọn loại trừ nhau nên dùng radio. */}
                           <div className="d-flex gap-3">
                             <Form.Check
-                              type="checkbox"
+                              type="radio"
                               id={`att-present-${m.memberId}`}
+                              name={`attendance-${m.memberId}`}
                               label="Có mặt"
                               checked={status === 'PRESENT'}
                               disabled={!editable || saving || !record?.id}
                               onChange={() => choose(record, 'PRESENT')}
                             />
                             <Form.Check
-                              type="checkbox"
+                              type="radio"
                               id={`att-absent-${m.memberId}`}
+                              name={`attendance-${m.memberId}`}
                               label="Vắng"
                               checked={status === 'ABSENT'}
                               disabled={!editable || saving || !record?.id}

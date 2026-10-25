@@ -3,10 +3,21 @@
 import { Link } from 'react-router-dom';
 import { Button, Container } from 'react-bootstrap';
 import PublicShell from '../../../components/layout/PublicShell';
+import { ROLES } from '../../../constants';
+import { useAuth } from '../../../context/useAuth';
 
 import './NotFoundPage.css';
 
 export default function NotFoundPage() {
+  const { isAuthenticated, role } = useAuth();
+  const homeByRole = {
+    [ROLES.MEMBER]: '/member/dashboard',
+    [ROLES.RECEPTIONIST]: '/reception/check-in',
+    [ROLES.COACH]: '/coach/dashboard',
+    [ROLES.MANAGER]: '/manager/dashboard',
+  };
+  const home = isAuthenticated ? homeByRole[role] || '/' : '/';
+
   return (
     <PublicShell>
       <Container className="py-5 text-center scms-404-wrap">
@@ -15,8 +26,8 @@ export default function NotFoundPage() {
         <p className="text-muted mb-4">
           Đường dẫn bạn truy cập không tồn tại hoặc đã được di chuyển.
         </p>
-        <Button as={Link} to="/" variant="danger">
-          Về trang chủ
+        <Button as={Link} to={home} variant="danger">
+          {isAuthenticated ? 'Về trang tổng quan' : 'Về trang chủ'}
         </Button>
       </Container>
     </PublicShell>

@@ -242,6 +242,23 @@ a.scms-sd-navitem:hover {
   color: #e6bdb8;
 }
 
+.scms-sd-bell-list {
+  color: #e2e2e8;
+}
+
+.scms-sd-bell-preview {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.scms-sd-bell-more {
+  padding: 0.55rem 1rem;
+  color: #e6bdb8;
+  font-size: 0.75rem;
+}
+
 .scms-sd-user {
   display: flex;
   align-items: center;

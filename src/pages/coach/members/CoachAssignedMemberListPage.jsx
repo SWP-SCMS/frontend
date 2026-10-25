@@ -55,7 +55,9 @@ export default function CoachAssignedMemberListPage() {
                 />
                 <div className="flex-grow-1">
                   <div className="fw-bold">{member.fullName}</div>
-                  <div className="small text-muted">{member.memberId} · {member.status}</div>
+                  <div className="small text-muted">
+                    {member.memberId} · {member.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã kết thúc'}
+                  </div>
                   <div className="small">Mục tiêu: {member.fitnessGoal || 'Chưa cập nhật'}</div>
                   <div className="small text-muted">Phân công từ {formatGymDate(member.assignedSince)}</div>
                 </div>
@@ -67,11 +69,11 @@ export default function CoachAssignedMemberListPage() {
           ))}
         </div>
       )}
-      <div className="d-flex justify-content-between mt-3">
+      {(result?.totalPages || 0) > 1 ? <div className="d-flex justify-content-between mt-3">
         <Button variant="outline-danger" size="sm" disabled={loading || page <= 0} onClick={() => setPage((value) => value - 1)}>‹ Trang trước</Button>
         <span className="small text-muted">Trang {(result?.page || 0) + 1}/{Math.max(1, result?.totalPages || 0)}</span>
         <Button variant="outline-danger" size="sm" disabled={loading || !result || page + 1 >= result.totalPages} onClick={() => setPage((value) => value + 1)}>Trang sau ›</Button>
-      </div>
+      </div> : null}
     </div>
   );
 }

@@ -30,8 +30,8 @@ import { formatPrice } from '../../../utils';
 
 const STATUS_FILTERS = [
   { value: '', label: 'Tất cả' },
-  { value: 'ACTIVE', label: 'ACTIVE' },
-  { value: 'INACTIVE', label: 'INACTIVE' },
+  { value: 'ACTIVE', label: 'Đang bán' },
+  { value: 'INACTIVE', label: 'Ngừng bán' },
 ];
 
 const STATUS_BADGE = {
@@ -135,7 +135,7 @@ export default function MembershipOfferListPage() {
           message={
             offers.length === 0
               ? 'Chưa có gói tập nào. Bấm "Tạo gói tập" để bắt đầu.'
-              : 'Thử bỏ bộ lọc hoặc đổi từ khoá tìm kiếm.'
+              : 'Thử bỏ bộ lọc hoặc đổi từ khóa tìm kiếm.'
           }
         />
       );
@@ -247,7 +247,7 @@ export default function MembershipOfferListPage() {
                 type="button"
                 variant="outline-secondary"
                 onClick={handleClearSearch}
-                aria-label="Xoá tìm kiếm"
+                aria-label="Xóa tìm kiếm"
               >
                 ✕
               </Button>

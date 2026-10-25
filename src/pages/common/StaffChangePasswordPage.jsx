@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, Form } from 'react-bootstrap';
+import { Button, Card, Form, InputGroup } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -34,7 +34,11 @@ export default function StaffChangePasswordPage() {
   const navigate = useNavigate();
   const { role, terminateSession } = useAuth();
   const profilePath = PROFILE_PATHS[role] || '/';
-  const [showPassword, setShowPassword] = useState(false);
+  const [visibleFields, setVisibleFields] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
   const [serverError, setServerError] = useState(null);
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
@@ -59,6 +63,33 @@ export default function StaffChangePasswordPage() {
     }
   }
 
+  function toggleVisibility(field) {
+    setVisibleFields((current) => ({ ...current, [field]: !current[field] }));
+  }
+
+  function passwordField(field, autoComplete) {
+    const visible = visibleFields[field];
+    return (
+      <InputGroup>
+        <Form.Control
+          type={visible ? 'text' : 'password'}
+          {...register(field)}
+          autoComplete={autoComplete}
+          isInvalid={Boolean(errors[field])}
+        />
+        <Button
+          type="button"
+          variant="outline-secondary"
+          onClick={() => toggleVisibility(field)}
+          aria-label={`${visible ? 'Ẩn' : 'Hiện'} ${field === 'currentPassword' ? 'mật khẩu hiện tại' : 'mật khẩu mới'}`}
+        >
+          {visible ? 'Ẩn' : 'Hiện'}
+        </Button>
+        <Form.Control.Feedback type="invalid">{errors[field]?.message}</Form.Control.Feedback>
+      </InputGroup>
+    );
+  }
+
   return (
     <div>
       <Link to={profilePath} className="d-inline-block mb-3">← Quay lại hồ sơ cá nhân</Link>
@@ -70,20 +101,17 @@ export default function StaffChangePasswordPage() {
           <Form onSubmit={handleSubmit(onSubmit)} noValidate>
             <Form.Group className="mb-3" controlId="staff-password-current">
               <Form.Label>Mật khẩu hiện tại *</Form.Label>
-              <Form.Control type={showPassword ? 'text' : 'password'} {...register('currentPassword')} autoComplete="current-password" isInvalid={Boolean(errors.currentPassword)} />
-              <Form.Control.Feedback type="invalid">{errors.currentPassword?.message}</Form.Control.Feedback>
+              {passwordField('currentPassword', 'current-password')}
             </Form.Group>
             <Form.Group className="mb-3" controlId="staff-password-new">
               <Form.Label>Mật khẩu mới *</Form.Label>
-              <Form.Control type={showPassword ? 'text' : 'password'} {...register('newPassword')} autoComplete="new-password" isInvalid={Boolean(errors.newPassword)} />
-              <Form.Control.Feedback type="invalid">{errors.newPassword?.message}</Form.Control.Feedback>
+              {passwordField('newPassword', 'new-password')}
+              <Form.Text className="text-muted">Tối thiểu 8 ký tự và không quá 72 ký tự.</Form.Text>
             </Form.Group>
             <Form.Group className="mb-3" controlId="staff-password-confirm">
               <Form.Label>Xác nhận mật khẩu mới *</Form.Label>
-              <Form.Control type={showPassword ? 'text' : 'password'} {...register('confirmPassword')} autoComplete="new-password" isInvalid={Boolean(errors.confirmPassword)} />
-              <Form.Control.Feedback type="invalid">{errors.confirmPassword?.message}</Form.Control.Feedback>
+              {passwordField('confirmPassword', 'new-password')}
             </Form.Group>
-            <Form.Check className="mb-3" id="staff-password-show" label="Hiện mật khẩu" checked={showPassword} onChange={(event) => setShowPassword(event.target.checked)} />
             <div className="d-flex gap-2">
               <Button type="submit" variant="danger" disabled={isSubmitting}>{isSubmitting ? 'Đang đổi...' : 'Đổi mật khẩu'}</Button>
               <Button as={Link} to={profilePath} variant="outline-secondary" disabled={isSubmitting}>Hủy</Button>

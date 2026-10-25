@@ -27,6 +27,10 @@ const STATUS_BADGE = {
   [ACCOUNT_STATUS.ACTIVE]: 'bg-success-subtle text-success-emphasis',
   [ACCOUNT_STATUS.SUSPENDED]: 'bg-warning-subtle text-warning-emphasis',
 };
+const STATUS_LABELS = {
+  [ACCOUNT_STATUS.ACTIVE]: 'Đang hoạt động',
+  [ACCOUNT_STATUS.SUSPENDED]: 'Tạm khóa',
+};
 
 export default function MemberListPage() {
   const location = useLocation();
@@ -187,7 +191,7 @@ export default function MemberListPage() {
                   {loading ? <Spinner animation="border" size="sm" /> : 'Tìm'}
                 </Button>
                 <Button type="button" variant="outline-secondary" onClick={handleReset}>
-                  Xoá
+                  Xóa
                 </Button>
               </Col>
             </Row>
@@ -195,8 +199,7 @@ export default function MemberListPage() {
 
           <p className="text-muted small mb-0 mt-3">
             Tra cứu là chính xác (không tìm theo tên hoặc email) và trả về tối đa
-            một kết quả. Tài khoản đã ngưng hoạt động (INACTIVE) được coi như
-            không tồn tại.
+            một kết quả. Tài khoản đã ngưng hoạt động sẽ không xuất hiện.
           </p>
         </div>
       </div>
@@ -227,7 +230,7 @@ export default function MemberListPage() {
                 </div>
               </div>
               <span className={`badge ${STATUS_BADGE[member.status] || 'bg-light text-dark'}`}>
-                {member.status || '—'}
+                {STATUS_LABELS[member.status] || 'Không xác định'}
               </span>
             </div>
 
@@ -291,9 +294,8 @@ export default function MemberListPage() {
       ) : null}
 
       <Alert variant="light" className="border small text-muted mt-3 mb-0">
-        Tài khoản <strong>INACTIVE</strong> không bao giờ được hiển thị tại quầy.
-        Tài khoản <strong>SUSPENDED</strong> vẫn tra cứu được nhưng không thể tạo
-        đơn gói tập mới.
+        Tài khoản đã ngưng hoạt động sẽ không xuất hiện tại quầy. Tài khoản tạm
+        khóa vẫn tra cứu được nhưng không thể tạo đơn gói tập mới.
       </Alert>
     </div>
   );

@@ -331,7 +331,7 @@ export default function MemberCreatePage() {
                     onClick={resetForm}
                     disabled={isSubmitting}
                   >
-                    Xoá form
+                    Xóa form
                   </Button>
                 </div>
               </Card.Body>

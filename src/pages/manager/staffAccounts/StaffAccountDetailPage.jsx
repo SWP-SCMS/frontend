@@ -74,9 +74,9 @@ export default function StaffAccountDetailPage() {
         let friendly;
         if (/last active/i.test(serverMessage || '')) {
           friendly =
-            'Không thể vô hiệu hoá Manager cuối cùng còn ACTIVE. Hãy kích hoạt một Manager khác trước.';
+            'Không thể ngưng hoạt động tài khoản quản lý cuối cùng. Hãy kích hoạt một quản lý khác trước.';
         } else if (/already INACTIVE/i.test(serverMessage || '')) {
-          friendly = 'Tài khoản này đã ở trạng thái INACTIVE.';
+          friendly = 'Tài khoản này đã ngưng hoạt động.';
         } else if (/their own account/i.test(serverMessage || '')) {
           friendly = 'Bạn không thể tự vô hiệu hoá tài khoản của chính mình.';
         } else if (/outstanding/i.test(serverMessage || '')) {
@@ -151,7 +151,7 @@ export default function StaffAccountDetailPage() {
   function openDeactivateModal() {
     if (isInactive) {
       const guardErr = new Error(
-        'Tài khoản này đã ở trạng thái INACTIVE nên không thể thực hiện lại.',
+        'Tài khoản này đã ngưng hoạt động nên không thể thực hiện lại.',
       );
       guardErr.response = {
         status: 409,
@@ -193,7 +193,7 @@ export default function StaffAccountDetailPage() {
             onClick={openDeactivateModal}
             disabled={isInactive}
           >
-            Chuyển sang INACTIVE
+            Ngưng hoạt động
           </Button>
         </div>
       </div>
@@ -204,18 +204,15 @@ export default function StaffAccountDetailPage() {
             <Card.Body>
               <h2 className="h6 text-uppercase text-muted">Thông tin tài khoản</h2>
               <dl className="row mb-0">
-                <dt className="col-sm-4 text-muted fw-normal">Account ID</dt>
-                <dd className="col-sm-8 text-break mb-2">
-                  <code className="small">{account.accountId}</code>
-                </dd>
-
                 <dt className="col-sm-4 text-muted fw-normal">Vai trò</dt>
                 <dd className="col-sm-8 mb-2">
                   {ROLE_LABELS[account.role] || account.role || '—'}
                 </dd>
 
                 <dt className="col-sm-4 text-muted fw-normal">Trạng thái</dt>
-                <dd className="col-sm-8 mb-2">{account.status || '—'}</dd>
+                <dd className="col-sm-8 mb-2">
+                  {account.status === 'ACTIVE' ? 'Đang hoạt động' : 'Ngưng hoạt động'}
+                </dd>
 
                 <dt className="col-sm-4 text-muted fw-normal">Ngày sinh</dt>
                 <dd className="col-sm-8 mb-0">{formatDate(account.birthDate)}</dd>
@@ -244,9 +241,8 @@ export default function StaffAccountDetailPage() {
         <Card.Body>
           <h2 className="h6 text-uppercase text-muted">Đặt lại mật khẩu</h2>
           <p className="text-muted small mb-3">
-            Theo BR-ACC-23: mật khẩu sẽ được đặt lại về số điện thoại đăng ký hiện tại
-            của tài khoản. Thao tác này không bắt buộc người dùng phải đổi mật khẩu ở
-            lần đăng nhập tiếp theo.
+            Mật khẩu sẽ được đặt lại về số điện thoại đăng ký hiện tại của tài khoản.
+            Người dùng nên đổi mật khẩu ngay sau lần đăng nhập tiếp theo.
           </p>
 
           <ErrorAlert
@@ -271,13 +267,12 @@ export default function StaffAccountDetailPage() {
 
       <Modal show={showDeactivate} onHide={() => setShowDeactivate(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Chuyển tài khoản sang INACTIVE</Modal.Title>
+          <Modal.Title>Ngưng hoạt động tài khoản</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p className="text-muted small">
-            Theo BR-ACC-19, đây là trạng thái kết thúc làm việc của tài khoản. Tài khoản
-            INACTIVE không thể đăng nhập nhưng lịch sử nghiệp vụ trước đó vẫn được bảo toàn.
-            Hành động này sẽ tạo Audit event (BR-ACC-25).
+            Tài khoản sẽ không thể đăng nhập sau thao tác này, nhưng toàn bộ lịch sử
+            nghiệp vụ trước đó vẫn được giữ lại.
           </p>
           <ErrorAlert
             error={deactivateError}
@@ -295,7 +290,7 @@ export default function StaffAccountDetailPage() {
               required
             />
             <Form.Text className="text-muted">
-              Lý do sẽ được lưu vào Audit log.
+              Lý do sẽ được lưu vào lịch sử hoạt động.
             </Form.Text>
           </Form.Group>
         </Modal.Body>
@@ -305,7 +300,7 @@ export default function StaffAccountDetailPage() {
             onClick={() => setShowDeactivate(false)}
             disabled={deactivating}
           >
-            Huỷ
+            Hủy
           </Button>
           <Button
             variant="danger"

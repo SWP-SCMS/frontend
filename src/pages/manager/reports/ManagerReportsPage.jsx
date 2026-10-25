@@ -18,14 +18,13 @@ import './ManagerReportsPage.css';
 const schema = z.object({
   from: z.string(),
   to: z.string(),
-  includeTestData: z.boolean(),
 }).superRefine((value, ctx) => {
   if (value.from && value.to && value.from > value.to) {
     ctx.addIssue({ code: 'custom', path: ['to'], message: 'Ngày kết thúc phải từ ngày bắt đầu trở đi.' });
   }
 });
 
-const DEFAULT_FILTERS = { from: '', to: '', includeTestData: false };
+const DEFAULT_FILTERS = { from: '', to: '' };
 
 function count(value) {
   const numeric = Number(value);
@@ -142,10 +141,7 @@ export default function ManagerReportsPage() {
                 <Form.Control type="date" {...register('to')} isInvalid={Boolean(errors.to)} />
                 <Form.Control.Feedback type="invalid">{errors.to?.message}</Form.Control.Feedback>
               </Col>
-              <Col md={3}>
-                <Form.Check type="switch" label="Bao gồm dữ liệu kiểm thử" {...register('includeTestData')} />
-              </Col>
-              <Col md={3} className="d-flex gap-2">
+              <Col md={6} className="d-flex gap-2">
                 <Button type="submit" variant="danger" disabled={loading}>{loading ? 'Đang tải…' : 'Lọc báo cáo'}</Button>
                 <Button type="button" variant="outline-secondary" disabled={loading} onClick={clear}>Đặt lại</Button>
               </Col>

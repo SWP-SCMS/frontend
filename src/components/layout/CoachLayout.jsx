@@ -6,11 +6,12 @@
 // Menu: Trang tổng quan, Lịch phụ trách, Hồ sơ cá nhân, Đăng xuất.
 
 import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Button, Dropdown, Modal } from 'react-bootstrap';
 import { useAuth } from '../../context/useAuth';
 import Icon from './MemberIcon';
 import useNotificationUnreadCount from './useNotificationUnreadCount';
+import NotificationBellContent from './NotificationBellContent';
 import './MemberLayout.css';
 import '../common/BrandLogo.css';
 
@@ -54,7 +55,7 @@ function StaticLogo() {
 export default function CoachLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const unreadCount = useNotificationUnreadCount();
+  const { unreadCount, notifications } = useNotificationUnreadCount();
   const hasUnread = unreadCount > 0;
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -126,13 +127,12 @@ export default function CoachLayout() {
               {hasUnread ? <span className="scms-ml-bell-dot" aria-hidden="true"></span> : null}
             </Dropdown.Toggle>
             <Dropdown.Menu className="scms-ml-bell-menu">
-              <div className="scms-ml-bell-head">Thông báo</div>
-              <div className="scms-ml-bell-empty">
-                {hasUnread ? `Bạn có ${unreadCount} thông báo mới.` : 'Chưa có thông báo nào.'}
-              </div>
-              <Dropdown.Item as={Link} to="/coach/notifications" className="small text-danger">
-                Xem tất cả thông báo
-              </Dropdown.Item>
+              <NotificationBellContent
+                notifications={notifications}
+                unreadCount={unreadCount}
+                notificationPath="/coach/notifications"
+                classPrefix="scms-ml"
+              />
             </Dropdown.Menu>
           </Dropdown>
 

@@ -30,8 +30,8 @@ import { getRoom, updateRoom } from '../../../services/roomService';
 import { applyServerErrors } from '../../../utils/serverErrors';
 
 const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'ACTIVE — đang hoạt động.' },
-  { value: 'INACTIVE', label: 'INACTIVE — đã ngưng hoạt động.' },
+  { value: 'ACTIVE', label: 'Đang hoạt động' },
+  { value: 'INACTIVE', label: 'Ngưng hoạt động' },
 ];
 
 // Page-local edit schema.
@@ -323,7 +323,7 @@ export default function RoomEditPage() {
             ))}
           </Form.Select>
           <Form.Text className="text-muted">
-            Thay đổi từ ACTIVE sang INACTIVE sẽ chuyển sang luồng xem trước
+            Chuyển sang trạng thái ngưng hoạt động sẽ mở bước xem trước
             và xử lý tất cả buổi tập bị ảnh hưởng; hệ thống không gửi PATCH
             ngưng hoạt động trực tiếp.
           </Form.Text>
@@ -353,7 +353,7 @@ export default function RoomEditPage() {
             }}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
           <Button
             type="button"

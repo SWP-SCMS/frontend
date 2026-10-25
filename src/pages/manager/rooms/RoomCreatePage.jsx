@@ -100,7 +100,7 @@ export default function RoomCreatePage() {
 
       <h1 className="h3 fw-bold mt-2 mb-1">Tạo phòng mới</h1>
       <p className="text-muted mb-4">
-        Phòng mới được tạo với trạng thái ACTIVE.
+        Phòng mới sẽ ở trạng thái đang hoạt động.
       </p>
 
       <ErrorAlert
@@ -165,7 +165,7 @@ export default function RoomCreatePage() {
             onClick={() => navigate('/manager/rooms')}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
         </div>
       </Form>

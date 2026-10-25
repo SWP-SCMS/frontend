@@ -74,6 +74,10 @@ const STATUS_BADGE = {
   [ACCOUNT_STATUS.ACTIVE]: 'bg-success-subtle text-success-emphasis',
   [ACCOUNT_STATUS.SUSPENDED]: 'bg-warning-subtle text-warning-emphasis',
 };
+const STATUS_LABELS = {
+  [ACCOUNT_STATUS.ACTIVE]: 'Đang hoạt động',
+  [ACCOUNT_STATUS.SUSPENDED]: 'Tạm khóa',
+};
 
 const EDITABLE_FIELDS = [
   'fullName',
@@ -443,7 +447,7 @@ export default function MemberDetailPage() {
 
       {profile.status === ACCOUNT_STATUS.SUSPENDED ? (
         <Alert variant="warning">
-          Tài khoản đang bị tạm khoá nên không thể tạo đơn gói tập mới. Hãy liên hệ
+          Tài khoản đang bị tạm khóa nên không thể tạo đơn gói tập mới. Hãy liên hệ
           quản lý nếu cần gia hạn.
         </Alert>
       ) : null}
@@ -572,7 +576,7 @@ export default function MemberDetailPage() {
                         {saving || isSubmitting ? <Spinner animation="border" size="sm" /> : 'Lưu thay đổi'}
                       </Button>
                       <Button type="button" variant="outline-secondary" onClick={cancelEdit}>
-                        Huỷ
+                        Hủy
                       </Button>
                     </div>
                     <p className="text-muted small mb-0 mt-3">
@@ -618,9 +622,9 @@ export default function MemberDetailPage() {
                   <dt className="col-5 text-muted fw-normal">Mã hội viên</dt>
                   <dd className="col-7">{profile.memberId}</dd>
                   <dt className="col-5 text-muted fw-normal">Vai trò</dt>
-                  <dd className="col-7">{profile.role}</dd>
+                  <dd className="col-7">Hội viên</dd>
                   <dt className="col-5 text-muted fw-normal">Trạng thái</dt>
-                  <dd className="col-7">{profile.status}</dd>
+                  <dd className="col-7">{STATUS_LABELS[profile.status] || 'Không xác định'}</dd>
                 </dl>
               </Card.Body>
             </Card>
@@ -722,7 +726,7 @@ export default function MemberDetailPage() {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="outline-secondary" onClick={() => setShowReset(false)} disabled={resetting}>
-            Huỷ
+            Hủy
           </Button>
           <Button variant="danger" onClick={handleResetPassword} disabled={resetting}>
             {resetting ? <Spinner animation="border" size="sm" /> : 'Đặt lại mật khẩu'}

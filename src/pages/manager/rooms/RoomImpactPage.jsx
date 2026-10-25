@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Alert, Button, Card, Col, Form, Row, Spinner, Table } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -103,6 +103,13 @@ const ROOM_ERROR_MESSAGES = {
     'Một buổi tập vừa thay đổi trạng thái. Vui lòng xem trước lại danh sách ảnh hưởng.',
 };
 
+const SESSION_STATUS_LABELS = {
+  SCHEDULED: 'Đã lên lịch',
+  IN_PROGRESS: 'Đang diễn ra',
+  COMPLETED: 'Đã hoàn thành',
+  CANCELLED: 'Đã hủy',
+};
+
 function localizedRoomError(error) {
   const message = ROOM_ERROR_MESSAGES[error?.response?.data?.code];
   return message ? { message } : error;
@@ -122,15 +129,22 @@ export default function RoomImpactPage() {
   const [preview, setPreview] = useState(null);
   const [previewing, setPreviewing] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [bulkAction, setBulkAction] = useState('');
+  const [bulkTargetRoomId, setBulkTargetRoomId] = useState('');
+  const [bulkReason, setBulkReason] = useState('');
+  const [bulkError, setBulkError] = useState('');
 
   const {
     register,
     handleSubmit,
     control,
+    clearErrors,
     getValues,
     reset,
     setError,
+    setValue,
     trigger,
     formState: { errors },
   } = useForm({
@@ -216,6 +230,10 @@ export default function RoomImpactPage() {
     try {
       const result = await previewRoomImpact(roomId, impactPayload(values));
       setPreview(result);
+      setBulkAction('');
+      setBulkTargetRoomId('');
+      setBulkReason('');
+      setBulkError('');
       reset({
         ...values,
         resolutions: result.sessions.map(emptyResolution),
@@ -295,6 +313,12 @@ export default function RoomImpactPage() {
     });
     if (invalid) return;
 
+    setConfirmOpen(true);
+  }
+
+  async function confirmApply() {
+    const values = getValues();
+    setConfirmOpen(false);
     setApplying(true);
     try {
       const fresh = await previewRoomImpact(roomId, impactPayload(values));
@@ -346,6 +370,40 @@ export default function RoomImpactPage() {
     () => rooms.filter((candidate) => candidate.id !== roomId && candidate.status === 'ACTIVE'),
     [roomId, rooms],
   );
+  const allAffectedSessionsScheduled = useMemo(
+    () => (preview?.sessions || []).every((session) => session.status === 'SCHEDULED'),
+    [preview],
+  );
+
+  function applyBulkResolution() {
+    if (!bulkAction) {
+      setBulkError('Vui lòng chọn cách xử lý chung.');
+      return;
+    }
+    if (bulkAction === 'MOVE' && !bulkTargetRoomId) {
+      setBulkError('Vui lòng chọn phòng đích.');
+      return;
+    }
+    if (bulkAction === 'CANCEL' && !bulkReason.trim()) {
+      setBulkError('Vui lòng nhập lý do hủy chung.');
+      return;
+    }
+
+    const updated = resolutions.map((resolution) => ({
+      ...resolution,
+      action: bulkAction,
+      targetRoomId: bulkAction === 'MOVE' ? bulkTargetRoomId : '',
+      reason: bulkAction === 'CANCEL' ? bulkReason.trim() : '',
+    }));
+    setValue('resolutions', updated, { shouldDirty: true, shouldValidate: true });
+    clearErrors('resolutions');
+    setBulkError('');
+    setNotice(
+      bulkAction === 'MOVE'
+        ? `Đã chọn chuyển toàn bộ ${updated.length} buổi sang phòng đích.`
+        : `Đã chọn hủy toàn bộ ${updated.length} buổi bị ảnh hưởng.`,
+    );
+  }
 
   if (loading) {
     return <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>;
@@ -399,7 +457,7 @@ export default function RoomImpactPage() {
                   <Form.Control.Feedback type="invalid">{errors.startDate?.message}</Form.Control.Feedback>
                 </Col>
                 <Col md={2}>
-                  <Form.Label>Giờ</Form.Label>
+                  <Form.Label>Giờ bắt đầu</Form.Label>
                   <Form.Control type="time" readOnly={Boolean(extensionSuspension)} {...register('startClock')} isInvalid={Boolean(errors.startClock)} />
                   <Form.Control.Feedback type="invalid">{errors.startClock?.message}</Form.Control.Feedback>
                 </Col>
@@ -409,7 +467,7 @@ export default function RoomImpactPage() {
                   <Form.Control.Feedback type="invalid">{errors.endDate?.message}</Form.Control.Feedback>
                 </Col>
                 <Col md={2}>
-                  <Form.Label>Giờ</Form.Label>
+                  <Form.Label>Giờ kết thúc</Form.Label>
                   <Form.Control type="time" {...register('endClock')} isInvalid={Boolean(errors.endClock)} />
                   <Form.Control.Feedback type="invalid">{errors.endClock?.message}</Form.Control.Feedback>
                 </Col>
@@ -432,7 +490,57 @@ export default function RoomImpactPage() {
             {preview.sessions.length === 0 ? (
               <Alert variant="success">Không có buổi tập cần xử lý. Bạn có thể áp dụng ngay.</Alert>
             ) : (
-              <Table responsive className="align-middle">
+              <>
+                <Card className="border bg-light mb-3">
+                  <Card.Body>
+                    <h3 className="h6 fw-bold">Áp dụng cho tất cả buổi tập</h3>
+                    <p className="small text-muted mb-3">
+                      Dùng khi toàn bộ buổi bị ảnh hưởng có cùng cách xử lý. Bạn vẫn có thể chỉnh riêng từng dòng sau đó.
+                    </p>
+                    <Row className="g-2 align-items-end">
+                      <Col md={3}>
+                        <Form.Label className="small">Cách xử lý chung</Form.Label>
+                        <Form.Select
+                          size="sm"
+                          value={bulkAction}
+                          onChange={(event) => {
+                            setBulkAction(event.target.value);
+                            setBulkError('');
+                          }}
+                        >
+                          <option value="">-- Chọn --</option>
+                          <option value="MOVE">Chuyển cùng một phòng</option>
+                          {allAffectedSessionsScheduled ? <option value="CANCEL">Hủy tất cả buổi</option> : null}
+                        </Form.Select>
+                      </Col>
+                      {bulkAction === 'MOVE' ? (
+                        <Col md={5}>
+                          <Form.Label className="small">Phòng đích</Form.Label>
+                          <Form.Select size="sm" value={bulkTargetRoomId} onChange={(event) => setBulkTargetRoomId(event.target.value)}>
+                            <option value="">-- Chọn phòng đích --</option>
+                            {targetRooms.map((target) => (
+                              <option key={target.id} value={target.id}>{target.name} ({target.capacity} chỗ)</option>
+                            ))}
+                          </Form.Select>
+                        </Col>
+                      ) : null}
+                      {bulkAction === 'CANCEL' ? (
+                        <Col md={5}>
+                          <Form.Label className="small">Lý do hủy chung</Form.Label>
+                          <Form.Control size="sm" maxLength={1000} value={bulkReason} onChange={(event) => setBulkReason(event.target.value)} />
+                        </Col>
+                      ) : null}
+                      <Col md="auto">
+                        <Button type="button" size="sm" variant="outline-danger" onClick={applyBulkResolution}>
+                          Áp dụng cho tất cả
+                        </Button>
+                      </Col>
+                    </Row>
+                    {bulkError ? <div className="text-danger small mt-2">{bulkError}</div> : null}
+                  </Card.Body>
+                </Card>
+
+                <Table responsive className="align-middle">
                 <thead><tr><th>Buổi tập</th><th>Thời gian</th><th>Trạng thái / đặt chỗ</th><th>Xử lý</th><th>Chi tiết</th></tr></thead>
                 <tbody>
                   {preview.sessions.map((session, index) => {
@@ -441,7 +549,7 @@ export default function RoomImpactPage() {
                       <tr key={session.sessionId}>
                         <td><Link to={`/manager/class-sessions/${session.sessionId}`}>{session.className}</Link></td>
                         <td>{formatGymDate(session.startTime)} · {formatGymTime(session.startTime)}–{formatGymTime(session.endTime)}</td>
-                        <td>{session.status} · {session.bookingCount} lượt đặt</td>
+                        <td>{SESSION_STATUS_LABELS[session.status] || 'Không xác định'} · {session.bookingCount} lượt đặt</td>
                         <td style={{ minWidth: 180 }}>
                           <input type="hidden" {...register(`resolutions.${index}.sessionId`)} />
                           <Form.Select size="sm" {...register(`resolutions.${index}.action`)} isInvalid={Boolean(errors.resolutions?.[index]?.action)}>
@@ -497,7 +605,8 @@ export default function RoomImpactPage() {
                     );
                   })}
                 </tbody>
-              </Table>
+                </Table>
+              </>
             )}
             <Button type="button" variant="danger" onClick={handleApply} disabled={applying || previewing}>
               {applying ? 'Đang áp dụng…' : 'Kiểm tra lại và áp dụng'}
@@ -505,6 +614,27 @@ export default function RoomImpactPage() {
           </Card.Body></Card>
         ) : null}
       </Form>
+
+      <Modal show={confirmOpen} onHide={() => (applying ? null : setConfirmOpen(false))} centered>
+        <Modal.Header closeButton={!applying}>
+          <Modal.Title>Xác nhận xử lý ảnh hưởng</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Thao tác này sẽ {mode === 'PERMANENT' ? 'ngưng hoạt động phòng vĩnh viễn' : 'tạm ngưng phòng'} và xử lý các buổi tập như sau:</p>
+          <ul className="mb-0">
+            <li>{resolutions.filter((item) => item.action === 'MOVE').length} buổi chuyển phòng</li>
+            <li>{resolutions.filter((item) => item.action === 'RESCHEDULE').length} buổi dời lịch</li>
+            <li>{resolutions.filter((item) => item.action === 'CANCEL').length} buổi bị hủy</li>
+            <li>{(preview?.sessions || []).reduce((sum, item) => sum + Number(item.bookingCount || 0), 0)} lượt đặt bị ảnh hưởng</li>
+          </ul>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setConfirmOpen(false)} disabled={applying}>Quay lại</Button>
+          <Button variant="danger" onClick={confirmApply} disabled={applying}>
+            {applying ? 'Đang áp dụng…' : 'Xác nhận áp dụng'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

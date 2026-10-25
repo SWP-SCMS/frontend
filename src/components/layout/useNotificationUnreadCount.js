@@ -6,10 +6,14 @@ const REFRESH_INTERVAL_MS = 30_000;
 
 export default function useNotificationUnreadCount() {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
 
   const loadUnreadCount = useCallback(() => {
-    listNotifications({ unreadOnly: true, page: 0, size: 1 })
-      .then((data) => setUnreadCount(data.unreadCount))
+    listNotifications({ unreadOnly: true, page: 0, size: 3 })
+      .then((data) => {
+        setUnreadCount(data.unreadCount);
+        setNotifications(data.content);
+      })
       .catch(() => {});
   }, []);
 
@@ -25,5 +29,5 @@ export default function useNotificationUnreadCount() {
     };
   }, [loadUnreadCount]);
 
-  return unreadCount;
+  return { unreadCount, notifications };
 }

@@ -81,7 +81,7 @@ export default function MembershipPlanEditPage() {
     <div style={{ maxWidth: 820 }}>
       <Link to={`/manager/membership-plans/${planCode}`} className="small text-decoration-none">← Quay lại chi tiết</Link>
       <h1 className="h3 fw-bold mt-2 mb-1">Chỉnh sửa loại gói</h1>
-      <p className="text-muted mb-4">Mã loại gói là bất biến. Backend sẽ khoá quyền lợi sau khi loại gói phát sinh đơn.</p>
+      <p className="text-muted mb-4">Mã loại gói không thể thay đổi. Quyền lợi sẽ được khóa sau khi loại gói phát sinh đơn.</p>
       <ErrorAlert error={serverError} title={planErrorMessage(serverError) || 'Không cập nhật được loại gói'} onClose={() => setServerError(null)} />
       <MembershipPlanForm
         benefits={benefits}

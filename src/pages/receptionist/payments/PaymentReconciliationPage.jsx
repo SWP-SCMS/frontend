@@ -52,6 +52,13 @@ const QUEUE_FILTERS = [
   { value: QUEUE_FILTER.EXPIRED_WINDOW, label: 'Quá hạn' },
 ];
 
+const PAYMENT_STATUS_LABELS = {
+  PENDING: 'Chờ xử lý',
+  PAID: 'Đã thanh toán',
+  FAILED: 'Không hợp lệ',
+  EXPIRED: 'Đã hết hạn',
+};
+
 // Both outcomes demand a reason and evidence (BE rejects the call with 400
 // otherwise). PAID additionally demands the three match-verification
 // fields, per BR-VAL-COM-05.
@@ -248,7 +255,7 @@ export default function PaymentReconciliationPage() {
       return (
         <EmptyState
           title="Không có giao dịch cần đối soát"
-          message="Mọi giao dịch Bank Transfer đã được xử lý hoặc chưa phát sinh."
+          message="Mọi giao dịch chuyển khoản đã được xử lý hoặc chưa phát sinh."
         />
       );
     }
@@ -256,7 +263,7 @@ export default function PaymentReconciliationPage() {
       <Table hover responsive className="align-middle mb-0">
         <thead className="table-light">
           <tr>
-            <th>Mã giao dịch</th>
+            <th>Mã thanh toán</th>
             <th>Đơn / Hội viên</th>
             <th>Số tiền</th>
             <th>Nội dung CK</th>
@@ -270,7 +277,7 @@ export default function PaymentReconciliationPage() {
             return (
               <tr key={row.paymentId}>
                 <td>
-                  <code className="small">{row.paymentReference || 'Chưa có reference'}</code>
+                  <code className="small">{row.paymentReference || 'Chưa có mã'}</code>
                 </td>
                 <td>
                   <div className="fw-semibold">
@@ -308,7 +315,7 @@ export default function PaymentReconciliationPage() {
                       variant="outline-success"
                       onClick={() => openDecision(row, RECONCILE_STATUS.PAID)}
                     >
-                      Xác nhận đã CK
+                      Xác nhận đã nhận tiền
                     </Button>
                     <Button
                       variant="outline-danger"
@@ -319,7 +326,7 @@ export default function PaymentReconciliationPage() {
                       title={
                         expired
                           ? 'Đánh dấu không có giao dịch hợp lệ'
-                          : 'Chỉ đánh dấu FAILED sau khi hết hạn thanh toán 24 giờ'
+                          : 'Chỉ có thể xác nhận không hợp lệ sau khi hết hạn thanh toán'
                       }
                       onClick={() => openDecision(row, RECONCILE_STATUS.FAILED)}
                     >
@@ -341,16 +348,14 @@ export default function PaymentReconciliationPage() {
       <header className="mb-3">
         <h1 className="h3 fw-bold mb-1">Đối soát thanh toán</h1>
         <p className="text-muted mb-0">
-          Xác nhận hoặc bác giao dịch chuyển khoản thủ công khi chưa có kết
-          quả từ ngân hàng / SePay (US19).
+          Kiểm tra và xác nhận các giao dịch chuyển khoản chưa có kết quả tự động.
         </p>
       </header>
 
       <Alert variant="info" className="small">
-        Mỗi thao tác đối soát đều ghi vào Audit log gồm người thực hiện,
-        thời điểm, lý do và bằng chứng đối soát. Giao dịch đã ở trạng
-        thái <strong>PAID</strong> hoặc <strong>FAILED</strong> là trạng
-        thái cuối và không thể sửa lại.
+        Mỗi quyết định đều được lưu vào lịch sử hoạt động, gồm người thực hiện,
+        thời điểm, lý do và bằng chứng đối soát. Giao dịch đã xác nhận thanh
+        toán hoặc xác nhận không hợp lệ sẽ không thể sửa lại.
       </Alert>
 
       <div className="d-flex flex-wrap gap-3 align-items-end mb-3">
@@ -358,7 +363,7 @@ export default function PaymentReconciliationPage() {
           <InputGroup size="sm">
             <Form.Control
               type="search"
-              placeholder="Tìm theo mã đơn, mã giao dịch, họ tên…"
+            placeholder="Tìm theo mã đơn, mã thanh toán, họ tên…"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               aria-label="Tìm kiếm giao dịch cần đối soát"
@@ -432,9 +437,9 @@ export default function PaymentReconciliationPage() {
           {active ? (
             <>
               <dl className="row small mb-3">
-                <dt className="col-sm-3 text-muted fw-normal">Mã giao dịch</dt>
+                <dt className="col-sm-3 text-muted fw-normal">Mã thanh toán</dt>
                 <dd className="col-sm-9 mb-1">
-                  <code>{active.paymentReference || 'Chưa có reference'}</code>
+                  <code>{active.paymentReference || 'Chưa có mã'}</code>
                 </dd>
                 <dt className="col-sm-3 text-muted fw-normal">Hội viên</dt>
                 <dd className="col-sm-9 mb-1">
@@ -452,9 +457,8 @@ export default function PaymentReconciliationPage() {
 
               {!isPaid ? (
                 <Alert variant="warning" className="small">
-                  Đánh dấu <strong>FAILED</strong> sẽ chuyển Payment sang
-                  FAILED và Order sang <strong>EXPIRED</strong>. Thao tác này
-                  không thể hoàn tác.
+                  Xác nhận không hợp lệ sẽ đóng giao dịch và đơn thanh toán.
+                  Thao tác này không thể hoàn tác.
                 </Alert>
               ) : null}
 
@@ -489,7 +493,7 @@ export default function PaymentReconciliationPage() {
                     <Col md={8}>
                       <Form.Group controlId="rec-provider">
                         <Form.Label className="small mb-1">
-                          Mã giao dịch / reference
+                          Mã giao dịch ngân hàng
                         </Form.Label>
                         <Form.Control
                           value={form.providerTransactionId}
@@ -501,7 +505,7 @@ export default function PaymentReconciliationPage() {
                         />
                         <Form.Text className="text-muted">
                           Lấy từ sao kê ngân hàng hoặc SePay. Mỗi mã chỉ được
-                          dùng cho một Payment.
+                          dùng cho một giao dịch thanh toán.
                         </Form.Text>
                       </Form.Group>
                     </Col>
@@ -577,7 +581,7 @@ export default function PaymentReconciliationPage() {
             onClick={closeDecision}
             disabled={submitting}
           >
-            Huỷ
+            Hủy
           </Button>
           <Button
             variant={isPaid ? 'success' : 'danger'}
@@ -587,8 +591,8 @@ export default function PaymentReconciliationPage() {
             {submitting
               ? 'Đang xử lý…'
               : isPaid
-                ? 'Xác nhận PAID'
-                : 'Đánh dấu FAILED'}
+                ? 'Xác nhận đã thanh toán'
+                : 'Xác nhận không hợp lệ'}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -597,7 +601,7 @@ export default function PaymentReconciliationPage() {
         <div className="mt-3">
           <ErrorAlert
             error={resultError}
-            title="Không đọi được trạng thái giao dịch"
+            title="Không đọc được trạng thái giao dịch"
             onClose={() => setResultError(null)}
           />
         </div>
@@ -605,7 +609,8 @@ export default function PaymentReconciliationPage() {
       {result ? (
         <div className="mt-3">
           <Alert variant="success" className="small mb-0">
-            Trạng thái hiện tại: <strong>{result.status}</strong>
+            Trạng thái hiện tại:{' '}
+            <strong>{PAYMENT_STATUS_LABELS[result.status] || result.status || '—'}</strong>
             {result.orderNumber ? <> · Đơn: <strong>{result.orderNumber}</strong></> : null}
             {result.paymentReference ? <> · Giao dịch: <strong>{result.paymentReference}</strong></> : null}
             {result.receiptId ? (

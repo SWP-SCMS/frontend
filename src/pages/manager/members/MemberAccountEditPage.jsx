@@ -199,8 +199,7 @@ export default function MemberAccountEditPage() {
 
       <h1 className="h3 fw-bold mt-2 mb-1">Chỉnh sửa hội viên</h1>
       <p className="text-muted mb-4">
-        {account.fullName || '—'} · {ROLE_LABELS[ROLES.MEMBER]} · Account ID{' '}
-        <code className="small">{account.accountId}</code>
+        {account.fullName || '—'} · {ROLE_LABELS[ROLES.MEMBER]}
       </p>
 
       <ErrorAlert
@@ -241,7 +240,8 @@ export default function MemberAccountEditPage() {
                 isInvalid={Boolean(errors.phone)}
               />
               <Form.Text className="text-muted">
-                Để trống nếu không muốn thay đổi số điện thoại.
+                Số điện thoại được dùng để đăng nhập và khôi phục mật khẩu. Để
+                trống nếu không muốn thay đổi.
               </Form.Text>
               <Form.Control.Feedback type="invalid">
                 {errors.phone?.message}
@@ -292,12 +292,18 @@ export default function MemberAccountEditPage() {
             </Col>
             <Col md={6}>
               <div className="text-muted small">Trạng thái hiện tại</div>
-              <div className="fw-semibold">{account.status || '—'}</div>
+              <div className="fw-semibold">
+                {account.status === 'ACTIVE'
+                  ? 'Đang hoạt động'
+                  : account.status === 'SUSPENDED'
+                    ? 'Tạm khóa'
+                    : 'Ngưng hoạt động'}
+              </div>
             </Col>
           </Row>
           <p className="small text-muted mt-2 mb-0">
-            Theo BR-ACC-05 / BR-LIM-02: vai trò cố định suốt vòng đời tài khoản. Để
-            thay đổi trạng thái (ACTIVE ↔ SUSPENDED), dùng nút trên trang chi tiết.
+            Vai trò của tài khoản không thể thay đổi. Để tạm khóa hoặc kích hoạt lại
+            hội viên, dùng nút trên trang chi tiết.
           </p>
           <p className="small text-muted mt-1 mb-0">
             Ngày tạo: {formatDate(account.createdAt) || '—'}
@@ -326,7 +332,7 @@ export default function MemberAccountEditPage() {
             }}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
           <Button
             type="button"

@@ -558,7 +558,7 @@ export default function SessionDetailPage() {
       {isCancelled ? (
         <Card className="border-0 shadow-sm">
           <Card.Body>
-            <h2 className="h6 text-uppercase text-muted">Huỷ</h2>
+            <h2 className="h6 text-uppercase text-muted">Hủy</h2>
             <p className="mb-2 small text-muted">
               Thời điểm huỷ: {formatGymDateTime(session.cancelledAt)}
             </p>

@@ -313,7 +313,7 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
         </div>
       ) : (
         <div className="mcs-cal-scroll" role="grid" aria-label="Lịch của tôi">
-          <div className="mcs-cal-table" role="rowgroup">
+          <div className="mcs-cal-table">
             <div className="mcs-cal-head" role="row">
               {days.map((day) => (
                 <div
@@ -329,7 +329,7 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
                 </div>
               ))}
             </div>
-            <div className="mcs-cal-body" role="rowgroup">
+            <div className="mcs-cal-body" role="row">
               {days.map((day) => {
                 const daySessions = grouped.get(day.ymd) || [];
                 return (

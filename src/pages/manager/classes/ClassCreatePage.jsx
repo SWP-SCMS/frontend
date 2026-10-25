@@ -257,7 +257,7 @@ export default function ClassCreatePage() {
 
       <h1 className="h3 fw-bold mt-2 mb-1">Tạo lớp mới</h1>
       <p className="text-muted mb-4">
-        Lớp mới được tạo với trạng thái ACTIVE.
+        Lớp mới sẽ ở trạng thái đang hoạt động.
       </p>
 
       <ErrorAlert
@@ -280,7 +280,7 @@ export default function ClassCreatePage() {
 
       {noActiveDisciplines ? (
         <Alert variant="warning">
-          Chưa có bộ môn ACTIVE để gán lớp. Hãy tạo / kích hoạt ít nhất
+          Chưa có bộ môn đang hoạt động để gán lớp. Hãy tạo hoặc kích hoạt ít nhất
           một bộ môn trước khi tạo lớp.{' '}
           <Alert.Link href="/manager/disciplines/new">
             Tạo bộ môn mới
@@ -315,7 +315,7 @@ export default function ClassCreatePage() {
             {errors.disciplineId?.message}
           </Form.Control.Feedback>
           <Form.Text className="text-muted">
-            Chỉ hiển thị các bộ môn đang ACTIVE.
+            Chỉ hiển thị các bộ môn đang hoạt động.
           </Form.Text>
         </Form.Group>
 
@@ -381,7 +381,7 @@ export default function ClassCreatePage() {
             onClick={() => navigate('/manager/classes')}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
         </div>
       </Form>

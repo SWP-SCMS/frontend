@@ -24,8 +24,8 @@ import { listDisciplines } from '../../../services/disciplineService';
 
 const STATUS_FILTERS = [
   { value: '', label: 'Tất cả' },
-  { value: 'ACTIVE', label: 'ACTIVE' },
-  { value: 'INACTIVE', label: 'INACTIVE' },
+  { value: 'ACTIVE', label: 'Đang hoạt động' },
+  { value: 'INACTIVE', label: 'Ngưng hoạt động' },
 ];
 
 const STATUS_BADGE = {
@@ -122,7 +122,7 @@ export default function DisciplineListPage() {
           message={
             disciplines.length === 0
               ? 'Chưa có bộ môn nào. Bấm "Tạo bộ môn" để bắt đầu.'
-              : 'Thử bỏ bộ lọc hoặc đổi từ khoá tìm kiếm.'
+              : 'Thử bỏ bộ lọc hoặc đổi từ khóa tìm kiếm.'
           }
         />
       );
@@ -226,7 +226,7 @@ export default function DisciplineListPage() {
                 type="button"
                 variant="outline-secondary"
                 onClick={handleClearSearch}
-                aria-label="Xoá tìm kiếm"
+                aria-label="Xóa tìm kiếm"
               >
                 ✕
               </Button>

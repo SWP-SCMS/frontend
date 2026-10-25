@@ -299,8 +299,8 @@ export default function SessionAssignmentEditPage() {
       base.unshift({
         value: currentCoachId,
         label: sessionDetail?.coachName
-          ? `${sessionDetail.coachName} (không còn ACTIVE)`
-          : '(không còn ACTIVE)',
+          ? `${sessionDetail.coachName} (đã ngưng hoạt động)`
+          : '(đã ngưng hoạt động)',
         inactive: true,
       });
     }
@@ -645,7 +645,7 @@ export default function SessionAssignmentEditPage() {
               {coachesLoading
                 ? 'Đang tải…'
                 : coachOptions.length === 0
-                  ? 'Không có huấn luyện viên ACTIVE'
+                  ? 'Không có huấn luyện viên đang hoạt động'
                   : '— Chọn huấn luyện viên —'}
             </option>
             {coachOptions.map((o) => (
@@ -655,9 +655,9 @@ export default function SessionAssignmentEditPage() {
             ))}
           </Form.Select>
           <Form.Text className="text-muted">
-            Chỉ các tài khoản COACH đang ACTIVE mới được chọn. Nếu huấn
+            Chỉ các huấn luyện viên đang hoạt động mới được chọn. Nếu huấn
             luyện viên hiện tại đã ngưng hoạt động, hệ thống sẽ hiển thị
-            tên kèm nhãn “(không còn ACTIVE)”.
+            tên kèm nhãn “(đã ngưng hoạt động)”.
           </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.coachId?.message}
@@ -675,7 +675,7 @@ export default function SessionAssignmentEditPage() {
               {roomsLoading
                 ? 'Đang tải…'
                 : roomOptions.length === 0
-                  ? 'Không có phòng tập ACTIVE'
+                  ? 'Không có phòng tập đang hoạt động'
                   : '— Chọn phòng tập —'}
             </option>
             {roomOptions.map((o) => (
@@ -717,7 +717,7 @@ export default function SessionAssignmentEditPage() {
             onClick={navigateBackToDetail}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
         </div>
       </Form>

@@ -288,7 +288,6 @@ export default function MemberProfilePage() {
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [showImageInput, setShowImageInput] = useState(false);
 
   const {
     register,
@@ -392,7 +391,6 @@ export default function MemberProfilePage() {
     if (original) reset(original);
     setSuccess(false);
     setServerError(null);
-    setShowImageInput(false);
   }
 
   async function onSubmit(data) {
@@ -410,7 +408,6 @@ export default function MemberProfilePage() {
       const next = toForm(updated);
       setOriginal(next);
       reset(next);
-      setShowImageInput(false);
       setSuccess(true);
     } catch (err) {
       // Shared helper for per-field errors. Allowlist matches the
@@ -510,15 +507,6 @@ export default function MemberProfilePage() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="scms-mp-btn-soft"
-                onClick={() => setShowImageInput((s) => !s)}
-              >
-                <Icon name="upload" />
-                Dùng URL ảnh cũ
-              </button>
-
               <ProfileImageUploadControl
                 onUpload={uploadMyProfileImage}
                 onUploaded={(updated) => {
@@ -529,37 +517,16 @@ export default function MemberProfilePage() {
                   setSuccess(true);
                 }}
               />
-
-              {showImageInput ? (
-                <div style={{ width: '100%' }}>
-                  <input
-                    className="scms-mp-input"
-                    {...register('profileImageUrl')}
-                    placeholder="Dán đường dẫn ảnh (https://...)"
-                    aria-label="Đường dẫn ảnh đại diện"
-                    aria-invalid={Boolean(errors.profileImageUrl)}
-                  />
-                  {errors.profileImageUrl ? (
-                    <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
-                      {errors.profileImageUrl.message}
-                    </div>
-                  ) : (
-                    <div className="scms-mp-hint" style={{ marginTop: 6 }}>
-                      Bấm &quot;Lưu thay đổi hồ sơ&quot; để lưu URL ảnh cũ.
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <span className="scms-mp-hint">
-                  Tải tệp JPEG/PNG là cách chính; URL tuyệt đối cũ vẫn được hỗ trợ.
-                </span>
-              )}
+              <input type="hidden" {...register('profileImageUrl')} />
+              <span className="scms-mp-hint">
+                Ảnh hồ sơ là bắt buộc khi check-in lần đầu tại trung tâm.
+              </span>
             </div>
           </div>
 
           <div className="scms-mp-card">
             <div className="scms-mp-card-head">
-              <span className="scms-mp-label-small">Định danh Thẻ SCMS</span>
+              <span className="scms-mp-label-small">Thẻ hội viên SCMS</span>
               <span style={{ color: '#dc2626', display: 'flex' }}>
                 <Icon name="badge" />
               </span>
@@ -568,24 +535,19 @@ export default function MemberProfilePage() {
             {/* BR-ACC-27 / BR-VAL-ACC-11: Member ID do hệ thống sinh, không sửa được. */}
             <div className="scms-mp-memberid">
               <small>
-                Mã hội viên (Member ID)
+                Mã hội viên
                 <Icon name="lock" size={16} />
               </small>
               <strong>{user?.memberId || '—'}</strong>
             </div>
 
             <div className="scms-mp-rows">
-              <div className="scms-mp-row">
-                <span className="k">Ngày gia nhập</span>
-                {/* Ngày đăng ký tài khoản thành công. TODO: BE chưa trả
-                    `createdAt` trong GET /members/me/profile; khi có thì ô
-                    này tự hiện ngày, hiện tại hiện "Sắp ra mắt". */}
-                {user?.createdAt ? (
+              {user?.createdAt ? (
+                <div className="scms-mp-row">
+                  <span className="k">Ngày gia nhập</span>
                   <span className="v">{formatDate(user.createdAt)}</span>
-                ) : (
-                  <span className="v scms-mp-soontag">Sắp ra mắt</span>
-                )}
-              </div>
+                </div>
+              ) : null}
               <div className="scms-mp-row">
                 <span className="k">Trạng thái tài khoản</span>
                 <span
@@ -608,7 +570,7 @@ export default function MemberProfilePage() {
             <div className="scms-mp-tip">
               <Icon name="tip" />
               <span>
-                Hội viên xuất trình mã Member ID hoặc đọc Số điện thoại cá nhân
+                Hội viên xuất trình mã hội viên hoặc đọc số điện thoại cá nhân
                 tại quầy để Lễ tân tra cứu hồ sơ.
               </span>
             </div>

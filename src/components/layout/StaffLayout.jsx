@@ -28,7 +28,7 @@ export default function StaffLayout({
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const unreadCount = useNotificationUnreadCount();
+  const { unreadCount, notifications } = useNotificationUnreadCount();
   const notificationPath = flattenNavSections(sidebarItems)
     .find((item) => item.to.endsWith('/notifications'))?.to;
 
@@ -63,6 +63,7 @@ export default function StaffLayout({
           user={user}
           roleLabel={roleLabel}
           unreadCount={unreadCount}
+          notifications={notifications}
           notificationPath={notificationPath}
           onRequestLogout={requestLogout}
         />

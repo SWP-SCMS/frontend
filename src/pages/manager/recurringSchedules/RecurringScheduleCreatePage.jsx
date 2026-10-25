@@ -635,7 +635,7 @@ export default function RecurringScheduleCreatePage() {
               {coachesLoading
                 ? 'Đang tải…'
                 : coachOptions.length === 0
-                  ? 'Không có huấn luyện viên ACTIVE'
+                  ? 'Không có huấn luyện viên đang hoạt động'
                   : '— Chọn huấn luyện viên —'}
             </option>
             {coachOptions.map((o) => (
@@ -645,7 +645,7 @@ export default function RecurringScheduleCreatePage() {
             ))}
           </Form.Select>
           <Form.Text className="text-muted">
-            Chỉ các tài khoản COACH đang ACTIVE mới được chọn.
+            Chỉ các huấn luyện viên đang hoạt động mới được chọn.
           </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.coachId?.message}
@@ -663,7 +663,7 @@ export default function RecurringScheduleCreatePage() {
               {roomsLoading
                 ? 'Đang tải…'
                 : roomOptions.length === 0
-                  ? 'Không có phòng tập ACTIVE'
+                  ? 'Không có phòng tập đang hoạt động'
                   : '— Chọn phòng tập —'}
             </option>
             {roomOptions.map((o) => (
@@ -806,7 +806,7 @@ export default function RecurringScheduleCreatePage() {
             onClick={handleResetForm}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
         </div>
       </Form>

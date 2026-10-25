@@ -12,6 +12,11 @@ import {
   searchPendingVerificationAccount,
 } from '../../../services/emailVerificationService';
 import { formatDateTime } from '../../../utils';
+import {
+  activationReasonLabel,
+  activationStatusLabel,
+  verificationMethodLabel,
+} from '../../../utils/emailVerificationUi';
 
 const schema = z.object({
   reasonCode: z.enum(['EMAIL_DELIVERY_FAILED', 'MEMBER_CANNOT_ACCESS_EMAIL', 'ACCESSIBILITY_SUPPORT', 'OTHER']),
@@ -112,12 +117,12 @@ export default function ManualActivationPage() {
       </div> : null}
     </Card.Body></Card>
 
-    <div className="d-flex justify-content-between align-items-end mb-2"><h2 className="h5 mb-0">Yêu cầu của tôi</h2><Form.Select style={{ width: 180 }} value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>{STATUS.map((item) => <option key={item}>{item}</option>)}</Form.Select></div>
+    <div className="d-flex justify-content-between align-items-end mb-2"><h2 className="h5 mb-0">Yêu cầu của tôi</h2><Form.Select style={{ width: 180 }} value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>{STATUS.map((item) => <option key={item} value={item}>{activationStatusLabel(item)}</option>)}</Form.Select></div>
     <Card className="border-0 shadow-sm"><Card.Body className="p-0">
-      {loading ? <div className="text-center p-4"><Spinner variant="danger" /></div> : <Table responsive hover className="mb-0"><thead><tr><th>Hội viên</th><th>Lý do</th><th>Trạng thái</th><th>Ngày gửi</th><th /></tr></thead><tbody>{(result?.content || []).map((item) => <tr key={item.requestId}><td>{item.memberId}<div className="small text-muted">{item.maskedEmail}</div></td><td>{item.reasonCode}</td><td><Badge bg={item.status === 'APPROVED' ? 'success' : item.status === 'PENDING' ? 'warning' : 'secondary'}>{item.status}</Badge></td><td>{formatDateTime(item.requestedAt)}</td><td><Button size="sm" variant="outline-danger" onClick={() => openDetail(item.requestId)}>Chi tiết</Button></td></tr>)}</tbody></Table>}
+      {loading ? <div className="text-center p-4"><Spinner variant="danger" /></div> : <Table responsive hover className="mb-0"><thead><tr><th>Hội viên</th><th>Lý do</th><th>Trạng thái</th><th>Ngày gửi</th><th /></tr></thead><tbody>{(result?.content || []).map((item) => <tr key={item.requestId}><td>{item.memberId}<div className="small text-muted">{item.maskedEmail}</div></td><td>{activationReasonLabel(item.reasonCode)}</td><td><Badge bg={item.status === 'APPROVED' ? 'success' : item.status === 'PENDING' ? 'warning' : 'secondary'}>{activationStatusLabel(item.status)}</Badge></td><td>{formatDateTime(item.requestedAt)}</td><td><Button size="sm" variant="outline-danger" onClick={() => openDetail(item.requestId)}>Chi tiết</Button></td></tr>)}</tbody></Table>}
     </Card.Body></Card>
     <div className="d-flex justify-content-between mt-2"><Button size="sm" variant="outline-secondary" disabled={page <= 0} onClick={() => setPage((x) => x - 1)}>Trang trước</Button><Button size="sm" variant="outline-secondary" disabled={page + 1 >= (result?.totalPages || 0)} onClick={() => setPage((x) => x + 1)}>Trang sau</Button></div>
 
-    <Modal show={Boolean(detail)} onHide={() => setDetail(null)} centered><Modal.Header closeButton><Modal.Title>Chi tiết yêu cầu</Modal.Title></Modal.Header><Modal.Body>{detail ? <dl className="row mb-0 small"><dt className="col-5">Hội viên</dt><dd className="col-7">{detail.memberId}</dd><dt className="col-5">Lý do</dt><dd className="col-7">{detail.reasonDetail}</dd><dt className="col-5">Cách xác minh</dt><dd className="col-7">{detail.verificationMethod}</dd><dt className="col-5">Bằng chứng</dt><dd className="col-7">{detail.evidenceNote}</dd><dt className="col-5">Quyết định</dt><dd className="col-7">{detail.decisionNote || '—'}</dd></dl> : null}</Modal.Body></Modal>
+    <Modal show={Boolean(detail)} onHide={() => setDetail(null)} centered><Modal.Header closeButton><Modal.Title>Chi tiết yêu cầu</Modal.Title></Modal.Header><Modal.Body>{detail ? <dl className="row mb-0 small"><dt className="col-5">Hội viên</dt><dd className="col-7">{detail.memberId}</dd><dt className="col-5">Lý do</dt><dd className="col-7">{detail.reasonDetail}</dd><dt className="col-5">Cách xác minh</dt><dd className="col-7">{verificationMethodLabel(detail.verificationMethod)}</dd><dt className="col-5">Bằng chứng</dt><dd className="col-7">{detail.evidenceNote}</dd><dt className="col-5">Quyết định</dt><dd className="col-7">{detail.decisionNote || '—'}</dd></dl> : null}</Modal.Body></Modal>
   </div>;
 }

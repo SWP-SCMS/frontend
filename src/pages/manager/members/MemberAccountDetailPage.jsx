@@ -27,7 +27,7 @@ import '../../receptionist/payments/ReceiptPage.css';
 
 const STATUS_LABELS = {
   [ACCOUNT_STATUS.ACTIVE]: 'Đang hoạt động',
-  [ACCOUNT_STATUS.SUSPENDED]: 'Tạm khoá',
+  [ACCOUNT_STATUS.SUSPENDED]: 'Tạm khóa',
   [ACCOUNT_STATUS.INACTIVE]: 'Ngưng hoạt động',
 };
 
@@ -173,7 +173,7 @@ export default function MemberAccountDetailPage() {
               variant="warning"
               onClick={() => openStatusModal(ACCOUNT_STATUS.SUSPENDED)}
             >
-              Tạm khoá
+              Tạm khóa
             </Button>
           ) : null}
           {isSuspended ? (
@@ -194,11 +194,6 @@ export default function MemberAccountDetailPage() {
             <Card.Body>
               <h2 className="h6 text-uppercase text-muted">Thông tin tài khoản</h2>
               <dl className="row mb-0">
-                <dt className="col-sm-4 text-muted fw-normal">Account ID</dt>
-                <dd className="col-sm-8 text-break mb-2">
-                  <code className="small">{account.accountId}</code>
-                </dd>
-
                 <dt className="col-sm-4 text-muted fw-normal">Vai trò</dt>
                 <dd className="col-sm-8 mb-2">{ROLE_LABELS[ROLES.MEMBER]}</dd>
 
@@ -318,15 +313,15 @@ export default function MemberAccountDetailPage() {
         <Modal.Header closeButton>
           <Modal.Title>
             {nextStatus === ACCOUNT_STATUS.SUSPENDED
-              ? 'Tạm khoá hội viên'
+              ? 'Tạm khóa hội viên'
               : 'Kích hoạt lại hội viên'}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p className="text-muted small">
             {nextStatus === ACCOUNT_STATUS.SUSPENDED
-              ? 'Theo BR-ACC-19: tất cả các buổi tập đã đặt trong tương lai của hội viên sẽ bị huỷ. Thao tác này sẽ tạo Audit event và gửi notification cho hội viên.'
-              : 'Hội viên sẽ có thể đăng nhập và đặt lịch tập trở lại. Thao tác này sẽ tạo Audit event và gửi notification.'}
+              ? 'Tất cả buổi tập đã đặt trong tương lai của hội viên sẽ bị hủy. Hệ thống sẽ lưu lịch sử thao tác và gửi thông báo cho hội viên.'
+              : 'Hội viên sẽ có thể đăng nhập và đặt lịch tập trở lại. Hệ thống sẽ lưu lịch sử thao tác và gửi thông báo cho hội viên.'}
           </p>
           <ErrorAlert
             error={statusError}
@@ -343,12 +338,12 @@ export default function MemberAccountDetailPage() {
               placeholder={
                 nextStatus === ACCOUNT_STATUS.SUSPENDED
                   ? 'Ví dụ: vi phạm nội quy trung tâm'
-                  : 'Ví dụ: hết thời hạn khoá tài khoản'
+                  : 'Ví dụ: hết thời hạn khóa tài khoản'
               }
               required
             />
             <Form.Text className="text-muted">
-              Lý do sẽ được lưu vào Audit log.
+              Lý do sẽ được lưu vào lịch sử hoạt động.
             </Form.Text>
           </Form.Group>
         </Modal.Body>
@@ -358,7 +353,7 @@ export default function MemberAccountDetailPage() {
             onClick={() => setShowStatus(false)}
             disabled={submitting}
           >
-            Huỷ
+            Hủy
           </Button>
           <Button
             variant={nextStatus === ACCOUNT_STATUS.SUSPENDED ? 'warning' : 'success'}

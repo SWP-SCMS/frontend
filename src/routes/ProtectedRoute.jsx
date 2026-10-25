@@ -3,6 +3,7 @@
 // flickering the login page on hard reloads.
 
 import { Navigate, useLocation } from 'react-router-dom';
+import LoadingScreen from '../components/common/LoadingScreen';
 import { useAuth } from '../context/useAuth';
 
 export default function ProtectedRoute({ children }) {
@@ -12,7 +13,7 @@ export default function ProtectedRoute({ children }) {
   if (!isReady) {
     // Bootstrap in progress (silent refresh + /members/me/profile).
     // Don't render children or redirect yet — let the splash show.
-    return null;
+    return <LoadingScreen label="Đang kiểm tra phiên đăng nhập" />;
   }
 
   if (!isAuthenticated) {

@@ -8,6 +8,7 @@
 
 import { Navigate, useLocation } from 'react-router-dom';
 
+import LoadingScreen from '../components/common/LoadingScreen';
 import { ROLES } from '../constants';
 import { useAuth } from '../context/useAuth';
 
@@ -27,7 +28,7 @@ export default function GuestRoute({ children }) {
 
   if (!isReady) {
     // Auth bootstrap still running — let the splash render.
-    return null;
+    return <LoadingScreen label="Đang kiểm tra phiên đăng nhập" />;
   }
 
   if (isAuthenticated) {

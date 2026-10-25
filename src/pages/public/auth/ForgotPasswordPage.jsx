@@ -92,7 +92,7 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setError(null);
     if (newPassword.length < 8 || passwordBytes(newPassword) > 72) {
-      setError('Mật khẩu phải có ít nhất 8 ký tự và không quá 72 byte UTF-8.');
+      setError('Mật khẩu phải có ít nhất 8 ký tự và không quá 72 ký tự.');
       return;
     }
     if (newPassword !== confirmPassword) {

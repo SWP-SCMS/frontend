@@ -45,8 +45,8 @@ import { normalizeBenefitCodes } from '../../../utils/membershipBenefits';
 import DisciplineBenefitField from './DisciplineBenefitField';
 
 const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'ACTIVE — đang hoạt động.' },
-  { value: 'INACTIVE', label: 'INACTIVE — đã ngưng hoạt động.' },
+  { value: 'ACTIVE', label: 'Đang hoạt động' },
+  { value: 'INACTIVE', label: 'Ngưng hoạt động' },
 ];
 
 // Page-local edit schema. status is editable here (unlike Create).
@@ -336,9 +336,9 @@ export default function DisciplineEditPage() {
                 ))}
               </Form.Select>
               <Form.Text className="text-muted">
-                ACTIVE — đang hoạt động.
+                Đang hoạt động.
                 <br />
-                INACTIVE — đã ngưng hoạt động.
+                Ngưng hoạt động.
               </Form.Text>
               <Form.Control.Feedback type="invalid">
                 {errors.status?.message}
@@ -373,7 +373,7 @@ export default function DisciplineEditPage() {
             }}
             disabled={isSubmitting}
           >
-            Huỷ
+            Hủy
           </Button>
           <Button
             type="button"
