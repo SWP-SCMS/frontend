@@ -21,6 +21,7 @@ const TARGET_LABELS = {
   MEMBERSHIP_TERMINATION_REQUEST: 'Yêu cầu hủy gói',
   COACH_LEAVE_REQUEST: 'Yêu cầu nghỉ HLV',
   REFUND_REQUEST: 'Yêu cầu hoàn tiền',
+  SESSION_WAITLIST: 'Hàng chờ buổi tập',
 };
 
 function notificationDestination(item, pathname) {
@@ -33,7 +34,7 @@ function notificationDestination(item, pathname) {
     if (sessionId && ['BOOKING_CREATED', 'SESSION_ROOM_CHANGED', 'SESSION_RESCHEDULED'].includes(type)) {
       return `/member/class-sessions?sessionId=${encodeURIComponent(sessionId)}`;
     }
-    if (['BOOKING_CANCELLED', 'SESSION_CANCELLED'].includes(type)) {
+    if (['BOOKING_CANCELLED', 'SESSION_CANCELLED', 'PT_BOOKING_CANCELLED'].includes(type)) {
       return '/member/class-sessions';
     }
     if ([
@@ -50,7 +51,13 @@ function notificationDestination(item, pathname) {
       return '/member/membership-requests';
     }
     if (type?.startsWith('MEMBERSHIP_REFUND_')) return '/member/receipts';
-    if (['WAITLIST_PROMOTED', 'WAITLIST_CANCELLED'].includes(type)) return '/member/class-sessions';
+    if ([
+      'WAITLIST_PROMOTED',
+      'WAITLIST_CANCELLED',
+      'WAITLIST_SKIPPED',
+      'WAITLIST_EXPIRED',
+      'PT_WAITLIST_CANCELLED',
+    ].includes(type)) return '/member/class-sessions';
     if (['ACCOUNT_CREATED', 'MEMBER_SUSPENDED', 'MEMBER_REACTIVATED'].includes(type)) {
       return '/member/profile';
     }
