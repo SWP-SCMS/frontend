@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, Spinner } from 'react-bootstrap';
+import { Button, Card, Form, InputGroup, Spinner } from 'react-bootstrap';
 
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import EmptyState from '../../../components/common/EmptyState';
@@ -10,6 +10,8 @@ import { formatGymDate } from '../../../utils/gymTime';
 
 export default function CoachAssignedMemberListPage() {
   const [page, setPage] = useState(0);
+  const [searchText, setSearchText] = useState('');
+  const [query, setQuery] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,13 +20,13 @@ export default function CoachAssignedMemberListPage() {
     setLoading(true);
     setError(null);
     try {
-      setResult(await listCoachAssignedMembers({ page, size: 20 }));
+      setResult(await listCoachAssignedMembers({ q: query, page, size: 20 }));
     } catch (err) {
       setError(err);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, query]);
 
   useEffect(() => {
     load();
@@ -34,11 +36,42 @@ export default function CoachAssignedMemberListPage() {
     <div>
       <h1 className="h3 fw-bold mb-1">Hội viên được phân công</h1>
       <p className="text-muted">Danh sách hội viên hiện thuộc phạm vi huấn luyện của bạn.</p>
+      <Form
+        className="mb-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setPage(0);
+          setQuery(searchText.trim());
+        }}
+      >
+        <InputGroup>
+          <Form.Control
+            value={searchText}
+            maxLength={100}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder="Tìm theo mã hội viên, họ tên hoặc số điện thoại"
+            aria-label="Tìm hội viên được phân công"
+          />
+          <Button type="submit" variant="danger">Tìm</Button>
+          {query ? (
+            <Button
+              type="button"
+              variant="outline-secondary"
+              onClick={() => { setSearchText(''); setQuery(''); setPage(0); }}
+            >
+              Xóa lọc
+            </Button>
+          ) : null}
+        </InputGroup>
+      </Form>
       <ErrorAlert error={error} title="Không tải được danh sách hội viên" onClose={() => setError(null)} />
       {loading ? (
         <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>
       ) : !result?.content.length ? (
-        <EmptyState title="Chưa có hội viên được phân công" message="Khi có phân công đang hiệu lực, hội viên sẽ xuất hiện tại đây." />
+        <EmptyState
+          title={query ? 'Không tìm thấy hội viên' : 'Chưa có hội viên được phân công'}
+          message={query ? 'Thử mã hội viên, họ tên hoặc số điện thoại khác.' : 'Khi có phân công đang hiệu lực, hội viên sẽ xuất hiện tại đây.'}
+        />
       ) : (
         <div className="d-grid gap-2">
           {result.content.map((member) => (

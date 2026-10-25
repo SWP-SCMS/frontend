@@ -13,8 +13,10 @@ function normalizePage(data, page, size) {
   };
 }
 
-export async function listCoachAssignedMembers({ page = 0, size = 20 } = {}) {
-  const { data } = await api.get('/coach/members', { params: { page, size } });
+export async function listCoachAssignedMembers({ q, page = 0, size = 20 } = {}) {
+  const params = { page, size };
+  if (q && q.trim()) params.q = q.trim();
+  const { data } = await api.get('/coach/members', { params });
   return normalizePage(data, page, size);
 }
 
