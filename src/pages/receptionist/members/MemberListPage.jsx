@@ -19,6 +19,7 @@ import { Alert, Button, Col, Form, InputGroup, Row, Spinner } from 'react-bootst
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
+import ReceptionActiveMembershipSummary from '../../../components/common/ReceptionActiveMembershipSummary';
 import { searchReceptionMember } from '../../../services/receptionistService';
 import { ACCOUNT_STATUS } from '../../../constants';
 import { formatDate, normalizePhone } from '../../../utils';
@@ -260,6 +261,11 @@ export default function MemberListPage() {
                 />
               </Col>
             </Row>
+
+            <ReceptionActiveMembershipSummary
+              membership={member.activeMembership}
+              memberCode={member.memberId}
+            />
 
             <div className="mt-3 d-flex flex-wrap gap-2">
               <Button as={Link} to={`/reception/members/${member.memberId}`} variant="outline-danger" size="sm">
