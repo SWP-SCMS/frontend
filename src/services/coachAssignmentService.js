@@ -20,6 +20,13 @@ export async function getActiveCoachAssignment(memberAccountId) {
   return response.status === 204 ? null : response.data;
 }
 
+export async function getCoachAssignmentImpact(memberAccountId) {
+  const { data } = await api.get(
+    `/manager/members/${encodeURIComponent(memberAccountId)}/coach-assignment/impact`,
+  );
+  return data;
+}
+
 export async function listCoachAssignmentHistory(
   memberAccountId,
   { page = 0, size = 10 } = {},

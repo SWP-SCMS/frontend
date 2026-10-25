@@ -182,6 +182,7 @@ export default function SessionAssignmentEditPage() {
   // ----- Form / submit state -----
   const [serverError, setServerError] = useState(null);
   const [formLevelConflict, setFormLevelConflict] = useState(null);
+  const [incompatibleMembers, setIncompatibleMembers] = useState(null);
   const [noChanges, setNoChanges] = useState(false);
 
   const {
@@ -358,6 +359,7 @@ export default function SessionAssignmentEditPage() {
   async function onSubmit(data) {
     setServerError(null);
     setFormLevelConflict(null);
+    setIncompatibleMembers(null);
     setNoChanges(false);
 
     if (!isEditableSession) {
@@ -463,6 +465,13 @@ export default function SessionAssignmentEditPage() {
           setFormLevelConflict(
             'Huấn luyện viên hoặc phòng tập đã có buổi tập khác trùng giờ. Vui lòng chọn lại.',
           );
+          pageLocalHandled = true;
+          break;
+        case 'PT_SESSION_ASSIGNMENT_HAS_INCOMPATIBLE_MEMBERS':
+          setIncompatibleMembers({
+            bookings: Array.isArray(problem.affectedBookings) ? problem.affectedBookings : [],
+            waitlists: Array.isArray(problem.affectedWaitlists) ? problem.affectedWaitlists : [],
+          });
           pageLocalHandled = true;
           break;
         case 'SESSION_NOT_FOUND':
@@ -626,6 +635,24 @@ export default function SessionAssignmentEditPage() {
 
       {formLevelConflict ? (
         <div className="alert alert-warning py-2 mb-3">{formLevelConflict}</div>
+      ) : null}
+      {incompatibleMembers ? (
+        <Alert variant="warning" className="mb-3">
+          <div className="fw-semibold mb-2">
+            Chưa thể đổi HLV cho buổi PT này.
+          </div>
+          <p className="small mb-2">
+            Những hội viên dưới đây chưa được phân công cho HLV mới. Hãy xử lý phân công HLV của họ trước rồi thử lại.
+          </p>
+          <ul className="small mb-0">
+            {incompatibleMembers.bookings.map((item) => (
+              <li key={`booking-${item.bookingId}`}>{item.memberFullName} ({item.memberCode}) · Đã đặt lịch</li>
+            ))}
+            {incompatibleMembers.waitlists.map((item) => (
+              <li key={`waitlist-${item.waitlistId}`}>{item.memberFullName} ({item.memberCode}) · Đang trong hàng chờ</li>
+            ))}
+          </ul>
+        </Alert>
       ) : null}
       {noChanges ? (
         <div className="alert alert-warning py-2 mb-3">
