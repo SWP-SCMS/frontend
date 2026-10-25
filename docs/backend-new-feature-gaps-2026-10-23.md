@@ -1438,3 +1438,100 @@ template nếu mỗi session cần thời gian mới khác nhau.
 - FE gửi `bulkResolution` cho thao tác “Áp dụng cho tất cả” với `MOVE` hoặc `CANCEL`.
 - Các session được Manager chỉnh riêng được gửi qua `resolutionOverrides`; FE không gửi
   đồng thời `resolutions[]` và `bulkResolution`.
+
+---
+
+## NEW-BE-GAP-026 — Chưa tra cứu được Coach khả dụng trước khi tạo session
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002, MF-008
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Manager Single Session / Recurring Schedule Creation
+
+### Hiện trạng
+
+Backend đã có `GET /api/v1/manager/class-sessions/{sessionId}/available-coaches`, nhưng
+endpoint này chỉ dùng được sau khi session đã tồn tại. Khi tạo một session đơn hoặc lịch
+lặp mới, FE chưa có API để hỏi Coach nào thực sự khả dụng trong khoảng thời gian dự kiến.
+
+Nếu FE tải toàn bộ Coach rồi để Manager chọn, xung đột chỉ được phát hiện lúc submit. Với
+lịch lặp, FE cũng không thể biết Coach có khả dụng cho toàn bộ các occurrence hay không.
+
+### Contract cần bổ sung
+
+Cung cấp endpoint tra cứu không phụ thuộc session đã tồn tại, tối thiểu nhận khoảng thời gian:
+
+```http
+GET /api/v1/manager/coaches/available?startTime=...&endTime=...
+```
+
+Với lịch lặp, contract có thể nhận recurrence pattern và số occurrence hoặc nhận danh sách
+các khoảng thời gian cần kiểm tra. Response chỉ trả Coach hợp lệ cho toàn bộ phạm vi yêu cầu,
+gồm `coachAccountId`, `fullName` và `phone`.
+
+### Quy tắc nghiệp vụ
+
+- Loại Coach có leave đã được duyệt hoặc session khác trùng giờ.
+- Áp dụng cùng một định nghĩa overlap với mutation tạo session.
+- Với PT 1-1, tiếp tục kiểm tra Coach Assignment và các điều kiện PT liên quan.
+- Kết quả discovery chỉ hỗ trợ lựa chọn; mutation vẫn phải kiểm tra lại trong transaction.
+
+### Acceptance criteria
+
+- Form tạo session đơn chỉ hiển thị Coach khả dụng cho thời gian đã chọn.
+- Form lịch lặp xác định được Coach khả dụng cho toàn bộ occurrence trước khi submit.
+- Không cần tải toàn bộ Coach rồi thử từng người hoặc gọi một request trên mỗi occurrence.
+- Nếu availability thay đổi giữa lúc xem và submit, mutation trả lỗi nghiệp vụ rõ ràng.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Tải lại danh sách Coach khi thời gian hoặc recurrence pattern thay đổi.
+- Giữ lựa chọn hiện tại chỉ khi Coach vẫn còn trong danh sách khả dụng.
+- Hiển thị trạng thái đang kiểm tra và empty state khi không có Coach phù hợp.
+
+---
+
+## NEW-BE-GAP-027 — Room Impact chưa trả phòng đích khả dụng cho toàn bộ thao tác xử lý
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-009
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Manager Room Impact Preview / Bulk Resolution
+
+### Hiện trạng
+
+Room Impact preview đã trả các session bị ảnh hưởng và apply API đã hỗ trợ bulk resolution,
+nhưng read model chưa cho biết phòng đích nào khả dụng cho từng session hoặc phòng nào dùng
+được cho toàn bộ nhóm session khi Manager chọn `MOVE` hàng loạt.
+
+FE không gọi API availability riêng cho từng dòng vì sẽ tạo N+1 request. Việc hiển thị toàn
+bộ phòng rồi chờ backend từ chối khi apply khiến Manager phải chọn mù và khó sửa payload lỗi.
+
+### Contract cần bổ sung
+
+Chọn một trong hai hướng, ưu tiên enrich preview:
+
+- Mỗi impacted session có `availableTargetRooms` gồm `roomId`, `roomName`, `capacity`;
+- Đồng thời trả `bulkAvailableTargetRooms` là giao của các phòng hợp lệ trên toàn bộ session
+  có thể áp dụng `MOVE` chung.
+
+Hoặc cung cấp một bulk discovery endpoint nhận các `sessionId` và trả availability theo nhóm
+trong một request. Contract phải xét cả capacity, loại phòng và quy tắc cho phép dùng chung
+phòng theo cấu hình của session/phòng.
+
+### Acceptance criteria
+
+- Manager chỉ chọn được phòng đích hợp lệ cho từng session.
+- “Áp dụng cho tất cả” chỉ hiện các phòng dùng được cho toàn bộ session thuộc bulk action.
+- Preview/discovery thực hiện trong một request, không phát sinh request theo từng dòng.
+- Apply vẫn tái kiểm tra availability và commit atomic để chống dữ liệu thay đổi đồng thời.
+- Khi không có phòng phù hợp, response đủ thông tin để FE hướng Manager sang `RESCHEDULE`
+  hoặc `CANCEL` thay vì thử ngẫu nhiên.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Thay danh sách toàn bộ phòng bằng danh sách phòng khả dụng từ preview/discovery.
+- Tách lựa chọn phòng chung và phòng override theo đúng bulk contract.
+- Hiển thị empty state và hướng xử lý khác khi không có phòng đích hợp lệ.
