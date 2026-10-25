@@ -163,9 +163,6 @@ export default function RefundReviewPage() {
         <Button variant="outline-secondary" onClick={load} disabled={loading}>Tải lại</Button>
       </div>
 
-      <Alert variant="warning" className="small">
-        Danh sách hoàn tiền hiện chưa có mã đơn, mã giao dịch và tên hội viên. Mã hệ thống được hiển thị tạm thời để kiểm tra quy trình.
-      </Alert>
       {notice ? <Alert variant="success" dismissible onClose={() => setNotice(null)}>{notice}</Alert> : null}
       {error ? <ErrorAlert error={error} title="Không thể xử lý hoàn tiền" onClose={() => setError(null)} /> : null}
 
@@ -182,10 +179,10 @@ export default function RefundReviewPage() {
                 <tbody>{rows.map((row) => (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.requestedAt)}</td>
-                    <td><code className="small">{row.memberAccountId}</code></td>
+                    <td><div className="fw-semibold">{row.memberFullName || 'Hội viên'}</div><div className="small text-muted">{row.memberCode || '—'}</div></td>
                     <td>
-                      <div className="small">Payment: <code>{row.paymentId}</code></div>
-                      <div className="small">Membership: <code>{row.membershipId}</code></div>
+                      <div>{row.receiptNumber || 'Chưa có số biên lai'}</div>
+                      <div className="small text-muted">Đơn {row.orderNumber || '—'}{row.paymentReference ? ` · ${row.paymentReference}` : ''}</div>
                     </td>
                     <td>{TYPE[row.type] || row.type || '—'}</td>
                     <td>
@@ -221,7 +218,8 @@ export default function RefundReviewPage() {
         <Modal.Header closeButton={!submitting}><Modal.Title className="h5">{modalTitle}</Modal.Title></Modal.Header>
         <Modal.Body>
           <dl className="row small mb-3">
-            <dt className="col-5">Hội viên</dt><dd className="col-7"><code>{action?.row.memberAccountId}</code></dd>
+            <dt className="col-5">Hội viên</dt><dd className="col-7">{action?.row.memberFullName || 'Hội viên'}<div className="small text-muted">{action?.row.memberCode || '—'}</div></dd>
+            <dt className="col-5">Nguồn hoàn</dt><dd className="col-7">{action?.row.receiptNumber || '—'}<div className="small text-muted">Đơn {action?.row.orderNumber || '—'}</div></dd>
             <dt className="col-5">Số tiền yêu cầu</dt><dd className="col-7">{formatPrice(action?.row.requestedAmount, 'VND')}</dd>
             <dt className="col-5">Mức đề xuất</dt><dd className="col-7">{formatPrice(action?.row.suggestedAmount, 'VND')}</dd>
             {action?.row.approvedAmount != null ? <><dt className="col-5">Đã duyệt</dt><dd className="col-7 fw-bold">{formatPrice(action.row.approvedAmount, 'VND')}</dd></> : null}

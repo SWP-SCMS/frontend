@@ -15,6 +15,13 @@ export async function createReceptionRefundRequest(memberCode, payload) {
   return data;
 }
 
+export async function listRefundEligibleSources(memberCode) {
+  const { data } = await api.get(
+    `/reception/members/${encodeURIComponent(memberCode)}/refund-eligible-sources`,
+  );
+  return Array.isArray(data) ? data : [];
+}
+
 export async function recordRefundCashDisbursement(requestId, payload) {
   const { data } = await api.post(
     `/reception/refund-requests/${encodeURIComponent(requestId)}/cash-disbursement`,
