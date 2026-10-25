@@ -1,13 +1,11 @@
 // Trang tổng quan của Huấn luyện viên.
 //
-// API: GET /coach/class-sessions và GET /coach/class-sessions/{id}
+// API: GET /coach/class-sessions. Danh sách đã có đủ ngữ cảnh hiển thị.
 //   - Buổi hôm nay        : from = 00:00 hôm nay, to = hết hôm nay
 //   - Buổi sắp tới        : status = SCHEDULED, from = bây giờ, 5 buổi đầu
 //   - Lớp đang mở         : các lớp (classId) còn buổi SCHEDULED hoặc
 //                           IN_PROGRESS của Coach
-//   - Học viên đã đăng ký : hội viên (memberId) đã đặt các buổi đó, lấy từ API
-//                           chi tiết (BE chưa có API thống kê nên gom ở FE,
-//                           tối đa 100 buổi mỗi loại)
+//   - Lượt đăng ký         : tổng bookedCount của các buổi còn hiệu lực
 //
 // Ba ô thống kê bấm được: mở hộp danh sách tương ứng.
 
@@ -16,10 +14,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Badge, Button, Modal, Spinner, Table } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { useAuth } from '../../../context/useAuth';
-import {
-  getCoachSession,
-  listCoachSessions,
-} from '../../../services/coachScheduleService';
+import { listCoachSessions } from '../../../services/coachScheduleService';
 import {
   formatGymDate,
   formatGymTime,
@@ -66,30 +61,6 @@ function SessionTable({ sessions, showDate }) {
   );
 }
 
-// Tải chi tiết nhiều buổi, tối đa DETAIL_CONCURRENCY request cùng lúc.
-// Buổi nào lỗi thì bỏ qua (không có trong Map) chứ không làm hỏng cả trang.
-const DETAIL_CONCURRENCY = 5;
-
-async function fetchDetails(ids, isCancelled) {
-  const result = new Map();
-  let next = 0;
-  async function worker() {
-    while (next < ids.length && !isCancelled()) {
-      const id = ids[next];
-      next += 1;
-      try {
-        result.set(id, await getCoachSession(id));
-      } catch {
-        // bỏ qua buổi lỗi
-      }
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(DETAIL_CONCURRENCY, ids.length) }, worker),
-  );
-  return result;
-}
-
 // Ô thống kê bấm được.
 function StatCard({ value, label, onClick }) {
   return (
@@ -107,11 +78,9 @@ function StatCard({ value, label, onClick }) {
 export default function CoachDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [today, setToday] = useState([]); // buổi hôm nay, đã có tên lớp / phòng
+  const [today, setToday] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
-  const [openSessions, setOpenSessions] = useState([]); // buổi còn hiệu lực (chưa có tên lớp)
-  const [openDetails, setOpenDetails] = useState([]); // chi tiết các buổi còn hiệu lực
-  const [detailsLoading, setDetailsLoading] = useState(true);
+  const [openSessions, setOpenSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -122,7 +91,6 @@ export default function CoachDashboardPage() {
     let cancelled = false;
     async function load() {
       try {
-        // Bước 1: các danh sách nhẹ. Xong là hiện trang ngay.
         const todayYmd = getGymZoneTodayIsoDate();
         const [todayRes, upcomingRes, scheduled, inProgress] =
           await Promise.all([
@@ -150,30 +118,10 @@ export default function CoachDashboardPage() {
         setUpcoming(upcomingRes.content ?? []);
         setOpenSessions(openSessions);
         setLoading(false);
-
-        // Bước 2 (chạy nền): API chi tiết để lấy tên lớp, phòng, học viên.
-        // Gộp buổi hôm nay + buổi còn hiệu lực, bỏ trùng, và chỉ gọi vài
-        // request cùng lúc để không làm nghẽn trình duyệt / BE.
-        const ids = [...new Set([...todayList, ...openSessions].map((x) => x.id))];
-        const detailMap = await fetchDetails(ids, () => cancelled);
-        if (cancelled) return;
-
-        setToday(
-          todayList.map((x) => ({
-            ...x,
-            className: detailMap.get(x.id)?.className,
-            roomName: detailMap.get(x.id)?.roomName,
-          })),
-        );
-        setOpenDetails(
-          openSessions.map((x) => detailMap.get(x.id)).filter(Boolean),
-        );
-        setDetailsLoading(false);
       } catch (err) {
         if (!cancelled) {
           setError(err);
           setLoading(false);
-          setDetailsLoading(false);
         }
       }
     }
@@ -186,36 +134,27 @@ export default function CoachDashboardPage() {
   // Lớp đang mở: gom các buổi còn hiệu lực theo classId.
   const openClasses = useMemo(() => {
     const map = new Map();
-    openDetails.forEach((d) => {
+    openSessions.forEach((d) => {
       if (!map.has(d.classId)) {
         map.set(d.classId, {
           classId: d.classId,
           className: d.className,
           disciplineName: d.disciplineName,
           sessionCount: 0,
-          memberIds: new Set(),
+          bookingCount: 0,
         });
       }
       const item = map.get(d.classId);
       item.sessionCount += 1;
-      d.members?.forEach((m) => item.memberIds.add(m.memberId));
+      item.bookingCount += Number(d.bookedCount) || 0;
     });
     return [...map.values()];
-  }, [openDetails]);
+  }, [openSessions]);
 
-  // Học viên đã đăng ký: mỗi người một dòng, kèm các lớp họ tham gia.
-  const registeredMembers = useMemo(() => {
-    const map = new Map();
-    openDetails.forEach((d) => {
-      d.members?.forEach((m) => {
-        if (!map.has(m.memberId)) {
-          map.set(m.memberId, { ...m, classNames: new Set() });
-        }
-        map.get(m.memberId).classNames.add(d.className);
-      });
-    });
-    return [...map.values()];
-  }, [openDetails]);
+  const openBookingCount = useMemo(
+    () => openSessions.reduce((sum, session) => sum + (Number(session.bookedCount) || 0), 0),
+    [openSessions],
+  );
 
   // Số lớp lấy ngay từ danh sách (classId), không cần đợi API chi tiết.
   const openClassCount = useMemo(
@@ -256,9 +195,9 @@ export default function CoachDashboardPage() {
               onClick={() => setPanel('classes')}
             />
             <StatCard
-              value={detailsLoading ? '…' : registeredMembers.length}
-              label="Học viên đã đăng ký lớp"
-              onClick={() => setPanel('members')}
+              value={openBookingCount}
+              label="Lượt đăng ký sắp tới"
+              onClick={() => setPanel('bookings')}
             />
           </div>
 
@@ -296,7 +235,7 @@ export default function CoachDashboardPage() {
           <Modal.Title className="h5">
             {panel === 'today' && 'Lịch dạy hôm nay'}
             {panel === 'classes' && 'Các lớp đang mở'}
-            {panel === 'members' && 'Học viên đã đăng ký lớp'}
+            {panel === 'bookings' && 'Lượt đăng ký ở các buổi sắp tới'}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -344,14 +283,7 @@ export default function CoachDashboardPage() {
               </Table>
             ))}
 
-          {panel !== 'today' && detailsLoading && (
-            <div className="text-center py-3">
-              <Spinner animation="border" size="sm" /> Đang tải...
-            </div>
-          )}
-
           {panel === 'classes' &&
-            !detailsLoading &&
             (openClasses.length === 0 ? (
               <p className="text-muted mb-0">Bạn chưa có lớp đang mở.</p>
             ) : (
@@ -361,7 +293,7 @@ export default function CoachDashboardPage() {
                     <th>Lớp</th>
                     <th>Bộ môn</th>
                     <th>Số buổi sắp tới</th>
-                    <th>Học viên</th>
+                    <th>Lượt đăng ký</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -370,34 +302,33 @@ export default function CoachDashboardPage() {
                       <td>{c.className || '—'}</td>
                       <td>{c.disciplineName || '—'}</td>
                       <td>{c.sessionCount}</td>
-                      <td>{c.memberIds.size}</td>
+                      <td>{c.bookingCount}</td>
                     </tr>
                   ))}
                 </tbody>
               </Table>
             ))}
 
-          {panel === 'members' &&
-            !detailsLoading &&
-            (registeredMembers.length === 0 ? (
-              <p className="text-muted mb-0">Chưa có học viên đăng ký.</p>
+          {panel === 'bookings' &&
+            (openSessions.length === 0 ? (
+              <p className="text-muted mb-0">Chưa có lượt đăng ký sắp tới.</p>
             ) : (
               <Table responsive className="align-middle mb-0">
                 <thead>
                   <tr>
-                    <th>Mã HV</th>
-                    <th>Họ tên</th>
-                    <th>SĐT</th>
-                    <th>Lớp tham gia</th>
+                    <th>Ngày</th>
+                    <th>Lớp</th>
+                    <th>Phòng</th>
+                    <th>Lượt đăng ký</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {registeredMembers.map((m) => (
-                    <tr key={m.memberId}>
-                      <td>{m.memberCode}</td>
-                      <td>{m.fullName}</td>
-                      <td>{m.phone || '—'}</td>
-                      <td>{[...m.classNames].join(', ')}</td>
+                  {openSessions.map((session) => (
+                    <tr key={session.id}>
+                      <td>{formatGymDate(session.startTime)} · {formatGymTime(session.startTime)}</td>
+                      <td>{session.className || '—'}</td>
+                      <td>{session.roomName || '—'}</td>
+                      <td>{session.bookedCount || 0}/{session.capacity}</td>
                     </tr>
                   ))}
                 </tbody>
