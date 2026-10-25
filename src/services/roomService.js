@@ -25,6 +25,18 @@ export async function listRooms() {
   return Array.isArray(data) ? data : [];
 }
 
+export async function discoverRoomAvailability({
+  startTime,
+  endTime,
+  requestedCapacity,
+  excludeSessionId,
+}) {
+  const params = { startTime, endTime, requestedCapacity };
+  if (excludeSessionId) params.excludeSessionId = excludeSessionId;
+  const { data } = await api.get('/manager/rooms/availability', { params });
+  return Array.isArray(data) ? data : [];
+}
+
 // POST /api/v1/manager/rooms
 export async function createRoom(payload) {
   const { data } = await api.post('/manager/rooms', payload);

@@ -8,8 +8,8 @@
 // endpoint and used as context for the request.
 //
 // Backend behavior (RecurringScheduleService#create):
-//   - 8 required fields: classId, coachId, roomId, startDate,
-//     weekdays, startTime, endTime, capacity.
+//   - Required fields: classId, coachId, roomId, startDate,
+//     weekdays, startTime, endTime, capacity and sessionCount.
 //   - weekdays: ISO weekday numbers 1..7 (Mon=1, Sun=7), must be
 //     unique and non-empty.
 //   - startDate: yyyy-MM-dd, must be today or later (Asia/Ho_Chi_Minh).
@@ -17,7 +17,7 @@
 //     startTime and each Session must last from 30 to 90 minutes.
 //   - capacity: positive integer; must not exceed selected Room's
 //     capacity.
-//   - Generates exactly 30 ClassSession rows starting on/after
+//   - Generates 1..100 ClassSession rows starting on/after
 //     startDate, on the selected weekdays, in Asia/Ho_Chi_Minh.
 //   - All-or-nothing: the entire batch is created or none is.
 //     The FE does NOT pre-compute occurrences; it sends one
@@ -114,6 +114,11 @@ const recurringScheduleCreateSchema = z
       })
       .int('Sức chứa phải là số nguyên dương.')
       .positive('Sức chứa phải lớn hơn 0.'),
+    sessionCount: z.coerce
+      .number({ invalid_type_error: 'Số buổi phải là số nguyên.' })
+      .int('Số buổi phải là số nguyên.')
+      .min(1, 'Số buổi phải từ 1 trở lên.')
+      .max(100, 'Số buổi không được vượt quá 100.'),
   })
   .refine((data) => data.endTime > data.startTime, {
     message: 'Giờ kết thúc phải sau giờ bắt đầu.',
@@ -223,6 +228,7 @@ export default function RecurringScheduleCreatePage() {
       startTime: '',
       endTime: '',
       capacity: '',
+      sessionCount: 30,
     },
   });
 
@@ -350,6 +356,7 @@ export default function RecurringScheduleCreatePage() {
       startTime: '',
       endTime: '',
       capacity: '',
+      sessionCount: 30,
     });
     setServerError(null);
     setSuccess(null);
@@ -368,6 +375,7 @@ export default function RecurringScheduleCreatePage() {
         startTime: data.startTime,
         endTime: data.endTime,
         capacity: data.capacity,
+        sessionCount: data.sessionCount,
       });
       setSuccess({
         id: response?.id,
@@ -392,6 +400,7 @@ export default function RecurringScheduleCreatePage() {
           'startTime',
           'endTime',
           'capacity',
+          'sessionCount',
         ],
       });
 
@@ -581,8 +590,7 @@ export default function RecurringScheduleCreatePage() {
 
       <h1 className="h3 fw-bold mt-2 mb-1">Tạo lịch cố định</h1>
       <p className="text-muted mb-4">
-        Hệ thống sẽ tạo 30 buổi tập theo các ngày trong tuần và khung
-        giờ đã chọn, bắt đầu từ ngày được chọn.
+        Chọn số buổi cần tạo theo các ngày trong tuần và khung giờ đã chọn.
       </p>
 
       {/* Class context (readonly) */}
@@ -736,6 +744,25 @@ export default function RecurringScheduleCreatePage() {
               );
             }}
           />
+        </Form.Group>
+
+        <Form.Group className="mt-3" controlId="rsc-sessionCount">
+          <Form.Label>Số buổi tập *</Form.Label>
+          <Form.Control
+            type="number"
+            min={1}
+            max={100}
+            step={1}
+            {...register('sessionCount')}
+            isInvalid={Boolean(errors.sessionCount)}
+            disabled={!classIsActive}
+          />
+          <Form.Text className="text-muted">
+            Có thể tạo từ 1 đến 100 buổi. Giá trị mặc định là 30.
+          </Form.Text>
+          <Form.Control.Feedback type="invalid">
+            {errors.sessionCount?.message}
+          </Form.Control.Feedback>
         </Form.Group>
 
         <div className="row mt-3 g-3">

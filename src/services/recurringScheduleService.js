@@ -4,8 +4,8 @@
 //   POST /api/v1/manager/recurring-schedules           createRecurringSchedule
 //
 // Notes:
-//   - The BE always generates exactly 30 ClassSession rows inside a
-//     single @Transactional batch. Either all 30 are created or none
+//   - The BE generates 1..100 ClassSession rows (30 by default) inside a
+//     single @Transactional batch. Either all requested rows are created or none
 //     are (BR-REC-04, BR-INT-03).
 //   - The FE sends ONE request and lets the BE do the 30-occurrence
 //     generation + conflict detection (BR-REC-02, BR-REC-03, BR-CLS-05,

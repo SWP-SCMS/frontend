@@ -54,7 +54,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getManagerSessionDetail, updateSessionAssignment } from '../../../services/classSessionService';
-import { listRooms } from '../../../services/roomService';
+import { discoverRoomAvailability } from '../../../services/roomService';
 import { searchStaffAccounts } from '../../../services/staffAccountService';
 import { applyServerErrors } from '../../../utils/serverErrors';
 
@@ -221,12 +221,18 @@ export default function SessionAssignmentEditPage() {
     loadDetail();
   }, [loadDetail]);
 
-  // ----- Rooms loader -----
+  // ----- Rooms availability loader -----
   useEffect(() => {
+    if (!sessionDetail?.startTime || !sessionDetail?.endTime || !sessionDetail?.capacity) return undefined;
     let cancelled = false;
     setRoomsLoading(true);
     setRoomsError(null);
-    listRooms()
+    discoverRoomAvailability({
+      startTime: sessionDetail.startTime,
+      endTime: sessionDetail.endTime,
+      requestedCapacity: sessionDetail.capacity,
+      excludeSessionId: sessionId,
+    })
       .then((result) => {
         if (cancelled) return;
         setRooms(Array.isArray(result) ? result : []);
@@ -241,7 +247,7 @@ export default function SessionAssignmentEditPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [sessionDetail, sessionId]);
 
   // ----- ACTIVE Coaches loader (complete pagination) -----
   useEffect(() => {
@@ -275,9 +281,11 @@ export default function SessionAssignmentEditPage() {
   const roomOptions = useMemo(() => {
     return activeRooms
       .map((r) => ({
-        value: r.id,
+        value: r.roomId || r.id,
         label: r.name || '—',
         capacity: typeof r.capacity === 'number' ? r.capacity : null,
+        availableCapacity: r.availableCapacity,
+        available: r.available !== false,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [activeRooms]);
@@ -706,9 +714,11 @@ export default function SessionAssignmentEditPage() {
                   : '— Chọn phòng tập —'}
             </option>
             {roomOptions.map((o) => (
-              <option key={o.value} value={o.value}>
+              <option key={o.value} value={o.value} disabled={!o.available}>
                 {o.label}
                 {o.capacity != null ? ` (Sức chứa: ${o.capacity})` : ''}
+                {o.availableCapacity != null ? ` · Còn ${o.availableCapacity} chỗ` : ''}
+                {!o.available ? ' · Không khả dụng' : ''}
               </option>
             ))}
           </Form.Select>
