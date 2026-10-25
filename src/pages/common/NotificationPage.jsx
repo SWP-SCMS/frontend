@@ -9,7 +9,7 @@ import {
   markNotificationRead,
 } from '../../services/notificationService';
 import { formatGymDate, formatGymTime } from '../../utils/gymTime';
-import { notificationSummary } from '../../utils/notificationUi';
+import { notificationDetail, notificationSummary } from '../../utils/notificationUi';
 
 const TARGET_LABELS = {
   CLASS_SESSION: 'Buổi tập',
@@ -222,6 +222,9 @@ export default function NotificationPage() {
                     {formatGymDate(item.createdAt)} · {formatGymTime(item.createdAt)}
                     {item.targetType ? ` · ${TARGET_LABELS[item.targetType] || humanize(item.targetType)}` : ''}
                   </div>
+                  {notificationDetail(item) ? (
+                    <div className="small mt-1">{notificationDetail(item)}</div>
+                  ) : null}
                 </div>
                 {!item.read ? (
                   <Button

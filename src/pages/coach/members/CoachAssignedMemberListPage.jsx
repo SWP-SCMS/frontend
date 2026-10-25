@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button, Card, Form, InputGroup, Spinner } from 'react-bootstrap';
 
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
@@ -9,9 +9,10 @@ import { listCoachAssignedMembers } from '../../../services/trainingService';
 import { formatGymDate } from '../../../utils/gymTime';
 
 export default function CoachAssignedMemberListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get('q')?.trim() || '';
   const [page, setPage] = useState(0);
-  const [searchText, setSearchText] = useState('');
-  const [query, setQuery] = useState('');
+  const [searchText, setSearchText] = useState(query);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,6 +33,19 @@ export default function CoachAssignedMemberListPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    setSearchText(query);
+    setPage(0);
+  }, [query]);
+
+  function applyQuery(value) {
+    const next = new URLSearchParams(searchParams);
+    const normalized = value.trim();
+    if (normalized) next.set('q', normalized);
+    else next.delete('q');
+    setSearchParams(next);
+  }
+
   return (
     <div>
       <h1 className="h3 fw-bold mb-1">Hội viên được phân công</h1>
@@ -40,8 +54,7 @@ export default function CoachAssignedMemberListPage() {
         className="mb-3"
         onSubmit={(event) => {
           event.preventDefault();
-          setPage(0);
-          setQuery(searchText.trim());
+          applyQuery(searchText);
         }}
       >
         <InputGroup>
@@ -57,7 +70,7 @@ export default function CoachAssignedMemberListPage() {
             <Button
               type="button"
               variant="outline-secondary"
-              onClick={() => { setSearchText(''); setQuery(''); setPage(0); }}
+              onClick={() => applyQuery('')}
             >
               Xóa lọc
             </Button>

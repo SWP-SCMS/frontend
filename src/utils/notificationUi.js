@@ -45,6 +45,19 @@ const TYPE_LABELS = {
   MEMBERSHIP_REFUND_REJECTED: 'Yêu cầu hoàn tiền bị từ chối',
 };
 
+const REASON_LABELS = {
+  MEMBER_NOT_ACTIVE: 'Tài khoản hội viên không còn hoạt động',
+  MEMBERSHIP_FROZEN: 'Gói tập đang được đóng băng',
+  SESSION_NOT_BOOKABLE: 'Buổi tập không còn nhận đặt lịch',
+  MEMBERSHIP_BENEFIT_REQUIRED: 'Gói tập không còn đủ quyền lợi yêu cầu',
+  BOOKING_DUPLICATE: 'Bạn đã có lịch đặt cho buổi tập này',
+  BOOKING_TIME_CONFLICT: 'Bạn đã có lịch tập khác trùng giờ',
+  PT_COACH_ASSIGNMENT_MISMATCH: 'Phân công huấn luyện viên PT đã thay đổi',
+  BOOKING_CONFLICT: 'Chỗ trống đã được người khác đặt trước',
+  SESSION_STARTED: 'Buổi tập đã bắt đầu',
+  COACH_ASSIGNMENT_CHANGED: 'Phân công huấn luyện viên đã thay đổi',
+};
+
 function humanize(value) {
   if (!value) return '';
   const text = String(value).replaceAll('_', ' ').toLocaleLowerCase('vi-VN');
@@ -55,4 +68,13 @@ export function notificationSummary(item) {
   const payload = item?.payload || {};
   return payload.message || TYPE_LABELS[item?.notificationType] ||
     humanize(item?.notificationType) || 'Thông báo hệ thống';
+}
+
+export function reasonLabel(reasonCode) {
+  return REASON_LABELS[reasonCode] || humanize(reasonCode);
+}
+
+export function notificationDetail(item) {
+  const reasonCode = item?.payload?.reasonCode;
+  return reasonCode ? `Lý do: ${reasonLabel(reasonCode)}` : '';
 }
