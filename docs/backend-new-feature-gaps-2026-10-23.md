@@ -15,10 +15,14 @@ Mục đích: tổng hợp các thiếu sót backend được phát hiện trong
 
 ## NEW-BE-GAP-001 — Chưa thể rút yêu cầu đóng băng gói tập
 
-**Trạng thái:** `OPEN`
+**Phụ trách:** @Nguyễn Thiện
+**Nguồn MF:** MF-006
+
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE `00e27b1`; FE `875f005`; luồng rút yêu cầu `PENDING` đã được tích hợp và kiểm thử.
 **Liên quan:** MF-006 — Membership freeze request workflow
 
-### Hiện trạng
+### Hiện trạng khi phát hiện
 
 Backend đã hỗ trợ:
 
@@ -103,10 +107,14 @@ Thêm mỗi gap mới thành một mục `NEW-BE-GAP-XXX`, giữ nguyên cấu t
 
 ## NEW-BE-GAP-002 — Danh sách yêu cầu gói thiếu thông tin nhận diện hội viên
 
-**Trạng thái:** `OPEN`  
+**Phụ trách:** @Nguyễn Thiện
+**Nguồn MF:** MF-001, MF-006
+
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE `34a379a`; FE `875f005`; danh sách Manager đã dùng tên và mã hội viên từ response.
 **Liên quan:** MF-001, MF-006 — màn duyệt yêu cầu của Manager
 
-### Hiện trạng
+### Hiện trạng khi phát hiện
 
 Hai API danh sách của Manager chỉ trả `memberAccountId` dạng UUID:
 
@@ -137,10 +145,14 @@ Bổ sung trực tiếp vào mỗi phần tử response:
 
 ## NEW-BE-GAP-003 — Cho phép duyệt nghỉ khi Coach vẫn còn buổi tập bị ảnh hưởng
 
-**Trạng thái:** `OPEN`  
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-008
+
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE `b5cb91c`; FE `875f005`; Manager được chặn duyệt và thấy các session cần xử lý trước.
 **Liên quan:** MF-008 — Coach leave approval flow
 
-### Hiện trạng
+### Hiện trạng khi phát hiện
 
 Khi Manager duyệt một yêu cầu nghỉ, backend chuyển yêu cầu sang `APPROVED` ngay cả khi response vẫn còn `affectedSessionIds`.
 
@@ -196,6 +208,9 @@ Content-Type: application/problem+json
 ---
 
 ## NEW-BE-GAP-004 — Chưa có API tra cứu Coach khả dụng khi phân công buổi tập
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-008
 
 **Trạng thái:** `OPEN`  
 **Liên quan:** MF-008, US23 — xử lý session bị ảnh hưởng bởi lịch nghỉ Coach
@@ -271,6 +286,9 @@ GET /api/v1/manager/coaches/availability
 
 ## NEW-BE-GAP-005 — Danh sách yêu cầu nghỉ thiếu thông tin nhận diện Coach
 
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-008
+
 **Trạng thái:** `OPEN`  
 **Liên quan:** MF-008 — màn Manager duyệt nghỉ Coach
 
@@ -316,6 +334,9 @@ Bổ sung trực tiếp vào `CoachLeaveResponse`:
 ---
 
 ## NEW-BE-GAP-006 — Có thể duyệt yêu cầu nghỉ sau khi khoảng nghỉ đã bắt đầu
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-008
 
 **Trạng thái:** `OPEN`  
 **Liên quan:** MF-008 — lifecycle của yêu cầu nghỉ Coach
@@ -372,6 +393,9 @@ Content-Type: application/problem+json
 ---
 
 ## NEW-BE-GAP-007 — Coach chưa thể hủy lịch nghỉ đã được duyệt
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-008
 
 **Trạng thái:** `OPEN`  
 **Liên quan:** MF-008 — lifecycle của yêu cầu nghỉ Coach
@@ -450,6 +474,9 @@ Bổ sung `CANCELLED` vào `CoachLeaveStatus` và OpenAPI enum.
 
 ## NEW-BE-GAP-008 — Manager chưa nhận notification về thay đổi đơn nghỉ Coach
 
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-008
+
 **Trạng thái:** `OPEN`  
 **Liên quan:** MF-008 — notification workflow của yêu cầu nghỉ Coach
 
@@ -514,10 +541,14 @@ Payload tối thiểu:
 
 ## NEW-BE-GAP-009 — Notification yêu cầu gói tập chỉ gửi cho Member, thiếu người xử lý tiếp theo
 
-**Trạng thái:** `OPEN`  
+**Phụ trách:** @Nguyễn Thiện
+**Nguồn MF:** MF-001, MF-006
+
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE `dd4f90d`; FE `875f005`; notification đã được định tuyến và hiển thị cho nhân viên xử lý tiếp theo.
 **Liên quan:** MF-001, MF-006 — membership termination và freeze workflow
 
-### Hiện trạng
+### Hiện trạng khi phát hiện
 
 Backend hiện đã gửi notification cho Member trong các transition chính:
 
@@ -593,10 +624,14 @@ Với yêu cầu đóng băng chờ thu phí, payload bổ sung `feeAmount`, `st
 
 ## NEW-BE-GAP-010 — Phòng dùng chung chưa hỗ trợ nhiều session trùng thời gian
 
-**Trạng thái:** `OPEN`  
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002
+
+**Trạng thái:** `DONE`
+**Hoàn thành:** BE `4e26d56`; FE `875f005`; UI và validation đã đồng bộ mô hình phòng `EXCLUSIVE`/`SHARED`.
 **Liên quan:** MF-002, US25–US30 — PT 1-1, quản lý phòng và lịch buổi tập
 
-### Hiện trạng
+### Hiện trạng khi phát hiện
 
 Backend hiện xem một phòng là tài nguyên độc quyền: hai session dùng cùng `roomId` không được chồng thời gian. Rule này phù hợp với phòng Yoga hoặc studio lớp nhóm, nhưng không phù hợp với các địa điểm dùng chung như **Khu PT** hoặc **Khu ngoài trời**, nơi nhiều PT session hoặc lớp nhỏ có thể diễn ra đồng thời.
 
@@ -674,6 +709,9 @@ Response lỗi `SHARED_ROOM_CAPACITY_EXCEEDED` nên trả thêm dữ liệu đ�
 
 ## NEW-BE-GAP-011 — Danh sách hoàn tiền thiếu mã nghiệp vụ và thông tin nhận diện hội viên
 
+**Phụ trách:** @Nguyễn Thiện
+**Nguồn MF:** MF-007
+
 **Trạng thái:** `OPEN`
 **Liên quan:** Luồng hoàn tiền tiền mặt cho gói đã chấm dứt hoặc gói đặt trước bị hủy
 
@@ -732,6 +770,9 @@ Các UUID vẫn được giữ để FE gửi mutation và làm React key, nhưn
 
 ## NEW-BE-GAP-012 — Workflow hoàn tiền chưa thông báo cho nhân viên phụ trách bước kế tiếp
 
+**Phụ trách:** @Nguyễn Thiện
+**Nguồn MF:** MF-007
+
 **Trạng thái:** `OPEN`
 **Liên quan:** Workflow hoàn tiền nhiều bước giữa Lễ tân và Quản lý
 
@@ -765,3 +806,616 @@ Payload cho staff nên chứa tối thiểu `refundRequestId`, `memberCode`, `me
 - Member tiếp tục nhận mọi thay đổi trạng thái của yêu cầu thuộc gói mình.
 - Notification chỉ được phát sau transition thành công và không bị trùng khi retry/idempotent replay.
 - Bấm notification của staff điều hướng đúng màn hình hoàn tiền theo vai trò.
+
+---
+
+## NEW-BE-GAP-013 — Đổi Coach của PT session chưa bảo toàn Booking và Waitlist hiện hữu
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002, MF-009, MF-010
+
+**Trạng thái:** `OPEN`
+**Liên quan:** MF-002, MF-009, MF-010 — PT 1-1, đổi phân công Session và Waitlist
+
+### Hiện trạng
+
+`PATCH /api/v1/manager/class-sessions/{sessionId}/assignment` hiện cho phép Manager đổi
+Coach của một PT session sau khi kiểm tra lịch của Coach mới, nhưng không kiểm tra các
+Booking `BOOKED` và Waitlist `WAITING` đã tồn tại trên session.
+
+Các Member đó có thể chỉ có Coach Assignment với Coach cũ. Sau khi đổi Coach, dữ liệu
+đang tồn tại không còn thỏa rule đặt PT, trong khi rule này chỉ được kiểm tra lúc tạo
+Booking/Waitlist hoặc lúc promote Waitlist.
+
+### Business rules cần chốt vào contract
+
+1. Trước khi đổi Coach của session `PT_1_1`, backend phải khóa và kiểm tra toàn bộ
+   Booking `BOOKED` cùng Waitlist `WAITING` của session.
+2. Chỉ cho đổi khi mọi Member liên quan có Coach Assignment `ACTIVE` với Coach mới.
+3. Nếu chưa thỏa, từ chối mutation và trả danh sách Member/Booking/Waitlist bị ảnh
+   hưởng để Manager xử lý; không tự để dữ liệu rơi vào trạng thái sai.
+4. Không cho phép giải pháp âm thầm giữ Booking nhưng đợi tới lần đọc hoặc promote mới
+   phát hiện sai Coach Assignment.
+5. Việc kiểm tra và đổi Coach phải nằm trong cùng transaction, có locking chống race
+   với thao tác Booking/Waitlist đồng thời.
+
+### Error code đề xuất
+
+`PT_SESSION_ASSIGNMENT_HAS_INCOMPATIBLE_MEMBERS`
+
+Response nên chứa `affectedBookings` và `affectedWaitlists`, mỗi phần tử có tối thiểu
+`memberAccountId`, `memberCode`, `memberFullName` và ID bản ghi liên quan.
+
+### Acceptance criteria
+
+- PT session chưa có Booking/Waitlist được đổi Coach bình thường.
+- Nếu có bất kỳ Member nào không được phân công cho Coach mới, mutation bị từ chối và
+  session vẫn giữ Coach cũ.
+- Sau khi Manager xử lý hết dữ liệu bị ảnh hưởng, thao tác đổi Coach thành công.
+- Request đồng thời không thể tạo Booking/Waitlist theo Coach cũ sau khi kiểm tra nhưng
+  trước khi session được đổi sang Coach mới.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Hiển thị danh sách Member bị ảnh hưởng thay vì chỉ báo lỗi chung.
+- Giữ form đổi Coach mở để Manager xử lý rồi tải lại.
+- Không tự suy luận tính tương thích chỉ từ dữ liệu FE; mutation BE vẫn là nguồn quyết định.
+
+---
+
+## NEW-BE-GAP-014 — Kết thúc hoặc đổi Coach Assignment chưa xử lý PT Booking và Waitlist tương lai
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002, MF-010
+
+**Trạng thái:** `OPEN`
+**Liên quan:** MF-002, MF-010 — Coach Assignment và PT 1-1
+
+### Hiện trạng
+
+Khi Manager kết thúc Coach Assignment hoặc đổi Member sang Coach khác,
+`CoachAssignmentService` hiện kết thúc assignment cũ và tạo assignment mới mà không
+xử lý các PT Booking/Waitlist tương lai gắn với Coach cũ.
+
+Member vì vậy vẫn có thể còn lịch PT đã đặt với người không còn là Coach được phân công,
+hoặc nằm trong hàng chờ mà chắc chắn sẽ bị `SKIPPED` khi promote.
+
+### Business rules
+
+1. Backend phải preview toàn bộ PT Booking `BOOKED` và Waitlist `WAITING` tương lai bị
+   ảnh hưởng trước khi kết thúc hoặc đổi Coach Assignment.
+2. Không được kết thúc assignment mà âm thầm giữ các lịch PT không còn hợp lệ.
+3. Khi Manager xác nhận kết thúc/đổi assignment, backend hủy các Booking bị ảnh hưởng
+   và đóng các Waitlist tương ứng trong cùng transaction.
+4. Member nhận notification cho từng lịch/hàng chờ bị hủy, kèm lý do Coach Assignment
+   đã thay đổi.
+5. Mỗi Booking bị hủy phải giải phóng chỗ và kích hoạt quy trình promote Waitlist của
+   session đó nếu còn người đủ điều kiện.
+6. Response trả số lượng và danh sách Booking/Waitlist đã xử lý để FE báo kết quả thật.
+
+### Acceptance criteria
+
+- Không còn Booking PT tương lai với Coach cũ sau khi assignment kết thúc hoặc bị thay thế.
+- Không còn Waitlist `WAITING` không tương thích với assignment mới.
+- Member được thông báo rõ về các lịch bị hủy.
+- Các chỗ trống phát sinh được đưa qua cơ chế promote Waitlist bình thường.
+- Toàn bộ thay đổi assignment, booking, waitlist, audit và notification nhất quán trong
+  cùng transaction.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Hiển thị preview ảnh hưởng trong modal kết thúc/đổi Coach Assignment.
+- Yêu cầu Manager xác nhận sau khi đã thấy danh sách lịch bị hủy.
+- Hiển thị kết quả từ response, không tự giả định số lượng đã xử lý.
+
+---
+
+## NEW-BE-GAP-015 — Waitlist không được promote khi Booking bị hủy bởi lifecycle khác
+
+**Phụ trách chính:** @Nhật Khánh
+**Phối hợp:** @Nguyễn Thiện
+**Nguồn MF:** MF-010; liên quan MF-001, MF-006
+
+**Trạng thái:** `OPEN`
+**Liên quan:** MF-001, MF-006, MF-010 — Termination, Freeze và Waitlist
+
+### Hiện trạng
+
+Luồng hủy Booking trực tiếp của Member/Lễ tân gọi `promoteAvailable(session)`. Tuy nhiên,
+Booking tương lai bị hủy hàng loạt bởi các lifecycle khác chưa đi qua cơ chế này, gồm:
+
+- Manager suspend Member;
+- Membership termination có hiệu lực;
+- Membership freeze bắt đầu;
+- kết thúc/đổi Coach Assignment sau khi `NEW-BE-GAP-014` được triển khai.
+
+Session có thể đã trống chỗ nhưng người đầu Waitlist vẫn nằm ở `WAITING`.
+
+### Contract và business rules
+
+1. Mọi thao tác chuyển Booking `BOOKED -> CANCELLED` phải trả hoặc thu thập tập
+   `sessionId` bị ảnh hưởng.
+2. Sau khi hủy, mỗi session còn `SCHEDULED` phải chạy promotion đúng một cách an toàn.
+3. Promotion vẫn kiểm tra lại eligibility và FIFO như luồng hủy trực tiếp.
+4. Bulk cancellation và promotion phải có locking/idempotency để không vượt capacity.
+5. Không promote nếu chính session đã bị `CANCELLED`.
+
+### Acceptance criteria
+
+- Freeze, termination hoặc suspend Member làm trống chỗ đều tự promote người đầu đủ
+  điều kiện.
+- Nhiều Booking của cùng session bị hủy trong một batch không tạo Booking vượt capacity.
+- Không có session còn chỗ trong khi vẫn còn Waitlist `WAITING` đủ điều kiện chỉ vì nguồn
+  hủy Booking khác nhau.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Không cần tự gọi API promote từ FE.
+- FE chỉ tải lại lịch/Waitlist sau mutation và hiển thị trạng thái authoritative từ BE.
+
+---
+
+## NEW-BE-GAP-016 — Waitlist hết hạn xử lý lazy và Member bị skip không được thông báo
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-010
+
+**Trạng thái:** `OPEN`
+**Liên quan:** MF-010 — Waitlist lifecycle
+
+### Hiện trạng
+
+Waitlist quá giờ bắt đầu chỉ được chuyển sang `EXPIRED` khi một API Waitlist được gọi
+hoặc khi promotion chạy. Scheduler vòng đời Session hiện không chủ động reconcile các
+entry này. Ngoài ra, khi promotion kiểm tra lại eligibility và đánh entry `SKIPPED`, hệ
+thống chỉ ghi audit mà không gửi notification cho Member.
+
+### Business rules
+
+1. Scheduler khi chuyển Session sang `IN_PROGRESS` phải đóng toàn bộ Waitlist `WAITING`
+   của session thành `EXPIRED` trong cùng chu kỳ reconcile.
+2. Expiration phải idempotent và không phụ thuộc có người mở màn hình Waitlist hay không.
+3. Khi entry bị `SKIPPED`, Member phải nhận notification với lý do thân thiện, ví dụ gói
+   hết hạn, trùng lịch, Membership đang freeze hoặc Coach Assignment PT không còn hợp lệ.
+4. Notification không lộ raw error/enum; payload giữ `reasonCode` ổn định để FE dịch.
+
+### Acceptance criteria
+
+- Sau giờ bắt đầu, không còn Waitlist `WAITING` dù không ai gọi API đọc.
+- Entry không đủ điều kiện khi promote chuyển `SKIPPED` và Member nhận đúng một notification.
+- Retry scheduler/promotion không phát notification trùng.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Thêm nhãn và nội dung cho notification `WAITLIST_SKIPPED`/`WAITLIST_EXPIRED`.
+- Hiển thị lý do kết thúc hàng chờ dựa trên `terminalReasonCode`.
+
+---
+
+## NEW-BE-GAP-017 — Chưa có API tra cứu Room khả dụng theo khoảng thời gian
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002, MF-009
+
+**Trạng thái:** `OPEN`
+**Liên quan:** MF-002, MF-009, NEW-BE-GAP-010 — PT, dời lịch và Room dùng chung
+
+### Hiện trạng
+
+Các form tạo, dời hoặc đổi Room chỉ tải được toàn bộ Room `ACTIVE`. FE không biết Room
+nào thực sự còn khả dụng trong khoảng thời gian đã chọn, đặc biệt với `SHARED` cần tính
+tổng capacity đang sử dụng. Manager phải chọn thử rồi chờ mutation BE từ chối.
+
+### Contract đề xuất
+
+```http
+GET /api/v1/manager/rooms/availability
+    ?startTime=<ISO-8601-instant>
+    &endTime=<ISO-8601-instant>
+    &requestedCapacity=<positive-int>
+    &excludeSessionId=<optional-uuid>
+```
+
+Mỗi item nên trả `roomId`, `name`, `usageMode`, `capacity`, `occupiedCapacity`,
+`availableCapacity` và `available`.
+
+### Business rules
+
+1. Chỉ trả hoặc đánh dấu Room `ACTIVE`.
+2. Room `EXCLUSIVE` khả dụng khi không có session/suspension chồng giờ.
+3. Room `SHARED` khả dụng khi tổng capacity sau khi thêm request không vượt capacity.
+4. Khi sửa session, loại trừ chính session đó khỏi phép tính.
+5. API chỉ hỗ trợ UX; mutation vẫn kiểm tra lại trong transaction để chống race.
+
+### Acceptance criteria
+
+- Dropdown có thể phân biệt Room khả dụng và không khả dụng trước khi submit.
+- Kết quả đúng cho cả `EXCLUSIVE`, `SHARED`, suspension và `excludeSessionId`.
+- Mutation vẫn từ chối an toàn nếu availability thay đổi sau lúc discovery.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Tải lại danh sách Room mỗi khi khoảng giờ hoặc capacity thay đổi.
+- Ưu tiên hiển thị Room khả dụng; giải thích sức chứa còn lại cho Room `SHARED`.
+
+---
+
+## NEW-BE-GAP-018 — Số lượng Session của recurring schedule đang cố định 30
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002, MF-009
+
+**Trạng thái:** `OPEN`
+**Mức ưu tiên:** `REQUIRED`
+**Liên quan:** MF-002 và quản lý lịch định kỳ
+
+### Hiện trạng
+
+Backend hardcode `OCCURRENCE_COUNT = 30`; Manager không thể chọn số buổi cần tạo. Điều
+này làm recurring schedule kém phù hợp cho khóa PT hoặc lớp nhóm có số buổi cụ thể.
+
+### Contract cần bổ sung
+
+Bổ sung `sessionCount` vào request tạo recurring schedule, với giới hạn đề xuất
+`1..100`. Response tiếp tục trả số session thực tế đã tạo.
+
+### Business rules
+
+1. Không gửi `sessionCount` có thể mặc định `30` để tương thích client cũ.
+2. Validate toàn bộ occurrence trước khi ghi; không tạo một phần khi occurrence bất kỳ
+   xung đột.
+3. Giới hạn tối đa để tránh request quá lớn và lock quá lâu.
+
+### Acceptance criteria
+
+- Manager chọn được số buổi khi tạo recurring schedule.
+- Giá trị ngoài giới hạn trả `VALIDATION_ERROR` theo field `sessionCount`.
+- Client cũ không gửi field vẫn tạo 30 buổi như trước.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Thêm trường **Số buổi** vào form recurring, mặc định 30.
+- Hiển thị số occurrence trong bước xác nhận trước khi tạo.
+
+---
+
+## NEW-BE-GAP-019 — Chưa có API tra cứu nguồn hoàn tiền đủ điều kiện cho Lễ tân
+
+**Phụ trách:** @Nguyễn Thiện
+**Nguồn MF:** MF-007
+
+**Trạng thái:** `OPEN`
+**Liên quan:** MF-007 — Refund workflow
+
+### Hiện trạng
+
+FE hiện ghép lịch sử Membership với danh sách biên lai để tìm payment tiền mặt đủ điều
+kiện. Tuy nhiên API biên lai của Lễ tân chỉ cho xem biên lai do chính tài khoản đó xử lý.
+Một Lễ tân khác vẫn có thể được giao xử lý hoàn tiền nhưng không tra được nguồn, phải
+nhập `paymentId` và `membershipId` UUID thủ công.
+
+### Contract đề xuất
+
+```http
+GET /api/v1/reception/members/{memberCode}/refund-eligible-sources
+```
+
+Response chỉ trả các nguồn mà backend xác định có khả năng tạo refund, kèm tối thiểu:
+`paymentId`, `membershipId`, `receiptId`, `receiptNumber`, `offerName`, `type`,
+`paidAmount`, `suggestedAmount` và lý do không đủ điều kiện nếu lựa chọn trả cả item bị
+loại.
+
+### Business rules
+
+1. Chỉ Receptionist `ACTIVE` được gọi.
+2. Chỉ trả payment `CASH/PAID` thuộc đúng Member.
+3. Áp dụng cùng eligibility và công thức tại thời điểm đọc như mutation tạo refund;
+   mutation vẫn kiểm tra lại trong transaction.
+4. Không mở rộng quyền đọc biên lai chung ngoài mục đích refund.
+
+### Acceptance criteria
+
+- Bất kỳ Lễ tân hợp lệ nào cũng tìm được nguồn hoàn của Member mà không cần UUID thủ công.
+- Item hiển thị bằng mã nghiệp vụ và tên gói, không lộ UUID làm nhãn chính.
+- Nguồn vừa mất eligibility bị mutation từ chối an toàn dù từng xuất hiện trong discovery.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Thay phép ghép receipt/membership phía FE bằng endpoint discovery.
+- Xóa ô nhập UUID thủ công khỏi luồng nghiệp vụ bình thường.
+
+---
+
+## NEW-BE-GAP-020 — Danh sách lịch Coach thiếu dữ liệu hiển thị, buộc FE gọi N+1
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-008
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Coach Dashboard và Coach Schedule
+
+### Hiện trạng
+
+`GET /api/v1/coach/class-sessions` hiện chỉ trả ID và dữ liệu lịch cơ bản. Để hiển thị
+tên lớp, loại lớp, phòng và số người đã đặt, FE đang phải gọi tiếp
+`GET /api/v1/coach/class-sessions/{sessionId}` cho từng phần tử trong danh sách.
+
+Coach Dashboard còn tải chi tiết tới 100 session để tổng hợp lớp và hội viên. Coach
+Schedule cũng dùng `Promise.all` trên toàn bộ session của tuần. Đây là N+1 request,
+làm trang chậm và tạo tải không cần thiết lên backend.
+
+### Contract cần bổ sung
+
+Mỗi phần tử của response danh sách Coach cần trả đủ read model tối thiểu:
+
+```json
+{
+  "id": "uuid",
+  "classId": "uuid",
+  "className": "Yoga cơ bản",
+  "classType": "GROUP",
+  "disciplineName": "Yoga",
+  "roomId": "uuid",
+  "roomName": "Phòng Yoga 1",
+  "startTime": "2026-10-24T01:00:00Z",
+  "endTime": "2026-10-24T02:00:00Z",
+  "capacity": 20,
+  "bookedCount": 12,
+  "status": "SCHEDULED"
+}
+```
+
+Nếu Dashboard vẫn cần số hội viên duy nhất trên nhiều session, backend phải cung cấp
+aggregate hoặc endpoint summary riêng; FE không được tải chi tiết từng session để tự
+đếm.
+
+### Business rules
+
+1. Chỉ trả các session thuộc Coach đang đăng nhập như contract hiện tại.
+2. `bookedCount` chỉ tính Booking đang chiếm chỗ theo cùng rule capacity của backend.
+3. Các tên hiển thị là read-only projection; không thay thế ID trong mutation.
+4. Dữ liệu danh sách phải hỗ trợ phân trang và filter hiện có mà không phát sinh truy
+   vấn riêng cho từng row ở tầng persistence.
+
+### Acceptance criteria
+
+- Coach Schedule hiển thị tên lớp, loại lớp, phòng và sĩ số bằng một request danh sách.
+- Coach Dashboard không gọi API chi tiết cho toàn bộ session khi tải trang.
+- Mở chi tiết một session vẫn được phép gọi endpoint chi tiết đúng một lần theo thao tác
+  của người dùng.
+- Số đã đặt và sức chứa hiển thị thống nhất với rule booking/capacity của backend.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Xóa `fetchDetails()` và `Promise.all(getCoachSession)` khỏi Dashboard/Schedule.
+- Render trực tiếp read model từ API list.
+- Chỉ gọi API chi tiết khi Coach chủ động mở một session.
+
+---
+
+## NEW-BE-GAP-021 — Tra cứu hội viên tại quầy thiếu tóm tắt gói đang sử dụng
+
+**Phụ trách:** @Nguyễn Thiện
+**Nguồn MF:** MF-014
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Receptionist Center Check-in
+
+### Hiện trạng
+
+`GET /api/v1/reception/members/search` chỉ trả hồ sơ tài khoản. Màn check-in không thể
+cho Lễ tân biết hội viên đang dùng gói nào và còn hiệu lực đến ngày nào nếu không gọi
+thêm API lịch sử Membership sau mỗi lần tìm kiếm.
+
+FE không thực hiện cách ghép N+1 này. Backend cần trả read model đủ cho nghiệp vụ tại
+quầy trong cùng response tra cứu.
+
+### Contract cần bổ sung
+
+Bổ sung tóm tắt Membership hiện tại vào `ReceptionMemberSearchResponse`:
+
+```json
+{
+  "memberId": "MB-100001",
+  "fullName": "Nguyễn Văn A",
+  "status": "ACTIVE",
+  "activeMembership": {
+    "membershipId": "uuid",
+    "offerName": "Plus 3 tháng",
+    "planName": "Plus",
+    "effectiveStartDate": "2026-10-01",
+    "effectiveEndDate": "2026-12-30",
+    "status": "ACTIVE",
+    "benefitCodes": ["CENTER_ACCESS"]
+  }
+}
+```
+
+`activeMembership` có thể là `null` khi không có gói hiệu lực.
+
+### Acceptance criteria
+
+- Một request tra cứu đủ để Lễ tân thấy gói hiện tại và ngày hết hạn.
+- Tóm tắt phản ánh đúng trạng thái freeze/termination tại thời điểm đọc.
+- Không phát sinh request Membership riêng cho từng lần tra cứu hội viên.
+- Mutation check-in vẫn kiểm tra lại eligibility trong transaction.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Hiển thị tên gói, thời hạn và trạng thái ngay trên thẻ hội viên tại quầy.
+- Thêm lối tắt sang bán gói khi không có Membership phù hợp.
+
+---
+
+## NEW-BE-GAP-022 — Danh sách hội viên của Coach chưa hỗ trợ tìm kiếm server-side
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Coach Assigned Member List
+
+### Hiện trạng
+
+`GET /api/v1/coach/members` chỉ nhận `page` và `size`. FE không thể cung cấp tìm kiếm
+đúng trên toàn bộ danh sách phân trang. Lọc riêng 20 phần tử của trang hiện tại sẽ tạo
+trải nghiệm sai vì hội viên có thể nằm ở trang khác.
+
+### Contract cần bổ sung
+
+Thêm query `q` tùy chọn vào endpoint hiện tại:
+
+```http
+GET /api/v1/coach/members?q=MB-100001&page=0&size=20
+```
+
+Tìm kiếm theo mã hội viên, họ tên hoặc số điện thoại trong phạm vi các Member đang được
+phân công cho Coach đăng nhập.
+
+### Acceptance criteria
+
+- Kết quả tìm kiếm đúng trên toàn bộ tập dữ liệu, không chỉ trang đang mở.
+- Query được trim, giới hạn độ dài và phân trang như danh sách thường.
+- Coach không thể tìm thấy Member ngoài phạm vi Coach Assignment của mình.
+- Query rỗng giữ nguyên hành vi danh sách hiện tại.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Thêm ô tìm kiếm đồng bộ với URL.
+- Gửi `q` cùng request danh sách và đưa page về 0 khi query thay đổi.
+
+---
+
+## NEW-BE-GAP-023 — Yêu cầu kích hoạt thủ công thiếu thông tin người gửi để hiển thị
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-012
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Manager Manual Email Activation Review
+
+### Hiện trạng
+
+Response danh sách yêu cầu kích hoạt thủ công chỉ trả `requestedByAccountId` dạng UUID.
+Manager không thể biết Lễ tân nào đã xác minh và gửi yêu cầu nếu FE không gọi thêm API
+chi tiết tài khoản cho từng dòng. FE không thực hiện cách ghép N+1 này và hiện ẩn UUID
+khỏi bảng nghiệp vụ.
+
+### Contract cần bổ sung
+
+Bổ sung read-only projection vào response danh sách và chi tiết:
+
+```json
+{
+  "requestedByAccountId": "uuid",
+  "requestedByName": "Trần Lễ Tân",
+  "requestedByRole": "RECEPTIONIST"
+}
+```
+
+### Acceptance criteria
+
+- Manager nhìn thấy tên người gửi trên danh sách mà không cần request phụ.
+- Dữ liệu lịch sử vẫn hiển thị được tên snapshot nếu tài khoản người gửi đã ngưng hoạt động.
+- UUID tiếp tục dùng nội bộ cho liên kết nhưng không xuất hiện như nhãn chính trên UI.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Khôi phục cột “Người gửi” bằng `requestedByName`.
+- Việt hóa vai trò nếu cần hiển thị trong chi tiết.
+
+---
+
+## NEW-BE-GAP-024 — Lịch sử kết quả và nhận xét thiếu ngữ cảnh hiển thị
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-002
+
+**Trạng thái:** `OPEN`
+**Liên quan:** Member Training Results / Training Feedback
+
+### Hiện trạng
+
+`MemberTrainingResultResponse` và `MemberTrainingFeedbackResponse` chỉ chứa các UUID
+liên kết như `createdByAccountId` và `classSessionId`. Vì vậy Member không biết nội dung
+do HLV nào ghi nhận và thuộc buổi tập nào. FE không gọi thêm API tài khoản và session
+cho từng dòng lịch sử vì sẽ tạo N+1 request.
+
+### Contract cần bổ sung
+
+Bổ sung read-only display projection phù hợp với từng bản ghi:
+
+```json
+{
+  "coachName": "Nguyễn Văn HLV",
+  "sessionName": "PT 1-1 cùng Nguyễn Văn HLV",
+  "sessionStartTime": "2026-10-24T01:00:00Z",
+  "className": null
+}
+```
+
+Các trường session có thể `null` với nội dung PT tổng quát không gắn một buổi cụ thể.
+
+### Acceptance criteria
+
+- Member nhận biết được ai tạo nội dung và nội dung thuộc buổi nào khi có liên kết.
+- Danh sách vẫn được tải bằng một request có phân trang, không phát sinh request theo dòng.
+- Dữ liệu lịch sử vẫn có nhãn hiển thị nếu HLV hoặc session sau đó ngưng hoạt động.
+
+### FE follow-up sau khi BE hoàn thành
+
+- Hiển thị tên HLV và buổi tập trên thẻ kết quả/nhận xét.
+- Chỉ hiển thị thông tin thực sự có trong read model; không lộ UUID liên kết.
+
+---
+
+## NEW-BE-GAP-025 — Room Impact chưa có bulk resolution ở cấp contract
+
+**Phụ trách:** @Nhật Khánh
+**Nguồn MF:** MF-009
+
+**Trạng thái:** `OPTIONAL — CẦN CHỐT VỚI TEAM`
+**Liên quan:** Manager Room Impact
+
+### Hiện trạng
+
+API hiện nhận một `resolution` riêng cho từng session bị ảnh hưởng. FE có thể hỗ trợ
+“Áp dụng cho tất cả” bằng cách sao chép cùng action/phòng đích/lý do vào toàn bộ mảng
+`resolutions`, nhưng vẫn phải materialize từng session ID từ kết quả preview.
+
+Cách này dùng được cho UI hiện tại, tuy nhiên contract chưa biểu diễn trực tiếp ý định
+bulk và backend phải nhận payload dài khi một phòng ảnh hưởng nhiều session.
+
+### Contract đề xuất nếu team chốt làm
+
+Cho phép request apply/extend nhận thêm bulk template tùy chọn:
+
+```json
+{
+  "bulkResolution": {
+    "action": "MOVE",
+    "targetRoomId": "uuid",
+    "reason": null
+  },
+  "resolutionOverrides": []
+}
+```
+
+Backend phải áp dụng template cho tập session của preview mới nhất, sau đó áp dụng
+override theo `sessionId`, kiểm tra availability/capacity và commit toàn bộ trong cùng
+transaction. `CANCEL` cũng có thể dùng lý do chung. `RESCHEDULE` không nên dùng bulk
+template nếu mỗi session cần thời gian mới khác nhau.
+
+### Acceptance criteria
+
+- Một bulk action không bỏ sót session mới phát sinh trong khoảng ảnh hưởng.
+- Toàn bộ thao tác vẫn atomic; một session không hợp lệ thì không áp dụng dở dang.
+- Backend trả lỗi chỉ rõ session nào làm bulk action thất bại.
+- FE vẫn có thể override từng session sau khi chọn cách xử lý chung.
+
+### FE hiện tại
+
+- FE đã có thao tác “Áp dụng cho tất cả” cho `MOVE` và `CANCEL` bằng contract
+  `resolutions[]` hiện hữu.
+- Nếu backend bổ sung bulk contract, FE chuyển sang gửi intent bulk và chỉ gửi các dòng
+  được Manager chỉnh riêng làm override.
