@@ -2,8 +2,8 @@
 //
 // API: GET /api/v1/membership-offers  (công khai, chỉ trả Offer ACTIVE)
 //
-// Bố cục: mỗi cột là một thời hạn (1 tháng, 3 tháng...), các loại gói trong
-// cùng thời hạn được sắp theo tên hiển thị.
+// Bố cục: mỗi khu vực là một loại gói (Basic, Plus, Premium...), các mức giá
+// trong cùng loại gói được sắp theo thời hạn tăng dần.
 //
 // Nút Chọn gói (xem OfferCtaButton.jsx): chưa đăng nhập -> Đăng nhập; Hội viên
 // đã đăng nhập -> trang thanh toán gói (/member/checkout/:offerId).
@@ -27,6 +27,14 @@ import {
 } from './offerUtils';
 import OfferCtaButton from './OfferCtaButton';
 import './OfferListPage.css';
+
+function planRank(label = '') {
+  const normalized = label.trim().toUpperCase();
+  if (normalized === 'BASIC') return 0;
+  if (normalized === 'PLUS') return 1;
+  if (normalized === 'PREMIUM') return 2;
+  return 3;
+}
 
 export default function OfferListPage() {
   const [offers, setOffers] = useState([]);
@@ -54,35 +62,48 @@ export default function OfferListPage() {
   const pricing = useMemo(() => computeOfferPricing(offers), [offers]);
   const bestId = useMemo(() => findBestSavingsOfferId(pricing), [pricing]);
 
-  // Mỗi cột là một thời hạn; các loại gói được lấy động từ API.
-  const columns = useMemo(() => {
-    const byDuration = new Map();
-    for (const o of offers) {
-      const days = Number(o.durationDays) || 0;
-      if (!byDuration.has(days)) byDuration.set(days, []);
-      byDuration.get(days).push(o);
+  // Gom theo loại gói giống trang Member; vẫn hỗ trợ plan động từ API.
+  const planGroups = useMemo(() => {
+    const groups = new Map();
+    for (const offer of offers) {
+      const key = offer.planCode || offer.planDisplayName || 'OTHER';
+      if (!groups.has(key)) {
+        groups.set(key, {
+          key,
+          label: offer.planDisplayName || offer.planCode || 'Gói khác',
+          offers: [],
+        });
+      }
+      groups.get(key).offers.push(offer);
     }
-    return [...byDuration.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([days, list]) => ({
-        days,
-        list: [...list].sort((a, b) =>
-          (a.planDisplayName || a.planCode || '').localeCompare(
-            b.planDisplayName || b.planCode || '',
-            'vi',
-          ),
+
+    return [...groups.values()]
+      .map((group) => ({
+        ...group,
+        offers: [...group.offers].sort(
+          (a, b) =>
+            Number(a.durationDays) - Number(b.durationDays) ||
+            (a.name || '').localeCompare(b.name || '', 'vi'),
         ),
-      }));
+      }))
+      .sort(
+        (a, b) =>
+          planRank(a.label) - planRank(b.label) ||
+          a.label.localeCompare(b.label, 'vi'),
+      );
   }, [offers]);
 
   let body;
   if (loading) {
     body = (
-      <div className="sof-grid" aria-busy="true" aria-label="Đang tải gói tập">
+      <div className="sof-categories" aria-busy="true" aria-label="Đang tải gói tập">
         {[0, 1].map((i) => (
-          <div className="sof-col" key={i}>
+          <div className="sof-category" key={i}>
+            <div className="sof-category-title sof-heading-skeleton" />
+            <div className="sof-category-grid">
             <div className="sof-card sof-skeleton" />
             <div className="sof-card sof-skeleton" />
+            </div>
           </div>
         ))}
       </div>
@@ -114,19 +135,21 @@ export default function OfferListPage() {
     );
   } else {
     body = (
-      <div className="sof-grid">
-        {columns.map((col) => (
-          <div className="sof-col" key={col.days}>
-            <h3 className="sof-col-title">Gói {formatDuration(col.days)}</h3>
-            {col.list.map((offer) => (
-              <OfferCard
-                key={offer.offerId}
-                offer={offer}
-                info={pricing.get(offer.offerId)}
-                best={offer.offerId === bestId}
-              />
-            ))}
-          </div>
+      <div className="sof-categories">
+        {planGroups.map((group) => (
+          <section className="sof-category" key={group.key}>
+            <h3 className="sof-category-title">{group.label}</h3>
+            <div className="sof-category-grid">
+              {group.offers.map((offer) => (
+                <OfferCard
+                  key={offer.offerId}
+                  offer={offer}
+                  info={pricing.get(offer.offerId)}
+                  best={offer.offerId === bestId}
+                />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     );
