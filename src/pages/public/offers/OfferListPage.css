@@ -51,28 +51,42 @@
   margin-bottom: 2rem;
 }
 
-/* ----- Lưới gói: mỗi cột một thời hạn, loại gói lấy động từ API ----- */
+/* ----- Danh sách gói: mỗi khu vực một loại gói, mức giá xếp theo thời hạn ----- */
 
-.sof-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem 1.5rem;
-  align-items: start;
-}
-
-.sof-col {
+.sof-categories {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2.75rem;
 }
 
-.sof-col-title {
+.sof-category {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sof-category-title {
   margin: 0;
-  font-size: 0.8rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--h-red);
+  color: var(--h-text);
+}
+
+.sof-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.sof-heading-skeleton {
+  width: 8rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: #24272c;
 }
 
 /* ----- Thẻ gói ----- */
@@ -81,6 +95,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  height: 100%;
   padding: 2rem;
   border-radius: 0.9rem;
   background: #1a1c20;
