@@ -299,6 +299,7 @@ export default function ManagerSessionListPage() {
   const roomId = readStringParam(params, 'roomId');
   const fromYmd = readStringParam(params, 'from');
   const toYmd = readStringParam(params, 'to');
+  const showCancelled = readStringParam(params, 'showCancelled') === '1';
   const listPage = readIntParam(params, 'page') ?? 0;
   const calYmd = readStringParam(params, 'week') || getLocalTodayIsoDate();
 
@@ -648,6 +649,16 @@ export default function ManagerSessionListPage() {
     setParams(next, { replace: true });
   }, [params, setParams]);
 
+  const setShowCancelled = useCallback(
+    (checked) => {
+      const next = new URLSearchParams(params);
+      if (checked) next.set('showCancelled', '1');
+      else next.delete('showCancelled');
+      setParams(next, { replace: true });
+    },
+    [params, setParams],
+  );
+
   const shiftCalendarWeek = useCallback(
     (delta) => {
       const ref = new Date(`${calYmd}T12:00:00+07:00`);
@@ -853,7 +864,27 @@ export default function ManagerSessionListPage() {
             </Row>
           ) : (
             <Row className="g-3 align-items-end mt-1">
-              <Col xs={12} className="d-flex justify-content-end">
+              <Col
+                xs={12}
+                className="d-flex flex-wrap justify-content-between align-items-center gap-2"
+              >
+                <Form.Check
+                  type="switch"
+                  id="manager-calendar-show-cancelled"
+                  label="Hiện buổi đã hủy"
+                  checked={
+                    status === 'CANCELLED' || (!status && showCancelled)
+                  }
+                  disabled={Boolean(status)}
+                  onChange={(event) =>
+                    setShowCancelled(event.target.checked)
+                  }
+                  title={
+                    status
+                      ? 'Bỏ bộ lọc trạng thái để tự chọn ẩn hoặc hiện buổi đã hủy.'
+                      : undefined
+                  }
+                />
                 <Button
                   size="sm"
                   variant="outline-secondary"
@@ -978,6 +1009,9 @@ export default function ManagerSessionListPage() {
           onNext={() => shiftCalendarWeek(1)}
           onToday={gotoCurrentWeek}
           sessionBrowserFrom={sessionBrowserFrom}
+          showCancelled={
+            status === 'CANCELLED' || (!status && showCancelled)
+          }
         />
       ) : null}
 
@@ -1242,6 +1276,7 @@ function CalendarView({
   onNext,
   onToday,
   sessionBrowserFrom,
+  showCancelled,
 }) {
   const days = useMemo(() => {
     if (!weekRange) return [];
@@ -1266,7 +1301,20 @@ function CalendarView({
     return out;
   }, [weekRange]);
 
-  const grouped = useMemo(() => groupByLocalDay(sessions || []), [sessions]);
+  const visibleSessions = useMemo(
+    () =>
+      showCancelled
+        ? sessions || []
+        : (sessions || []).filter(
+            (session) => session?.status !== 'CANCELLED',
+          ),
+    [sessions, showCancelled],
+  );
+
+  const grouped = useMemo(
+    () => groupByLocalDay(visibleSessions),
+    [visibleSessions],
+  );
 
   const fullyLoaded =
     !loading &&
@@ -1460,7 +1508,7 @@ function CalendarView({
           </div>
         </div>
       )}
-      {!loading && (sessions || []).length === 0 ? (
+      {!loading && visibleSessions.length === 0 ? (
         <EmptyState
           title="Không có buổi tập trong tuần này"
           message="Hãy thử tuần khác hoặc bỏ bộ lọc."
