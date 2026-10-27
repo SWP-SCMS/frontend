@@ -9,7 +9,11 @@ import {
   markNotificationRead,
 } from '../../services/notificationService';
 import { formatGymDate, formatGymTime } from '../../utils/gymTime';
-import { notificationDetail, notificationSummary } from '../../utils/notificationUi';
+import {
+  humanize,
+  notificationDetail,
+  notificationSummary,
+} from '../../utils/notificationUi';
 
 const TARGET_LABELS = {
   CLASS_SESSION: 'Buổi tập',
