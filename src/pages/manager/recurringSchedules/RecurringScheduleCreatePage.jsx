@@ -20,16 +20,12 @@
 //   - Generates 1..100 ClassSession rows starting on/after
 //     startDate, on the selected weekdays, in Asia/Ho_Chi_Minh.
 //   - All-or-nothing: the entire batch is created or none is.
-//     The FE does NOT pre-compute occurrences; it sends one
-//     request and renders the BE's success response.
+//     The FE computes the same occurrence windows only for coach
+//     availability discovery. The BE remains authoritative and creates
+//     the sessions transactionally from the recurring request.
 //
-// The supporting selects (Room / Coach) are loaded via the
-// existing US25 / US05-08 services:
-//   - listRooms()   (US25)
-//   - searchStaffAccounts({ role: 'COACH', status: 'ACTIVE' })
-//     — paginated to the BE-allowed max page size of 100, walked
-//     until the BE reports no more pages, so every eligible
-//     ACTIVE COACH is selectable.
+// Room options come from US25. Coach options come from the availability
+// discovery endpoint and must be free for every generated occurrence.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -41,18 +37,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getClass } from '../../../services/sportClassService';
 import { listRooms } from '../../../services/roomService';
-import { searchStaffAccounts } from '../../../services/staffAccountService';
+import { discoverAvailableCoaches } from '../../../services/classSessionService';
 import { createRecurringSchedule } from '../../../services/recurringScheduleService';
 import { applyServerErrors } from '../../../utils/serverErrors';
-import { getGymZoneTodayIsoDate } from '../../../utils/gymTime';
-
-// Maximum page size the BE accepts for /manager/staff-accounts
-// (StaffAccountController validation: 1 <= size <= 100). Using the
-// largest supported size keeps the number of round-trips bounded
-// and guarantees every eligible ACTIVE COACH is reachable in
-// practice. We still walk every page until totalPages is reached,
-// so the result is independent of the page size.
-const COACH_PAGE_SIZE = 100;
+import {
+  getGymZoneTodayIsoDate,
+  gymLocalDateToIsoInstant,
+} from '../../../utils/gymTime';
 
 // Locale-agnostic yyyy-MM-dd (matches HTML <input type="date">).
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -160,32 +151,59 @@ function hasFieldMessage(fieldErrors, field) {
   return typeof list === 'string' && list.trim().length > 0;
 }
 
-// Fetches every ACTIVE COACH account by walking the existing
-// paged /manager/staff-accounts endpoint until the BE says there
-// are no more pages. Uses the BE-allowed max page size of 100.
-async function fetchAllActiveCoaches() {
-  const aggregated = [];
-  let page = 0;
-  // Defensive upper bound: stop after 50 pages (5000 rows) to
-  // avoid any runaway loop.
-  const MAX_PAGES = 50;
-  while (page < MAX_PAGES) {
-    const result = await searchStaffAccounts({
-      role: 'COACH',
-      status: 'ACTIVE',
-      page,
-      size: COACH_PAGE_SIZE,
-    });
-    const content = Array.isArray(result?.content) ? result.content : [];
-    aggregated.push(...content);
-    const totalPages = Number(result?.totalPages) || 0;
-    const totalElements = Number(result?.totalElements) || aggregated.length;
-    if (aggregated.length >= totalElements) break;
-    if (content.length === 0) break;
-    if (totalPages > 0 && page + 1 >= totalPages) break;
-    page += 1;
+function addGymLocalDays(date, days) {
+  if (!ISO_DATE_RE.test(date)) return null;
+  const [year, month, day] = date.split('-').map(Number);
+  const instant = new Date(Date.UTC(year, month - 1, day + days));
+  return instant.toISOString().slice(0, 10);
+}
+
+function getIsoWeekday(date) {
+  if (!ISO_DATE_RE.test(date)) return null;
+  const [year, month, day] = date.split('-').map(Number);
+  const sundayFirst = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  return sundayFirst === 0 ? 7 : sundayFirst;
+}
+
+// Mirrors the backend's recurring occurrence generation so coach discovery
+// checks every actual window that would be created by the submit request.
+function buildRecurringWindows({
+  startDate,
+  weekdays,
+  startTime,
+  endTime,
+  sessionCount,
+}) {
+  const count = Number(sessionCount);
+  const selectedDays = new Set(
+    Array.isArray(weekdays) ? weekdays.map(Number) : [],
+  );
+  if (
+    !ISO_DATE_RE.test(startDate)
+    || !ISO_TIME_RE.test(startTime)
+    || !ISO_TIME_RE.test(endTime)
+    || endTime <= startTime
+    || !Number.isInteger(count)
+    || count < 1
+    || count > 100
+    || selectedDays.size === 0
+  ) {
+    return [];
   }
-  return aggregated;
+
+  const windows = [];
+  let offset = 0;
+  while (windows.length < count && offset < 800) {
+    const date = addGymLocalDays(startDate, offset);
+    if (date && selectedDays.has(getIsoWeekday(date))) {
+      const start = gymLocalDateToIsoInstant(date, startTime);
+      const end = gymLocalDateToIsoInstant(date, endTime);
+      if (!start || !end) return [];
+      windows.push({ startTime: start, endTime: end });
+    }
+    offset += 1;
+  }
+  return windows.length === count ? windows : [];
 }
 
 export default function RecurringScheduleCreatePage() {
@@ -204,7 +222,7 @@ export default function RecurringScheduleCreatePage() {
   const [roomsError, setRoomsError] = useState(null);
 
   const [coaches, setCoaches] = useState([]);
-  const [coachesLoading, setCoachesLoading] = useState(true);
+  const [coachesLoading, setCoachesLoading] = useState(false);
   const [coachesError, setCoachesError] = useState(null);
 
   const [serverError, setServerError] = useState(null);
@@ -217,6 +235,8 @@ export default function RecurringScheduleCreatePage() {
     reset,
     watch,
     setError,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(recurringScheduleCreateSchema),
@@ -277,27 +297,6 @@ export default function RecurringScheduleCreatePage() {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    setCoachesLoading(true);
-    setCoachesError(null);
-    fetchAllActiveCoaches()
-      .then((result) => {
-        if (cancelled) return;
-        setCoaches(result);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setCoachesError(err);
-      })
-      .finally(() => {
-        if (!cancelled) setCoachesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   // ---- Derived lists for selectors ----
 
   const activeRooms = useMemo(
@@ -315,11 +314,82 @@ export default function RecurringScheduleCreatePage() {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [activeRooms]);
 
+  const availabilityStartDate = watch('startDate');
+  const availabilityWeekdays = watch('weekdays');
+  const availabilityWeekdayKey = Array.isArray(availabilityWeekdays)
+    ? availabilityWeekdays.join(',')
+    : '';
+  const availabilityStartTime = watch('startTime');
+  const availabilityEndTime = watch('endTime');
+  const availabilitySessionCount = watch('sessionCount');
+  const occurrenceWindows = useMemo(
+    () => buildRecurringWindows({
+      startDate: availabilityStartDate,
+      weekdays: availabilityWeekdayKey
+        ? availabilityWeekdayKey.split(',').map(Number)
+        : [],
+      startTime: availabilityStartTime,
+      endTime: availabilityEndTime,
+      sessionCount: availabilitySessionCount,
+    }),
+    [
+      availabilityStartDate,
+      availabilityWeekdayKey,
+      availabilityStartTime,
+      availabilityEndTime,
+      availabilitySessionCount,
+    ],
+  );
+
+  useEffect(() => {
+    if (occurrenceWindows.length === 0) {
+      setCoaches([]);
+      setCoachesError(null);
+      setCoachesLoading(false);
+      if (getValues('coachId')) setValue('coachId', '');
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setCoachesLoading(true);
+      setCoachesError(null);
+      try {
+        const result = await discoverAvailableCoaches({
+          startTimes: occurrenceWindows.map((window) => window.startTime),
+          endTimes: occurrenceWindows.map((window) => window.endTime),
+        });
+        if (cancelled) return;
+        setCoaches(result);
+        const selectedCoachId = getValues('coachId');
+        if (
+          selectedCoachId
+          && !result.some((coach) => coach.coachAccountId === selectedCoachId)
+        ) {
+          setValue('coachId', '');
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCoaches([]);
+          setCoachesError(error);
+          if (getValues('coachId')) setValue('coachId', '');
+        }
+      } finally {
+        if (!cancelled) setCoachesLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [occurrenceWindows, getValues, setValue]);
+
   const coachOptions = useMemo(() => {
     return coaches
       .map((acc) => ({
-        value: acc.accountId,
-        label: acc.fullName || acc.email || '—',
+        value: acc.coachAccountId,
+        label: acc.fullName || acc.phone || '—',
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [coaches]);
@@ -643,7 +713,9 @@ export default function RecurringScheduleCreatePage() {
               {coachesLoading
                 ? 'Đang tải…'
                 : coachOptions.length === 0
-                  ? 'Không có huấn luyện viên đang hoạt động'
+                  ? occurrenceWindows.length > 0
+                    ? 'Không có huấn luyện viên phù hợp cho toàn bộ lịch'
+                    : 'Hoàn tất lịch để tìm huấn luyện viên'
                   : '— Chọn huấn luyện viên —'}
             </option>
             {coachOptions.map((o) => (
@@ -653,7 +725,7 @@ export default function RecurringScheduleCreatePage() {
             ))}
           </Form.Select>
           <Form.Text className="text-muted">
-            Chỉ các huấn luyện viên đang hoạt động mới được chọn.
+            Chỉ hiển thị huấn luyện viên còn trống ở tất cả các buổi dự kiến.
           </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.coachId?.message}

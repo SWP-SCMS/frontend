@@ -98,6 +98,31 @@ export async function listAvailableSessionCoaches(sessionId) {
   return Array.isArray(data) ? data : [];
 }
 
+// GET /api/v1/manager/coaches/available
+// Returns active coaches who are available for every requested window.
+// Spring expects repeated startTime/endTime query keys, so build the query
+// explicitly instead of relying on Axios' array serialization convention.
+export async function discoverAvailableCoaches({
+  startTimes,
+  endTimes,
+  memberAccountId,
+}) {
+  if (!Array.isArray(startTimes) || !Array.isArray(endTimes)) {
+    throw new Error('startTimes and endTimes arrays are required');
+  }
+  if (startTimes.length === 0 || startTimes.length !== endTimes.length) {
+    throw new Error('startTimes and endTimes must contain matching windows');
+  }
+
+  const params = new URLSearchParams();
+  startTimes.forEach((value) => params.append('startTime', value));
+  endTimes.forEach((value) => params.append('endTime', value));
+  if (memberAccountId) params.set('memberAccountId', memberAccountId);
+
+  const { data } = await api.get('/manager/coaches/available', { params });
+  return Array.isArray(data) ? data : [];
+}
+
 // PATCH /api/v1/manager/class-sessions/{id}/assignment (US30)
 //
 // Path param:

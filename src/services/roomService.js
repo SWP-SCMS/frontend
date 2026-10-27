@@ -83,7 +83,17 @@ export async function previewRoomImpact(roomId, payload) {
   );
   return {
     count: Number(data?.count) || 0,
-    sessions: Array.isArray(data?.sessions) ? data.sessions : [],
+    sessions: Array.isArray(data?.sessions)
+      ? data.sessions.map((session) => ({
+          ...session,
+          availableTargetRooms: Array.isArray(session?.availableTargetRooms)
+            ? session.availableTargetRooms
+            : [],
+        }))
+      : [],
+    bulkAvailableTargetRooms: Array.isArray(data?.bulkAvailableTargetRooms)
+      ? data.bulkAvailableTargetRooms
+      : [],
   };
 }
 
