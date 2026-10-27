@@ -11,7 +11,6 @@ import {
   extendRoomSuspension,
   getRoom,
   listRoomSuspensions,
-  listRooms,
   previewRoomImpact,
 } from '../../../services/roomService';
 import {
@@ -90,6 +89,28 @@ function sameIds(left, right) {
   return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
+function includesTargetRoom(targetRooms, roomId) {
+  return Array.isArray(targetRooms)
+    && targetRooms.some((room) => room.roomId === roomId);
+}
+
+function mergeFreshResolutions(freshSessions, currentResolutions) {
+  const currentBySessionId = new Map(
+    currentResolutions.map((resolution) => [resolution.sessionId, resolution]),
+  );
+  return freshSessions.map((session) => {
+    const current = currentBySessionId.get(session.sessionId)
+      || emptyResolution(session);
+    if (
+      current.action === 'MOVE'
+      && !includesTargetRoom(session.availableTargetRooms, current.targetRoomId)
+    ) {
+      return { ...current, targetRoomId: '' };
+    }
+    return current;
+  });
+}
+
 function resolutionPayload(resolution) {
   return {
     sessionId: resolution.sessionId,
@@ -147,7 +168,6 @@ export default function RoomImpactPage() {
   const [searchParams] = useSearchParams();
   const extensionSuspensionId = searchParams.get('extensionSuspensionId');
   const [room, setRoom] = useState(null);
-  const [rooms, setRooms] = useState([]);
   const [extensionSuspension, setExtensionSuspension] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -185,11 +205,10 @@ export default function RoomImpactPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const requests = [getRoom(roomId), listRooms()];
+      const requests = [getRoom(roomId)];
       if (extensionSuspensionId) requests.push(listRoomSuspensions(roomId));
-      const [current, allRooms, suspensions = []] = await Promise.all(requests);
+      const [current, suspensions = []] = await Promise.all(requests);
       setRoom(current);
-      setRooms(allRooms);
       if (extensionSuspensionId) {
         const suspension = suspensions.find(
           (item) => item.id === extensionSuspensionId,
@@ -291,6 +310,18 @@ export default function RoomImpactPage() {
           message: 'Vui lòng chọn phòng đích.',
         });
         invalid = true;
+      } else if (
+        resolution.action === 'MOVE'
+        && !includesTargetRoom(
+          preview?.sessions?.[index]?.availableTargetRooms,
+          resolution.targetRoomId,
+        )
+      ) {
+        setError(`resolutions.${index}.targetRoomId`, {
+          type: 'manual',
+          message: 'Phòng đích không còn phù hợp với buổi tập này.',
+        });
+        invalid = true;
       } else if (resolution.action === 'CANCEL' && !resolution.reason.trim()) {
         setError(`resolutions.${index}.reason`, {
           type: 'manual',
@@ -356,6 +387,37 @@ export default function RoomImpactPage() {
         );
         return;
       }
+
+      const bulkMoveInvalid = appliedBulkResolution?.action === 'MOVE'
+        && !includesTargetRoom(
+          fresh.bulkAvailableTargetRooms,
+          appliedBulkResolution.targetRoomId,
+        );
+      const invalidSessionMove = values.resolutions.some((resolution) => {
+        if (resolution.action !== 'MOVE') return false;
+        const session = fresh.sessions.find(
+          (candidate) => candidate.sessionId === resolution.sessionId,
+        );
+        return !includesTargetRoom(
+          session?.availableTargetRooms,
+          resolution.targetRoomId,
+        );
+      });
+      if (bulkMoveInvalid || invalidSessionMove) {
+        setPreview(fresh);
+        reset({
+          ...values,
+          resolutions: mergeFreshResolutions(fresh.sessions, values.resolutions),
+        });
+        if (bulkMoveInvalid) {
+          setBulkTargetRoomId('');
+          setAppliedBulkResolution(null);
+        }
+        setNotice(
+          'Danh sách phòng phù hợp vừa thay đổi. Phòng không còn khả dụng đã được bỏ chọn; vui lòng kiểm tra lại.',
+        );
+        return;
+      }
       if (extensionSuspension) {
         const payload = impactPayload(values, true);
         await extendRoomSuspension(roomId, extensionSuspension.id, {
@@ -392,10 +454,7 @@ export default function RoomImpactPage() {
     }
   }
 
-  const targetRooms = useMemo(
-    () => rooms.filter((candidate) => candidate.id !== roomId && candidate.status === 'ACTIVE'),
-    [roomId, rooms],
-  );
+  const bulkTargetRooms = preview?.bulkAvailableTargetRooms || [];
   const allAffectedSessionsScheduled = useMemo(
     () => (preview?.sessions || []).every((session) => session.status === 'SCHEDULED'),
     [preview],
@@ -407,7 +466,18 @@ export default function RoomImpactPage() {
       return;
     }
     if (bulkAction === 'MOVE' && !bulkTargetRoomId) {
-      setBulkError('Vui lòng chọn phòng đích.');
+      setBulkError(
+        bulkTargetRooms.length === 0
+          ? 'Không có phòng phù hợp cho toàn bộ các buổi.'
+          : 'Vui lòng chọn phòng đích.',
+      );
+      return;
+    }
+    if (
+      bulkAction === 'MOVE'
+      && !includesTargetRoom(bulkTargetRooms, bulkTargetRoomId)
+    ) {
+      setBulkError('Phòng đích không còn phù hợp cho toàn bộ các buổi.');
       return;
     }
     if (bulkAction === 'CANCEL' && !bulkReason.trim()) {
@@ -541,7 +611,9 @@ export default function RoomImpactPage() {
                           }}
                         >
                           <option value="">-- Chọn --</option>
-                          <option value="MOVE">Chuyển cùng một phòng</option>
+                          <option value="MOVE" disabled={bulkTargetRooms.length === 0}>
+                            Chuyển cùng một phòng
+                          </option>
                           {allAffectedSessionsScheduled ? <option value="CANCEL">Hủy tất cả buổi</option> : null}
                         </Form.Select>
                       </Col>
@@ -550,10 +622,17 @@ export default function RoomImpactPage() {
                           <Form.Label className="small">Phòng đích</Form.Label>
                           <Form.Select size="sm" value={bulkTargetRoomId} onChange={(event) => { setBulkTargetRoomId(event.target.value); setAppliedBulkResolution(null); }}>
                             <option value="">-- Chọn phòng đích --</option>
-                            {targetRooms.map((target) => (
-                              <option key={target.id} value={target.id}>{target.name} ({target.capacity} chỗ)</option>
+                            {bulkTargetRooms.map((target) => (
+                              <option key={target.roomId} value={target.roomId}>
+                                {target.roomName} ({target.capacity} chỗ)
+                              </option>
                             ))}
                           </Form.Select>
+                          {bulkTargetRooms.length === 0 ? (
+                            <div className="small text-muted mt-1">
+                              Không có phòng phù hợp cho toàn bộ các buổi.
+                            </div>
+                          ) : null}
                         </Col>
                       ) : null}
                       {bulkAction === 'CANCEL' ? (
@@ -582,6 +661,7 @@ export default function RoomImpactPage() {
                 <tbody>
                   {preview.sessions.map((session, index) => {
                     const action = resolutions[index]?.action || '';
+                    const sessionTargetRooms = session.availableTargetRooms || [];
                     return (
                       <tr key={session.sessionId}>
                         <td><Link to={`/manager/class-sessions/${session.sessionId}`}>{session.className}</Link></td>
@@ -591,7 +671,9 @@ export default function RoomImpactPage() {
                           <input type="hidden" {...register(`resolutions.${index}.sessionId`)} />
                           <Form.Select size="sm" {...register(`resolutions.${index}.action`)} isInvalid={Boolean(errors.resolutions?.[index]?.action)}>
                             <option value="">-- Chọn --</option>
-                            <option value="MOVE">Chuyển phòng</option>
+                            <option value="MOVE" disabled={sessionTargetRooms.length === 0}>
+                              Chuyển phòng
+                            </option>
                             {session.status === 'SCHEDULED' ? <option value="RESCHEDULE">Dời lịch</option> : null}
                             {session.status === 'SCHEDULED' ? <option value="CANCEL">Hủy buổi</option> : null}
                           </Form.Select>
@@ -602,12 +684,17 @@ export default function RoomImpactPage() {
                             <>
                               <Form.Select size="sm" {...register(`resolutions.${index}.targetRoomId`)} isInvalid={Boolean(errors.resolutions?.[index]?.targetRoomId)}>
                                 <option value="">-- Phòng đích --</option>
-                                {targetRooms.map((target) => (
-                                  <option key={target.id} value={target.id}>
-                                    {target.name} ({target.capacity} chỗ)
+                                {sessionTargetRooms.map((target) => (
+                                  <option key={target.roomId} value={target.roomId}>
+                                    {target.roomName} ({target.capacity} chỗ)
                                   </option>
                                 ))}
                               </Form.Select>
+                              {sessionTargetRooms.length === 0 ? (
+                                <div className="small text-muted mt-1">
+                                  Không có phòng phù hợp cho buổi này.
+                                </div>
+                              ) : null}
                               <Form.Control.Feedback type="invalid">{errors.resolutions?.[index]?.targetRoomId?.message}</Form.Control.Feedback>
                             </>
                           ) : action === 'RESCHEDULE' ? (
