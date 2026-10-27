@@ -377,98 +377,28 @@
   color: var(--h-red-soft);
 }
 
-.scms-home-plan {
-  position: relative;
+.scms-home-offers-cta {
   display: flex;
-  flex-direction: column;
   justify-content: space-between;
-  padding: 2.5rem;
-  border-radius: 0.75rem;
-  background: #1a1c20;
-}
-
-.scms-home-plan-hl {
-  background: var(--h-card);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-}
-
-.scms-home-plan-badge {
-  position: absolute;
-  top: -12px;
-  right: 1.5rem;
-  padding: 0.25rem 1rem;
-  border-radius: 999px;
-  background: var(--h-red);
-  color: #fff6f5;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.scms-home-tag {
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  background: #333539;
-  font-size: 0.68rem;
-  font-weight: 600;
-  white-space: nowrap;
-  color: var(--h-muted);
-}
-
-.scms-home-plan-hl .scms-home-tag {
-  background: rgba(220, 38, 38, 0.2);
-  color: var(--h-red-soft);
-}
-
-.scms-home-price {
-  font-size: 2.5rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-}
-
-.scms-home-check {
-  color: var(--h-red-soft);
-  flex-shrink: 0;
-}
-
-.scms-home-plan-hl .scms-home-check {
-  color: var(--h-red);
-}
-
-.scms-home-benefit-group {
-  flex: 1;
-  min-width: 0;
-}
-
-.scms-home-benefit-group summary {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  cursor: pointer;
-  list-style: none;
+  gap: 2rem;
+  padding: clamp(2rem, 5vw, 4rem);
+  border: 1px solid rgba(255, 180, 171, 0.14);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 92% 15%, rgba(220, 38, 38, 0.2), transparent 34%),
+    var(--h-card);
 }
 
-.scms-home-benefit-group summary::-webkit-details-marker {
-  display: none;
+.scms-home-offers-cta-copy {
+  max-width: 720px;
 }
 
-.scms-home-benefit-group summary svg {
-  flex: 0 0 auto;
-  transition: transform 0.18s ease;
-}
-
-.scms-home-benefit-group[open] summary svg {
-  transform: rotate(180deg);
-}
-
-.scms-home-benefit-group ul {
-  display: grid;
-  gap: 0.45rem;
-  margin: 0.75rem 0 0;
-  padding-left: 1rem;
-  color: var(--h-muted);
+@media (max-width: 767.98px) {
+  .scms-home-offers-cta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 .scms-home-space {

@@ -78,15 +78,16 @@ export default function MemberLayout({ children }) {
     [memberships],
   );
 
-  // Contract Membership cũ chưa có Benefit. Khi BE trả benefitCodes, UI gate
-  // chính xác theo quyền; khi chưa có thì không khóa oan và để BE xác nhận
-  // mutation. Tuyệt đối không suy quyền từ mã/tên Plan.
+  // Sau khi tải thành công mà không có Membership ACTIVE, tập quyền được biết
+  // chắc chắn là rỗng và mọi tính năng theo Benefit phải bị khóa. Chỉ fail-open
+  // cho Membership ACTIVE từ contract cũ chưa trả benefitCodes, để không khóa
+  // oan người đang có gói. Tuyệt đối không suy quyền từ mã/tên Plan.
   const rawBenefitCodes =
     activeMembership?.benefitCodes ?? activeMembership?.benefit_codes;
-  const benefitsKnown = Array.isArray(rawBenefitCodes);
+  const benefitsKnown = activeMembership == null || Array.isArray(rawBenefitCodes);
   const benefitCodes = useMemo(
-    () => (benefitsKnown ? rawBenefitCodes : []),
-    [benefitsKnown, rawBenefitCodes],
+    () => (Array.isArray(rawBenefitCodes) ? rawBenefitCodes : []),
+    [rawBenefitCodes],
   );
   const hasBenefit = useCallback(
     (benefitCode) => benefitCodes.includes(benefitCode),

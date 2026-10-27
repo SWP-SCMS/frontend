@@ -58,7 +58,7 @@ const REASON_LABELS = {
   COACH_ASSIGNMENT_CHANGED: 'Phân công huấn luyện viên đã thay đổi',
 };
 
-function humanize(value) {
+export function humanize(value) {
   if (!value) return '';
   const text = String(value).replaceAll('_', ' ').toLocaleLowerCase('vi-VN');
   return text.charAt(0).toLocaleUpperCase('vi-VN') + text.slice(1);

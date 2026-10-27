@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-b
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import {
   createMyFreezeRequest,
   createMyTerminationRequest,
@@ -62,6 +63,11 @@ function StatusBadge({ status, map }) {
 }
 
 export default function MembershipRequestsPage() {
+  const {
+    hasActiveMembership,
+    loading: membershipLoading,
+    error: membershipError,
+  } = useMemberArea();
   const [terminationRows, setTerminationRows] = useState([]);
   const [freezeRows, setFreezeRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +108,8 @@ export default function MembershipRequestsPage() {
       ['PENDING', 'APPROVED_PENDING_PAYMENT', 'SCHEDULED', 'ACTIVE'].includes(row.status)),
     [freezeRows],
   );
+  const noActiveMembership =
+    !membershipLoading && !membershipError && !hasActiveMembership;
 
   async function submitTermination(event) {
     event.preventDefault();
@@ -204,92 +212,118 @@ export default function MembershipRequestsPage() {
       </div>
 
       {notice ? <Alert variant="success" dismissible onClose={() => setNotice(null)}>{notice}</Alert> : null}
-      {actionError ? <ErrorAlert error={actionError} title="Không thể xử lý yêu cầu" /> : null}
+      {actionError && !noActiveMembership ? <ErrorAlert error={actionError} title="Không thể xử lý yêu cầu" /> : null}
       {loadError ? <ErrorAlert error={loadError} title="Không tải được danh sách yêu cầu" /> : null}
 
-      {loading ? (
+      {loading || membershipLoading ? (
         <div className="py-5 text-center"><Spinner animation="border" variant="danger" /></div>
       ) : (
         <div className="d-grid gap-4">
+          {noActiveMembership ? (
+            <Card className="border-0 shadow-sm">
+              <Card.Body className="p-4 text-center">
+                <h2 className="h5 fw-bold mb-2">Bạn không có gói tập đang hoạt động</h2>
+                <p className="text-muted mb-4">
+                  Bạn cần có gói tập đang hoạt động để gửi yêu cầu hủy hoặc đóng băng.
+                </p>
+                <Button as={Link} to="/offers" variant="danger">
+                  Xem các gói tập
+                </Button>
+              </Card.Body>
+            </Card>
+          ) : null}
+
           <Card className="border-0 shadow-sm">
             <Card.Body className="p-4">
-              <h2 className="h5 fw-bold">Hủy gói tập</h2>
-              <p className="text-muted small">
-                Chọn hủy ngay hoặc tiếp tục dùng đến hết chu kỳ hiện tại. Yêu cầu chỉ có hiệu lực sau khi quản lý duyệt.
-              </p>
-              <Form onSubmit={submitTermination} className="scms-membership-request-form">
-                <Form.Group>
-                  <Form.Label>Thời điểm hủy</Form.Label>
-                  <Form.Select
-                    value={termination.mode}
-                    onChange={(event) => setTermination((value) => ({ ...value, mode: event.target.value }))}
-                    disabled={hasOpenTermination}
-                  >
-                    <option value="END_OF_CYCLE">Cuối chu kỳ hiện tại</option>
-                    <option value="IMMEDIATE">Ngay sau khi được duyệt</option>
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group className="scms-membership-request-reason">
-                  <Form.Label>Lý do</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    maxLength={1000}
-                    value={termination.reason}
-                    onChange={(event) => setTermination((value) => ({ ...value, reason: event.target.value }))}
-                    disabled={hasOpenTermination}
-                  />
-                </Form.Group>
-                <Button type="submit" variant="danger" disabled={hasOpenTermination || busyKey === 'termination-create'}>
-                  {hasOpenTermination ? 'Đang có yêu cầu chờ duyệt' : busyKey === 'termination-create' ? 'Đang gửi...' : 'Gửi yêu cầu hủy'}
-                </Button>
-              </Form>
+              <h2 className="h5 fw-bold">
+                {noActiveMembership ? 'Lịch sử yêu cầu hủy gói' : 'Hủy gói tập'}
+              </h2>
+              {!noActiveMembership ? (
+                <>
+                  <p className="text-muted small">
+                    Chọn hủy ngay hoặc tiếp tục dùng đến hết chu kỳ hiện tại. Yêu cầu chỉ có hiệu lực sau khi quản lý duyệt.
+                  </p>
+                  <Form onSubmit={submitTermination} className="scms-membership-request-form">
+                    <Form.Group>
+                      <Form.Label>Thời điểm hủy</Form.Label>
+                      <Form.Select
+                        value={termination.mode}
+                        onChange={(event) => setTermination((value) => ({ ...value, mode: event.target.value }))}
+                        disabled={hasOpenTermination}
+                      >
+                        <option value="END_OF_CYCLE">Cuối chu kỳ hiện tại</option>
+                        <option value="IMMEDIATE">Ngay sau khi được duyệt</option>
+                      </Form.Select>
+                    </Form.Group>
+                    <Form.Group className="scms-membership-request-reason">
+                      <Form.Label>Lý do</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={2}
+                        maxLength={1000}
+                        value={termination.reason}
+                        onChange={(event) => setTermination((value) => ({ ...value, reason: event.target.value }))}
+                        disabled={hasOpenTermination}
+                      />
+                    </Form.Group>
+                    <Button type="submit" variant="danger" disabled={hasOpenTermination || busyKey === 'termination-create'}>
+                      {hasOpenTermination ? 'Đang có yêu cầu chờ duyệt' : busyKey === 'termination-create' ? 'Đang gửi...' : 'Gửi yêu cầu hủy'}
+                    </Button>
+                  </Form>
+                </>
+              ) : null}
               <RequestTable type="termination" rows={terminationRows} busyKey={busyKey} onWithdraw={setWithdrawTarget} />
             </Card.Body>
           </Card>
 
           <Card className="border-0 shadow-sm">
             <Card.Body className="p-4">
-              <h2 className="h5 fw-bold">Đóng băng gói tập</h2>
-              <p className="text-muted small">
-                Sau khi quản lý duyệt, bạn cần thanh toán phí tại quầy lễ tân để lịch đóng băng có hiệu lực.
-              </p>
-              <Form onSubmit={submitFreeze} className="scms-membership-request-form">
-                <Form.Group>
-                  <Form.Label>Từ ngày</Form.Label>
-                  <Form.Control
-                    type="date"
-                    min={todayInput()}
-                    value={freeze.startDate}
-                    onChange={(event) => setFreeze((value) => ({ ...value, startDate: event.target.value }))}
-                    disabled={hasOpenFreeze}
-                  />
-                </Form.Group>
-                <Form.Group>
-                  <Form.Label>Đến ngày</Form.Label>
-                  <Form.Control
-                    type="date"
-                    min={freeze.startDate || todayInput()}
-                    value={freeze.endDate}
-                    onChange={(event) => setFreeze((value) => ({ ...value, endDate: event.target.value }))}
-                    disabled={hasOpenFreeze}
-                  />
-                </Form.Group>
-                <Form.Group className="scms-membership-request-reason">
-                  <Form.Label>Lý do</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    maxLength={1000}
-                    value={freeze.reason}
-                    onChange={(event) => setFreeze((value) => ({ ...value, reason: event.target.value }))}
-                    disabled={hasOpenFreeze}
-                  />
-                </Form.Group>
-                <Button type="submit" variant="danger" disabled={hasOpenFreeze || busyKey === 'freeze-create'}>
-                  {hasOpenFreeze ? 'Đang có yêu cầu mở' : busyKey === 'freeze-create' ? 'Đang gửi...' : 'Gửi yêu cầu đóng băng'}
-                </Button>
-              </Form>
+              <h2 className="h5 fw-bold">
+                {noActiveMembership ? 'Lịch sử yêu cầu đóng băng' : 'Đóng băng gói tập'}
+              </h2>
+              {!noActiveMembership ? (
+                <>
+                  <p className="text-muted small">
+                    Sau khi quản lý duyệt, bạn cần thanh toán phí tại quầy lễ tân để lịch đóng băng có hiệu lực.
+                  </p>
+                  <Form onSubmit={submitFreeze} className="scms-membership-request-form">
+                    <Form.Group>
+                      <Form.Label>Từ ngày</Form.Label>
+                      <Form.Control
+                        type="date"
+                        min={todayInput()}
+                        value={freeze.startDate}
+                        onChange={(event) => setFreeze((value) => ({ ...value, startDate: event.target.value }))}
+                        disabled={hasOpenFreeze}
+                      />
+                    </Form.Group>
+                    <Form.Group>
+                      <Form.Label>Đến ngày</Form.Label>
+                      <Form.Control
+                        type="date"
+                        min={freeze.startDate || todayInput()}
+                        value={freeze.endDate}
+                        onChange={(event) => setFreeze((value) => ({ ...value, endDate: event.target.value }))}
+                        disabled={hasOpenFreeze}
+                      />
+                    </Form.Group>
+                    <Form.Group className="scms-membership-request-reason">
+                      <Form.Label>Lý do</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={2}
+                        maxLength={1000}
+                        value={freeze.reason}
+                        onChange={(event) => setFreeze((value) => ({ ...value, reason: event.target.value }))}
+                        disabled={hasOpenFreeze}
+                      />
+                    </Form.Group>
+                    <Button type="submit" variant="danger" disabled={hasOpenFreeze || busyKey === 'freeze-create'}>
+                      {hasOpenFreeze ? 'Đang có yêu cầu mở' : busyKey === 'freeze-create' ? 'Đang gửi...' : 'Gửi yêu cầu đóng băng'}
+                    </Button>
+                  </Form>
+                </>
+              ) : null}
               <RequestTable type="freeze" rows={freezeRows} busyKey={busyKey} onFreezeAction={setFreezeAction} />
             </Card.Body>
           </Card>
