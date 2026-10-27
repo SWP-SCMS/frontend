@@ -41,18 +41,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getClass } from '../../../services/sportClassService';
 import { discoverRoomAvailability, listRooms } from '../../../services/roomService';
-import { searchStaffAccounts } from '../../../services/staffAccountService';
-import { createSingleSession } from '../../../services/classSessionService';
+import {
+  createSingleSession,
+  discoverAvailableCoaches,
+} from '../../../services/classSessionService';
 import { applyServerErrors } from '../../../utils/serverErrors';
 import { getGymZoneTodayIsoDate } from '../../../utils/gymTime';
-
-// Maximum page size the BE accepts for /manager/staff-accounts
-// (StaffAccountController validation: 1 <= size <= 100). Using the
-// largest supported size keeps the number of round-trips bounded
-// and guarantees every eligible ACTIVE COACH is reachable in
-// practice. We still walk every page until totalPages is reached,
-// so the result is independent of the page size.
-const COACH_PAGE_SIZE = 100;
 
 // Locale-agnostic yyyy-MM-dd (matches HTML <input type="date">).
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -116,34 +110,6 @@ function formatGymDate(iso) {
     month: '2-digit',
     year: 'numeric',
   });
-}
-
-// Fetches every ACTIVE COACH account by walking the existing
-// paged /manager/staff-accounts endpoint until the BE says there
-// are no more pages. Uses the BE-allowed max page size of 100.
-async function fetchAllActiveCoaches() {
-  const aggregated = [];
-  let page = 0;
-  // Defensive upper bound: stop after 50 pages (5000 rows) to
-  // avoid any runaway loop.
-  const MAX_PAGES = 50;
-  while (page < MAX_PAGES) {
-    const result = await searchStaffAccounts({
-      role: 'COACH',
-      status: 'ACTIVE',
-      page,
-      size: COACH_PAGE_SIZE,
-    });
-    const content = Array.isArray(result?.content) ? result.content : [];
-    aggregated.push(...content);
-    const totalPages = Number(result?.totalPages) || 0;
-    const totalElements = Number(result?.totalElements) || aggregated.length;
-    if (aggregated.length >= totalElements) break;
-    if (content.length === 0) break;
-    if (totalPages > 0 && page + 1 >= totalPages) break;
-    page += 1;
-  }
-  return aggregated;
 }
 
 // Page-local Zod schema for the editable fields only. `classId` is
@@ -226,7 +192,7 @@ export default function SingleSessionCreatePage() {
   const [roomAvailabilityError, setRoomAvailabilityError] = useState(null);
 
   const [coaches, setCoaches] = useState([]);
-  const [coachesLoading, setCoachesLoading] = useState(true);
+  const [coachesLoading, setCoachesLoading] = useState(false);
   const [coachesError, setCoachesError] = useState(null);
 
   const [serverError, setServerError] = useState(null);
@@ -238,6 +204,8 @@ export default function SingleSessionCreatePage() {
     reset,
     watch,
     setError,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(singleSessionCreateSchema),
@@ -296,27 +264,6 @@ export default function SingleSessionCreatePage() {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    setCoachesLoading(true);
-    setCoachesError(null);
-    fetchAllActiveCoaches()
-      .then((result) => {
-        if (cancelled) return;
-        setCoaches(result);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setCoachesError(err);
-      })
-      .finally(() => {
-        if (!cancelled) setCoachesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   // ---- Derived lists for selectors ----
 
   const activeRooms = useMemo(
@@ -328,6 +275,51 @@ export default function SingleSessionCreatePage() {
   const availabilityStart = watch('startTime');
   const availabilityEnd = watch('endTime');
   const availabilityCapacity = watch('capacity');
+  useEffect(() => {
+    const startTime = gymLocalToIsoInstant(availabilityDate, availabilityStart);
+    const endTime = gymLocalToIsoInstant(availabilityDate, availabilityEnd);
+    if (!startTime || !endTime || new Date(endTime) <= new Date(startTime)) {
+      setCoaches([]);
+      setCoachesError(null);
+      setCoachesLoading(false);
+      if (getValues('coachId')) setValue('coachId', '');
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setCoachesLoading(true);
+      setCoachesError(null);
+      try {
+        const result = await discoverAvailableCoaches({
+          startTimes: [startTime],
+          endTimes: [endTime],
+        });
+        if (cancelled) return;
+        setCoaches(result);
+        const selectedCoachId = getValues('coachId');
+        if (
+          selectedCoachId
+          && !result.some((coach) => coach.coachAccountId === selectedCoachId)
+        ) {
+          setValue('coachId', '');
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCoaches([]);
+          setCoachesError(error);
+          if (getValues('coachId')) setValue('coachId', '');
+        }
+      } finally {
+        if (!cancelled) setCoachesLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [availabilityDate, availabilityStart, availabilityEnd, getValues, setValue]);
 
   useEffect(() => {
     const startTime = gymLocalToIsoInstant(availabilityDate, availabilityStart);
@@ -383,8 +375,8 @@ export default function SingleSessionCreatePage() {
   const coachOptions = useMemo(() => {
     return coaches
       .map((acc) => ({
-        value: acc.accountId,
-        label: acc.fullName || acc.email || '—',
+        value: acc.coachAccountId,
+        label: acc.fullName || acc.phone || '—',
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [coaches]);
@@ -717,7 +709,9 @@ export default function SingleSessionCreatePage() {
               {coachesLoading
                 ? 'Đang tải…'
                 : coachOptions.length === 0
-                  ? 'Không có huấn luyện viên đang hoạt động'
+                  ? availabilityStart && availabilityEnd
+                    ? 'Không có huấn luyện viên phù hợp'
+                    : 'Chọn ngày và giờ để tìm huấn luyện viên'
                   : '— Chọn huấn luyện viên —'}
             </option>
             {coachOptions.map((o) => (
@@ -727,7 +721,7 @@ export default function SingleSessionCreatePage() {
             ))}
           </Form.Select>
           <Form.Text className="text-muted">
-            Chỉ các huấn luyện viên đang hoạt động mới được chọn.
+            Chỉ hiển thị huấn luyện viên đang hoạt động và còn trống trong thời gian đã chọn.
           </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.coachId?.message}
