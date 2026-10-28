@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -47,7 +48,7 @@ export default function StaffProfilePage() {
   const [saveNotice, setSaveNotice] = useState(null);
   const profilePath = PROFILE_PATHS[role] || '/';
 
-  const { register, handleSubmit, reset, setError, formState: { errors, isSubmitting } } = useForm({
+  const { register, control, handleSubmit, reset, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: profileToForm(null),
   });
@@ -124,7 +125,7 @@ export default function StaffProfilePage() {
               <Col md={6}><Form.Group controlId="staff-profile-fullName"><Form.Label>Họ và tên *</Form.Label><Form.Control {...register('fullName')} maxLength={200} isInvalid={Boolean(errors.fullName)} /><Form.Control.Feedback type="invalid">{errors.fullName?.message}</Form.Control.Feedback></Form.Group></Col>
               <Col md={6}><Form.Group controlId="staff-profile-phone"><Form.Label>Số điện thoại *</Form.Label><Form.Control {...register('phone')} inputMode="numeric" isInvalid={Boolean(errors.phone)} /><Form.Text className="text-muted">Đây là thông tin dùng để đăng nhập và khôi phục mật khẩu. Hãy kiểm tra kỹ trước khi thay đổi.</Form.Text><Form.Control.Feedback type="invalid">{errors.phone?.message}</Form.Control.Feedback></Form.Group></Col>
               <Col md={6}><Form.Group controlId="staff-profile-email"><Form.Label>Email *</Form.Label><Form.Control type="email" {...register('email')} maxLength={320} readOnly /><Form.Text className="text-muted">Dùng nút “Đổi email” để xác thực địa chỉ mới.</Form.Text></Form.Group></Col>
-              <Col md={6}><Form.Group controlId="staff-profile-birthDate"><Form.Label>Ngày sinh *</Form.Label><Form.Control type="date" {...register('birthDate')} max={getGymZoneTodayIsoDate()} isInvalid={Boolean(errors.birthDate)} /><Form.Control.Feedback type="invalid">{errors.birthDate?.message}</Form.Control.Feedback></Form.Group></Col>
+              <Col md={6}><Form.Group controlId="staff-profile-birthDate"><Form.Label>Ngày sinh *</Form.Label><RhfDateInput control={control} name="birthDate" max={getGymZoneTodayIsoDate()} isInvalid={Boolean(errors.birthDate)} /><Form.Control.Feedback type="invalid">{errors.birthDate?.message}</Form.Control.Feedback></Form.Group></Col>
             </Row>
             <div className="d-flex gap-2 mt-4">
               <Button type="submit" variant="danger" disabled={isSubmitting}>{isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}</Button>

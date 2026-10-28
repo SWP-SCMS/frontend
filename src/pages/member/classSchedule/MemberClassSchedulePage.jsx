@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Alert, Button, Card, Form, Spinner } from 'react-bootstrap';
 
+import { DateInput } from '../../../components/common/DateInput';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
@@ -210,12 +211,11 @@ export default function MemberClassSchedulePage() {
               <Form.Label htmlFor="mcs-cal-pick" className="small text-muted mb-0">
                 Chọn ngày
               </Form.Label>
-              <Form.Control
+              <DateInput
                 id="mcs-cal-pick"
-                type="date"
                 size="sm"
                 value={calYmd}
-                onChange={(e) => setWeek(e.target.value)}
+                onChange={setWeek}
                 aria-label="Chọn ngày để chuyển tuần"
               />
             </div>

@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Modal, Spinner } from 'react-bootstrap';
 
+import { DateInput } from '../../../components/common/DateInput';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { useAuth } from '../../../context/useAuth';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
@@ -665,20 +666,20 @@ export default function ClassBookingPage({ ptOnly = false }) {
 
           <div className="cbs-dates">
             <label htmlFor="cbs-from">Từ ngày</label>
-            <input
+            <DateInput
               id="cbs-from"
-              type="date"
               className="cbs-date"
+              unstyled
               value={fromYmd}
-              onChange={(e) => changeFilter(setFromYmd, e.target.value)}
+              onChange={(value) => changeFilter(setFromYmd, value)}
             />
             <label htmlFor="cbs-to">Đến ngày</label>
-            <input
+            <DateInput
               id="cbs-to"
-              type="date"
               className="cbs-date"
+              unstyled
               value={toYmd}
-              onChange={(e) => changeFilter(setToYmd, e.target.value)}
+              onChange={(value) => changeFilter(setToYmd, value)}
             />
             <button
               type="button"

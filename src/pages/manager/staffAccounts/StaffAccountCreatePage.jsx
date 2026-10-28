@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -52,6 +53,7 @@ export default function StaffAccountCreatePage() {
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
@@ -171,9 +173,9 @@ export default function StaffAccountCreatePage() {
           <Col md={6}>
             <Form.Group controlId="create-birthDate">
               <Form.Label>Ngày sinh *</Form.Label>
-              <Form.Control
-                type="date"
-                {...register('birthDate')}
+              <RhfDateInput
+                control={control}
+                name="birthDate"
                 max={new Date().toISOString().slice(0, 10)}
                 isInvalid={Boolean(errors.birthDate)}
               />

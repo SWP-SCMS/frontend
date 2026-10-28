@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Badge, Button, Card, Form, Spinner } from 'react-bootstrap';
 
+import { DateInput } from '../../../components/common/DateInput';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import { listCoachSessions } from '../../../services/coachScheduleService';
@@ -155,12 +156,11 @@ export default function CoachSchedulePage() {
               <Form.Label htmlFor="coach-cal-pick" className="small text-muted mb-0">
                 Chọn ngày
               </Form.Label>
-              <Form.Control
+              <DateInput
                 id="coach-cal-pick"
-                type="date"
                 size="sm"
                 value={calYmd}
-                onChange={(e) => setWeek(e.target.value)}
+                onChange={setWeek}
                 aria-label="Chọn ngày để chuyển tuần"
               />
             </div>

@@ -34,6 +34,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Spinner } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -657,11 +658,12 @@ export default function MemberProfilePage() {
                 ) : null}
               </Field>
               <Field id="mp-birthDate" label="Ngày sinh" required>
-                <input
+                <RhfDateInput
                   id="mp-birthDate"
                   className="scms-mp-input"
-                  type="date"
-                  {...register('birthDate')}
+                  unstyled
+                  control={control}
+                  name="birthDate"
                   autoComplete="bday"
                   aria-invalid={Boolean(errors.birthDate)}
                 />

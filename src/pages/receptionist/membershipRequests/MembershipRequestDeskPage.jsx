@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
 
+import { DateInput } from '../../../components/common/DateInput';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { searchReceptionMember } from '../../../services/receptionistService';
 import {
@@ -228,8 +229,8 @@ export default function MembershipRequestDeskPage() {
         <Card className="border-0 shadow-sm mb-4"><Card.Body className="p-4">
           <h2 className="h5 fw-bold">Tạo yêu cầu đóng băng — {memberCode}</h2>
           <Form onSubmit={createFreeze} className="row g-3 align-items-end">
-            <Form.Group className="col-lg-2"><Form.Label>Từ ngày</Form.Label><Form.Control type="date" min={todayInput()} value={freeze.startDate} onChange={(event) => setFreeze((value) => ({ ...value, startDate: event.target.value }))} /></Form.Group>
-            <Form.Group className="col-lg-2"><Form.Label>Đến ngày</Form.Label><Form.Control type="date" min={freeze.startDate || todayInput()} value={freeze.endDate} onChange={(event) => setFreeze((value) => ({ ...value, endDate: event.target.value }))} /></Form.Group>
+            <Form.Group className="col-lg-2"><Form.Label>Từ ngày</Form.Label><DateInput min={todayInput()} value={freeze.startDate} onChange={(startDate) => setFreeze((value) => ({ ...value, startDate }))} /></Form.Group>
+            <Form.Group className="col-lg-2"><Form.Label>Đến ngày</Form.Label><DateInput min={freeze.startDate || todayInput()} value={freeze.endDate} onChange={(endDate) => setFreeze((value) => ({ ...value, endDate }))} /></Form.Group>
             <Form.Group className="col-lg-5"><Form.Label>Lý do</Form.Label><Form.Control maxLength={1000} value={freeze.reason} onChange={(event) => setFreeze((value) => ({ ...value, reason: event.target.value }))} /></Form.Group>
             <div className="col-lg-3"><Button className="w-100" type="submit" variant="danger" disabled={busy}>Tạo yêu cầu hộ</Button></div>
           </Form>
