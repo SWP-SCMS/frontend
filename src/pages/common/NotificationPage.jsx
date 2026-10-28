@@ -16,6 +16,7 @@ import {
 } from '../../utils/notificationUi';
 
 const TARGET_LABELS = {
+  ACCOUNT: 'Tài khoản',
   CLASS_SESSION: 'Buổi tập',
   BOOKING: 'Lịch đặt',
   COACH_ASSIGNMENT: 'Phân công huấn luyện viên',

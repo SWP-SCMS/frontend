@@ -124,7 +124,7 @@ export default function ReceptionCenterCheckInPage() {
   } = useForm({
     resolver: zodResolver(memberSearchSchema),
     defaultValues: {
-      criterion: 'memberId',
+      criterion: 'phone',
       query: '',
     },
   });
@@ -198,7 +198,7 @@ export default function ReceptionCenterCheckInPage() {
       checkInIdempotencyKeyRef.current = null;
       setCheckInSuccess({ result, fullName: selectedMember.fullName });
       resetCheckIn({ identityVerified: false });
-      resetSearch({ criterion: 'memberId', query: '' });
+      resetSearch({ criterion: 'phone', query: '' });
       setSelectedMember(null);
       setSearched(false);
       setTimeout(() => setSearchFocus('query'), 0);
@@ -253,7 +253,7 @@ export default function ReceptionCenterCheckInPage() {
       <Card className="border-0 shadow-sm mb-3">
         <Card.Body>
           <Form onSubmit={handleSearchSubmit(searchMember)} noValidate>
-            <Row className="g-3 align-items-end">
+            <Row className="g-3 align-items-start">
               <Col md={3}>
                 <Form.Label htmlFor="checkInSearchCriterion">
                   Tra cứu theo
@@ -263,8 +263,8 @@ export default function ReceptionCenterCheckInPage() {
                   disabled={searchSubmitting || checkInSubmitting}
                   {...registerSearch('criterion')}
                 >
-                  <option value="memberId">Mã hội viên</option>
                   <option value="phone">Số điện thoại</option>
+                  <option value="memberId">Mã hội viên</option>
                 </Form.Select>
               </Col>
               <Col md={6}>
@@ -283,6 +283,12 @@ export default function ReceptionCenterCheckInPage() {
                 </Form.Control.Feedback>
               </Col>
               <Col md={3}>
+                <Form.Label
+                  className="d-none d-md-block invisible"
+                  aria-hidden="true"
+                >
+                  Thao tác
+                </Form.Label>
                 <Button
                   type="submit"
                   variant="danger"

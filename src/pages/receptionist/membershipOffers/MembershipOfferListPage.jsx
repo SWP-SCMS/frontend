@@ -19,7 +19,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Button,
   ButtonGroup,
-  Card,
   Form,
   InputGroup,
   Spinner,
@@ -27,11 +26,22 @@ import {
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
-import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { listActiveOffers } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
-import { hasBenefitContract } from '../../../utils/membershipBenefits';
-import { buildFeatures } from '../../public/offers/offerUtils';
+import {
+  buildFeatures,
+  computeOfferPricing,
+  formatDuration,
+} from '../../public/offers/offerUtils';
+import './MembershipOfferListPage.css';
+
+function categoryRank(label = '') {
+  const normalized = label.trim().toUpperCase();
+  if (normalized === 'BASIC') return 0;
+  if (normalized === 'PLUS') return 1;
+  if (normalized === 'PREMIUM') return 2;
+  return 3;
+}
 
 function readStringParam(params, name) {
   const v = params.get(name);
@@ -111,6 +121,39 @@ export default function MembershipOfferListPage() {
     return [{ value: '', label: 'Tất cả' }, ...[...unique.entries()].sort((a, b) => a[1].localeCompare(b[1], 'vi')).map(([value, label]) => ({ value, label }))];
   }, [offers]);
 
+  const pricing = useMemo(() => computeOfferPricing(offers), [offers]);
+
+  const groupedFiltered = useMemo(() => {
+    const groups = new Map();
+
+    filtered.forEach((offer) => {
+      const key = offer.planCode || offer.planDisplayName || 'OTHER';
+      if (!groups.has(key)) {
+        groups.set(key, {
+          key,
+          label: offer.planDisplayName || offer.planCode || 'Gói khác',
+          offers: [],
+        });
+      }
+      groups.get(key).offers.push(offer);
+    });
+
+    groups.forEach((group) => {
+      group.offers.sort(
+        (a, b) =>
+          Number(a.durationDays) - Number(b.durationDays) ||
+          Number(a.priceAmount) - Number(b.priceAmount) ||
+          (a.name || '').localeCompare(b.name || '', 'vi'),
+      );
+    });
+
+    return [...groups.values()].sort(
+      (a, b) =>
+        categoryRank(a.label) - categoryRank(b.label) ||
+        a.label.localeCompare(b.label, 'vi'),
+    );
+  }, [filtered]);
+
   const cardBody = useMemo(() => {
     if (loading) {
       return (
@@ -132,56 +175,70 @@ export default function MembershipOfferListPage() {
       );
     }
     return (
-      <div className="d-flex flex-column gap-3">
-        {filtered.map((offer) => (
-          <Card key={offer.offerId} className="border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-                <div>
-                  <span className={`badge me-2 ${
-                    'bg-light text-dark'
-                  }`}>
-                    {offer.planCode || '—'}
-                  </span>
-                  <span className="fw-semibold">{offer.name || '—'}</span>
-                  {offer.planDisplayName ? (
-                    <span className="text-muted ms-1">· {offer.planDisplayName}</span>
-                  ) : null}
-                </div>
-                <div className="text-end">
-                  <div className="fw-bold text-danger">
-                    {formatPrice(offer.priceAmount, offer.currencyCode)}
-                  </div>
-                  <small className="text-muted">
-                    {offer.durationDays ? `${offer.durationDays} ngày` : '—'}
-                  </small>
-                </div>
-              </div>
-              {offer.description ? (
-                <p className="text-muted small mb-2" style={{ whiteSpace: 'pre-wrap' }}>
-                  {offer.description}
-                </p>
-              ) : null}
-              {hasBenefitContract(offer) ? (
-                <MembershipBenefitList
-                  benefitCodes={offer.benefitCodes}
-                  benefits={offer.benefits}
-                />
-              ) : (
-                <ul className="list-unstyled mb-0 d-grid gap-1">
-                  {buildFeatures(offer).map((feature) => (
-                    <li key={feature.code} className="small text-muted">
-                      {feature.ok ? '✓' : '✗'} {feature.text}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card.Body>
-          </Card>
+      <div className="scms-ro-categories">
+        {groupedFiltered.map((category) => (
+          <section key={category.key} className="scms-ro-category">
+            <div className="scms-ro-category-head">
+              <h2>{category.label}</h2>
+              <span>{category.offers.length} lựa chọn</span>
+            </div>
+            <div className="scms-ro-grid">
+              {category.offers.map((offer) => {
+                const info = pricing.get(offer.offerId);
+                const showPerMonth =
+                  info?.perMonth && Number(offer.durationDays) !== 30;
+
+                return (
+                  <article key={offer.offerId} className="scms-ro-card">
+                    <div className="scms-ro-card-top">
+                      <span className="scms-ro-plan">
+                        {offer.planDisplayName || offer.planCode || 'Gói tập'}
+                      </span>
+                      <span className="scms-ro-duration">
+                        {formatDuration(offer.durationDays)}
+                      </span>
+                    </div>
+                    <h3>{offer.name || '—'}</h3>
+                    {offer.description ? (
+                      <p className="scms-ro-description">{offer.description}</p>
+                    ) : null}
+                    <div className="scms-ro-price">
+                      {formatPrice(offer.priceAmount, offer.currencyCode)}
+                      <small> / {formatDuration(offer.durationDays)}</small>
+                    </div>
+                    <div
+                      className={`scms-ro-per-month${showPerMonth ? '' : ' empty'}`}
+                      aria-hidden={!showPerMonth}
+                    >
+                      {showPerMonth ? (
+                        <>
+                          ≈ {formatPrice(info.perMonth, offer.currencyCode)} / tháng
+                          {info.savings > 0 ? ` · Tiết kiệm ${info.savings}%` : ''}
+                        </>
+                      ) : (
+                        '\u00a0'
+                      )}
+                    </div>
+                    <ul className="scms-ro-benefits">
+                      {buildFeatures(offer).map((feature) => (
+                        <li
+                          key={feature.code || feature.text}
+                          className={feature.ok ? '' : 'off'}
+                        >
+                          <span aria-hidden="true">{feature.ok ? '✓' : '–'}</span>
+                          {feature.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
         ))}
       </div>
     );
-  }, [loading, filtered, offers.length]);
+  }, [groupedFiltered, loading, offers.length, pricing]);
 
   return (
     <div>

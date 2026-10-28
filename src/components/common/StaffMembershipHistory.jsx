@@ -60,12 +60,7 @@ export default function StaffMembershipHistory({
     <Card className="border-0 shadow-sm mt-3">
       <Card.Body>
         <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-          <div>
-            <h2 className="h6 text-uppercase text-muted mb-1">Lịch sử gói tập</h2>
-            <p className="small text-muted mb-0">
-              Thông tin được giữ theo gói đã mua, không phụ thuộc thay đổi của ưu đãi hiện tại.
-            </p>
-          </div>
+          <h2 className="h6 text-uppercase text-muted mb-0">Lịch sử gói tập</h2>
           {!loading && error ? (
             <Button type="button" variant="outline-danger" size="sm" onClick={load}>
               Thử lại
