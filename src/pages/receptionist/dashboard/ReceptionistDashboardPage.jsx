@@ -33,7 +33,7 @@ const DASHBOARD_LINKS = [
   {
     title: 'Đăng ký hội viên mới',
     description:
-      'Tạo tài khoản hội viên tại quầy. Mật khẩu khởi tạo được sinh từ số điện thoại.',
+      'Tạo tài khoản hội viên tại quầy.',
     to: '/reception/members/new',
     cta: 'Đăng ký hội viên',
   },

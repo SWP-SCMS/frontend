@@ -152,10 +152,17 @@ export async function getReceptionPendingOrder(memberId) {
 //   { paymentId, orderId, status, method, membershipId, receiptId, paidAt }
 // For a cash payment every one of those is populated immediately — the
 // Membership and Receipt exist by the time this returns (BR-PAY-15).
-export async function createReceptionCashPayment(memberId, { offerId }) {
+export async function createReceptionCashPayment(
+  memberId,
+  { offerId },
+  idempotencyKey,
+) {
   const { data } = await api.post(
     `/reception/members/${memberId}/cash-payments`,
     { offerId },
+    idempotencyKey
+      ? { headers: { 'Idempotency-Key': idempotencyKey } }
+      : undefined,
   );
   return data;
 }

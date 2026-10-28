@@ -34,8 +34,8 @@
 // shows the QR inline, and polls GET /payments/{paymentId}/result.
 // Receptionist must never call the Member-only SePay initialization endpoint.
 
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Alert,
   Button,
@@ -68,6 +68,8 @@ import './ReceiptPage.css';
 // wording. This includes both 409 business conflicts and the 503 deployment
 // safety gate returned when the approved SePay destination is misconfigured.
 const PAYMENT_ERROR_MESSAGES = {
+  PAYMENT_CONFLICT:
+    'Không thể hoàn tất giao dịch vì trạng thái thanh toán đã thay đổi. Vui lòng tải lại trang và kiểm tra đơn hiện có.',
   ACTIVE_MEMBERSHIP_EXISTS:
     'Không thể tạo đơn theo hợp đồng cũ. Hãy tải lại trang và thử luồng gia hạn.',
   MEMBERSHIP_RENEWAL_ALREADY_EXISTS:
@@ -98,6 +100,7 @@ const PAYMENT_METHOD = {
 };
 
 export default function CashPaymentPage() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const memberId = params.get('memberId') || '';
@@ -134,6 +137,7 @@ export default function CashPaymentPage() {
   const [purchased, setPurchased] = useState(null);
   const [pendingOrder, setPendingOrder] = useState(null);
   const [membershipHistoryVersion, setMembershipHistoryVersion] = useState(0);
+  const cashRequestRef = useRef({ scope: '', key: '' });
 
   // ---- Receptionist SePay state (Phase 3) ----
   // POST /reception/members/{memberCode}/membership-orders/{orderId}/payments/sepay
@@ -358,7 +362,23 @@ export default function CashPaymentPage() {
     try {
       setPurchased(selectedOffer);
       if (paymentMethod === PAYMENT_METHOD.CASH) {
-        const result = await createReceptionCashPayment(memberId, { offerId });
+        const requestScope = `${memberId}:${offerId}`;
+        if (cashRequestRef.current.scope !== requestScope) {
+          cashRequestRef.current = {
+            scope: requestScope,
+            key: crypto.randomUUID(),
+          };
+        }
+
+        const result = await createReceptionCashPayment(
+          memberId,
+          { offerId },
+          cashRequestRef.current.key,
+        );
+        if (result.receiptId) {
+          navigate(`/receipts/${result.receiptId}`, { replace: true });
+          return;
+        }
         setReceipt(result);
         setTransferOrder(null);
         setPendingOrder(null);
@@ -600,10 +620,7 @@ export default function CashPaymentPage() {
   return (
     <div>
       <header className="mb-3">
-        <h1 className="h3 fw-bold mb-1">Tạo đơn gói tập</h1>
-        <p className="text-muted mb-0">
-          Bước 2 — Chọn gói và phương thức thanh toán.
-        </p>
+        <h1 className="h3 fw-bold mb-0">Tạo đơn gói tập</h1>
       </header>
 
       {transferOrder ? (
@@ -1028,9 +1045,6 @@ export default function CashPaymentPage() {
                 : '—'}
             </dd>
           </dl>
-          <Alert variant="warning" className="small mb-0 mt-3">
-            Thao tác này sẽ kích hoạt hoặc ghi nhận gói gia hạn và tạo biên lai ngay.
-          </Alert>
         </Modal.Body>
         <Modal.Footer>
           <Button
@@ -1062,7 +1076,7 @@ export default function CashPaymentPage() {
             <Card className="border-0 shadow-sm">
               <Card.Body>
                 <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                  <h2 className="h6 fw-bold mb-0">Bước 2 — Chọn gói và thanh toán</h2>
+                  <h2 className="h6 fw-bold mb-0">Chọn gói và thanh toán</h2>
                   <Button
                     variant="link"
                     size="sm"
@@ -1141,9 +1155,6 @@ export default function CashPaymentPage() {
                                 onChange={() => setPaymentMethod(PAYMENT_METHOD.BANK_TRANSFER)}
                                 label="Chuyển khoản"
                               />
-                              <div className="text-muted small mt-1">
-                                Tạo đơn chờ thanh toán và xử lý kết quả qua SePay/Đối soát.
-                              </div>
                             </Card.Body>
                           </Card>
                         </Col>
@@ -1165,31 +1176,11 @@ export default function CashPaymentPage() {
                                 onChange={() => setPaymentMethod(PAYMENT_METHOD.CASH)}
                                 label="Tiền mặt"
                               />
-                              <div className="text-muted small mt-1">
-                                Xác nhận đã nhận tiền, tạo gói phù hợp với vòng đời hiện tại và xuất biên lai ngay.
-                              </div>
                             </Card.Body>
                           </Card>
                         </Col>
                       </Row>
                     </Form.Group>
-
-                    <Alert variant="light" className="border small text-muted mt-3 mb-3">
-                      {paymentMethod === PAYMENT_METHOD.CASH ? (
-                        <>
-                          Xác nhận này ghi nhận đã nhận đủ tiền mặt, tạo gói tập
-                          và xuất biên lai ngay. Nếu hội viên đang có gói hoạt động,
-                          gói mới sẽ ở trạng thái chờ kích hoạt. Nếu chưa thực tế
-                          nhận tiền, đừng xác nhận.
-                        </>
-                      ) : (
-                        <>
-                          Hệ thống sẽ tạo đơn chuyển khoản ở trạng thái chờ thanh toán.
-                          Sau khi thanh toán được xác nhận, gói sẽ kích hoạt ngay
-                          hoặc chờ gói hiện tại kết thúc nếu đây là đơn gia hạn.
-                        </>
-                      )}
-                    </Alert>
 
                     {/* The button is disabled for blocked states, so say why
                         right here instead of leaving the user to guess. */}
@@ -1204,6 +1195,7 @@ export default function CashPaymentPage() {
                     <Button
                       type="submit"
                       variant="danger"
+                      className="mt-3"
                       disabled={!offerId || isSuspended || submitting || blockedByPendingOrder}
                     >
                       {submitting ? (
@@ -1247,10 +1239,6 @@ export default function CashPaymentPage() {
             receptionMemberCode={memberId}
           />
 
-          <Alert variant="light" className="border small text-muted mb-0">
-            Chuyển khoản tạo đơn chờ thanh toán; tiền mặt hoàn tất giao dịch và
-            xuất biên lai ngay. Gói gia hạn sẽ chờ gói hiện tại kết thúc.
-          </Alert>
         </Col>
       </Row>
     </div>

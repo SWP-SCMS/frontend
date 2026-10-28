@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Alert, Button, Col, Form, InputGroup, Row, Spinner } from 'react-bootstrap';
+import { Button, Col, Form, InputGroup, Row, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
@@ -33,12 +33,19 @@ const STATUS_LABELS = {
   [ACCOUNT_STATUS.SUSPENDED]: 'Tạm khóa',
 };
 
+function isMemberNotFoundError(error) {
+  return (
+    error?.response?.status === 404 &&
+    error?.response?.data?.code === 'MEMBER_NOT_FOUND'
+  );
+}
+
 export default function MemberListPage() {
   const location = useLocation();
   const [params, setParams] = useSearchParams();
 
   // 'memberId' | 'phone' — mirrors the mutually-exclusive backend params.
-  const [criterion, setCriterion] = useState('memberId');
+  const [criterion, setCriterion] = useState('phone');
   const [memberIdInput, setMemberIdInput] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
 
@@ -77,7 +84,7 @@ export default function MemberListPage() {
       .catch((err) => {
         if (!cancelled) {
           setMember(null);
-          setError(err);
+          setError(isMemberNotFoundError(err) ? null : err);
         }
       })
       .finally(() => {
@@ -126,9 +133,6 @@ export default function MemberListPage() {
       <header className="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
         <div>
           <h1 className="h3 fw-bold mb-1">Tra cứu hội viên</h1>
-          <p className="text-muted mb-0">
-            Tìm chính xác một hội viên bằng mã hội viên hoặc số điện thoại.
-          </p>
         </div>
         <Button as={Link} to="/reception/members/new" variant="danger" size="sm">
           Đăng ký hội viên mới
@@ -198,10 +202,6 @@ export default function MemberListPage() {
             </Row>
           </Form>
 
-          <p className="text-muted small mb-0 mt-3">
-            Tra cứu là chính xác (không tìm theo tên hoặc email) và trả về tối đa
-            một kết quả. Tài khoản đã ngưng hoạt động sẽ không xuất hiện.
-          </p>
         </div>
       </div>
 
@@ -299,10 +299,6 @@ export default function MemberListPage() {
         </div>
       ) : null}
 
-      <Alert variant="light" className="border small text-muted mt-3 mb-0">
-        Tài khoản đã ngưng hoạt động sẽ không xuất hiện tại quầy. Tài khoản tạm
-        khóa vẫn tra cứu được nhưng không thể tạo đơn gói tập mới.
-      </Alert>
     </div>
   );
 }

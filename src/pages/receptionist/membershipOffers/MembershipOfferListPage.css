@@ -1,0 +1,141 @@
+.scms-ro-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.scms-ro-category-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.scms-ro-category-head h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.scms-ro-category-head span {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.scms-ro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.scms-ro-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.4rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.scms-ro-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.scms-ro-plan {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.scms-ro-duration {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.scms-ro-card h3 {
+  margin: 0.15rem 0 0;
+  color: #0f172a;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.scms-ro-description {
+  min-height: 1.3rem;
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+
+.scms-ro-price {
+  margin-top: 0.35rem;
+  color: #b91c1c;
+  font-size: 1.55rem;
+  font-weight: 800;
+}
+
+.scms-ro-price small {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.scms-ro-per-month {
+  min-height: 1.2rem;
+  color: #047857;
+  font-size: 0.8rem;
+}
+
+.scms-ro-per-month.empty {
+  visibility: hidden;
+}
+
+.scms-ro-benefits {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.45rem 0 0;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid #e2e8f0;
+  list-style: none;
+  color: #334155;
+  font-size: 0.88rem;
+}
+
+.scms-ro-benefits li {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+}
+
+.scms-ro-benefits li > span {
+  color: #059669;
+  font-weight: 800;
+}
+
+.scms-ro-benefits li.off,
+.scms-ro-benefits li.off > span {
+  color: #94a3b8;
+}
