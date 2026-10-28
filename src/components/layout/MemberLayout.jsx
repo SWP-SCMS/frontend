@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Modal } from 'react-bootstrap';
 import { useAuth } from '../../context/useAuth';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import {
   getMyMemberships,
   listActiveOffers,
@@ -52,6 +53,15 @@ export default function MemberLayout({ children }) {
   useEffect(() => {
     loadMemberships();
   }, [loadMemberships]);
+
+  const refreshMembershipsInBackground = useCallback(async () => {
+    try {
+      setMemberships(await getMyMemberships());
+    } catch {
+      // Keep the last known membership state if a background refresh fails.
+    }
+  }, []);
+  useAutoRefresh(refreshMembershipsInBackground);
 
   useEffect(() => {
     let cancelled = false;

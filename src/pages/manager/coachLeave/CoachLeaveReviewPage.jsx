@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-b
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import {
   listManagerCoachLeaveRequests,
   reviewCoachLeaveRequest,
@@ -56,6 +57,15 @@ export default function CoachLeaveReviewPage() {
   }, [status]);
 
   useEffect(() => { load(); }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      setRows(await listManagerCoachLeaveRequests(status));
+    } catch {
+      // Keep the current queue visible if a background refresh fails.
+    }
+  }, [status]);
+  useAutoRefresh(refreshInBackground, 15_000, !decision && !busy);
 
   function openDecision(row, action) {
     setActionError(null);

@@ -13,6 +13,7 @@ const TYPE_LABELS = {
   ACCOUNT_CREATED: 'Tài khoản đã được tạo',
   ACCOUNT_ACTIVATED: 'Tài khoản đã được kích hoạt',
   ACCOUNT_ACTIVATED_MANUALLY: 'Tài khoản đã được kích hoạt tại quầy',
+  MANUAL_ACTIVATION_REVIEW_REQUIRED: 'Có yêu cầu kích hoạt tài khoản cần duyệt',
   ACCOUNT_EMAIL_CHANGE_REQUESTED: 'Đã gửi yêu cầu đổi email tài khoản',
   ACCOUNT_EMAIL_CHANGE_COMPLETED: 'Đổi email tài khoản thành công',
   PASSWORD_RESET_COMPLETED: 'Đặt lại mật khẩu thành công',

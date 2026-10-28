@@ -3,6 +3,7 @@ import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { useAuth } from '../../../context/useAuth';
 import { getManagerDashboard } from '../../../services/managerReportingService';
 import { formatPrice } from '../../../utils';
@@ -38,6 +39,10 @@ export default function ManagerDashboardPage() {
     try { setData(await getManagerDashboard()); } catch (err) { setError(err); } finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+  const refreshInBackground = useCallback(async () => {
+    try { setData(await getManagerDashboard()); } catch { /* Keep the last dashboard snapshot on transient failures. */ }
+  }, []);
+  useAutoRefresh(refreshInBackground);
 
   return (
     <div>

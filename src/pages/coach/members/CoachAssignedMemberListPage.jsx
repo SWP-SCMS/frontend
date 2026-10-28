@@ -5,6 +5,7 @@ import { Button, Card, Form, InputGroup, Spinner } from 'react-bootstrap';
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import EmptyState from '../../../components/common/EmptyState';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { listCoachAssignedMembers } from '../../../services/trainingService';
 import { formatGymDate } from '../../../utils/gymTime';
 
@@ -32,6 +33,15 @@ export default function CoachAssignedMemberListPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      setResult(await listCoachAssignedMembers({ q: query, page, size: 20 }));
+    } catch {
+      // Keep the current assigned-member list if a background refresh fails.
+    }
+  }, [query, page]);
+  useAutoRefresh(refreshInBackground);
 
   useEffect(() => {
     setSearchText(query);

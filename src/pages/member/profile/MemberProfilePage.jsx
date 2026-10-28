@@ -51,7 +51,12 @@ import {
 import { useAuth } from '../../../context/useAuth';
 import { extractErrorMessage, formatDate, normalizePhone } from '../../../utils';
 import { applyServerErrors } from '../../../utils/serverErrors';
-import { emailSchema, birthDateSchema } from '../../../schemas/fragments';
+import {
+  emailSchema,
+  birthDateSchema,
+  fullNameSchema,
+  optionalPersonNameSchema,
+} from '../../../schemas/fragments';
 
 import './MemberProfilePage.css';
 
@@ -75,11 +80,7 @@ const optionalHttpUrl = z
 
 const memberProfileSchema = z
   .object({
-    fullName: z
-      .string()
-      .trim()
-      .min(1, 'Vui lòng nhập họ tên.')
-      .max(200, 'Họ tên không được vượt quá 200 ký tự.'),
+    fullName: fullNameSchema,
     phone: z
       .string()
       .trim()
@@ -92,7 +93,7 @@ const memberProfileSchema = z
     birthDate: birthDateSchema,
     profileImageUrl: optionalHttpUrl,
     fitnessGoal: z.string(),
-    emergencyContactName: z.string(),
+    emergencyContactName: optionalPersonNameSchema,
     emergencyContactPhone: z.string(),
   })
   .superRefine((d, ctx) => {

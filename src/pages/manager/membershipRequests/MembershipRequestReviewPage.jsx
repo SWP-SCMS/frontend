@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-b
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { searchMemberAccounts } from '../../../services/memberAccountService';
 import {
   createManagerDirectTermination,
@@ -76,6 +77,20 @@ export default function MembershipRequestReviewPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      const [terminations, freezes] = await Promise.all([
+        listManagerTerminationRequests(),
+        listManagerFreezeRequests(),
+      ]);
+      setTerminationRows(terminations.content || []);
+      setFreezeRows(freezes.content || []);
+    } catch {
+      // Preserve the visible queues during temporary network failures.
+    }
+  }, []);
+  useAutoRefresh(refreshInBackground, 15_000, !decision && !busy);
 
   function openDecision(kind, action, row) {
     setActionError(null);

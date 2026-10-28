@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import {
   createManualActivationRequest,
   getReceptionManualActivationRequest,
@@ -27,6 +28,41 @@ const schema = z.object({
 });
 
 const STATUS = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'EXPIRED'];
+
+const ERROR_MESSAGES = {
+  PENDING_ACCOUNT_NOT_FOUND:
+    'Không tìm thấy tài khoản đang chờ xác thực. Tài khoản có thể đã được xử lý hoặc quá hạn.',
+  MANUAL_ACTIVATION_NOT_ELIGIBLE:
+    'Tài khoản không còn đủ điều kiện kích hoạt thủ công. Vui lòng tra cứu lại.',
+  MANUAL_ACTIVATION_REQUEST_PENDING:
+    'Hội viên đã có yêu cầu kích hoạt đang chờ duyệt.',
+  MANUAL_ACTIVATION_REQUEST_NOT_FOUND:
+    'Không tìm thấy yêu cầu kích hoạt hoặc yêu cầu không còn tồn tại.',
+  VALIDATION_ERROR:
+    'Thông tin yêu cầu chưa hợp lệ. Vui lòng kiểm tra lại và thử lại.',
+  RATE_LIMITED:
+    'Bạn thao tác quá nhanh. Vui lòng chờ một lúc rồi thử lại.',
+};
+
+function localizedError(error) {
+  const code = error?.response?.data?.code;
+  if (ERROR_MESSAGES[code]) return new Error(ERROR_MESSAGES[code]);
+
+  const statusCode = error?.response?.status;
+  if (statusCode === 401) {
+    return new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+  }
+  if (statusCode === 403) {
+    return new Error('Bạn không có quyền thực hiện thao tác này.');
+  }
+  if (!error?.response) {
+    return new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng và thử lại.');
+  }
+  if (statusCode >= 500) {
+    return new Error('Hệ thống đang gặp sự cố. Vui lòng thử lại sau.');
+  }
+  return new Error('Không thể xử lý yêu cầu. Vui lòng thử lại sau.');
+}
 
 export default function ManualActivationPage() {
   const [query, setQuery] = useState('');
@@ -51,18 +87,26 @@ export default function ManualActivationPage() {
     setLoading(true);
     setError(null);
     try { setResult(await listReceptionManualActivationRequests({ status, page, size: 20 })); }
-    catch (err) { setError(err); }
+    catch (err) { setError(localizedError(err)); }
     finally { setLoading(false); }
   }, [status, page]);
 
   useEffect(() => { load(); }, [load]);
+  const refreshInBackground = useCallback(async () => {
+    try {
+      setResult(await listReceptionManualActivationRequests({ status, page, size: 20 }));
+    } catch {
+      // Keep the current request list visible if a background refresh fails.
+    }
+  }, [status, page]);
+  useAutoRefresh(refreshInBackground);
 
   async function search(event) {
     event.preventDefault();
     if (!query.trim()) return;
     setSearching(true); setError(null); setAccount(null);
     try { setAccount(await searchPendingVerificationAccount(query)); }
-    catch (err) { setError(err); }
+    catch (err) { setError(localizedError(err)); }
     finally { setSearching(false); }
   }
 
@@ -75,13 +119,13 @@ export default function ManualActivationPage() {
       setAccount(null); setQuery(''); form.reset();
       if (status === 'PENDING' && page === 0) await load();
       else { setStatus('PENDING'); setPage(0); }
-    } catch (err) { setError(err); }
+    } catch (err) { setError(localizedError(err)); }
   }
 
   async function openDetail(id) {
     setError(null);
     try { setDetail(await getReceptionManualActivationRequest(id)); }
-    catch (err) { setError(err); }
+    catch (err) { setError(localizedError(err)); }
   }
 
   return <div>

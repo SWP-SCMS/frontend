@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import {
   createCoachLeaveRequest,
   listMyCoachLeaveRequests,
@@ -62,6 +63,15 @@ export default function CoachLeaveRequestsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      setRows(await listMyCoachLeaveRequests());
+    } catch {
+      // Keep the current request list visible if a background refresh fails.
+    }
+  }, []);
+  useAutoRefresh(refreshInBackground, 30_000, !busy);
 
   async function submit(event) {
     event.preventDefault();

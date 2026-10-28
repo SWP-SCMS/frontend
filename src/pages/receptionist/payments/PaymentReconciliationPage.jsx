@@ -34,6 +34,7 @@ import {
 } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import EmptyState from '../../../components/common/EmptyState';
 import {
   QUEUE_FILTER,
@@ -134,6 +135,21 @@ export default function PaymentReconciliationPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      const data = await listReconciliationQueue({
+        status: filter,
+        query,
+        page,
+        size: PAGE_SIZE,
+      });
+      setQueue({ ...EMPTY_QUEUE, ...data });
+    } catch {
+      // Keep the current payment queue visible if a background refresh fails.
+    }
+  }, [filter, query, page]);
+  useAutoRefresh(refreshInBackground, 15_000, !active && !submitting);
 
   function handleSubmitSearch(e) {
     e.preventDefault();
@@ -347,16 +363,7 @@ export default function PaymentReconciliationPage() {
     <div>
       <header className="mb-3">
         <h1 className="h3 fw-bold mb-1">Đối soát thanh toán</h1>
-        <p className="text-muted mb-0">
-          Kiểm tra và xác nhận các giao dịch chuyển khoản chưa có kết quả tự động.
-        </p>
       </header>
-
-      <Alert variant="info" className="small">
-        Mỗi quyết định đều được lưu vào lịch sử hoạt động, gồm người thực hiện,
-        thời điểm, lý do và bằng chứng đối soát. Giao dịch đã xác nhận thanh
-        toán hoặc xác nhận không hợp lệ sẽ không thể sửa lại.
-      </Alert>
 
       <div className="d-flex flex-wrap gap-3 align-items-end mb-3">
         <Form onSubmit={handleSubmitSearch} style={{ maxWidth: 360, flexGrow: 1 }}>
