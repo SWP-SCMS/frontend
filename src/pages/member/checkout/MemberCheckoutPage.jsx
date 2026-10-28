@@ -52,6 +52,10 @@ const ERROR_MESSAGES = {
   PAYMENT_CONFLICT:
     'Đơn này hiện không thể thanh toán (có thể đã được xử lý). Vui lòng tải lại trang.',
   PAYMENT_NOT_FOUND: 'Không tìm thấy đơn hàng.',
+  PAYMENT_DESTINATION_CONFIGURATION_INVALID:
+    'Hệ thống chưa thể tạo mã QR do cấu hình tài khoản nhận tiền chưa hợp lệ. Vui lòng liên hệ lễ tân.',
+  PAYMENT_DESTINATION_SNAPSHOT_MISSING:
+    'Yêu cầu thanh toán cũ thiếu thông tin tài khoản nhận tiền. Vui lòng liên hệ lễ tân để được xử lý.',
 };
 
 function errorMessage(err, fallback) {

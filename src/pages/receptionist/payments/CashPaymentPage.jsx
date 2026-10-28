@@ -64,8 +64,10 @@ import { listActiveOffers } from '../../../services/membershipService';
 import { formatDateTime, formatPrice, normalizePhone } from '../../../utils';
 import './ReceiptPage.css';
 
-// Business 409s from the backend, mapped to counter-ready wording.
-const CONFLICT_MESSAGES = {
+// Stable payment/business errors from the backend, mapped to counter-ready
+// wording. This includes both 409 business conflicts and the 503 deployment
+// safety gate returned when the approved SePay destination is misconfigured.
+const PAYMENT_ERROR_MESSAGES = {
   ACTIVE_MEMBERSHIP_EXISTS:
     'Không thể tạo đơn theo hợp đồng cũ. Hãy tải lại trang và thử luồng gia hạn.',
   MEMBERSHIP_RENEWAL_ALREADY_EXISTS:
@@ -78,6 +80,10 @@ const CONFLICT_MESSAGES = {
   OFFER_NOT_ACTIVE: 'Gói tập đã ngừng bán, vui lòng chọn gói khác.',
   MEMBERSHIP_OFFER_NOT_AVAILABLE:
     'Gói tập hoặc loại gói vừa ngừng hoạt động. Vui lòng tải lại và chọn gói khác.',
+  PAYMENT_DESTINATION_CONFIGURATION_INVALID:
+    'Không thể tạo mã QR vì cấu hình tài khoản nhận tiền SePay chưa hợp lệ. Vui lòng báo quản lý kiểm tra cấu hình triển khai.',
+  PAYMENT_DESTINATION_SNAPSHOT_MISSING:
+    'Đơn thanh toán cũ thiếu thông tin tài khoản nhận tiền. Vui lòng chuyển sang đối soát hoặc nhờ quản lý xử lý đơn này.',
 };
 
 const MEMBER_STATUS_LABELS = {
@@ -419,8 +425,8 @@ export default function CashPaymentPage() {
     await submitPayment();
   }
 
-  const conflictCode = error?.response?.data?.code;
-  const conflictMessage = CONFLICT_MESSAGES[conflictCode];
+  const paymentErrorCode = error?.response?.data?.code;
+  const paymentErrorMessage = PAYMENT_ERROR_MESSAGES[paymentErrorCode];
 
   async function handleCancelOrder() {
     const order = pendingOrder;
@@ -990,8 +996,8 @@ export default function CashPaymentPage() {
         </Form>
       </Modal>
 
-      {conflictMessage ? (
-        <Alert variant="warning">{conflictMessage}</Alert>
+      {paymentErrorMessage ? (
+        <Alert variant="warning">{paymentErrorMessage}</Alert>
       ) : null}
 
       <Modal
@@ -1046,7 +1052,7 @@ export default function CashPaymentPage() {
         </Modal.Footer>
       </Modal>
 
-      {error && !conflictMessage ? (
+      {error && !paymentErrorMessage ? (
         <ErrorAlert error={error} title="Không tạo được đơn gói tập" onClose={() => setError(null)} />
       ) : null}
 
