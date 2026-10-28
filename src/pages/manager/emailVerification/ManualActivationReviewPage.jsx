@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import {
   decideManualActivationRequest,
   getManagerManualActivationRequest,
@@ -38,6 +39,14 @@ export default function ManualActivationReviewPage() {
     finally { setLoading(false); }
   }, [status, page]);
   useEffect(() => { load(); }, [load]);
+  const refreshInBackground = useCallback(async () => {
+    try {
+      setResult(await listManagerManualActivationRequests({ status, page, size: 20 }));
+    } catch {
+      // Keep the current queue visible if a background refresh fails.
+    }
+  }, [status, page]);
+  useAutoRefresh(refreshInBackground, 15_000, !detail && !decision);
 
   async function open(id) {
     setError(null);

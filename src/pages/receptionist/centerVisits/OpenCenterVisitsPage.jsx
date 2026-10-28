@@ -3,6 +3,7 @@ import { Alert, Button, Modal, Spinner, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { checkoutMemberCenterVisit, listOpenCenterVisits } from '../../../services/centerVisitService';
 import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 
@@ -28,6 +29,15 @@ export default function OpenCenterVisitsPage() {
   }, [page]);
 
   useEffect(() => { load(); }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      setResult(await listOpenCenterVisits({ page, size: 20 }));
+    } catch {
+      // Keep the current list visible if a background refresh fails.
+    }
+  }, [page]);
+  useAutoRefresh(refreshInBackground, 15_000, !selected && !checkingOut);
 
   function openCheckout(visit) {
     setSelected(visit);

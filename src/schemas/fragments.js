@@ -13,13 +13,27 @@ import { getGymZoneTodayIsoDate } from '../utils/gymTime';
 // source (RegisterPage, MemberCreatePage, StaffAccountCreatePage).
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// fullName — required, trimmed, non-blank, max 200 (BE @Size(max=200)).
-// Trims before sending so the wire value matches the existing behavior.
+const PERSON_NAME_RE =
+  /^(?:\p{L}\p{M}*)+(?:(?:\p{Zs}+|[\p{Pd}'’.]\p{Zs}*)(?:\p{L}\p{M}*)+)*$/u;
+const PERSON_NAME_MESSAGE =
+  'Họ tên chỉ được gồm chữ cái và dấu cách, gạch nối, dấu nháy hoặc dấu chấm.';
+
+// BE accepts Unicode letters/marks and name separators, with a 200-character
+// limit. Trim before validation and sending, matching existing form behavior.
 export const fullNameSchema = z
   .string()
   .trim()
   .min(1, 'Vui lòng nhập họ và tên.')
-  .max(200, 'Họ và tên không được vượt quá 200 ký tự.');
+  .max(200, 'Họ và tên không được vượt quá 200 ký tự.')
+  .regex(PERSON_NAME_RE, PERSON_NAME_MESSAGE);
+
+export const optionalPersonNameSchema = z
+  .string()
+  .trim()
+  .max(200, 'Họ tên không được vượt quá 200 ký tự.')
+  .refine((value) => value === '' || PERSON_NAME_RE.test(value), {
+    message: PERSON_NAME_MESSAGE,
+  });
 
 // email — required, regex-checked, max 320 (BE).
 // The base email() / .email() helper is intentionally NOT used so that

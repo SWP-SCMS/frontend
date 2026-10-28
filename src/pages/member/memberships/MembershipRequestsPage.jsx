@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-b
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import {
   createMyFreezeRequest,
@@ -98,6 +99,20 @@ export default function MembershipRequestsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      const [terminations, freezes] = await Promise.all([
+        listMyTerminationRequests(),
+        listMyFreezeRequests(),
+      ]);
+      setTerminationRows(terminations.content || []);
+      setFreezeRows(freezes.content || []);
+    } catch {
+      // Preserve the current request lists during temporary failures.
+    }
+  }, []);
+  useAutoRefresh(refreshInBackground, 30_000, !withdrawTarget && !busyKey);
 
   const hasOpenTermination = useMemo(
     () => terminationRows.some((row) => row.status === 'PENDING'),

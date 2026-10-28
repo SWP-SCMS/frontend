@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import EmptyState from '../../../components/common/EmptyState';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
 import { ACCOUNT_STATUS } from '../../../constants';
 import {
@@ -432,6 +433,19 @@ export default function ReceptionistMemberBookingPage() {
   useEffect(() => {
     if (accountId) loadHistory();
   }, [accountId, loadHistory]);
+
+  const refreshBookingData = useCallback(async () => {
+    if (!accountId) return;
+    await Promise.all([
+      loadSessions({ silent: true }),
+      loadHistory({ silent: true }),
+    ]);
+  }, [accountId, loadSessions, loadHistory]);
+  useAutoRefresh(
+    refreshBookingData,
+    30_000,
+    Boolean(accountId) && !bookTarget && !cancelTarget && !waitlistTarget && !busyId && !waitlistSubmitting,
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 60 * 1000);

@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import { searchReceptionMember } from '../../../services/receptionistService';
 import {
   createReceptionRefundRequest,
   listReceptionRefundRequests,
   listRefundEligibleSources,
   recordRefundCashDisbursement,
 } from '../../../services/refundService';
-import { formatDateTime, formatPrice } from '../../../utils';
+import { formatDateTime, formatPrice, normalizePhone } from '../../../utils';
 
 const PAGE_SIZE = 20;
 
@@ -41,6 +42,7 @@ function statusBadge(status) {
 function messageOf(error, fallback) {
   const problem = error?.response?.data;
   const known = {
+    MEMBER_NOT_FOUND: 'Không tìm thấy hội viên. Vui lòng kiểm tra lại số điện thoại hoặc mã hội viên.',
     REFUND_NOT_FOUND: 'Yêu cầu hoàn tiền không còn tồn tại.',
     REFUND_NOT_ELIGIBLE: 'Thanh toán hoặc gói tập không đủ điều kiện hoàn tiền.',
     REFUND_ALREADY_EXISTS: 'Thanh toán này đã có yêu cầu hoàn tiền đang mở.',
@@ -51,6 +53,9 @@ function messageOf(error, fallback) {
     REFUND_REMAINING_DAYS_BELOW_THRESHOLD: 'Thời gian còn lại của gói thấp hơn ngưỡng được hoàn tiền.',
     VALIDATION_ERROR: 'Dữ liệu hoàn tiền chưa hợp lệ.',
   };
+  if (/requested member was not found/i.test(problem?.detail || '')) {
+    return 'Không tìm thấy hội viên. Vui lòng kiểm tra lại số điện thoại hoặc mã hội viên.';
+  }
   return known[problem?.code] || problem?.detail || fallback;
 }
 
@@ -67,6 +72,9 @@ export default function RefundRequestDeskPage() {
   const [submitting, setSubmitting] = useState(false);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [sourceCandidates, setSourceCandidates] = useState([]);
+  const [lookupCriterion, setLookupCriterion] = useState('memberId');
+  const [memberLookup, setMemberLookup] = useState('');
+  const [matchedMember, setMatchedMember] = useState(null);
   const [cashTarget, setCashTarget] = useState(null);
   const [evidence, setEvidence] = useState('');
   const idempotencyKey = useRef(newIdempotencyKey());
@@ -92,23 +100,104 @@ export default function RefundRequestDeskPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const refreshInBackground = useCallback(async () => {
+    if (document.visibilityState === 'hidden') return;
+    try {
+      setResult(await listReceptionRefundRequests({ page, size: PAGE_SIZE }));
+    } catch {
+      // Keep the current list visible when a background refresh temporarily fails.
+    }
+  }, [page]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refreshInBackground();
+    };
+    const intervalId = window.setInterval(refreshInBackground, 15_000);
+    window.addEventListener('focus', refreshWhenVisible);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshWhenVisible);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [refreshInBackground]);
+
+  useEffect(() => {
+    const memberCode = form.memberCode;
+    if (!memberCode) return undefined;
+
+    let active = true;
+    const refreshEligibleSources = async () => {
+      if (document.visibilityState === 'hidden') return;
+      try {
+        const candidates = await listRefundEligibleSources(memberCode);
+        if (!active) return;
+        setSourceCandidates(candidates);
+        setForm((current) => {
+          if (current.memberCode !== memberCode || !current.paymentId) return current;
+          const stillEligible = candidates.some(
+            (candidate) =>
+              candidate.paymentId === current.paymentId &&
+              candidate.membershipId === current.membershipId,
+          );
+          return stillEligible
+            ? current
+            : { ...current, paymentId: '', membershipId: '', requestedAmount: '' };
+        });
+      } catch {
+        // Keep the last known eligible sources when a background refresh fails.
+      }
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refreshEligibleSources();
+    };
+    const intervalId = window.setInterval(refreshEligibleSources, 15_000);
+    window.addEventListener('focus', refreshWhenVisible);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshWhenVisible);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [form.memberCode]);
+
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
     if (field === 'memberCode') setSourceCandidates([]);
   }
 
   async function findRefundSources() {
-    const memberCode = form.memberCode.trim().toUpperCase();
-    if (!/^MB-[0-9]+$/.test(memberCode)) {
-      setError(new Error('Nhập mã hội viên dạng MB-100001 trước khi tìm nguồn hoàn.'));
-      return;
+    let memberCode = '';
+    if (lookupCriterion === 'phone') {
+      const phone = normalizePhone(memberLookup);
+      if (!phone) {
+        setError(new Error('Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.'));
+        return;
+      }
+    } else {
+      memberCode = memberLookup.trim().toUpperCase();
+      if (!/^MB-[0-9]+$/.test(memberCode)) {
+        setError(new Error('Nhập mã hội viên dạng MB-100001 trước khi tìm nguồn hoàn.'));
+        return;
+      }
     }
     setSourceLoading(true);
     setError(null);
+    setSourceCandidates([]);
+    setMatchedMember(null);
+    setForm((current) => ({ ...current, paymentId: '', membershipId: '', requestedAmount: '' }));
     try {
+      if (lookupCriterion === 'phone') {
+        const member = await searchReceptionMember({ phone: normalizePhone(memberLookup) });
+        memberCode = member.memberId;
+        setMatchedMember(member);
+      }
       const candidates = await listRefundEligibleSources(memberCode);
+      setForm((current) => ({ ...current, memberCode }));
       setSourceCandidates(candidates);
-      if (candidates.length === 1) selectRefundSource(candidates[0]);
+      if (candidates.length === 1) selectRefundSource(candidates[0], memberCode);
       if (!candidates.length) {
         setError(new Error('Hội viên hiện không có nguồn hoàn tiền đủ điều kiện.'));
       }
@@ -120,10 +209,10 @@ export default function RefundRequestDeskPage() {
     }
   }
 
-  function selectRefundSource(candidate) {
+  function selectRefundSource(candidate, resolvedMemberCode = form.memberCode) {
     setForm((current) => ({
       ...current,
-      memberCode: current.memberCode.trim().toUpperCase(),
+      memberCode: resolvedMemberCode.trim().toUpperCase(),
       paymentId: candidate.paymentId,
       membershipId: candidate.membershipId,
       requestedAmount: String(candidate.suggestedAmount || ''),
@@ -169,6 +258,8 @@ export default function RefundRequestDeskPage() {
       idempotencyKey.current = newIdempotencyKey();
       setForm({ memberCode: '', paymentId: '', membershipId: '', requestedAmount: '', reason: '' });
       setSourceCandidates([]);
+      setMemberLookup('');
+      setMatchedMember(null);
       setNotice('Đã gửi yêu cầu hoàn tiền để Quản lý duyệt bước đầu.');
       if (page === 0) await load();
       else setPage(0);
@@ -229,12 +320,59 @@ export default function RefundRequestDeskPage() {
         <Card.Body className="p-4">
           <h2 className="h5 fw-bold">Tạo yêu cầu hoàn tiền</h2>
           <Form onSubmit={createRequest} className="row g-3">
-            <Form.Group className="col-lg-3">
-              <Form.Label>Mã hội viên *</Form.Label>
-              <div className="d-flex gap-2">
-                <Form.Control value={form.memberCode} onChange={(event) => updateForm('memberCode', event.target.value)} placeholder="MB-100001" maxLength={20} />
-                <Button type="button" variant="outline-danger" disabled={sourceLoading} onClick={findRefundSources}>{sourceLoading ? 'Đang tìm...' : 'Tìm nguồn'}</Button>
+            <div className="col-12">
+              <div className="btn-group" role="group" aria-label="Tiêu chí tra cứu hội viên">
+                <Button
+                  type="button"
+                  variant={lookupCriterion === 'memberId' ? 'danger' : 'outline-danger'}
+                  onClick={() => {
+                    setLookupCriterion('memberId');
+                    setMemberLookup('');
+                    setMatchedMember(null);
+                    setSourceCandidates([]);
+                    setForm((current) => ({ ...current, memberCode: '', paymentId: '', membershipId: '', requestedAmount: '' }));
+                  }}
+                >
+                  Mã hội viên
+                </Button>
+                <Button
+                  type="button"
+                  variant={lookupCriterion === 'phone' ? 'danger' : 'outline-danger'}
+                  onClick={() => {
+                    setLookupCriterion('phone');
+                    setMemberLookup('');
+                    setMatchedMember(null);
+                    setSourceCandidates([]);
+                    setForm((current) => ({ ...current, memberCode: '', paymentId: '', membershipId: '', requestedAmount: '' }));
+                  }}
+                >
+                  Số điện thoại
+                </Button>
               </div>
+            </div>
+            <Form.Group className="col-lg-3">
+              <Form.Label>{lookupCriterion === 'phone' ? 'Số điện thoại *' : 'Mã hội viên *'}</Form.Label>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  value={memberLookup}
+                  onChange={(event) => {
+                    setMemberLookup(event.target.value);
+                    setMatchedMember(null);
+                    setSourceCandidates([]);
+                    setForm((current) => ({ ...current, memberCode: '', paymentId: '', membershipId: '', requestedAmount: '' }));
+                  }}
+                  placeholder={lookupCriterion === 'phone' ? '0901234567' : 'MB-100001'}
+                  maxLength={lookupCriterion === 'phone' ? 15 : 20}
+                  inputMode={lookupCriterion === 'phone' ? 'tel' : undefined}
+                  style={{ height: '3.125rem' }}
+                />
+                <Button type="button" variant="outline-danger" className="flex-shrink-0 text-nowrap" style={{ height: '3.125rem' }} disabled={sourceLoading} onClick={findRefundSources}>{sourceLoading ? 'Đang tìm...' : 'Tìm nguồn'}</Button>
+              </div>
+              {matchedMember ? (
+                <Form.Text className="text-muted">
+                  {matchedMember.fullName} · {matchedMember.memberId}
+                </Form.Text>
+              ) : null}
             </Form.Group>
             {sourceCandidates.length ? (
               <Form.Group className="col-12">
@@ -258,14 +396,14 @@ export default function RefundRequestDeskPage() {
             ) : null}
             <Form.Group className="col-lg-3">
               <Form.Label>Số tiền yêu cầu *</Form.Label>
-              <Form.Control type="number" min="1" step="1" inputMode="numeric" value={form.requestedAmount} onChange={(event) => updateForm('requestedAmount', event.target.value)} />
+              <Form.Control type="number" min="1" step="1" inputMode="numeric" value={form.requestedAmount} onChange={(event) => updateForm('requestedAmount', event.target.value)} style={{ height: '3.125rem' }} />
             </Form.Group>
             <Form.Group className="col-lg-6">
               <Form.Label>Lý do *</Form.Label>
-              <Form.Control as="textarea" rows={2} maxLength={1000} value={form.reason} onChange={(event) => updateForm('reason', event.target.value)} />
+              <Form.Control as="textarea" rows={2} maxLength={1000} value={form.reason} onChange={(event) => updateForm('reason', event.target.value)} style={{ height: '3.125rem' }} />
             </Form.Group>
-            <div className="col-lg-3 d-flex align-items-end">
-              <Button type="submit" variant="danger" className="w-100" disabled={submitting}>
+            <div className="col-12 d-flex justify-content-center pt-2">
+              <Button type="submit" variant="danger" className="w-100" style={{ maxWidth: '18rem' }} disabled={submitting}>
                 {submitting ? 'Đang gửi...' : 'Gửi yêu cầu hoàn tiền'}
               </Button>
             </div>

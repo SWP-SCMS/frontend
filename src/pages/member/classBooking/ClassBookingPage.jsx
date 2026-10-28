@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Modal, Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { useAuth } from '../../../context/useAuth';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
@@ -320,6 +321,15 @@ export default function ClassBookingPage({ ptOnly = false }) {
   useEffect(() => {
     loadWaitlists();
   }, [loadWaitlists]);
+
+  const refreshBookingData = useCallback(async () => {
+    await Promise.all([
+      loadSessions({ silent: true }),
+      loadBookings(),
+      loadWaitlists(),
+    ]);
+  }, [loadSessions, loadBookings, loadWaitlists]);
+  useAutoRefresh(refreshBookingData, 30_000, !bookTarget && !cancelTarget && !busyId);
 
   // ----- Dữ liệu cho bộ lọc -----
   const disciplines = useMemo(

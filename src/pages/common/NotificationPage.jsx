@@ -3,6 +3,7 @@ import { Alert, Badge, Button, Card, Form, Spinner } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import ErrorAlert from '../../components/common/ErrorAlert';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import {
   listNotifications,
   markAllNotificationsRead,
@@ -86,6 +87,7 @@ function notificationDestination(item, pathname) {
     return '/reception/dashboard';
   }
   if (role === 'manager') {
+    if (type === 'MANUAL_ACTIVATION_REVIEW_REQUIRED') return '/manager/email-verification';
     if (type?.startsWith('MEMBERSHIP_REFUND_')) return '/manager/refunds';
     if (type?.startsWith('MEMBERSHIP_FREEZE_') || type?.startsWith('MEMBERSHIP_TERMINATION_')) {
       return '/manager/membership-requests';
@@ -119,6 +121,15 @@ export default function NotificationPage() {
   }, [page, unreadOnly]);
 
   useEffect(() => { load(); }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      setResult(await listNotifications({ unreadOnly, page, size: 20 }));
+    } catch {
+      // Keep the visible notifications if a background refresh fails.
+    }
+  }, [unreadOnly, page]);
+  useAutoRefresh(refreshInBackground, 30_000, !mutating);
 
   async function handleRead(item) {
     setMutating(item.id);

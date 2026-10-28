@@ -3,6 +3,7 @@ import { Alert, Button, Spinner, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { listMyReceipts } from '../../../services/memberReceiptService';
 import { formatPrice } from '../../../utils';
 import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
@@ -16,6 +17,10 @@ export default function MemberReceiptListPage() {
     try { setReceipts(await listMyReceipts()); } catch (err) { setError(err); } finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
+  const refreshInBackground = useCallback(async () => {
+    try { setReceipts(await listMyReceipts()); } catch { /* Keep the current receipts on transient failures. */ }
+  }, []);
+  useAutoRefresh(refreshInBackground);
   return (
     <div>
       <div className="d-flex flex-wrap justify-content-between gap-3 align-items-start mb-4">

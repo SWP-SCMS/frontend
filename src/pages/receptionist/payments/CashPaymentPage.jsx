@@ -502,7 +502,6 @@ export default function CashPaymentPage() {
 
         <Card className="border-0 shadow-sm">
           <Card.Body>
-            <h2 className="h6 fw-bold mb-3">Bước 1 — Tìm hội viên</h2>
             <Form onSubmit={handleLookupSubmit}>
               <Row className="g-3 align-items-end">
                 <Col md={3}>
@@ -570,12 +569,6 @@ export default function CashPaymentPage() {
               />
             ) : null}
 
-            <p className="text-muted small mb-0 mt-3">
-              Tra cứu là chính xác — không tìm theo tên hay email. Nhập mã hội viên
-              hoặc số điện thoại để sang bước chọn gói tập. Nếu hội viên chưa có
-              tài khoản,{' '}
-              <Link to="/reception/members/new">đăng ký hội viên mới</Link> trước.
-            </p>
           </Card.Body>
         </Card>
       </div>

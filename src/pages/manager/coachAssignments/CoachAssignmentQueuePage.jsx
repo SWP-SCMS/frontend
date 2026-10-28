@@ -27,6 +27,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import EmptyState from '../../../components/common/EmptyState';
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import {
   ASSIGNMENT_CANDIDATE_STATUS,
   assignCoach,
@@ -177,6 +178,31 @@ export default function CoachAssignmentQueuePage() {
   useEffect(() => {
     loadWorkloads();
   }, [loadWorkloads]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      const [data, workloadData] = await Promise.all([
+        listCoachAssignmentCandidates({
+          query: query || undefined,
+          assignmentStatus,
+          page,
+          size: PAGE_SIZE,
+        }),
+        listCoachAssignmentWorkloads(),
+      ]);
+      setCandidates({ ...EMPTY_PAGE, ...data });
+      setWorkloads(
+        [...workloadData].sort(
+          (left, right) =>
+            Number(left.activeMemberCount || 0) - Number(right.activeMemberCount || 0)
+            || String(left.fullName || '').localeCompare(String(right.fullName || ''), 'vi'),
+        ),
+      );
+    } catch {
+      // Keep the visible candidate and workload data on transient failures.
+    }
+  }, [assignmentStatus, page, query]);
+  useAutoRefresh(refreshInBackground, 30_000, !assignMember && !historyMember && !submitting);
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);

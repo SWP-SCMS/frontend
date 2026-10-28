@@ -16,6 +16,7 @@ const ERROR_MESSAGES = {
   INVALID_PASSWORD_RESET_SESSION:
     'Phiên đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu mã OTP mới.',
   NEW_PASSWORD_SAME_AS_CURRENT: 'Mật khẩu mới phải khác mật khẩu hiện tại.',
+  RATE_LIMITED: 'Bạn thao tác quá nhanh. Vui lòng thử lại sau.',
   RATE_LIMIT_EXCEEDED: 'Bạn thao tác quá nhanh. Vui lòng thử lại sau.',
 };
 

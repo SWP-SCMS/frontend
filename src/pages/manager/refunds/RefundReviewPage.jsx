@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import {
   finalApproveRefundRequest,
   firstApproveRefundRequest,
@@ -76,6 +77,15 @@ export default function RefundReviewPage() {
   }, [page]);
 
   useEffect(() => { load(); }, [load]);
+
+  const refreshInBackground = useCallback(async () => {
+    try {
+      setResult(await listManagerRefundRequests({ page, size: PAGE_SIZE }));
+    } catch {
+      // Keep the current queue visible if a background refresh fails.
+    }
+  }, [page]);
+  useAutoRefresh(refreshInBackground, 15_000, !action && !submitting);
 
   function openAction(kind, row) {
     setError(null);

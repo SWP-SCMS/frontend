@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { searchReceptionMember } from '../../../services/receptionistService';
 import {
   collectFreezeCashPayment,
@@ -64,6 +65,21 @@ export default function MembershipRequestDeskPage() {
   const [endEarlyTarget, setEndEarlyTarget] = useState(null);
   const [termination, setTermination] = useState({ mode: 'END_OF_CYCLE', reason: '' });
   const [freeze, setFreeze] = useState({ startDate: '', endDate: '', reason: '' });
+
+  const refreshForCurrentMember = useCallback(async () => {
+    if (!memberCode) return;
+    try {
+      const [terminations, freezes] = await Promise.all([
+        listReceptionTerminationRequests(memberCode),
+        listReceptionFreezeRequests(memberCode),
+      ]);
+      setTerminationRows(terminations.content || []);
+      setFreezeRows(freezes.content || []);
+    } catch {
+      // Preserve the last visible member requests if a background refresh fails.
+    }
+  }, [memberCode]);
+  useAutoRefresh(refreshForCurrentMember, 30_000, Boolean(memberCode) && !busy && !paymentTarget && !endEarlyTarget);
 
   async function loadFor(code) {
     const normalized = code.trim().toUpperCase();

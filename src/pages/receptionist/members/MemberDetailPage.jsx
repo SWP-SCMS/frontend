@@ -66,7 +66,12 @@ import {
 import { ACCOUNT_STATUS } from '../../../constants';
 import { formatDateTime, formatPrice, normalizePhone } from '../../../utils';
 import { applyServerErrors } from '../../../utils/serverErrors';
-import { emailSchema, birthDateSchema } from '../../../schemas/fragments';
+import {
+  emailSchema,
+  birthDateSchema,
+  fullNameSchema,
+  optionalPersonNameSchema,
+} from '../../../schemas/fragments';
 import { paymentMethodLabel } from '../../../utils/receiptPdf';
 import '../payments/ReceiptPage.css';
 
@@ -113,15 +118,12 @@ const phoneRequiredSchema = z
 
 const receptionMemberProfileSchema = z
   .object({
-    fullName: z
-      .string()
-      .trim()
-      .min(1, 'Họ tên không được để trống.'),
+    fullName: fullNameSchema,
     phone: phoneRequiredSchema,
     email: emailSchema,
     birthDate: birthDateSchema,
     fitnessGoal: z.string(),
-    emergencyContactName: z.string(),
+    emergencyContactName: optionalPersonNameSchema,
     emergencyContactPhone: z.string(),
   })
   .superRefine((d, ctx) => {
