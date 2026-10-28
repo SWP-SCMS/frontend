@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Accordion, Button, Card, Col, Form, ProgressBar, Row, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
@@ -84,7 +85,7 @@ export default function ManagerReportsPage() {
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { control, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: DEFAULT_FILTERS,
   });
@@ -133,12 +134,12 @@ export default function ManagerReportsPage() {
             <Row className="g-3 align-items-end">
               <Col md={3}>
                 <Form.Label>Từ ngày</Form.Label>
-                <Form.Control type="date" {...register('from')} isInvalid={Boolean(errors.from)} />
+                <RhfDateInput control={control} name="from" isInvalid={Boolean(errors.from)} />
                 <Form.Control.Feedback type="invalid">{errors.from?.message}</Form.Control.Feedback>
               </Col>
               <Col md={3}>
                 <Form.Label>Đến ngày</Form.Label>
-                <Form.Control type="date" {...register('to')} isInvalid={Boolean(errors.to)} />
+                <RhfDateInput control={control} name="to" isInvalid={Boolean(errors.to)} />
                 <Form.Control.Feedback type="invalid">{errors.to?.message}</Form.Control.Feedback>
               </Col>
               <Col md={6} className="d-flex gap-2">

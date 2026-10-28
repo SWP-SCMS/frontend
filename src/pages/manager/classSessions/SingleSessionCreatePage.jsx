@@ -35,6 +35,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -48,7 +49,7 @@ import {
 import { applyServerErrors } from '../../../utils/serverErrors';
 import { getGymZoneTodayIsoDate } from '../../../utils/gymTime';
 
-// Locale-agnostic yyyy-MM-dd (matches HTML <input type="date">).
+// Locale-agnostic yyyy-MM-dd used by the model/API.
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -200,6 +201,7 @@ export default function SingleSessionCreatePage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -764,9 +766,9 @@ export default function SingleSessionCreatePage() {
 
         <Form.Group className="mt-3" controlId="ssc-sessionDate">
           <Form.Label>Ngày buổi tập *</Form.Label>
-          <Form.Control
-            type="date"
-            {...register('sessionDate')}
+          <RhfDateInput
+            control={control}
+            name="sessionDate"
             isInvalid={Boolean(errors.sessionDate)}
             disabled={!classIsActive}
           />

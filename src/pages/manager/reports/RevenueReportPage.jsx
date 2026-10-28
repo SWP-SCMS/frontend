@@ -28,6 +28,7 @@ import {
 } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
+import { DateInput } from '../../../components/common/DateInput';
 import { fetchRevenueReport } from '../../../services/revenueReportService';
 import { formatDate, formatPrice } from '../../../utils';
 
@@ -166,26 +167,24 @@ export default function RevenueReportPage() {
               <Form.Label htmlFor="report-from" className="small mb-1">
                 Từ ngày
               </Form.Label>
-              <Form.Control
+              <DateInput
                 id="report-from"
-                type="date"
                 size="sm"
                 value={from}
                 max={to || undefined}
-                onChange={(e) => setFrom(e.target.value)}
+                onChange={setFrom}
               />
             </Col>
             <Col md={4} lg={3}>
               <Form.Label htmlFor="report-to" className="small mb-1">
                 Đến ngày
               </Form.Label>
-              <Form.Control
+              <DateInput
                 id="report-to"
-                type="date"
                 size="sm"
                 value={to}
                 min={from || undefined}
-                onChange={(e) => setTo(e.target.value)}
+                onChange={setTo}
               />
             </Col>
             <Col md={4} lg={3}>
