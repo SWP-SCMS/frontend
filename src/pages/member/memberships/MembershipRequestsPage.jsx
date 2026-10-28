@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
+import { DateInput } from '../../../components/common/DateInput';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
@@ -304,21 +305,19 @@ export default function MembershipRequestsPage() {
                   <Form onSubmit={submitFreeze} className="scms-membership-request-form">
                     <Form.Group>
                       <Form.Label>Từ ngày</Form.Label>
-                      <Form.Control
-                        type="date"
+                      <DateInput
                         min={todayInput()}
                         value={freeze.startDate}
-                        onChange={(event) => setFreeze((value) => ({ ...value, startDate: event.target.value }))}
+                        onChange={(startDate) => setFreeze((value) => ({ ...value, startDate }))}
                         disabled={hasOpenFreeze}
                       />
                     </Form.Group>
                     <Form.Group>
                       <Form.Label>Đến ngày</Form.Label>
-                      <Form.Control
-                        type="date"
+                      <DateInput
                         min={freeze.startDate || todayInput()}
                         value={freeze.endDate}
-                        onChange={(event) => setFreeze((value) => ({ ...value, endDate: event.target.value }))}
+                        onChange={(endDate) => setFreeze((value) => ({ ...value, endDate }))}
                         disabled={hasOpenFreeze}
                       />
                     </Form.Group>

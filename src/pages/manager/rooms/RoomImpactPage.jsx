@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Alert, Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -554,7 +555,7 @@ export default function RoomImpactPage() {
               <>
                 <Col md={2}>
                   <Form.Label>Từ ngày</Form.Label>
-                  <Form.Control type="date" min={getGymZoneTodayIsoDate()} readOnly={Boolean(extensionSuspension)} {...register('startDate')} isInvalid={Boolean(errors.startDate)} />
+                  <RhfDateInput control={control} name="startDate" min={getGymZoneTodayIsoDate()} readOnly={Boolean(extensionSuspension)} isInvalid={Boolean(errors.startDate)} />
                   <Form.Control.Feedback type="invalid">{errors.startDate?.message}</Form.Control.Feedback>
                 </Col>
                 <Col md={2}>
@@ -564,7 +565,7 @@ export default function RoomImpactPage() {
                 </Col>
                 <Col md={2}>
                   <Form.Label>Đến ngày</Form.Label>
-                  <Form.Control type="date" min={getGymZoneTodayIsoDate()} {...register('endDate')} isInvalid={Boolean(errors.endDate)} />
+                  <RhfDateInput control={control} name="endDate" min={getGymZoneTodayIsoDate()} isInvalid={Boolean(errors.endDate)} />
                   <Form.Control.Feedback type="invalid">{errors.endDate?.message}</Form.Control.Feedback>
                 </Col>
                 <Col md={2}>
@@ -700,14 +701,14 @@ export default function RoomImpactPage() {
                           ) : action === 'RESCHEDULE' ? (
                             <Row className="g-2">
                               <Col xs={7}>
-                                <Form.Control size="sm" type="date" min={getGymZoneTodayIsoDate()} {...register(`resolutions.${index}.startDate`)} isInvalid={Boolean(errors.resolutions?.[index]?.startDate)} />
+                                <RhfDateInput control={control} name={`resolutions.${index}.startDate`} size="sm" min={getGymZoneTodayIsoDate()} isInvalid={Boolean(errors.resolutions?.[index]?.startDate)} />
                                 <Form.Control.Feedback type="invalid">{errors.resolutions?.[index]?.startDate?.message}</Form.Control.Feedback>
                               </Col>
                               <Col xs={5}>
                                 <Form.Control size="sm" type="time" {...register(`resolutions.${index}.startClock`)} isInvalid={Boolean(errors.resolutions?.[index]?.startClock)} />
                               </Col>
                               <Col xs={7}>
-                                <Form.Control size="sm" type="date" min={getGymZoneTodayIsoDate()} {...register(`resolutions.${index}.endDate`)} isInvalid={Boolean(errors.resolutions?.[index]?.endDate)} />
+                                <RhfDateInput control={control} name={`resolutions.${index}.endDate`} size="sm" min={getGymZoneTodayIsoDate()} isInvalid={Boolean(errors.resolutions?.[index]?.endDate)} />
                               </Col>
                               <Col xs={5}>
                                 <Form.Control size="sm" type="time" {...register(`resolutions.${index}.endClock`)} isInvalid={Boolean(errors.resolutions?.[index]?.endClock)} />

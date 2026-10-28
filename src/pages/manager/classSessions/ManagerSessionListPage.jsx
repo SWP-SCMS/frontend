@@ -35,6 +35,7 @@ import {
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
+import { DateInput } from '../../../components/common/DateInput';
 import BulkCancelSessionsModal from '../../../components/manager/BulkCancelSessionsModal';
 import { listClasses } from '../../../services/sportClassService';
 import { listRooms } from '../../../services/roomService';
@@ -58,7 +59,7 @@ const LIST_PAGE_SIZE = 20;
 // the smallest number of round-trips for typical weeks.
 const CALENDAR_PAGE_SIZE = 100;
 
-// yyyy-MM-dd (HTML <input type="date">).
+// yyyy-MM-dd (giá trị model/API, độc lập với định dạng hiển thị).
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // Locale-agnostic helpers — every display goes through `Asia/Ho_Chi_Minh`.
@@ -828,22 +829,20 @@ export default function ManagerSessionListPage() {
                 <Form.Label className="small text-muted mb-1">
                   Từ ngày (giờ địa phương)
                 </Form.Label>
-                <Form.Control
+                <DateInput
                   size="sm"
-                  type="date"
                   value={fromYmd}
-                  onChange={(e) => onFilterChange('from', e.target.value)}
+                  onChange={(value) => onFilterChange('from', value)}
                 />
               </Col>
               <Col md={3} sm={6}>
                 <Form.Label className="small text-muted mb-1">
                   Đến ngày (giờ địa phương)
                 </Form.Label>
-                <Form.Control
+                <DateInput
                   size="sm"
-                  type="date"
                   value={toYmd}
-                  onChange={(e) => onFilterChange('to', e.target.value)}
+                  onChange={(value) => onFilterChange('to', value)}
                 />
                 {listRangeIso?.invalid ? (
                   <Form.Text className="text-danger">
@@ -1381,12 +1380,11 @@ function CalendarView({
             >
               Chọn ngày
             </Form.Label>
-            <Form.Control
+            <DateInput
               id="msl-cal-pick"
-              type="date"
               size="sm"
               value={selectedYmd || ''}
-              onChange={(e) => onSelectDate && onSelectDate(e.target.value)}
+              onChange={(value) => onSelectDate?.(value)}
               aria-label="Chọn ngày để chuyển tuần"
             />
           </div>

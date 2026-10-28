@@ -26,6 +26,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -135,6 +136,7 @@ export default function RegisterPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
@@ -366,11 +368,12 @@ export default function RegisterPage() {
               </Icon>
             }
           >
-            <input
+            <RhfDateInput
               id="reg-birthDate"
               className="scms-login-input scms-register-date"
-              type="date"
-              {...register('birthDate')}
+              unstyled
+              control={control}
+              name="birthDate"
               max={latestEligibleBirthDate(16)}
               autoComplete="bday"
             />

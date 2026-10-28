@@ -6,7 +6,7 @@
 
 export const GYM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
-// yyyy-MM-dd (giá trị của <input type="date">).
+// yyyy-MM-dd (giá trị model/API, độc lập với định dạng hiển thị).
 export const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // Ngày hiện tại (YYYY-MM-DD) theo giờ phòng tập.

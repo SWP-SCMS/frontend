@@ -12,6 +12,7 @@ import {
   Table,
 } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -283,7 +284,7 @@ export default function ReceptionistMemberBookingPage() {
   const historyRequestRef = useRef(0);
 
   const {
-    register: registerFilter,
+    control: filterControl,
     handleSubmit: handleFilterSubmit,
     reset: resetFilters,
     formState: { errors: filterErrors },
@@ -702,9 +703,9 @@ export default function ReceptionistMemberBookingPage() {
               <Col md={4}>
                 <Form.Group controlId="booking-from-date">
                   <Form.Label>Từ ngày</Form.Label>
-                  <Form.Control
-                    type="date"
-                    {...registerFilter('fromDate')}
+                  <RhfDateInput
+                    control={filterControl}
+                    name="fromDate"
                     isInvalid={Boolean(filterErrors.fromDate)}
                   />
                   <Form.Control.Feedback type="invalid">
@@ -715,9 +716,9 @@ export default function ReceptionistMemberBookingPage() {
               <Col md={4}>
                 <Form.Group controlId="booking-to-date">
                   <Form.Label>Đến ngày</Form.Label>
-                  <Form.Control
-                    type="date"
-                    {...registerFilter('toDate')}
+                  <RhfDateInput
+                    control={filterControl}
+                    name="toDate"
                     isInvalid={Boolean(filterErrors.toDate)}
                   />
                   <Form.Control.Feedback type="invalid">

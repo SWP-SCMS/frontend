@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -74,6 +75,7 @@ export default function StaffAccountEditPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setError,
@@ -290,9 +292,9 @@ export default function StaffAccountEditPage() {
           <Col md={6}>
             <Form.Group controlId="edit-birthDate">
               <Form.Label>Ngày sinh *</Form.Label>
-              <Form.Control
-                type="date"
-                {...register('birthDate')}
+              <RhfDateInput
+                control={control}
+                name="birthDate"
                 max={new Date().toISOString().slice(0, 10)}
                 isInvalid={Boolean(errors.birthDate)}
               />

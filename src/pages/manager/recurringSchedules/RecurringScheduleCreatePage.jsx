@@ -31,6 +31,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
 import { useForm, Controller } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -45,7 +46,7 @@ import {
   gymLocalDateToIsoInstant,
 } from '../../../utils/gymTime';
 
-// Locale-agnostic yyyy-MM-dd (matches HTML <input type="date">).
+// Locale-agnostic yyyy-MM-dd used by the model/API.
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -766,9 +767,9 @@ export default function RecurringScheduleCreatePage() {
 
         <Form.Group className="mt-3" controlId="rsc-startDate">
           <Form.Label>Ngày bắt đầu *</Form.Label>
-          <Form.Control
-            type="date"
-            {...register('startDate')}
+          <RhfDateInput
+            control={control}
+            name="startDate"
             isInvalid={Boolean(errors.startDate)}
             disabled={!classIsActive}
           />

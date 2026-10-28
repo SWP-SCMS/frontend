@@ -114,11 +114,23 @@
   color: #334155;
 }
 
-.mco-feat li span {
-  display: inline-block;
-  width: 1.1rem;
+.mco-feat li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.mco-feat li > span:first-child {
+  flex: 0 0 1.1rem;
   font-weight: 800;
   color: #059669;
+}
+
+.mco-feat li > span:last-child {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .mco-feat li.off {
@@ -126,7 +138,7 @@
   text-decoration: line-through;
 }
 
-.mco-feat li.off span {
+.mco-feat li.off > span:first-child {
   color: #94a3b8;
 }
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, Card, Col, Form, Row, Spinner, Table } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -163,7 +164,7 @@ export default function AuditHistoryPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, control, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(filterSchema),
     defaultValues: EMPTY_FILTERS,
   });
@@ -219,11 +220,11 @@ export default function AuditHistoryPage() {
               </Col>
               <Col md={2}>
                 <Form.Label>Từ ngày</Form.Label>
-                <Form.Control type="date" {...register('from')} />
+                <RhfDateInput control={control} name="from" />
               </Col>
               <Col md={2}>
                 <Form.Label>Đến ngày</Form.Label>
-                <Form.Control type="date" {...register('to')} isInvalid={Boolean(errors.to)} />
+                <RhfDateInput control={control} name="to" isInvalid={Boolean(errors.to)} />
                 <Form.Control.Feedback type="invalid">{errors.to?.message}</Form.Control.Feedback>
               </Col>
               <Col md={2} className="d-flex align-items-end gap-2">

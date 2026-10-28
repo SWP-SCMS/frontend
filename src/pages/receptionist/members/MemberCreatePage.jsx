@@ -25,6 +25,7 @@ import {
   Spinner,
 } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
+import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -75,6 +76,7 @@ export default function MemberCreatePage() {
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     reset,
@@ -318,9 +320,9 @@ export default function MemberCreatePage() {
                   <Col sm={6}>
                     <Form.Group className="mb-3">
                       <Form.Label className="small text-muted mb-1">Ngày sinh *</Form.Label>
-                      <Form.Control
-                        type="date"
-                        {...register('birthDate')}
+                      <RhfDateInput
+                        control={control}
+                        name="birthDate"
                         max={latestEligibleBirthDate(16)}
                         isInvalid={Boolean(errors.birthDate)}
                       />
