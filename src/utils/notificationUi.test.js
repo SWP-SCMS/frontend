@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  notificationDestination,
+  manualActivationNotificationDestination,
   notificationSummary,
 } from './notificationUi.js';
 
@@ -22,22 +22,22 @@ test('labels manual activation review notifications in Vietnamese', () => {
 
 test('routes manual activation review notifications only for managers', () => {
   assert.equal(
-    notificationDestination(activationNotification, '/manager/notifications'),
+    manualActivationNotificationDestination(activationNotification, '/manager/notifications'),
     '/manager/email-verification',
   );
   assert.notEqual(
-    notificationDestination(activationNotification, '/reception/notifications'),
+    manualActivationNotificationDestination(activationNotification, '/reception/notifications'),
     '/manager/email-verification',
   );
   assert.notEqual(
-    notificationDestination(activationNotification, '/member/notifications'),
+    manualActivationNotificationDestination(activationNotification, '/member/notifications'),
     '/manager/email-verification',
   );
 });
 
 test('routes read notifications and tolerates missing optional payload fields', () => {
   assert.equal(
-    notificationDestination(
+    manualActivationNotificationDestination(
       { ...activationNotification, read: true, payload: undefined },
       '/manager/notifications',
     ),

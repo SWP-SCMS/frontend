@@ -11,6 +11,7 @@ import {
 import { formatGymDate, formatGymTime } from '../../utils/gymTime';
 import {
   humanize,
+  manualActivationNotificationDestination,
   notificationDetail,
   notificationSummary,
 } from '../../utils/notificationUi';
@@ -30,6 +31,9 @@ const TARGET_LABELS = {
 };
 
 function notificationDestination(item, pathname) {
+  const manualActivationDestination = manualActivationNotificationDestination(item, pathname);
+  if (manualActivationDestination) return manualActivationDestination;
+
   const role = pathname.split('/')[1];
   const type = item.notificationType;
   const payload = item.payload || {};
