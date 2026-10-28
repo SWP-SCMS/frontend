@@ -5,14 +5,11 @@
 //   - Có gói tập đang hoạt động chưa : useMemberArea() <- GET /members/me/memberships
 //   - Danh sách gói đang bán          : GET /membership-offers
 //   - Đơn đang chờ thanh toán         : GET /members/me/membership-orders/pending
-//   - Nút "Chọn gói"                  : POST /members/me/membership-orders
-//
-// Thanh toán chuyển khoản (US18) chưa làm ở FE: sau khi tạo đơn, trang chỉ
-// hiển thị đơn đang chờ thanh toán.
+//   - Nút "Chọn gói"                  : mở xác nhận rồi chuyển sang checkout
 
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Alert, Spinner } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button, Modal, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../../context/useAuth';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
@@ -21,10 +18,7 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 import MemberCoachCard from '../../../components/member/MemberCoachCard';
 import { buildFeatures } from '../../public/offers/offerUtils';
 import { listActiveOffers } from '../../../services/membershipService';
-import {
-  createMyMembershipOrder,
-  getMyPendingMembershipOrder,
-} from '../../../services/memberService';
+import { getMyPendingMembershipOrder } from '../../../services/memberService';
 import {
   extractErrorMessage,
   formatDateTime,
@@ -175,7 +169,7 @@ function Step({ state, label, title, text, here }) {
   );
 }
 
-function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
+function PlanCard({ planCode, offers, blockedReason, onChoose }) {
   // Plan này chỉ có 1 mức giá -> giữ nguyên layout cũ, không cần bộ chọn.
   const list = offers || [];
   const hasVariants = list.length > 1;
@@ -185,8 +179,6 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
   // của phiên bản đang bấm và fallback về offers[0] khi không còn hợp lệ.
   const [pickedOfferId, setPickedOfferId] = useState(null);
   const offer = list.find((o) => o.offerId === pickedOfferId) || list[0];
-  const busy = Boolean(offer) && busyOfferId === offer.offerId;
-
   const features = buildFeatures(offer);
 
   return (
@@ -254,10 +246,10 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
         <button
           type="button"
           className="scms-md-plan-btn"
-          disabled={Boolean(blockedReason) || busy}
+          disabled={Boolean(blockedReason)}
           onClick={() => onChoose(offer)}
         >
-          {busy ? 'Đang tạo đơn...' : 'Chọn gói tập'}
+          Chọn gói tập
         </button>
         {blockedReason ? (
           <div className="scms-md-plan-note">{blockedReason}</div>
@@ -270,6 +262,7 @@ function PlanCard({ planCode, offers, blockedReason, busyOfferId, onChoose }) {
 // ----- Trang chính -----
 
 export default function MemberDashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const {
     activeMembership,
@@ -278,7 +271,6 @@ export default function MemberDashboardPage() {
     hasReservedMembership,
     loading: membershipLoading,
     error: membershipError,
-    reload: reloadMemberships,
   } = useMemberArea();
 
   const [offers, setOffers] = useState([]);
@@ -288,9 +280,8 @@ export default function MemberDashboardPage() {
   const [pendingOrder, setPendingOrder] = useState(null);
   const [pendingLoading, setPendingLoading] = useState(true);
 
-  const [orderingId, setOrderingId] = useState(null);
+  const [selectedOffer, setSelectedOffer] = useState(null);
   const [actionError, setActionError] = useState(null);
-  const [notice, setNotice] = useState(null);
 
   const refreshPending = useCallback(async () => {
     try {
@@ -322,33 +313,17 @@ export default function MemberDashboardPage() {
     };
   }, [refreshPending]);
 
-  // BR-ORD-01: mua gói bắt đầu bằng một Order, quyền lợi chưa được cấp ngay.
-  // BR-ORD-02/03: Member tự mua dùng Bank Transfer, Order ở PENDING_PAYMENT.
+  // Dashboard chỉ chọn gói và chuyển sang checkout. Order và yêu cầu thanh toán
+  // được tạo tại checkout để không để lại đơn PENDING_PAYMENT mà người dùng
+  // không nhìn thấy mã QR.
   async function handleChoose(offer) {
     setActionError(null);
-    setNotice(null);
-    setOrderingId(offer.offerId);
-    try {
-      const order = await createMyMembershipOrder({ offerId: offer.offerId });
-      setPendingOrder(order);
-      setNotice(
-        `Đã tạo đơn ${order.orderNumber} cho gói ${order.offerName}. Đơn đang chờ thanh toán.`,
-      );
-    } catch (err) {
-      // Luôn hiển thị lỗi BE trả về, ví dụ:
-      //   đã có gói gia hạn RESERVED (MEMBERSHIP_RENEWAL_ALREADY_EXISTS)
-      //   đã có đơn PENDING_PAYMENT (PENDING_MEMBERSHIP_ORDER_EXISTS)
-      setActionError({
-        message: problemMessage(err, 'Không tạo được đơn mua gói.'),
-      });
-      if (err?.response?.status === 409) {
-        // Trạng thái trên màn hình đã cũ -> đồng bộ lại với BE.
-        refreshPending();
-        reloadMemberships();
-      }
-    } finally {
-      setOrderingId(null);
-    }
+    setSelectedOffer(offer);
+  }
+
+  function continueToCheckout() {
+    if (!selectedOffer?.offerId) return;
+    navigate(`/member/checkout/${selectedOffer.offerId}`);
   }
 
   // ACTIVE vẫn được mua thêm một gói gia hạn. Chỉ khóa khi đã có RESERVED
@@ -443,6 +418,13 @@ export default function MemberDashboardPage() {
               </p>
             </div>
           </div>
+          <Link
+            to={`/member/checkout/${pendingOrder.offerId}`}
+            className="scms-md-btn-dark"
+          >
+            Tiếp tục thanh toán
+            <Icon name="arrow" size={16} />
+          </Link>
         </div>
       ) : null}
 
@@ -548,16 +530,6 @@ export default function MemberDashboardPage() {
               </Link>
             </div>
 
-            {notice ? (
-              <Alert
-                variant="success"
-                dismissible
-                onClose={() => setNotice(null)}
-                className="mb-0"
-              >
-                {notice}
-              </Alert>
-            ) : null}
             <ErrorAlert
               error={actionError}
               title="Không thực hiện được"
@@ -582,7 +554,6 @@ export default function MemberDashboardPage() {
                       planCode={planCode}
                       offers={planOffers}
                       blockedReason={blockedReason}
-                      busyOfferId={orderingId}
                       onChoose={handleChoose}
                     />
                   ))}
@@ -609,6 +580,47 @@ export default function MemberDashboardPage() {
           </div>
         </div>
       </div>
+
+      <Modal
+        show={Boolean(selectedOffer)}
+        onHide={() => setSelectedOffer(null)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="h5">Xác nhận chọn gói tập</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedOffer ? (
+            <>
+              <p className="mb-2">
+                Bạn đang chọn gói <strong>{selectedOffer.name}</strong> thuộc loại{' '}
+                <strong>
+                  {selectedOffer.planDisplayName || selectedOffer.planCode}
+                </strong>.
+              </p>
+              <p className="mb-0 text-muted">
+                Thời hạn {selectedOffer.durationDays} ngày · Tổng thanh toán{' '}
+                <strong>
+                  {formatPrice(
+                    selectedOffer.priceAmount,
+                    selectedOffer.currencyCode,
+                  )}
+                </strong>
+                . Bạn sẽ được chuyển tới trang kiểm tra đơn và thanh toán bằng
+                mã QR.
+              </p>
+            </>
+          ) : null}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="outline-secondary" onClick={() => setSelectedOffer(null)}>
+            Quay lại
+          </Button>
+          <Button variant="danger" onClick={continueToCheckout}>
+            Đi đến thanh toán
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }
