@@ -11,6 +11,7 @@ import {
 import { formatGymDate, formatGymTime } from '../../utils/gymTime';
 import {
   humanize,
+  manualActivationNotificationDestination,
   notificationDetail,
   notificationSummary,
 } from '../../utils/notificationUi';
@@ -24,12 +25,16 @@ const TARGET_LABELS = {
   MEMBERSHIP: 'Gói tập',
   MEMBERSHIP_FREEZE_REQUEST: 'Yêu cầu đóng băng',
   MEMBERSHIP_TERMINATION_REQUEST: 'Yêu cầu hủy gói',
+  MANUAL_ACTIVATION_REQUEST: 'Yêu cầu kích hoạt tài khoản',
   COACH_LEAVE_REQUEST: 'Yêu cầu nghỉ HLV',
   REFUND_REQUEST: 'Yêu cầu hoàn tiền',
   SESSION_WAITLIST: 'Hàng chờ buổi tập',
 };
 
 function notificationDestination(item, pathname) {
+  const manualActivationDestination = manualActivationNotificationDestination(item, pathname);
+  if (manualActivationDestination) return manualActivationDestination;
+
   const role = pathname.split('/')[1];
   const type = item.notificationType;
   const payload = item.payload || {};

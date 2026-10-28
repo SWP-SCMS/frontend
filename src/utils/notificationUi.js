@@ -51,6 +51,7 @@ const TYPE_LABELS = {
   MEMBERSHIP_REFUND_CASH_DISBURSED: 'Đã ghi nhận giao tiền hoàn',
   MEMBERSHIP_REFUND_COMPLETED: 'Yêu cầu hoàn tiền đã hoàn tất',
   MEMBERSHIP_REFUND_REJECTED: 'Yêu cầu hoàn tiền bị từ chối',
+  MANUAL_ACTIVATION_REVIEW_REQUIRED: 'Có yêu cầu kích hoạt tài khoản cần duyệt',
 };
 
 const REASON_LABELS = {
@@ -85,4 +86,11 @@ export function reasonLabel(reasonCode) {
 export function notificationDetail(item) {
   const reasonCode = item?.payload?.reasonCode;
   return reasonCode ? `Lý do: ${reasonLabel(reasonCode)}` : '';
+}
+
+export function manualActivationNotificationDestination(item, pathname) {
+  const role = pathname?.split('/')[1];
+  return role === 'manager' && item?.notificationType === 'MANUAL_ACTIVATION_REVIEW_REQUIRED'
+    ? '/manager/email-verification'
+    : null;
 }
