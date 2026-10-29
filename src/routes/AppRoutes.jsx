@@ -85,9 +85,6 @@ const MemberTrainingFeedbackPage = lazy(
 const MemberReceiptListPage = lazy(
   () => import('../pages/member/receipts/MemberReceiptListPage'),
 );
-const NotificationPage = lazy(
-  () => import('../pages/common/NotificationPage'),
-);
 const StaffProfilePage = lazy(
   () => import('../pages/common/StaffProfilePage'),
 );
@@ -560,7 +557,6 @@ export default function AppRoutes() {
       <Route path="/member/feedback" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_FEEDBACK" serviceName="Nhận xét huấn luyện viên">{withSuspense(<MemberTrainingFeedbackPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/receipts" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberReceiptListPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/receipts/:receiptId" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<ReceiptPage memberMode />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
-      <Route path="/member/notifications" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<NotificationPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
 
       {/* ---------- Receptionist ----------
        * Persistent dark shell across the entire Receptionist area.
@@ -586,7 +582,6 @@ export default function AppRoutes() {
         <Route path="check-in" element={withSuspense(<ReceptionCenterCheckInPage />)} />
         <Route path="center-visits" element={withSuspense(<OpenCenterVisitsPage />)} />
         <Route path="dashboard" element={withSuspense(<ReceptionistDashboardPage />)} />
-        <Route path="notifications" element={withSuspense(<NotificationPage />)} />
         <Route path="profile" element={withSuspense(<StaffProfilePage />)} />
         <Route path="profile/email" element={withSuspense(<StaffChangeEmailPage />)} />
         <Route path="profile/password" element={withSuspense(<StaffChangePasswordPage />)} />
@@ -660,7 +655,6 @@ export default function AppRoutes() {
         <Route path="members/:memberAccountId/training-plans" element={withSuspense(<CoachMemberTrainingPage kind="plans" />)} />
         <Route path="members/:memberAccountId/training-results" element={withSuspense(<CoachMemberTrainingPage kind="results" />)} />
         <Route path="members/:memberAccountId/feedback" element={withSuspense(<CoachMemberTrainingPage kind="feedback" />)} />
-        <Route path="notifications" element={withSuspense(<NotificationPage />)} />
       </Route>
 
       {/* ---------- Manager ----------
@@ -734,7 +728,6 @@ export default function AppRoutes() {
         <Route path="reports" element={withSuspense(<ManagerReportsPage />)} />
         <Route path="reports/revenue" element={withSuspense(<RevenueReportPage />)} />
         <Route path="audit-events" element={withSuspense(<AuditHistoryPage />)} />
-        <Route path="notifications" element={withSuspense(<NotificationPage />)} />
         <Route path="profile" element={withSuspense(<StaffProfilePage />)} />
         <Route path="profile/email" element={withSuspense(<StaffChangeEmailPage />)} />
         <Route path="profile/password" element={withSuspense(<StaffChangePasswordPage />)} />

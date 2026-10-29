@@ -31,7 +31,10 @@ import {
   listSupportedClassTypes,
 } from '../../../services/sportClassService';
 import { listDisciplines } from '../../../services/disciplineService';
-import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  applyServerErrors,
+  hasServerFieldMessage,
+} from '../../../utils/serverErrors';
 
 const TYPE_LABELS = {
   GROUP: 'Nhóm',
@@ -51,7 +54,6 @@ function normalizeWriteTypes(values) {
     ),
   ];
 }
-
 // Page-local schema. status is intentionally absent — backend assigns ACTIVE.
 // classType is validated against the latest server-provided write capability.
 function buildClassCreateSchema(supportedTypes) {
@@ -176,8 +178,8 @@ export default function ClassCreatePage() {
 
       const code = err?.response?.data?.code;
       const fieldErrors = err?.response?.data?.errors;
-      const alreadyMappedName = hasFieldMessage(fieldErrors, 'name');
-      const alreadyMappedDisc = hasFieldMessage(fieldErrors, 'disciplineId');
+      const alreadyMappedName = hasServerFieldMessage(fieldErrors, 'name');
+      const alreadyMappedDisc = hasServerFieldMessage(fieldErrors, 'disciplineId');
       const classTypeUnsupported = code === 'CLASS_TYPE_UNSUPPORTED';
 
       // PAGE-LOCAL domain conflicts.
@@ -201,7 +203,7 @@ export default function ClassCreatePage() {
       }
       if (
         classTypeUnsupported &&
-        !hasFieldMessage(fieldErrors, 'classType')
+        !hasServerFieldMessage(fieldErrors, 'classType')
       ) {
         setError('classType', {
           type: 'server',
@@ -387,13 +389,4 @@ export default function ClassCreatePage() {
       </Form>
     </div>
   );
-}
-
-function hasFieldMessage(fieldErrors, field) {
-  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
-  const list = fieldErrors[field];
-  if (Array.isArray(list)) {
-    return list.some((m) => typeof m === 'string' && m.trim());
-  }
-  return typeof list === 'string' && list.trim().length > 0;
 }

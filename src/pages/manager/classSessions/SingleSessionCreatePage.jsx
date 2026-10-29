@@ -13,7 +13,7 @@
 //   - startTime / endTime: ISO-8601 Instant values representing the
 //     selected Asia/Ho_Chi_Minh wall-clock. The FE converts the
 //     manager's date + HH:mm selection to those Instants (see
-//     gymLocalToIsoInstant helper below). The BE then compares
+//     gymLocalDateToIsoInstant utility below). The BE then compares
 //     startTime strictly against clock.instant() (must be in the
 //     future), endTime strictly against startTime, and duration at most
 //     from 30 to 90 minutes.
@@ -46,11 +46,19 @@ import {
   createSingleSession,
   discoverAvailableCoaches,
 } from '../../../services/classSessionService';
-import { applyServerErrors } from '../../../utils/serverErrors';
-import { getGymZoneTodayIsoDate } from '../../../utils/gymTime';
+import {
+  applyServerErrors,
+  hasServerFieldMessage,
+} from '../../../utils/serverErrors';
+import {
+  formatGymDate,
+  formatGymTime,
+  getGymZoneTodayIsoDate,
+  gymLocalDateToIsoInstant,
+  ISO_DATE_RE,
+} from '../../../utils/gymTime';
 
 // Locale-agnostic yyyy-MM-dd used by the model/API.
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const TYPE_LABEL = {
@@ -58,60 +66,6 @@ const TYPE_LABEL = {
   YOGA: 'Yoga',
   PT_1_1: 'PT 1:1',
 };
-
-function getLocalTodayIsoDate() {
-  return getGymZoneTodayIsoDate();
-}
-
-// Convert a Vietnam-gym-local date (yyyy-MM-dd) and time (HH:mm)
-// into the ISO-8601 Instant string the backend expects. We anchor
-// the wall-clock explicitly at UTC+07:00 (Asia/Ho_Chi_Minh) so the
-// result is independent of the browser's runtime timezone. Returns
-// null when the inputs are missing or malformed; callers must not
-// submit an invalid date.
-function gymLocalToIsoInstant(date, time) {
-  if (!date || !time) return null;
-  if (!ISO_DATE_RE.test(date) || !ISO_TIME_RE.test(time)) return null;
-  const composed = new Date(`${date}T${time}:00+07:00`);
-  if (Number.isNaN(composed.getTime())) return null;
-  return composed.toISOString();
-}
-
-function hasFieldMessage(fieldErrors, field) {
-  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
-  const list = fieldErrors[field];
-  if (Array.isArray(list)) {
-    return list.some((m) => typeof m === 'string' && m.trim());
-  }
-  return typeof list === 'string' && list.trim().length > 0;
-}
-
-// Format an ISO Instant string in Asia/Ho_Chi_Minh (independent of
-// the browser's machine timezone). Used by the success view to
-// show the BE's returned startTime / endTime reliably.
-function formatGymTime(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleTimeString('vi-VN', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-function formatGymDate(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('vi-VN', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
 
 // Page-local Zod schema for the editable fields only. `classId` is
 // read from the route/loaded class and is not validated as a form
@@ -131,7 +85,7 @@ const singleSessionCreateSchema = z
       .string()
       .regex(ISO_DATE_RE, 'Ngày buổi tập không hợp lệ (định dạng yyyy-MM-dd).')
       .refine(
-        (d) => d >= getLocalTodayIsoDate(),
+        (d) => d >= getGymZoneTodayIsoDate(),
         'Ngày buổi tập phải từ hôm nay trở đi.',
       ),
     startTime: z
@@ -214,7 +168,7 @@ export default function SingleSessionCreatePage() {
     defaultValues: {
       coachId: '',
       roomId: '',
-      sessionDate: getLocalTodayIsoDate(),
+      sessionDate: getGymZoneTodayIsoDate(),
       startTime: '',
       endTime: '',
       capacity: '',
@@ -278,8 +232,8 @@ export default function SingleSessionCreatePage() {
   const availabilityEnd = watch('endTime');
   const availabilityCapacity = watch('capacity');
   useEffect(() => {
-    const startTime = gymLocalToIsoInstant(availabilityDate, availabilityStart);
-    const endTime = gymLocalToIsoInstant(availabilityDate, availabilityEnd);
+    const startTime = gymLocalDateToIsoInstant(availabilityDate, availabilityStart);
+    const endTime = gymLocalDateToIsoInstant(availabilityDate, availabilityEnd);
     if (!startTime || !endTime || new Date(endTime) <= new Date(startTime)) {
       setCoaches([]);
       setCoachesError(null);
@@ -324,8 +278,8 @@ export default function SingleSessionCreatePage() {
   }, [availabilityDate, availabilityStart, availabilityEnd, getValues, setValue]);
 
   useEffect(() => {
-    const startTime = gymLocalToIsoInstant(availabilityDate, availabilityStart);
-    const endTime = gymLocalToIsoInstant(availabilityDate, availabilityEnd);
+    const startTime = gymLocalDateToIsoInstant(availabilityDate, availabilityStart);
+    const endTime = gymLocalDateToIsoInstant(availabilityDate, availabilityEnd);
     const requestedCapacity = Number(availabilityCapacity);
     if (
       !startTime
@@ -408,7 +362,7 @@ export default function SingleSessionCreatePage() {
     reset({
       coachId: '',
       roomId: '',
-      sessionDate: getLocalTodayIsoDate(),
+      sessionDate: getGymZoneTodayIsoDate(),
       startTime: '',
       endTime: '',
       capacity: '',
@@ -421,8 +375,8 @@ export default function SingleSessionCreatePage() {
     setServerError(null);
     setSuccess(null);
 
-    const startIso = gymLocalToIsoInstant(data.sessionDate, data.startTime);
-    const endIso = gymLocalToIsoInstant(data.sessionDate, data.endTime);
+    const startIso = gymLocalDateToIsoInstant(data.sessionDate, data.startTime);
+    const endIso = gymLocalDateToIsoInstant(data.sessionDate, data.endTime);
     if (!startIso || !endIso) {
       // Defensive: the Zod schema already enforces valid yyyy-MM-dd
       // and HH:mm, so this should not be reachable in practice.
@@ -503,7 +457,7 @@ export default function SingleSessionCreatePage() {
           break;
         case 'COACH_NOT_FOUND':
         case 'COACH_NOT_ACTIVE':
-          if (!hasFieldMessage(fieldErrors, 'coachId')) {
+          if (!hasServerFieldMessage(fieldErrors, 'coachId')) {
             setError('coachId', {
               type: 'server',
               message:
@@ -516,7 +470,7 @@ export default function SingleSessionCreatePage() {
           break;
         case 'ROOM_NOT_FOUND':
         case 'ROOM_INACTIVE':
-          if (!hasFieldMessage(fieldErrors, 'roomId')) {
+          if (!hasServerFieldMessage(fieldErrors, 'roomId')) {
             setError('roomId', {
               type: 'server',
               message:
@@ -529,7 +483,7 @@ export default function SingleSessionCreatePage() {
           break;
         case 'SESSION_CAPACITY_EXCEEDS_ROOM':
         case 'ROOM_CAPACITY_BELOW_SESSION_CAPACITY':
-          if (!hasFieldMessage(fieldErrors, 'capacity')) {
+          if (!hasServerFieldMessage(fieldErrors, 'capacity')) {
             setError('capacity', {
               type: 'server',
               message:

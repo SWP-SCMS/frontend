@@ -22,6 +22,7 @@ import {
   listCoachAssignmentWorkloads,
 } from '../../services/coachAssignmentService';
 import { searchStaffAccounts } from '../../services/staffAccountService';
+import { coachAssignmentEndReasonLabel } from '../../utils/coachAssignment';
 import { formatGymDate, formatGymTime } from '../../utils/gymTime';
 import ErrorAlert from '../common/ErrorAlert';
 
@@ -330,7 +331,9 @@ export default function MemberCoachAssignmentCard({
                         <td>
                           {formatInstant(item.endsAt)}
                           {item.endReason ? (
-                            <div className="small text-muted">{item.endReason}</div>
+                            <div className="small text-muted">
+                              {coachAssignmentEndReasonLabel(item.endReason)}
+                            </div>
                           ) : null}
                         </td>
                         <td>{item.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã kết thúc'}</td>

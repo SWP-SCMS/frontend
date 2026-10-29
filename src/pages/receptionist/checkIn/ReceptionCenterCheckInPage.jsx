@@ -390,7 +390,7 @@ export default function ReceptionCenterCheckInPage() {
 
                 {activeMembership && !activeMembership.frozen && !hasCenterAccess ? (
                   <Alert variant="warning" className="mt-3">
-                    Gói hiện tại không có quyền ra/vào trung tâm nên chưa thể check-in.
+                    Gói hiện tại không có quyền sử dụng khu tự tập luyện nên chưa thể check-in.
                   </Alert>
                 ) : null}
 

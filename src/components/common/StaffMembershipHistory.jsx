@@ -24,6 +24,15 @@ const STATUS_VARIANTS = {
   TERMINATED: 'danger',
 };
 
+function membershipHistoryError(error) {
+  if (error?.response?.data?.code === 'PAYMENT_NOT_FOUND') {
+    return new Error(
+      'Không tìm thấy hội viên hoặc hội viên chưa ở trạng thái hoạt động/tạm khóa để xem lịch sử gói tập.',
+    );
+  }
+  return error;
+}
+
 export default function StaffMembershipHistory({
   managerMemberAccountId,
   receptionMemberCode,
@@ -76,7 +85,10 @@ export default function StaffMembershipHistory({
         ) : null}
 
         {!loading && error ? (
-          <ErrorAlert error={error} title="Không tải được lịch sử gói tập" />
+          <ErrorAlert
+            error={membershipHistoryError(error)}
+            title="Không tải được lịch sử gói tập"
+          />
         ) : null}
 
         {!loading && !error && memberships.length === 0 ? (

@@ -60,34 +60,7 @@ import {
 } from '../../../services/classSessionService';
 import { discoverRoomAvailability } from '../../../services/roomService';
 import { applyServerErrors } from '../../../utils/serverErrors';
-
-const GYM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
-
-// ----- Time-zone helpers (page-local; matches US28 / US29) -----
-
-function formatGymDate(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('vi-VN', {
-    timeZone: GYM_TIME_ZONE,
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
-
-function formatGymTime(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleTimeString('vi-VN', {
-    timeZone: GYM_TIME_ZONE,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
+import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 
 // ----- Return-state helpers (preserve US29 originating URL) -----
 

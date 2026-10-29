@@ -88,10 +88,3 @@ export function notificationDetail(item) {
   const reasonCode = item?.payload?.reasonCode;
   return reasonCode ? `Lý do: ${reasonLabel(reasonCode)}` : '';
 }
-
-export function manualActivationNotificationDestination(item, pathname) {
-  const role = pathname?.split('/')[1];
-  return role === 'manager' && item?.notificationType === 'MANUAL_ACTIVATION_REVIEW_REQUIRED'
-    ? '/manager/email-verification'
-    : null;
-}

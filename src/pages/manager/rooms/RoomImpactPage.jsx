@@ -19,8 +19,15 @@ import {
   formatGymTime,
   getGymLocalIsoDate,
   getGymZoneTodayIsoDate,
+  ISO_DATE_RE,
   gymLocalDateToIsoInstant,
 } from '../../../utils/gymTime';
+import { parseDateInput } from '../../../utils/dateInput';
+
+function modelDate(value) {
+  if (ISO_DATE_RE.test(value)) return value;
+  return parseDateInput(value) || '';
+}
 
 const impactSchema = z
   .object({
@@ -50,8 +57,41 @@ const impactSchema = z
         ctx.addIssue({ path: [field], code: 'custom', message: 'Bắt buộc.' });
       }
     }
-    const start = gymLocalDateToIsoInstant(data.startDate, data.startClock);
-    const end = gymLocalDateToIsoInstant(data.endDate, data.endClock);
+    const startDate = modelDate(data.startDate);
+    const endDate = modelDate(data.endDate);
+    const today = getGymZoneTodayIsoDate();
+    if (data.startDate && !startDate) {
+      ctx.addIssue({
+        path: ['startDate'],
+        code: 'custom',
+        message: 'Vui lòng nhập ngày hợp lệ theo dạng ngày/tháng/năm.',
+      });
+    } else if (startDate && startDate < today) {
+      ctx.addIssue({
+        path: ['startDate'],
+        code: 'custom',
+        message: 'Ngày bắt đầu không được trước hôm nay.',
+      });
+    }
+    if (data.endDate && !endDate) {
+      ctx.addIssue({
+        path: ['endDate'],
+        code: 'custom',
+        message: 'Vui lòng nhập ngày hợp lệ theo dạng ngày/tháng/năm.',
+      });
+    } else if (endDate && endDate < today) {
+      ctx.addIssue({
+        path: ['endDate'],
+        code: 'custom',
+        message: 'Ngày kết thúc không được trước hôm nay.',
+      });
+    }
+    const start = startDate
+      ? gymLocalDateToIsoInstant(startDate, data.startClock)
+      : null;
+    const end = endDate
+      ? gymLocalDateToIsoInstant(endDate, data.endClock)
+      : null;
     if (start && end && end <= start) {
       ctx.addIssue({
         path: ['endClock'],

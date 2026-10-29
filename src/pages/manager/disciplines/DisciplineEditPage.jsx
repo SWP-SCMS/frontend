@@ -36,7 +36,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import AffectedSessionsAlert from '../../../components/common/AffectedSessionsAlert';
 import { getDiscipline, updateDiscipline } from '../../../services/disciplineService';
-import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  applyServerErrors,
+  hasServerFieldMessage,
+} from '../../../utils/serverErrors';
 import {
   extractAffectedSessions,
   hasAffectedSessionPayload,
@@ -73,15 +76,6 @@ function disciplineToForm(d) {
       (code) => code !== 'CLASS_BOOKING',
     ),
   };
-}
-
-function hasFieldMessage(fieldErrors, field) {
-  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
-  const list = fieldErrors[field];
-  if (Array.isArray(list)) {
-    return list.some((m) => typeof m === 'string' && m.trim());
-  }
-  return typeof list === 'string' && list.trim().length > 0;
 }
 
 export default function DisciplineEditPage() {
@@ -202,7 +196,7 @@ export default function DisciplineEditPage() {
       // PAGE-LOCAL: DISCIPLINE_NAME_CONFLICT.
       if (
         code === 'DISCIPLINE_NAME_CONFLICT' &&
-        !hasFieldMessage(fieldErrors, 'name')
+        !hasServerFieldMessage(fieldErrors, 'name')
       ) {
         setError('name', {
           type: 'server',

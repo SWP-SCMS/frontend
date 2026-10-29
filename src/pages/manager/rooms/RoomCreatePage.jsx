@@ -16,7 +16,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { createRoom } from '../../../services/roomService';
-import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  applyServerErrors,
+  hasServerFieldMessage,
+} from '../../../utils/serverErrors';
 
 // Page-local schema. status is intentionally absent — the backend assigns ACTIVE.
 const roomCreateSchema = z.object({
@@ -71,7 +74,7 @@ export default function RoomCreatePage() {
 
       // PAGE-LOCAL domain conflicts.
       let pageLocalHandled = false;
-      if (code === 'ROOM_NAME_CONFLICT' && !hasFieldMessage(fieldErrors, 'name')) {
+      if (code === 'ROOM_NAME_CONFLICT' && !hasServerFieldMessage(fieldErrors, 'name')) {
         setError('name', {
           type: 'server',
           message: 'Tên phòng đã tồn tại.',
@@ -171,13 +174,4 @@ export default function RoomCreatePage() {
       </Form>
     </div>
   );
-}
-
-function hasFieldMessage(fieldErrors, field) {
-  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
-  const list = fieldErrors[field];
-  if (Array.isArray(list)) {
-    return list.some((m) => typeof m === 'string' && m.trim());
-  }
-  return typeof list === 'string' && list.trim().length > 0;
 }

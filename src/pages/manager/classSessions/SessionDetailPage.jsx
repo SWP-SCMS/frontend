@@ -36,8 +36,10 @@ import {
   getManagerSessionDetail,
 } from '../../../services/classSessionService';
 import { listManagerSessionWaitlist } from '../../../services/waitlistService';
-
-const GYM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+import {
+  formatGymDate,
+  formatGymTime,
+} from '../../../utils/gymTime';
 
 const STATUS_BADGE = {
   SCHEDULED: 'bg-primary-subtle text-primary-emphasis',
@@ -58,39 +60,6 @@ const TYPE_LABEL = {
   YOGA: 'Yoga',
   PT_1_1: 'PT 1:1',
 };
-
-// ----- Asia/Ho_Chi_Minh helpers (page-local; same convention as US28) -----
-
-function formatGymDate(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('vi-VN', {
-    timeZone: GYM_TIME_ZONE,
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
-
-function formatGymTime(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleTimeString('vi-VN', {
-    timeZone: GYM_TIME_ZONE,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-function formatGymDateTime(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return `${formatGymDate(iso)} · ${formatGymTime(iso)}`;
-}
 
 // Safe internal-only back target. Accepts only paths that start with
 // /manager/class-sessions to avoid ever navigating to an arbitrary URL.
@@ -560,7 +529,8 @@ export default function SessionDetailPage() {
           <Card.Body>
             <h2 className="h6 text-uppercase text-muted">Hủy</h2>
             <p className="mb-2 small text-muted">
-              Thời điểm huỷ: {formatGymDateTime(session.cancelledAt)}
+              Thời điểm huỷ: {formatGymDate(session.cancelledAt)} ·{' '}
+              {formatGymTime(session.cancelledAt)}
             </p>
             <h2 className="h6 text-uppercase text-muted">Lý do huỷ</h2>
             <p

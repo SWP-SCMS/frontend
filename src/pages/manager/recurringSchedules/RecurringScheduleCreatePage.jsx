@@ -40,7 +40,10 @@ import { getClass } from '../../../services/sportClassService';
 import { listRooms } from '../../../services/roomService';
 import { discoverAvailableCoaches } from '../../../services/classSessionService';
 import { createRecurringSchedule } from '../../../services/recurringScheduleService';
-import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  applyServerErrors,
+  hasServerFieldMessage,
+} from '../../../utils/serverErrors';
 import {
   getGymZoneTodayIsoDate,
   gymLocalDateToIsoInstant,
@@ -84,7 +87,7 @@ const recurringScheduleCreateSchema = z
       .string()
       .regex(ISO_DATE_RE, 'Ngày bắt đầu không hợp lệ (định dạng yyyy-MM-dd).')
       .refine(
-        (d) => d >= getLocalTodayIsoDate(),
+        (d) => d >= getGymZoneTodayIsoDate(),
         'Ngày bắt đầu phải từ hôm nay trở đi.',
       ),
     weekdays: z
@@ -138,19 +141,6 @@ const recurringScheduleCreateSchema = z
       path: ['endTime'],
     },
   );
-
-function getLocalTodayIsoDate() {
-  return getGymZoneTodayIsoDate();
-}
-
-function hasFieldMessage(fieldErrors, field) {
-  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
-  const list = fieldErrors[field];
-  if (Array.isArray(list)) {
-    return list.some((m) => typeof m === 'string' && m.trim());
-  }
-  return typeof list === 'string' && list.trim().length > 0;
-}
 
 function addGymLocalDays(date, days) {
   if (!ISO_DATE_RE.test(date)) return null;
@@ -244,7 +234,7 @@ export default function RecurringScheduleCreatePage() {
     defaultValues: {
       coachId: '',
       roomId: '',
-      startDate: getLocalTodayIsoDate(),
+      startDate: getGymZoneTodayIsoDate(),
       weekdays: [],
       startTime: '',
       endTime: '',
@@ -422,7 +412,7 @@ export default function RecurringScheduleCreatePage() {
     reset({
       coachId: '',
       roomId: '',
-      startDate: getLocalTodayIsoDate(),
+      startDate: getGymZoneTodayIsoDate(),
       weekdays: [],
       startTime: '',
       endTime: '',
@@ -518,7 +508,7 @@ export default function RecurringScheduleCreatePage() {
           break;
         case 'COACH_NOT_FOUND':
         case 'COACH_NOT_ACTIVE':
-          if (!hasFieldMessage(fieldErrors, 'coachId')) {
+          if (!hasServerFieldMessage(fieldErrors, 'coachId')) {
             setError('coachId', {
               type: 'server',
               message:
@@ -531,7 +521,7 @@ export default function RecurringScheduleCreatePage() {
           break;
         case 'ROOM_NOT_FOUND':
         case 'ROOM_INACTIVE':
-          if (!hasFieldMessage(fieldErrors, 'roomId')) {
+          if (!hasServerFieldMessage(fieldErrors, 'roomId')) {
             setError('roomId', {
               type: 'server',
               message:
@@ -544,7 +534,7 @@ export default function RecurringScheduleCreatePage() {
           break;
         case 'SESSION_CAPACITY_EXCEEDS_ROOM':
         case 'ROOM_CAPACITY_BELOW_SESSION_CAPACITY':
-          if (!hasFieldMessage(fieldErrors, 'capacity')) {
+          if (!hasServerFieldMessage(fieldErrors, 'capacity')) {
             setError('capacity', {
               type: 'server',
               message:
