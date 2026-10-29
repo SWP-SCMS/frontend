@@ -6,19 +6,24 @@
 
 .scms-membership-request-form {
   display: grid;
-  grid-template-columns: minmax(180px, 0.7fr) minmax(220px, 1fr) minmax(280px, 1.5fr) auto;
-  align-items: end;
+  align-items: start;
   gap: 1rem;
   margin-top: 1.25rem;
 }
 
-.scms-membership-request-form > .scms-membership-request-reason:first-of-type {
-  grid-column: span 2;
+.scms-membership-request-termination-form {
+  grid-template-columns: minmax(200px, 1fr) minmax(280px, 1.5fr) minmax(220px, 1fr);
+}
+
+.scms-membership-request-freeze-form {
+  grid-template-columns: repeat(2, minmax(140px, 0.8fr)) minmax(240px, 1.5fr) minmax(190px, 1fr);
 }
 
 .scms-membership-request-form .btn {
+  align-self: end;
   min-height: 38px;
   white-space: nowrap;
+  width: 100%;
 }
 
 .scms-membership-request-reason-cell {
@@ -33,6 +38,10 @@
   }
 
   .scms-membership-request-form > .scms-membership-request-reason {
+    grid-column: 1 / -1;
+  }
+
+  .scms-membership-request-form > .btn {
     grid-column: 1 / -1;
   }
 }

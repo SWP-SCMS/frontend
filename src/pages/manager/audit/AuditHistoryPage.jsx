@@ -10,6 +10,33 @@ import { listAuditEvents } from '../../../services/auditService';
 import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 
 const ACTION_LABELS = {
+  ACCOUNT_ACTIVATED: 'Kích hoạt tài khoản',
+  ACCOUNT_ACTIVATED_MANUALLY: 'Kích hoạt tài khoản tại quầy',
+  ACCOUNT_CREATED: 'Tạo tài khoản',
+  ACCOUNT_CREATED_PENDING_EMAIL_VERIFICATION: 'Tạo tài khoản, chờ xác minh email',
+  ACCOUNT_REGISTRATION_REVIVED: 'Khôi phục đăng ký tài khoản',
+  INITIAL_MANAGER_PROVISIONED: 'Khởi tạo tài khoản quản lý',
+  EMAIL_VERIFICATION_BYPASSED: 'Bỏ qua xác minh email',
+  EMAIL_VERIFICATION_REGISTRATION_EXPIRED: 'Đăng ký hết hạn xác minh email',
+  MANUAL_ACTIVATION_REQUEST_APPROVED: 'Duyệt yêu cầu kích hoạt tài khoản',
+  MANUAL_ACTIVATION_REQUEST_CANCELLED: 'Hủy yêu cầu kích hoạt tài khoản',
+  MANUAL_ACTIVATION_REQUEST_EXPIRED: 'Yêu cầu kích hoạt tài khoản hết hạn',
+  MANUAL_ACTIVATION_REQUEST_REJECTED: 'Từ chối yêu cầu kích hoạt tài khoản',
+  MANUAL_ACTIVATION_REQUESTED: 'Gửi yêu cầu kích hoạt tài khoản',
+  MEMBER_SUSPENDED: 'Tạm khóa tài khoản hội viên',
+  MEMBER_REACTIVATED: 'Mở lại tài khoản hội viên',
+  STAFF_DEACTIVATED: 'Vô hiệu hóa tài khoản nhân viên',
+  STAFF_SELF_PROFILE_UPDATED: 'Nhân viên tự cập nhật hồ sơ',
+  PASSWORD_RESET: 'Đặt lại mật khẩu',
+  PASSWORD_RESET_REQUESTED: 'Yêu cầu đặt lại mật khẩu',
+  PASSWORD_RESET_COMPLETED: 'Hoàn tất đặt lại mật khẩu',
+  PASSWORD_RESET_EXPIRED: 'Yêu cầu đặt lại mật khẩu hết hạn',
+  PASSWORD_RESET_FAILED: 'Đặt lại mật khẩu thất bại',
+  ACCOUNT_EMAIL_CHANGE_REQUESTED: 'Gửi yêu cầu đổi email tài khoản',
+  ACCOUNT_EMAIL_CHANGE_COMPLETED: 'Đổi email tài khoản',
+  EMAIL_DELIVERY_TERMINAL_FAILED: 'Gửi email thất bại sau nhiều lần thử',
+  DISCIPLINE_CREATED: 'Tạo bộ môn',
+  DISCIPLINE_UPDATED: 'Cập nhật bộ môn',
   SESSION_CANCELLED: 'Hủy buổi tập',
   SESSION_ROOM_CHANGED: 'Đổi phòng tập',
   SESSION_RESCHEDULED: 'Đổi lịch buổi tập',
@@ -17,9 +44,22 @@ const ACTION_LABELS = {
   ROOM_UPDATED: 'Cập nhật phòng tập',
   ROOM_SUSPENDED: 'Tạm ngưng phòng tập',
   ROOM_REACTIVATED: 'Mở lại phòng tập',
+  ROOM_SUSPENSION_EXTENDED: 'Gia hạn thời gian tạm ngưng phòng',
   COACH_ASSIGNED: 'Phân công huấn luyện viên',
   COACH_REASSIGNED: 'Đổi huấn luyện viên',
   COACH_ASSIGNMENT_ENDED: 'Kết thúc phân công huấn luyện viên',
+  SESSION_ASSIGNMENT_CHANGED: 'Thay đổi phân công buổi tập',
+  WAITLIST_PROMOTED: 'Chuyển hội viên từ hàng chờ sang lịch đặt',
+  WAITLIST_CANCELLED: 'Hủy lượt trong hàng chờ',
+  WAITLIST_SKIPPED: 'Bỏ qua lượt trong hàng chờ',
+  WAITLIST_EXPIRED: 'Lượt trong hàng chờ hết hạn',
+  PT_WAITLIST_CANCELLED: 'Hủy hàng chờ buổi tập PT',
+  ATTENDANCE_CHANGED: 'Cập nhật điểm danh',
+  COACH_LEAVE_REQUESTED: 'Gửi yêu cầu nghỉ của huấn luyện viên',
+  COACH_LEAVE_WITHDRAWN: 'Rút yêu cầu nghỉ của huấn luyện viên',
+  COACH_LEAVE_APPROVED: 'Duyệt yêu cầu nghỉ của huấn luyện viên',
+  COACH_LEAVE_REJECTED: 'Từ chối yêu cầu nghỉ của huấn luyện viên',
+  COACH_LEAVE_CANCELLED: 'Hủy lịch nghỉ của huấn luyện viên',
   CENTER_VISIT_CREATED: 'Check-in trung tâm',
   CENTER_VISIT_CHECKED_OUT: 'Checkout trung tâm',
   SPORT_CLASS_CREATED: 'Tạo lớp học',
@@ -27,9 +67,30 @@ const ACTION_LABELS = {
   BOOKING_CREATED: 'Đặt lịch tập',
   BOOKING_CANCELLED: 'Hủy lịch tập',
   MEMBERSHIP_ORDER_CREATED: 'Tạo đơn đăng ký gói tập',
+  MEMBERSHIP_ORDER_CANCELLED: 'Hủy đơn đăng ký gói tập',
   MEMBERSHIP_ACTIVATED: 'Kích hoạt gói tập',
+  PAYMENT_RECONCILED: 'Đối soát thanh toán',
+  PAYMENT_PAID: 'Xác nhận thanh toán thành công',
   PAYMENT_RECORDED: 'Ghi nhận thanh toán',
   RECEIPT_ISSUED: 'Phát hành biên lai',
+  MEMBERSHIP_FREEZE_REQUESTED: 'Gửi yêu cầu đóng băng gói tập',
+  MEMBERSHIP_FREEZE_APPROVED: 'Duyệt yêu cầu đóng băng gói tập',
+  MEMBERSHIP_FREEZE_REJECTED: 'Từ chối yêu cầu đóng băng gói tập',
+  MEMBERSHIP_FREEZE_WITHDRAWN: 'Rút yêu cầu đóng băng gói tập',
+  MEMBERSHIP_FREEZE_SCHEDULED: 'Lên lịch đóng băng gói tập',
+  MEMBERSHIP_FREEZE_STARTED: 'Bắt đầu đóng băng gói tập',
+  MEMBERSHIP_FREEZE_COMPLETED: 'Hoàn tất đóng băng gói tập',
+  MEMBERSHIP_FREEZE_ENDED_EARLY: 'Kết thúc đóng băng gói tập sớm',
+  MEMBERSHIP_REFUND_REQUESTED: 'Gửi yêu cầu hoàn tiền',
+  MEMBERSHIP_REFUND_FIRST_APPROVED: 'Duyệt bước đầu yêu cầu hoàn tiền',
+  MEMBERSHIP_REFUND_CASH_DISBURSED: 'Ghi nhận chi tiền hoàn',
+  MEMBERSHIP_REFUND_COMPLETED: 'Hoàn tất yêu cầu hoàn tiền',
+  MEMBERSHIP_REFUND_REJECTED: 'Từ chối yêu cầu hoàn tiền',
+  MEMBERSHIP_TERMINATION_REQUESTED: 'Gửi yêu cầu hủy gói tập',
+  MEMBERSHIP_TERMINATION_APPROVED: 'Duyệt yêu cầu hủy gói tập',
+  MEMBERSHIP_TERMINATION_REJECTED: 'Từ chối yêu cầu hủy gói tập',
+  MEMBERSHIP_TERMINATION_WITHDRAWN: 'Rút yêu cầu hủy gói tập',
+  MEMBERSHIP_TERMINATION_EXECUTED: 'Thực hiện hủy gói tập',
   MEMBERSHIP_PLAN_CREATED: 'Tạo loại gói tập',
   MEMBERSHIP_PLAN_UPDATED: 'Cập nhật loại gói tập',
   MEMBERSHIP_OFFER_CREATED: 'Tạo gói tập',
@@ -43,9 +104,20 @@ const ACTION_LABELS = {
 };
 
 const TARGET_LABELS = {
+  DISCIPLINE: 'Bộ môn',
+  MANUAL_ACTIVATION_REQUEST: 'Yêu cầu kích hoạt tài khoản',
+  ATTENDANCE: 'Lượt điểm danh',
+  Attendance: 'Lượt điểm danh',
   CLASS_SESSION: 'Buổi tập',
   ROOM: 'Phòng tập',
   ROOM_SUSPENSION: 'Lịch tạm ngưng phòng',
+  COACH_LEAVE_REQUEST: 'Yêu cầu nghỉ của huấn luyện viên',
+  MEMBERSHIP_FREEZE_REQUEST: 'Yêu cầu đóng băng gói tập',
+  REFUND_REQUEST: 'Yêu cầu hoàn tiền',
+  MEMBERSHIP_TERMINATION_REQUEST: 'Yêu cầu hủy gói tập',
+  SESSION_WAITLIST: 'Hàng chờ buổi tập',
+  WAITLIST: 'Hàng chờ buổi tập',
+  EMAIL_CHANGE_REQUEST: 'Yêu cầu đổi email',
   COACH_ASSIGNMENT: 'Phân công huấn luyện viên',
   CENTER_VISIT: 'Lượt vào trung tâm',
   SPORT_CLASS: 'Lớp học',
@@ -73,14 +145,70 @@ const ROLE_LABELS = {
 const FIELD_LABELS = {
   status: 'Trạng thái',
   name: 'Tên',
+  email: 'Email',
+  phone: 'Số điện thoại',
+  role: 'Vai trò',
   capacity: 'Sức chứa',
   cancelledBookings: 'Số lịch đặt đã hủy',
   startTime: 'Thời gian bắt đầu',
   endTime: 'Thời gian kết thúc',
   reason: 'Lý do',
+  reasonDetail: 'Chi tiết lý do',
+  reasonCode: 'Mã lý do',
+  source: 'Nguồn',
+  verificationMethod: 'Phương thức xác minh',
+  evidenceNote: 'Thông tin xác minh',
+  decisionNote: 'Ghi chú quyết định',
+  roomName: 'Tên phòng',
+  roomCode: 'Mã phòng',
+  disciplineName: 'Tên bộ môn',
+  className: 'Tên lớp học',
+  coachName: 'Tên huấn luyện viên',
+  memberName: 'Tên hội viên',
+  planName: 'Tên gói tập',
+  offerName: 'Tên gói đăng ký',
+  amount: 'Số tiền',
+  price: 'Giá',
+  refundAmount: 'Số tiền hoàn',
+  paymentMethod: 'Phương thức thanh toán',
+  paymentStatus: 'Trạng thái thanh toán',
+  startDate: 'Ngày bắt đầu',
+  endDate: 'Ngày kết thúc',
+  requestedAt: 'Thời điểm gửi yêu cầu',
+  approvedAt: 'Thời điểm duyệt',
+  cancelledAt: 'Thời điểm hủy',
 };
 
 const VALUE_LABELS = {
+  EMAIL_DELIVERY_FAILED: 'Gửi email thất bại',
+  MEMBER_CANNOT_ACCESS_EMAIL: 'Hội viên không truy cập được email',
+  ACCESSIBILITY_SUPPORT: 'Cần hỗ trợ tiếp cận',
+  IN_PERSON_GOVERNMENT_ID_CHECK: 'Xác minh trực tiếp bằng giấy tờ tùy thân',
+  IN_PERSON_PROFILE_AND_REGISTERED_PHONE_MATCH: 'Đối chiếu hồ sơ và số điện thoại đã đăng ký',
+  OTHER_APPROVED_PROCEDURE: 'Quy trình xác minh khác đã được duyệt',
+  SCHEDULED_CLEANUP: 'Tác vụ tự động dọn đăng ký hết hạn',
+  MANUAL: 'Thủ công',
+  SYSTEM: 'Hệ thống',
+  RECEPTIONIST: 'Lễ tân',
+  MANAGER: 'Quản lý',
+  MEMBER: 'Hội viên',
+  COACH: 'Huấn luyện viên',
+  CASH: 'Tiền mặt',
+  CARD: 'Thẻ',
+  BANK_TRANSFER: 'Chuyển khoản',
+  CASH_PAYMENT: 'Tiền mặt',
+  BANK_CARD: 'Thẻ ngân hàng',
+  TRANSFER: 'Chuyển khoản',
+  APPROVED: 'Đã duyệt',
+  REJECTED: 'Đã từ chối',
+  EXPIRED: 'Đã hết hạn',
+  WITHDRAWN: 'Đã rút yêu cầu',
+  REQUESTED: 'Đã gửi yêu cầu',
+  STANDARD: 'Tiêu chuẩn',
+  PLUS: 'Plus',
+  PREMIUM: 'Premium',
+  BASIC: 'Cơ bản',
+  OTHER: 'Khác',
   ACTIVE: 'Đang hoạt động',
   INACTIVE: 'Ngừng hoạt động',
   SUSPENDED: 'Tạm ngưng',
@@ -105,25 +233,21 @@ const filterSchema = z.object({
 
 const EMPTY_FILTERS = { action: '', targetType: '', from: '', to: '' };
 
-function humanize(value, fallback = 'Không xác định') {
-  if (!value) return fallback;
-  const text = String(value).replaceAll('_', ' ').toLocaleLowerCase('vi-VN');
-  return text.charAt(0).toLocaleUpperCase('vi-VN') + text.slice(1);
-}
-
 function actionLabel(value) {
-  return ACTION_LABELS[value] || humanize(value, 'Hoạt động hệ thống');
+  if (!value) return 'Hoạt động khác';
+  return ACTION_LABELS[value] || 'Hoạt động khác';
 }
 
 function targetLabel(value) {
-  return TARGET_LABELS[value] || humanize(value, 'Đối tượng hệ thống');
+  if (!value) return 'Đối tượng khác';
+  return TARGET_LABELS[value] || 'Đối tượng khác';
 }
 
 function actorIdentity(event) {
   if (!event.actorAccountId) return { name: 'Hệ thống', role: '' };
   return {
     name: event.actorName?.trim() || 'Nhân viên hệ thống',
-    role: ROLE_LABELS[event.actorRole] || humanize(event.actorRole, ''),
+    role: ROLE_LABELS[event.actorRole] || (event.actorRole ? 'Nhân viên' : ''),
   };
 }
 
@@ -131,6 +255,7 @@ function displayValue(value) {
   if (value == null || value === '') return 'Không có';
   if (typeof value === 'boolean') return value ? 'Có' : 'Không';
   if (VALUE_LABELS[value]) return VALUE_LABELS[value];
+  if (typeof value === 'string' && /^[A-Z][A-Z0-9_]+$/.test(value)) return 'Giá trị khác';
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
     return `${formatGymDate(value)} · ${formatGymTime(value)}`;
   }
@@ -142,7 +267,7 @@ function visibleDetails(data) {
   return Object.entries(data)
     .filter(([, value]) => value == null || typeof value !== 'object')
     .filter(([key]) => !key.toLocaleLowerCase('en-US').endsWith('id'))
-    .map(([key, value]) => ({ label: FIELD_LABELS[key] || humanize(key), value: displayValue(value) }));
+    .map(([key, value]) => ({ label: FIELD_LABELS[key] || 'Thông tin khác', value: displayValue(value) }));
 }
 
 function DetailList({ title, data }) {
