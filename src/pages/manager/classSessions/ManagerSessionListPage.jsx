@@ -44,7 +44,15 @@ import {
   listManagerSessions,
 } from '../../../services/classSessionService';
 import './ManagerSessionListPage.css';
-import { getGymZoneTodayIsoDate } from '../../../utils/gymTime';
+import {
+  formatGymDate,
+  formatGymTime,
+  getGymLocalIsoDate,
+  getGymZoneTodayIsoDate,
+  getWeekRangeDates,
+  gymLocalDateToIsoInstant,
+  ISO_DATE_RE,
+} from '../../../utils/gymTime';
 
 // BE-enforced page size cap for staff-accounts (1..100).
 const COACH_PAGE_SIZE = 100;
@@ -59,10 +67,6 @@ const LIST_PAGE_SIZE = 20;
 // the smallest number of round-trips for typical weeks.
 const CALENDAR_PAGE_SIZE = 100;
 
-// yyyy-MM-dd (giá trị model/API, độc lập với định dạng hiển thị).
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-// Locale-agnostic helpers — every display goes through `Asia/Ho_Chi_Minh`.
 const GYM_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
 const STATUS_FILTERS = [
@@ -91,124 +95,6 @@ const VIEW_OPTIONS = [
   { value: 'list', label: 'Danh sách' },
   { value: 'calendar', label: 'Lịch' },
 ];
-
-// ----- Date / time helpers (gym-zone, browser-independent) -----
-
-// Today in the browser's local zone, formatted as YYYY-MM-DD. The
-// date inputs use the user's local zone as the input contract; the
-// boundary Instants we send to the BE are explicitly anchored at
-// UTC+07:00.
-function getLocalTodayIsoDate() {
-  return getGymZoneTodayIsoDate();
-}
-
-// Format an ISO Instant string in Asia/Ho_Chi_Minh.
-function formatGymTime(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleTimeString('vi-VN', {
-    timeZone: GYM_TIME_ZONE,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
-
-// Format an ISO Instant string as a gym-local date dd/MM/yyyy.
-function formatGymDate(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('vi-VN', {
-    timeZone: GYM_TIME_ZONE,
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
-
-// Day-of-week (0=Sun..6=Sat) for an ISO Instant, gym-local.
-function getGymLocalDayOfWeek(iso) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  // Use Intl to extract the gym-local weekday.
-  const wd = new Intl.DateTimeFormat('en-US', {
-    timeZone: GYM_TIME_ZONE,
-    weekday: 'short',
-  }).format(d);
-  const map = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-  return map[wd] ?? null;
-}
-
-// Gym-local YYYY-MM-DD for an ISO Instant.
-function getGymLocalIsoDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: GYM_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(d);
-  // en-CA yields YYYY-MM-DD already.
-  return parts;
-}
-
-// Convert a gym-local YYYY-MM-DD + 00:00 (or 24:00 for the upper
-// bound) into an ISO Instant string anchored at UTC+07:00. This is
-// the boundary semantics the BE expects:
-//   [from, to) over the Session interval — endTime > from AND startTime < to.
-function gymLocalDateToIsoInstant(dateStr, hhmm) {
-  if (!dateStr || !ISO_DATE_RE.test(dateStr)) return null;
-  const [hh, mm] = (hhmm || '00:00').split(':');
-  const h = Number(hh);
-  const m = Number(mm);
-  if (
-    !Number.isFinite(h) ||
-    !Number.isFinite(m) ||
-    h < 0 ||
-    h > 23 ||
-    m < 0 ||
-    m > 59
-  ) {
-    return null;
-  }
-  const hhStr = String(h).padStart(2, '0');
-  const mmStr = String(m).padStart(2, '0');
-  const composed = new Date(`${dateStr}T${hhStr}:${mmStr}:00+07:00`);
-  if (Number.isNaN(composed.getTime())) return null;
-  return composed.toISOString();
-}
-
-// Compute Monday 00:00 and next-Monday 00:00 (gym-local) for the
-// week containing the given gym-local date string. Returns the two
-// gym-local YYYY-MM-DD strings.
-function getWeekRangeDates(referenceLocalYmd) {
-  const ref = referenceLocalYmd && ISO_DATE_RE.test(referenceLocalYmd)
-    ? referenceLocalYmd
-    : getLocalTodayIsoDate();
-  // Anchor at UTC noon to avoid any TZ-DST edge ambiguity.
-  const probe = new Date(`${ref}T12:00:00+07:00`);
-  if (Number.isNaN(probe.getTime())) {
-    return null;
-  }
-  // Day-of-week in gym-zone, 0=Sun..6=Sat.
-  const wd = getGymLocalDayOfWeek(probe.toISOString());
-  if (wd == null) return null;
-  // Move backwards to Monday: (wd + 6) % 7 days.
-  const offsetToMonday = (wd + 6) % 7;
-  const monday = new Date(probe.getTime());
-  monday.setUTCDate(monday.getUTCDate() - offsetToMonday);
-  const nextMonday = new Date(monday.getTime());
-  nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
-  return {
-    mondayYmd: getGymLocalIsoDate(monday.toISOString()),
-    nextMondayYmd: getGymLocalIsoDate(nextMonday.toISOString()),
-  };
-}
 
 // ----- Coach bulk fetch (no N+1, no first-page truncation) -----
 async function fetchAllCoaches() {
@@ -302,7 +188,7 @@ export default function ManagerSessionListPage() {
   const toYmd = readStringParam(params, 'to');
   const showCancelled = readStringParam(params, 'showCancelled') === '1';
   const listPage = readIntParam(params, 'page') ?? 0;
-  const calYmd = readStringParam(params, 'week') || getLocalTodayIsoDate();
+  const calYmd = readStringParam(params, 'week') || getGymZoneTodayIsoDate();
 
   // Exact current Session-browsing URL (path + search). Passed into
   // detail-page Links as location state so the detail back-link can
@@ -604,8 +490,8 @@ export default function ManagerSessionListPage() {
         next2.delete('page');
         next2.delete('from');
         next2.delete('to');
-        if (!next2.get('week')) next2.set('week', getLocalTodayIsoDate());
-        if (!next2.get('day')) next2.set('day', getLocalTodayIsoDate());
+        if (!next2.get('week')) next2.set('week', getGymZoneTodayIsoDate());
+        if (!next2.get('day')) next2.set('day', getGymZoneTodayIsoDate());
       } else {
         next2.delete('week');
         next2.delete('day');
@@ -674,7 +560,7 @@ export default function ManagerSessionListPage() {
   );
 
   const gotoCurrentWeek = useCallback(() => {
-    const today = getLocalTodayIsoDate();
+    const today = getGymZoneTodayIsoDate();
     const next = new URLSearchParams(params);
     next.set('week', today);
     next.set('day', today);

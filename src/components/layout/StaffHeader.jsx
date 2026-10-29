@@ -12,33 +12,44 @@ import { Dropdown } from 'react-bootstrap';
 import StaffIcon from './StaffIcon';
 import NotificationBellContent from './NotificationBellContent';
 
-export default function StaffHeader({ user, roleLabel, unreadCount = 0, notifications = [], notificationPath, onRequestLogout }) {
+export default function StaffHeader({
+  user,
+  roleLabel,
+  unreadCount = 0,
+  notifications = [],
+  hasMore,
+  loadingMore,
+  loadMoreError,
+  onLoadMore,
+  onRequestLogout,
+}) {
   const hasUnread = unreadCount > 0;
   return (
     <header className="scms-sd-header">
       <nav className="scms-sd-topnav">
-        {notificationPath ? (
-          <Dropdown align="start">
-            <Dropdown.Toggle
-              as="button"
-              type="button"
-              className="scms-sd-bell"
-              aria-label={hasUnread ? `Thông báo (${unreadCount} mới)` : 'Thông báo'}
-              id="staff-notification-bell"
-            >
-              <StaffIcon name="bell" size={20} />
-              {hasUnread ? <span className="scms-sd-bell-dot" aria-hidden="true"></span> : null}
-            </Dropdown.Toggle>
-            <Dropdown.Menu className="scms-sd-bell-menu">
-              <NotificationBellContent
-                notifications={notifications}
-                unreadCount={unreadCount}
-                notificationPath={notificationPath}
-                classPrefix="scms-sd"
-              />
-            </Dropdown.Menu>
-          </Dropdown>
-        ) : null}
+        <Dropdown align="start">
+          <Dropdown.Toggle
+            as="button"
+            type="button"
+            className="scms-sd-bell"
+            aria-label={hasUnread ? `Thông báo (${unreadCount} mới)` : 'Thông báo'}
+            id="staff-notification-bell"
+          >
+            <StaffIcon name="bell" size={20} />
+            {hasUnread ? <span className="scms-sd-bell-dot" aria-hidden="true"></span> : null}
+          </Dropdown.Toggle>
+          <Dropdown.Menu className="scms-sd-bell-menu">
+            <NotificationBellContent
+              notifications={notifications}
+              unreadCount={unreadCount}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              loadMoreError={loadMoreError}
+              onLoadMore={onLoadMore}
+              classPrefix="scms-sd"
+            />
+          </Dropdown.Menu>
+        </Dropdown>
       </nav>
 
       <div className="scms-sd-user">

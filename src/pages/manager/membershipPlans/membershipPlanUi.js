@@ -9,7 +9,7 @@ export const PLAN_STATUS_BADGE = {
 };
 
 export const BENEFIT_LABELS = {
-  CENTER_ACCESS: 'Ra/vào trung tâm',
+  CENTER_ACCESS: 'Sử dụng khu tự tập luyện',
   CLASS_BOOKING: 'Đặt lịch lớp',
   POOL_ACCESS: 'Sử dụng hồ bơi',
   MASSAGE_ACCESS: 'Dịch vụ massage',

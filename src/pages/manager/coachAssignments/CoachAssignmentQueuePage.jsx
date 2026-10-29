@@ -36,6 +36,7 @@ import {
   listCoachAssignmentHistory,
   listCoachAssignmentWorkloads,
 } from '../../../services/coachAssignmentService';
+import { coachAssignmentEndReasonLabel } from '../../../utils/coachAssignment';
 import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 
 const PAGE_SIZE = 20;
@@ -648,7 +649,11 @@ export default function CoachAssignmentQueuePage() {
                           <td>{formatInstant(item.startsAt)}</td>
                           <td>
                             {formatInstant(item.endsAt)}
-                            {item.endReason ? <div className="small text-muted">{item.endReason}</div> : null}
+                            {item.endReason ? (
+                              <div className="small text-muted">
+                                {coachAssignmentEndReasonLabel(item.endReason)}
+                              </div>
+                            ) : null}
                           </td>
                           <td>{item.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã kết thúc'}</td>
                         </tr>

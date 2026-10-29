@@ -31,7 +31,6 @@ const COACH_SIDEBAR_ITEMS = [
   {
     label: 'Tài khoản',
     items: [
-      { to: '/coach/notifications', label: 'Thông báo', icon: 'bell' },
       { to: '/coach/profile', label: 'Hồ sơ cá nhân', icon: 'profile' },
     ],
   },
@@ -55,7 +54,14 @@ function StaticLogo() {
 export default function CoachLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { unreadCount, notifications } = useNotificationUnreadCount();
+  const {
+    unreadCount,
+    notifications,
+    hasMore,
+    loadingMore,
+    loadMoreError,
+    loadMoreNotifications,
+  } = useNotificationUnreadCount();
   const hasUnread = unreadCount > 0;
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -130,7 +136,10 @@ export default function CoachLayout() {
               <NotificationBellContent
                 notifications={notifications}
                 unreadCount={unreadCount}
-                notificationPath="/coach/notifications"
+                hasMore={hasMore}
+                loadingMore={loadingMore}
+                loadMoreError={loadMoreError}
+                onLoadMore={loadMoreNotifications}
                 classPrefix="scms-ml"
               />
             </Dropdown.Menu>

@@ -37,7 +37,6 @@ export const APP_SHELL_NAV_ITEMS = {
     {
       label: 'Hệ thống',
       items: [
-        { to: '/reception/notifications', label: 'Thông báo' },
         { to: '/reception/profile', label: 'Hồ sơ cá nhân' },
       ],
     },
@@ -87,7 +86,6 @@ export const APP_SHELL_NAV_ITEMS = {
       items: [
         { to: '/manager/reports', label: 'Báo cáo chi tiết' },
         { to: '/manager/audit-events', label: 'Lịch sử hoạt động' },
-        { to: '/manager/notifications', label: 'Thông báo' },
         { to: '/manager/profile', label: 'Hồ sơ cá nhân' },
       ],
     },
@@ -178,7 +176,6 @@ export const MEMBER_SIDEBAR_ITEMS = [
   {
     label: 'Tài khoản',
     items: [
-      { to: '/member/notifications', label: 'Thông báo', icon: 'bell' },
       { to: '/member/profile', label: 'Hồ sơ cá nhân', icon: 'profile', end: true },
     ],
   },

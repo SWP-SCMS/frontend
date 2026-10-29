@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { useController } from 'react-hook-form';
 
@@ -9,6 +9,16 @@ import {
 } from '../../utils/dateInput';
 
 const NO_EMISSION = Symbol('no-emission');
+
+function caretAfterDigits(value, digitCount) {
+  if (digitCount <= 0) return 0;
+  let digits = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    if (/\d/.test(value[index])) digits += 1;
+    if (digits === digitCount) return index + 1;
+  }
+  return value.length;
+}
 
 export const DateInput = forwardRef(function DateInput(
   {
@@ -30,6 +40,17 @@ export const DateInput = forwardRef(function DateInput(
     formatDateInput(value) || normalizeDateInputDraft(value),
   );
   const lastEmission = useRef(NO_EMISSION);
+  const pendingCaret = useRef(null);
+  const isComposing = useRef(false);
+
+  useLayoutEffect(() => {
+    const pending = pendingCaret.current;
+    if (!pending) return;
+    pendingCaret.current = null;
+    if (document.activeElement === pending.input) {
+      pending.input.setSelectionRange(pending.position, pending.position);
+    }
+  }, [displayValue]);
 
   useEffect(() => {
     if (lastEmission.current === value) {
@@ -51,6 +72,19 @@ export const DateInput = forwardRef(function DateInput(
     return nextValue;
   };
 
+  const updateDraft = (input, rawValue, caret) => {
+    const digitsBeforeCaret = rawValue.slice(0, caret).replace(/\D/g, '').length;
+    const nextValue = normalizeDateInputDraft(rawValue);
+    const nextCaret = caretAfterDigits(nextValue, digitsBeforeCaret);
+    if (nextValue === displayValue) {
+      input.setSelectionRange(nextCaret, nextCaret);
+    } else {
+      pendingCaret.current = { input, position: nextCaret };
+    }
+    setDisplayValue(nextValue);
+    commit(nextValue);
+  };
+
   const sharedProps = {
     ...props,
     ref,
@@ -60,10 +94,23 @@ export const DateInput = forwardRef(function DateInput(
     maxLength: 10,
     value: displayValue,
     'aria-invalid': props['aria-invalid'] ?? (isInvalid || undefined),
+    onCompositionStart: () => {
+      isComposing.current = true;
+    },
+    onCompositionEnd: (event) => {
+      isComposing.current = false;
+      const input = event.target;
+      updateDraft(input, input.value, input.selectionStart ?? input.value.length);
+    },
     onChange: (event) => {
-      const nextValue = normalizeDateInputDraft(event.target.value);
-      setDisplayValue(nextValue);
-      commit(nextValue);
+      const input = event.target;
+      if (isComposing.current || event.nativeEvent?.isComposing) {
+        setDisplayValue(input.value);
+        return;
+      }
+      const rawValue = input.value;
+      const caret = input.selectionStart ?? rawValue.length;
+      updateDraft(input, rawValue, caret);
     },
     onBlur: (event) => {
       const nextValue = commit(event.target.value);

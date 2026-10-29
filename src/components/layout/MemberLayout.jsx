@@ -30,7 +30,14 @@ export default function MemberLayout({ children }) {
   const [activeOffers, setActiveOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { unreadCount, notifications } = useNotificationUnreadCount();
+  const {
+    unreadCount,
+    notifications,
+    hasMore,
+    loadingMore,
+    loadMoreError,
+    loadMoreNotifications,
+  } = useNotificationUnreadCount();
 
   // Hộp thoại xác nhận trước khi đăng xuất.
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -219,6 +226,10 @@ export default function MemberLayout({ children }) {
             user={user}
             unreadCount={unreadCount}
             notifications={notifications}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            loadMoreError={loadMoreError}
+            onLoadMore={loadMoreNotifications}
             onRequestLogout={requestLogout}
           />
 

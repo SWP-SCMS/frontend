@@ -27,7 +27,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getRoom, updateRoom } from '../../../services/roomService';
-import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  applyServerErrors,
+  hasServerFieldMessage,
+} from '../../../utils/serverErrors';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'Đang hoạt động' },
@@ -58,15 +61,6 @@ function roomToForm(r) {
     status: r?.status || 'ACTIVE',
     usageMode: r?.usageMode || 'EXCLUSIVE',
   };
-}
-
-function hasFieldMessage(fieldErrors, field) {
-  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
-  const list = fieldErrors[field];
-  if (Array.isArray(list)) {
-    return list.some((m) => typeof m === 'string' && m.trim());
-  }
-  return typeof list === 'string' && list.trim().length > 0;
 }
 
 export default function RoomEditPage() {
@@ -178,7 +172,7 @@ export default function RoomEditPage() {
       let pageLocalHandled = false;
 
       // PAGE-LOCAL domain conflicts.
-      if (code === 'ROOM_NAME_CONFLICT' && !hasFieldMessage(fieldErrors, 'name')) {
+      if (code === 'ROOM_NAME_CONFLICT' && !hasServerFieldMessage(fieldErrors, 'name')) {
         setError('name', {
           type: 'server',
           message: 'Tên phòng đã tồn tại.',

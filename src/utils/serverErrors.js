@@ -54,6 +54,15 @@ function pickMessage(list) {
   return null;
 }
 
+export function hasServerFieldMessage(fieldErrors, field) {
+  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
+  const list = fieldErrors[field];
+  if (Array.isArray(list)) {
+    return list.some((message) => typeof message === 'string' && message.trim());
+  }
+  return typeof list === 'string' && list.trim().length > 0;
+}
+
 // Build a Set for O(1) allowlist lookup. Defensive: if the caller passes
 // a non-array (e.g. undefined, null, string), treat as empty allowlist so
 // the helper becomes a no-op and the page's global ErrorAlert takes over.

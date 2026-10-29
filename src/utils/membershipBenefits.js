@@ -4,7 +4,7 @@ function normalizeCode(value) {
 }
 
 const BENEFIT_DISPLAY_NAMES = {
-  CENTER_ACCESS: 'Ra/vào trung tâm',
+  CENTER_ACCESS: 'Sử dụng khu tự tập luyện',
   CLASS_BOOKING: 'Đặt lịch lớp học',
   MASSAGE_ACCESS: 'Sử dụng dịch vụ massage',
   OUTDOOR_SPORT_ACCESS: 'Thể thao ngoài trời',
@@ -63,9 +63,11 @@ export function normalizeMembershipBenefits(source) {
     if (!code) continue;
 
     const displayName =
-      typeof benefit.displayName === 'string' && benefit.displayName.trim()
-        ? benefit.displayName.trim()
-        : formatBenefitCode(code);
+      code === 'CENTER_ACCESS'
+        ? formatBenefitCode(code)
+        : typeof benefit.displayName === 'string' && benefit.displayName.trim()
+          ? benefit.displayName.trim()
+          : formatBenefitCode(code);
     const description =
       typeof benefit.description === 'string' && benefit.description.trim()
         ? benefit.description.trim()

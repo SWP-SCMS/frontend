@@ -44,7 +44,10 @@ import {
   listSupportedClassTypes,
   updateClass,
 } from '../../../services/sportClassService';
-import { applyServerErrors } from '../../../utils/serverErrors';
+import {
+  applyServerErrors,
+  hasServerFieldMessage,
+} from '../../../utils/serverErrors';
 import { extractAffectedSessions } from '../../../utils/schedulingProblem';
 
 const TYPE_LABELS = {
@@ -104,15 +107,6 @@ function classToForm(c) {
     description: c?.description || '',
     status: c?.status || 'ACTIVE',
   };
-}
-
-function hasFieldMessage(fieldErrors, field) {
-  if (!fieldErrors || typeof fieldErrors !== 'object') return false;
-  const list = fieldErrors[field];
-  if (Array.isArray(list)) {
-    return list.some((m) => typeof m === 'string' && m.trim());
-  }
-  return typeof list === 'string' && list.trim().length > 0;
 }
 
 export default function ClassEditPage() {
@@ -273,7 +267,7 @@ export default function ClassEditPage() {
         // Both inline (name) and global (ErrorAlert) signals are
         // intentionally preserved — the page-local CLASS_NOT_FOUND
         // contract requires both, per the Wave 2 plan.
-        if (!hasFieldMessage(fieldErrors, 'name')) {
+        if (!hasServerFieldMessage(fieldErrors, 'name')) {
           setError('name', {
             type: 'server',
             message:
@@ -297,7 +291,7 @@ export default function ClassEditPage() {
       }
       if (
         code === 'CLASS_NAME_CONFLICT' &&
-        !hasFieldMessage(fieldErrors, 'name')
+        !hasServerFieldMessage(fieldErrors, 'name')
       ) {
         setError('name', {
           type: 'server',
@@ -307,7 +301,7 @@ export default function ClassEditPage() {
       }
       if (
         classTypeUnsupported &&
-        !hasFieldMessage(fieldErrors, 'classType')
+        !hasServerFieldMessage(fieldErrors, 'classType')
       ) {
         setError('classType', {
           type: 'server',

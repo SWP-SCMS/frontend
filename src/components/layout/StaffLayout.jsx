@@ -17,7 +17,6 @@ import { useAuth } from '../../context/useAuth';
 import StaffSidebar from './StaffSidebar';
 import StaffHeader from './StaffHeader';
 import useNotificationUnreadCount from './useNotificationUnreadCount';
-import { flattenNavSections } from './navConfig';
 import './StaffLayout.css';
 
 export default function StaffLayout({
@@ -28,9 +27,14 @@ export default function StaffLayout({
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { unreadCount, notifications } = useNotificationUnreadCount();
-  const notificationPath = flattenNavSections(sidebarItems)
-    .find((item) => item.to.endsWith('/notifications'))?.to;
+  const {
+    unreadCount,
+    notifications,
+    hasMore,
+    loadingMore,
+    loadMoreError,
+    loadMoreNotifications,
+  } = useNotificationUnreadCount();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -64,7 +68,10 @@ export default function StaffLayout({
           roleLabel={roleLabel}
           unreadCount={unreadCount}
           notifications={notifications}
-          notificationPath={notificationPath}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          loadMoreError={loadMoreError}
+          onLoadMore={loadMoreNotifications}
           onRequestLogout={requestLogout}
         />
 

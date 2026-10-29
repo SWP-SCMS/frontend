@@ -13,7 +13,16 @@ import { Dropdown } from 'react-bootstrap';
 import Icon from './MemberIcon';
 import NotificationBellContent from './NotificationBellContent';
 
-export default function MemberHeader({ user, unreadCount = 0, notifications = [], onRequestLogout }) {
+export default function MemberHeader({
+  user,
+  unreadCount = 0,
+  notifications = [],
+  hasMore,
+  loadingMore,
+  loadMoreError,
+  onLoadMore,
+  onRequestLogout,
+}) {
   const hasUnread = unreadCount > 0;
 
   return (
@@ -35,7 +44,10 @@ export default function MemberHeader({ user, unreadCount = 0, notifications = []
           <NotificationBellContent
             notifications={notifications}
             unreadCount={unreadCount}
-            notificationPath="/member/notifications"
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            loadMoreError={loadMoreError}
+            onLoadMore={onLoadMore}
             classPrefix="scms-ml"
           />
         </Dropdown.Menu>
