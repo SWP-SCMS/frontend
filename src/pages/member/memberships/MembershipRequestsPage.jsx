@@ -242,7 +242,7 @@ export default function MembershipRequestsPage() {
                 <p className="text-muted mb-4">
                   Bạn cần có gói tập đang hoạt động để gửi yêu cầu hủy hoặc đóng băng.
                 </p>
-                <Button as={Link} to="/offers" variant="danger">
+                <Button as={Link} to="/member/plan" variant="danger">
                   Xem các gói tập
                 </Button>
               </Card.Body>
@@ -259,7 +259,10 @@ export default function MembershipRequestsPage() {
                   <p className="text-muted small">
                     Chọn hủy ngay hoặc tiếp tục dùng đến hết chu kỳ hiện tại. Yêu cầu chỉ có hiệu lực sau khi quản lý duyệt.
                   </p>
-                  <Form onSubmit={submitTermination} className="scms-membership-request-form">
+                  <Form
+                    onSubmit={submitTermination}
+                    className="scms-membership-request-form scms-membership-request-termination-form"
+                  >
                     <Form.Group>
                       <Form.Label>Thời điểm hủy</Form.Label>
                       <Form.Select
@@ -302,7 +305,10 @@ export default function MembershipRequestsPage() {
                   <p className="text-muted small">
                     Sau khi quản lý duyệt, bạn cần thanh toán phí tại quầy lễ tân để lịch đóng băng có hiệu lực.
                   </p>
-                  <Form onSubmit={submitFreeze} className="scms-membership-request-form">
+                  <Form
+                    onSubmit={submitFreeze}
+                    className="scms-membership-request-form scms-membership-request-freeze-form"
+                  >
                     <Form.Group>
                       <Form.Label>Từ ngày</Form.Label>
                       <DateInput
