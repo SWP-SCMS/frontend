@@ -25,6 +25,15 @@ const ForgotPasswordPage = lazy(
 );
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
+const CourseCatalogPage = lazy(
+  () => import('../pages/public/courses/CourseCatalogPage'),
+);
+const CourseDetailPage = lazy(
+  () => import('../pages/public/courses/CourseDetailPage'),
+);
+const CourseRunDetailPage = lazy(
+  () => import('../pages/public/courses/CourseRunDetailPage'),
+);
 const NotFoundPage = lazy(() => import('../pages/public/notFound/NotFoundPage'));
 const ForbiddenPage = lazy(() => import('../pages/public/forbidden/ForbiddenPage'));
 
@@ -392,6 +401,15 @@ export default function AppRoutes() {
       <Route
         path="/offers/:offerId"
         element={withSuspense(<OfferDetailPage />)}
+      />
+      <Route path="/courses" element={withSuspense(<CourseCatalogPage />)} />
+      <Route
+        path="/courses/:courseId"
+        element={withSuspense(<CourseDetailPage />)}
+      />
+      <Route
+        path="/course-runs/:runId"
+        element={withSuspense(<CourseRunDetailPage />)}
       />
 
       {/* ---------- Member ---------- */}
