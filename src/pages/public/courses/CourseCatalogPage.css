@@ -48,6 +48,8 @@
 .course-session-unit { color: #ffaaa4; font-weight: 700; }
 .course-session p { color: #989ca5; margin: .3rem 0 0; }
 .course-session-status { color: #c7cad0; font-size: .85rem; }
+.course-run-action { display: flex; justify-content: flex-end; margin: 1.25rem 0 2rem; }
+.course-run-action .course-primary-link { width: auto; min-width: 220px; margin: 0; }
 @media (max-width: 720px) {
   .course-detail-hero { align-items: stretch; flex-direction: column; }
   .course-code-box, .course-price-box { width: 100%; }

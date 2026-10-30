@@ -74,3 +74,28 @@ export function formatCourseDateTime(value) {
     timeStyle: 'short',
   }).format(date);
 }
+
+const COURSE_ERROR_MESSAGES = {
+  COURSE_IDEMPOTENCY_KEY_REQUIRED: 'Thiếu mã xác nhận thao tác. Vui lòng thử lại.',
+  COURSE_IDEMPOTENCY_KEY_REUSED: 'Yêu cầu này đã được xử lý. Vui lòng tải lại trang.',
+  COURSE_RUN_NOT_AVAILABLE: 'Đợt học này hiện không còn khả dụng.',
+  MEMBER_NOT_FOUND: 'Không tìm thấy thông tin hội viên.',
+  MEMBER_NOT_ACTIVE: 'Tài khoản hội viên chưa hoạt động.',
+  COURSE_REGISTRATION_NOT_OPEN: 'Đợt học này chưa mở đăng ký.',
+  COURSE_REGISTRATION_CLOSED: 'Đợt học này đã đóng đăng ký.',
+  COURSE_RESERVATION_EXISTS: 'Bạn đang có một đơn giữ chỗ cho đợt học này.',
+  COURSE_MEMBER_ALREADY_ENROLLED: 'Bạn đã đăng ký đợt học này.',
+  COURSE_CAPACITY_FULL: 'Đợt học đã đủ chỗ. Bạn có thể tham gia danh sách chờ.',
+  COURSE_SCHEDULE_CONFLICT: 'Lịch học của khóa này trùng với lịch hiện có của bạn.',
+  COURSE_ORDER_NOT_FOUND: 'Không tìm thấy đơn đăng ký khóa học.',
+};
+
+export function getCourseErrorCode(error) {
+  const data = error?.response?.data;
+  return data?.code || data?.errorCode || data?.error || error?.code || '';
+}
+
+export function getCourseErrorMessage(error, fallback = 'Không thể xử lý yêu cầu. Vui lòng thử lại.') {
+  const code = getCourseErrorCode(error);
+  return COURSE_ERROR_MESSAGES[code] || error?.response?.data?.detail || fallback;
+}

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import PublicDarkLayout from '../../../components/layout/PublicDarkLayout';
+import { ROLES } from '../../../constants';
+import { useAuth } from '../../../context/useAuth';
 import { getCatalogCourseRun } from '../../../services/courseCatalogService';
 import {
   COURSE_REGISTRATION_STATUS_LABELS,
@@ -13,6 +15,7 @@ import './CourseCatalogPage.css';
 
 export default function CourseRunDetailPage() {
   const { runId } = useParams();
+  const { isAuthenticated, role } = useAuth();
   const [run, setRun] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -64,6 +67,17 @@ export default function CourseRunDetailPage() {
                 <div><dt>Quy mô lớp</dt><dd>Tối đa {run.capacity} học viên</dd></div>
                 <div><dt>Số buổi</dt><dd>{run.totalUnits ?? run.sessions?.length ?? '—'} buổi</dd></div>
               </dl>
+
+              {run.registrationStatus === 'OPEN' && (!isAuthenticated || role === ROLES.MEMBER) ? (
+                <div className="course-run-action">
+                  <Link
+                    className="course-primary-link"
+                    to={isAuthenticated ? `/member/courses/${runId}/register` : '/login'}
+                  >
+                    {isAuthenticated ? 'Đăng ký khóa học' : 'Đăng nhập để đăng ký'}
+                  </Link>
+                </div>
+              ) : null}
 
               <div className="course-title-row"><div><span className="scms-home-eyebrow">Nội dung khóa</span><h2>Lịch học dự kiến</h2></div></div>
               {run.sessions?.length ? (

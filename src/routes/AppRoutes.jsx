@@ -73,6 +73,12 @@ const MembershipRequestsPage = lazy(
 const MemberCheckoutPage = lazy(
   () => import('../pages/member/checkout/MemberCheckoutPage'),
 );
+const MemberCoursesPage = lazy(
+  () => import('../pages/member/courses/MemberCoursesPage'),
+);
+const MemberCourseRegistrationPage = lazy(
+  () => import('../pages/member/courses/MemberCourseRegistrationPage'),
+);
 
 // Member – View Class Schedule (US32)
 const MemberClassSchedulePage = lazy(
@@ -466,6 +472,30 @@ export default function AppRoutes() {
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
                 {withSuspense(<MemberCheckoutPage />)}
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/courses"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<MemberCoursesPage />)}
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/courses/:runId/register"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<MemberCourseRegistrationPage />)}
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
