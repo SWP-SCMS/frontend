@@ -306,6 +306,20 @@ const ClassEditPage = lazy(
   () => import('../pages/manager/classes/ClassEditPage'),
 );
 
+// Manager – Course booking administration
+const ManagerCoursesPage = lazy(
+  () => import('../pages/manager/courses/ManagerCoursesPage'),
+);
+const ManagerCourseDetailPage = lazy(
+  () => import('../pages/manager/courses/ManagerCourseDetailPage'),
+);
+const ManagerCourseRunsPage = lazy(
+  () => import('../pages/manager/courses/ManagerCourseRunsPage'),
+);
+const ManagerCourseRunDetailPage = lazy(
+  () => import('../pages/manager/courses/ManagerCourseRunDetailPage'),
+);
+
 // Manager – Room management (US25)
 const RoomListPage = lazy(
   () => import('../pages/manager/rooms/RoomListPage'),
@@ -754,6 +768,10 @@ export default function AppRoutes() {
         <Route path="classes/new" element={withSuspense(<ClassCreatePage />)} />
         <Route path="classes/:classId" element={withSuspense(<ClassDetailPage />)} />
         <Route path="classes/:classId/edit" element={withSuspense(<ClassEditPage />)} />
+        <Route path="courses" element={withSuspense(<ManagerCoursesPage />)} />
+        <Route path="courses/:courseId" element={withSuspense(<ManagerCourseDetailPage />)} />
+        <Route path="course-runs" element={withSuspense(<ManagerCourseRunsPage />)} />
+        <Route path="course-runs/:runId" element={withSuspense(<ManagerCourseRunDetailPage />)} />
         <Route path="rooms" element={withSuspense(<RoomListPage />)} />
         <Route path="rooms/new" element={withSuspense(<RoomCreatePage />)} />
         <Route path="rooms/:roomId" element={withSuspense(<RoomDetailPage />)} />

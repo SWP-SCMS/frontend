@@ -72,6 +72,13 @@ export const APP_SHELL_NAV_ITEMS = {
       ],
     },
     {
+      label: 'Khóa học',
+      items: [
+        { to: '/manager/courses', label: 'Danh mục khóa học' },
+        { to: '/manager/course-runs', label: 'Đợt mở khóa học' },
+      ],
+    },
+    {
       label: 'Kinh doanh',
       items: [
         { to: '/manager/membership-plans', label: 'Loại gói & quyền lợi' },
