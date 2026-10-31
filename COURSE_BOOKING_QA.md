@@ -38,3 +38,20 @@ Backend reference: 6fdd77d. Backend read-only. Tests intentionally not run; user
 - Verify empty/whitespace inputs, invalid dates, reversed dates, fractional/negative amounts, minimum above capacity, modal reopen/reset and failed submission retry.
 - Numbers above JavaScript safe integer are rejected rather than silently rounded.
 - Focused lint and diff checks passed; functional tests remain user-owned and were not run.
+
+## Update 2026-11-01 — backend 6097813
+This section supersedes the earlier blanket statement that withdrawal decision/refund review APIs are missing.
+- BE now supports withdrawal creation/history/Manager decisions and Manager refund obligation review.
+- FE implements Member withdrawal creation/history, safe error labels and notification labels. Submitted requests remain in the calendar while WITHDRAWAL_PENDING.
+- No client refund calculation: pending amounts are unknown, zero is shown only when BE returns zero. Withdrawal approval and refund approval do not mean disbursement completed.
+- Manager queue/refund UI remains deferred: DTOs lack Member/Run business names. Reception withdrawal creation lacks enrollment discovery. No per-row requests added.
+- Disbursement/final verification and Member refund-obligation read API remain unavailable.
+
+Manual acceptance (not executed):
+1. Member opens Khóa học của tôi, selects an active Run, submits a trimmed reason of 1–1000 characters. Empty reason/selection show inline validation.
+2. Double-click, timeout after server commit and retry: pending request is visible and cannot be duplicated from the form. Failed history reload disables submission.
+3. Pending withdrawal retains personal calendar/attendance. Refresh the full page after a Manager decision: rejection restores ACTIVE; approval shows WITHDRAWN and removes active calendar sessions.
+4. Check closed withdrawal window, open transfer, inactive enrollment and already-pending errors; UI must show Vietnamese explanations, no internal IDs.
+5. Pending/refused requests with null refund display Chưa xác định; approved zero refund displays 0; nonzero refund exactly uses the BE response.
+6. Withdrawal/refund notifications use human-readable labels and Member destination /member/courses. There is no claim of paid refund or available disbursement action.
+7. Verify missing enrollment names use neutral text, no UUID fallback, and browser network has no per-request name lookups.

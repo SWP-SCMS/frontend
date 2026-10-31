@@ -1,4 +1,11 @@
 const TYPE_LABELS = {
+  COURSE_WITHDRAWAL_REQUESTED: 'Đã tạo yêu cầu rút khóa học của bạn',
+  COURSE_WITHDRAWAL_REVIEW_REQUIRED: 'Có yêu cầu rút khóa học cần duyệt',
+  COURSE_WITHDRAWAL_APPROVED: 'Yêu cầu rút khóa học đã được duyệt',
+  COURSE_WITHDRAWAL_REJECTED: 'Yêu cầu rút khóa học đã bị từ chối',
+  COURSE_REFUND_APPROVED: 'Nghĩa vụ hoàn tiền khóa học đã được duyệt, chưa xác nhận chi tiền',
+  COURSE_REFUND_REJECTED: 'Nghĩa vụ hoàn tiền khóa học đã bị từ chối',
+
   COURSE_WAITLIST_INVITED: 'Đã có chỗ trống cho khóa học bạn đang chờ',
   COURSE_WAITLIST_CANCELLED: 'Danh sách chờ khóa học đã bị hủy',
   COURSE_SCHEDULE_CHANGED: 'Lịch khóa học đã thay đổi',
