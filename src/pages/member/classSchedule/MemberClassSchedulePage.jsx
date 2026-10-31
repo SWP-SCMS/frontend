@@ -101,7 +101,7 @@ export default function MemberClassSchedulePage() {
       const results = await Promise.allSettled([listAllMyBookedBookings(), listMyCourseEnrollments()]);
       const gym = results[0].status === 'fulfilled' ? results[0].value : [];
       const courses = results[1].status === 'fulfilled' ? results[1].value : [];
-      setBookings([...gym, ...courses.filter((e) => e.lifecycleStatus === 'ACTIVE').flatMap((e) =>
+      setBookings([...gym, ...courses.filter((e) => ['ACTIVE', 'WITHDRAWAL_PENDING'].includes(e.lifecycleStatus)).flatMap((e) =>
         (e.sessions || []).filter((s) => s.disposition === 'ENROLLED').map((s) => ({
           ...s, id: `course-${s.enrollmentSessionId}`, classType: 'COURSE',
           className: `${e.courseName} · ${e.runCode} · Buổi ${s.unitNumber}`,
