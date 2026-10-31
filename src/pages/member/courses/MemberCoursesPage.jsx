@@ -10,6 +10,8 @@ import {
 } from '../../../services/courseWaitlistService';
 import {
   COURSE_ATTENDANCE_STATUS_LABELS,
+  COURSE_ENROLLMENT_STATUS_LABELS,
+  COURSE_DISPOSITION_LABELS,
   COURSE_WAITLIST_STATUS_LABELS,
   formatCourseDateTime,
   getCourseErrorMessage,
@@ -117,7 +119,7 @@ export default function MemberCoursesPage() {
                         <small>{enrollment.courseCode} · {enrollment.runCode}</small>
                         <h3>{enrollment.courseName}</h3>
                       </div>
-                      <span className="member-course-status is-success">Đã đăng ký</span>
+                      <span className="member-course-status">{getCourseStatusLabel(COURSE_ENROLLMENT_STATUS_LABELS, enrollment.lifecycleStatus)}</span>
                     </div>
                     <p>Đăng ký lúc {formatCourseDateTime(enrollment.enrolledAt)}</p>
                     <div className="member-course-session-stack">
@@ -127,7 +129,7 @@ export default function MemberCoursesPage() {
                           <div className="member-course-session-row" key={session.enrollmentSessionId}>
                             <strong>Buổi {session.unitNumber}</strong>
                             <span>{formatCourseDateTime(session.startAt)}</span>
-                            <small>{getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, session.attendanceStatus)}</small>
+                            <small>{getCourseStatusLabel(COURSE_DISPOSITION_LABELS, session.disposition)} · {getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, session.attendanceStatus)}</small>
                           </div>
                         ))}
                     </div>

@@ -112,3 +112,13 @@ export async function updateManagerCourseSession(runId, sessionId, payload) {
   );
   return data;
 }
+
+export async function cancelManagerCourseSession(runId, sessionId, expectedVersion) {
+  const { data } = await api.post(`/manager/course-runs/${runId}/sessions/${sessionId}/cancel`, { expectedVersion });
+  return data;
+}
+
+export async function createManagerCourseMakeup(runId, sessionId, payload) {
+  const { data } = await api.post(`/manager/course-runs/${runId}/sessions/${sessionId}/makeup`, payload);
+  return data;
+}
