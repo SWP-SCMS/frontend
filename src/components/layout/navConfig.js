@@ -30,6 +30,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/reception/membership-offers', label: 'Gói tập' },
         { to: '/reception/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/reception/orders/new', label: 'Tạo đơn gói tập' },
+        { to: '/reception/courses', label: 'Đăng ký khóa học' },
         { to: '/reception/payments/reconcile', label: 'Đối soát' },
         { to: '/reception/refunds', label: 'Hoàn tiền' },
       ],

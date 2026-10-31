@@ -25,6 +25,8 @@ const ForgotPasswordPage = lazy(
 );
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
+const ReceptionCourseBookingPage = lazy(() => import('../pages/receptionist/courses/ReceptionCourseBookingPage'));
+
 const CourseCatalogPage = lazy(
   () => import('../pages/public/courses/CourseCatalogPage'),
 );
@@ -658,6 +660,7 @@ export default function AppRoutes() {
         <Route path="membership-offers" element={withSuspense(<ReceptionistMembershipOfferListPage />)} />
         <Route path="membership-requests" element={withSuspense(<MembershipRequestDeskPage />)} />
         <Route path="orders/new" element={withSuspense(<CashPaymentPage />)} />
+        <Route path="courses" element={withSuspense(<ReceptionCourseBookingPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
         <Route path="payments/cash" element={withSuspense(<CashPaymentPage />)} />
         <Route path="refunds" element={withSuspense(<RefundRequestDeskPage />)} />
