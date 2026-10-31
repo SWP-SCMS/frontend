@@ -1,4 +1,10 @@
 const TYPE_LABELS = {
+  COURSE_SCHEDULE_CHANGED: 'Lịch khóa học đã thay đổi',
+  COURSE_SESSION_CANCELLED: 'Buổi học khóa đã hủy, chờ xếp bù',
+  COURSE_SESSION_MAKEUP_SCHEDULED: 'Đã xếp buổi học bù cho khóa học',
+  COURSE_RUN_CONFIRMED: 'Đợt khóa học đã được xác nhận mở',
+  COURSE_RUN_CANCELLED: 'Đợt khóa học đã bị hủy',
+
   BOOKING_CREATED: 'Đặt lịch tập thành công',
   BOOKING_CANCELLED: 'Lịch đặt đã bị hủy',
   SESSION_CANCELLED: 'Buổi tập đã bị hủy',
@@ -76,6 +82,7 @@ export function humanize(value) {
 
 export function notificationSummary(item) {
   const payload = item?.payload || {};
+  if (item?.notificationType?.startsWith('COURSE_')) return TYPE_LABELS[item.notificationType] || 'Có cập nhật về khóa học';
   return payload.message || TYPE_LABELS[item?.notificationType] ||
     humanize(item?.notificationType) || 'Thông báo hệ thống';
 }

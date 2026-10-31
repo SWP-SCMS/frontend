@@ -12,6 +12,7 @@ function notificationDestination(item, pathname) {
   const sessionId = payload.sessionId || (item.targetType === 'CLASS_SESSION' ? item.targetId : null);
 
   if (role === 'member') {
+    if (type?.startsWith('COURSE_')) return '/member/courses';
     if (sessionId && ['BOOKING_CREATED', 'SESSION_ROOM_CHANGED', 'SESSION_RESCHEDULED'].includes(type)) {
       return `/member/class-sessions?sessionId=${encodeURIComponent(sessionId)}`;
     }

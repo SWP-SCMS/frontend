@@ -17,6 +17,7 @@ import {
   getCourseErrorMessage,
   getCourseStatusLabel,
 } from '../../../utils/courseUi';
+import CourseScheduleChanges from './CourseScheduleChanges';
 import './MemberCoursesPage.css';
 
 const ACTIVE_WAITLIST_STATUSES = new Set(['WAITING', 'INVITED']);
@@ -146,6 +147,7 @@ export default function MemberCoursesPage() {
             )}
           </section>
 
+          <CourseScheduleChanges enrollments={enrollments} />
           <section className="member-course-section">
             <div className="member-course-section-title">
               <h2>Danh sách chờ</h2>
