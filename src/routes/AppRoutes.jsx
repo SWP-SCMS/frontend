@@ -588,12 +588,7 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
-                <MemberBenefitRouteGuard
-                  benefitCode="CLASS_BOOKING"
-                  serviceName="Lịch lớp của tôi"
-                >
-                  <MemberClassSchedulePage />
-                </MemberBenefitRouteGuard>
+                <MemberClassSchedulePage />
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>

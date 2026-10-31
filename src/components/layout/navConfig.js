@@ -139,7 +139,6 @@ export const MEMBER_SIDEBAR_ITEMS = [
         to: '/member/class-sessions',
         label: 'Lịch của tôi',
         icon: 'calendar',
-        requiredBenefit: 'CLASS_BOOKING',
       },
     ],
   },

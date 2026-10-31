@@ -20,6 +20,8 @@ import { DateInput } from '../../../components/common/DateInput';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
+import { listMyCourseEnrollments } from '../../../services/courseEnrollmentService';
+import { COURSE_ATTENDANCE_STATUS_LABELS, getCourseStatusLabel, formatCourseDateTime } from '../../../utils/courseUi';
 import SessionDetailModal from './SessionDetailModal';
 import { getAttendanceDisplay } from './attendance';
 import {
@@ -41,6 +43,7 @@ const CLASS_TYPE_LABEL = {
   GROUP: 'Nhóm',
   YOGA: 'Yoga',
   PT_1_1: 'PT 1-1',
+  COURSE: 'Khóa học',
 };
 
 const WEEKDAY_LABELS = [
@@ -95,7 +98,18 @@ export default function MemberClassSchedulePage() {
     setLoading(true);
     setError(null);
     try {
-      setBookings(await listAllMyBookedBookings());
+      const results = await Promise.allSettled([listAllMyBookedBookings(), listMyCourseEnrollments()]);
+      const gym = results[0].status === 'fulfilled' ? results[0].value : [];
+      const courses = results[1].status === 'fulfilled' ? results[1].value : [];
+      setBookings([...gym, ...courses.filter((e) => e.lifecycleStatus === 'ACTIVE').flatMap((e) =>
+        (e.sessions || []).filter((s) => s.disposition === 'ENROLLED').map((s) => ({
+          ...s, id: `course-${s.enrollmentSessionId}`, classType: 'COURSE',
+          className: `${e.courseName} · ${e.runCode} · Buổi ${s.unitNumber}`,
+          startTime: s.startAt, endTime: s.endAt,
+        }))) ]);
+      if (results.some((result) => result.status === 'rejected')) {
+        setError(new Error('Một phần lịch chưa tải được. Vui lòng tải lại trang.'));
+      }
     } catch (err) {
       setError(err);
     } finally {
@@ -243,8 +257,13 @@ export default function MemberClassSchedulePage() {
         onSelect={setSelected}
       />
 
+      {selected?.classType === 'COURSE' && <Alert variant="info" dismissible onClose={closeSelected}>
+        <strong>{selected.className}</strong><p>{formatCourseDateTime(selected.startTime)} – {formatCourseDateTime(selected.endTime)}</p>
+        <p>{getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, selected.attendanceStatus)}</p>
+        <Link to="/member/courses">Xem khóa học của tôi</Link>
+      </Alert>}
       <SessionDetailModal
-        session={selected}
+        session={selected?.classType === 'COURSE' ? null : selected}
         onClose={closeSelected}
       />
     </div>
@@ -374,7 +393,7 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
 // ----- Một buổi tập trong lưới (bấm để xem chi tiết) -----
 function SessionCard({ session, onClick }) {
   const s = session || {};
-  const att = getAttendanceDisplay(s);
+  const att = s.classType === 'COURSE' ? { key: 'course', text: getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, s.attendanceStatus) } : getAttendanceDisplay(s);
   return (
     <button
       type="button"

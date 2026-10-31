@@ -122,6 +122,8 @@ export default function MemberCoursesPage() {
                       <span className="member-course-status">{getCourseStatusLabel(COURSE_ENROLLMENT_STATUS_LABELS, enrollment.lifecycleStatus)}</span>
                     </div>
                     <p>Đăng ký lúc {formatCourseDateTime(enrollment.enrolledAt)}</p>
+                    <p>Điểm danh: {(enrollment.sessions || []).filter((s) => s.attendanceStatus === 'PRESENT').length} có mặt · {(enrollment.sessions || []).filter((s) => s.attendanceStatus === 'ABSENT').length} vắng · {(enrollment.sessions || []).filter((s) => s.attendanceStatus === 'NOT_RECORDED').length} chưa ghi nhận</p>
+                    <Link to="/member/class-sessions">Xem lịch cá nhân</Link>
                     <div className="member-course-session-stack">
                       {[...(enrollment.sessions || [])]
                         .sort((a, b) => a.unitNumber - b.unitNumber)
