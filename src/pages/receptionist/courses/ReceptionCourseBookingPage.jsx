@@ -1,3 +1,7 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { courseMemberSearchSchema } from '../../../schemas/courseSchemas';
+import { normalizePhone } from '../../../utils';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Card, Form } from 'react-bootstrap';
 import { searchReceptionMember } from '../../../services/receptionistService';
@@ -9,8 +13,7 @@ import { COURSE_ORDER_STATUS_LABELS, formatCourseMoney, formatCourseDateTime, ge
 export default function ReceptionCourseBookingPage() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
-  const [query, setQuery] = useState('');
-  const [kind, setKind] = useState('memberId');
+  const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(courseMemberSearchSchema), defaultValues: { kind: 'memberId', query: '' } });
   const [member, setMember] = useState(null);
   const [runs, setRuns] = useState([]);
   const [page, setPage] = useState(0);
@@ -46,22 +49,24 @@ export default function ReceptionCourseBookingPage() {
     const updated = await getReceptionCourseOrder(member.accountId, order.orderId);
     setOrder(updated); setPayment(updated.payment);
   }
+  const searchMember = ({ kind, query }) => perform(async () => {
+        setMember(null); setRun(null); keys.current = {};
+        setMember(await searchReceptionMember({ [kind]: kind === 'phone' ? normalizePhone(query) : query }));
+      });
   const payable = order?.orderStatus === 'PENDING_PAYMENT' && Date.parse(order.expiresAt) > now;
   return <div className="container-fluid py-3">
     <h1>Đăng ký khóa học</h1>
     <p>Đăng ký theo đợt học. Học phí khóa học độc lập với gói tập gym.</p>
     {error && <Alert variant="danger" role="alert">{error}</Alert>}
     <Card className="mb-3"><Card.Body>
-      <Form onSubmit={(e) => { e.preventDefault(); perform(async () => {
-        setMember(null); setRun(null); keys.current = {};
-        setMember(await searchReceptionMember({ [kind]: query }));
-      }); }}>
+      <Form noValidate onSubmit={(event) => handleSubmit(searchMember)(event)}>
         <Form.Label htmlFor="course-member-kind">Tra cứu hội viên</Form.Label>
-        <Form.Select id="course-member-kind" value={kind} disabled={busy || !!order} onChange={(e) => setKind(e.target.value)}>
+        <Form.Select id="course-member-kind" {...register('kind')} disabled={busy || !!order}>
           <option value="memberId">Mã hội viên</option><option value="phone">Số điện thoại</option>
         </Form.Select>
-        <Form.Control className="my-2" aria-label="Mã hội viên hoặc số điện thoại" required value={query} disabled={busy || !!order} onChange={(e) => setQuery(e.target.value)} />
-        <Button type="submit" disabled={busy || !!order || !query.trim()}>Tra cứu</Button>
+        <Form.Control className="my-2" aria-label="Mã hội viên hoặc số điện thoại" {...register('query')} isInvalid={!!errors.query} disabled={busy || !!order} />
+        <Form.Control.Feedback type="invalid">{errors.query?.message}</Form.Control.Feedback>
+        <Button type="submit" disabled={busy || !!order}>Tra cứu</Button>
       </Form>
       {member && <p className="mt-3">{member.fullName} · {member.memberId} · {member.phone}</p>}
       {member && member.status !== 'ACTIVE' && <Alert variant="warning">Hội viên chưa ở trạng thái hoạt động.</Alert>}

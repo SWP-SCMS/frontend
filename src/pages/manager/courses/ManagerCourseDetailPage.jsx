@@ -1,3 +1,6 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { courseEditSchema } from '../../../schemas/courseSchemas';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
@@ -14,7 +17,8 @@ export default function ManagerCourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showEdit, setShowEdit] = useState(false);
-  const [form, setForm] = useState({});
+  const courseForm = useForm({ resolver: zodResolver(courseEditSchema), defaultValues: {} });
+  const { register, handleSubmit, reset: setForm, formState: { errors } } = courseForm;
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -30,8 +34,8 @@ export default function ManagerCourseDetailPage() {
     setShowEdit(true);
   }
 
-  async function handleEdit(event) {
-    event.preventDefault(); setBusy(true); setError('');
+  async function handleEdit(form) {
+     setBusy(true); setError('');
     try {
       const updated = await updateManagerCourse(courseId, {
         expectedVersion: course.version,
@@ -73,12 +77,12 @@ export default function ManagerCourseDetailPage() {
       <Col lg={4}><div className="bg-white rounded shadow-sm p-4"><dl className="row mb-0"><dt className="col-7">Đăng ký tối thiểu</dt><dd className="col-5 text-end">{course.defaultMinimumEnrollment}</dd><dt className="col-7">Phiên bản</dt><dd className="col-5 text-end">{course.version}</dd></dl></div></Col>
     </Row>
 
-    <Modal show={showEdit} onHide={() => setShowEdit(false)} centered size="lg"><Form onSubmit={handleEdit}>
+    <Modal show={showEdit} onHide={() => setShowEdit(false)} centered size="lg"><Form noValidate onSubmit={handleSubmit(handleEdit)}>
       <Modal.Header closeButton><Modal.Title>Chỉnh sửa khóa học</Modal.Title></Modal.Header><Modal.Body><Row className="g-3">
-        <Col md={8}><Form.Label>Tên khóa học *</Form.Label><Form.Control required maxLength={200} value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Col>
-        <Col md={4}><Form.Label>Số đăng ký tối thiểu *</Form.Label><Form.Control required type="number" min={1} value={form.defaultMinimumEnrollment || 1} onChange={(e) => setForm({ ...form, defaultMinimumEnrollment: e.target.value })} /></Col>
-        <Col xs={12}><Form.Label>Ảnh khóa học (URL)</Form.Label><Form.Control maxLength={500} value={form.imageUrl || ''} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} /></Col>
-        <Col xs={12}><Form.Label>Mô tả</Form.Label><Form.Control as="textarea" rows={5} maxLength={2000} value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Col>
+        <Col md={8}><Form.Label>Tên khóa học *</Form.Label><Form.Control required maxLength={200} {...register('name')} isInvalid={!!errors.name} /><Form.Control.Feedback type="invalid">{errors.name?.message}</Form.Control.Feedback></Col>
+        <Col md={4}><Form.Label>Số đăng ký tối thiểu *</Form.Label><Form.Control required type="number" min={1} {...register('defaultMinimumEnrollment')} isInvalid={!!errors.defaultMinimumEnrollment} /><Form.Control.Feedback type="invalid">{errors.defaultMinimumEnrollment?.message}</Form.Control.Feedback></Col>
+        <Col xs={12}><Form.Label>Ảnh khóa học (URL)</Form.Label><Form.Control maxLength={500} {...register('imageUrl')} isInvalid={!!errors.imageUrl} /><Form.Control.Feedback type="invalid">{errors.imageUrl?.message}</Form.Control.Feedback></Col>
+        <Col xs={12}><Form.Label>Mô tả</Form.Label><Form.Control as="textarea" rows={5} maxLength={2000} {...register('description')} isInvalid={!!errors.description} /><Form.Control.Feedback type="invalid">{errors.description?.message}</Form.Control.Feedback></Col>
       </Row></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setShowEdit(false)}>Hủy</Button><Button variant="danger" type="submit" disabled={busy}>Lưu thay đổi</Button></Modal.Footer>
     </Form></Modal>
   </div>;

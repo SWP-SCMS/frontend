@@ -1,3 +1,6 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { courseCreateSchema } from '../../../schemas/courseSchemas';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
@@ -15,7 +18,8 @@ export default function ManagerCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const courseForm = useForm({ resolver: zodResolver(courseCreateSchema), defaultValues: emptyForm });
+  const { register, handleSubmit, reset: setForm, formState: { errors } } = courseForm;
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -37,8 +41,8 @@ export default function ManagerCoursesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleCreate(event) {
-    event.preventDefault();
+  async function handleCreate(form) {
+
     setSaving(true);
     setError('');
     try {
@@ -86,14 +90,14 @@ export default function ManagerCoursesPage() {
       </div>
 
       <Modal show={showCreate} onHide={() => setShowCreate(false)} centered size="lg">
-        <Form onSubmit={handleCreate}><Modal.Header closeButton><Modal.Title>Tạo khóa học</Modal.Title></Modal.Header>
+        <Form noValidate onSubmit={handleSubmit(handleCreate)}><Modal.Header closeButton><Modal.Title>Tạo khóa học</Modal.Title></Modal.Header>
           <Modal.Body><Row className="g-3">
-            <Col md={4}><Form.Label>Mã khóa học *</Form.Label><Form.Control required maxLength={50} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></Col>
-            <Col md={8}><Form.Label>Tên khóa học *</Form.Label><Form.Control required maxLength={200} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Col>
-            <Col md={8}><Form.Label>Bộ môn *</Form.Label><Form.Select required value={form.disciplineId} onChange={(e) => setForm({ ...form, disciplineId: e.target.value })}><option value="">-- Chọn bộ môn --</option>{disciplines.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Form.Select></Col>
-            <Col md={4}><Form.Label>Số đăng ký tối thiểu *</Form.Label><Form.Control required type="number" min={1} value={form.defaultMinimumEnrollment} onChange={(e) => setForm({ ...form, defaultMinimumEnrollment: e.target.value })} /></Col>
-            <Col xs={12}><Form.Label>Ảnh khóa học (URL)</Form.Label><Form.Control maxLength={500} value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} /></Col>
-            <Col xs={12}><Form.Label>Mô tả</Form.Label><Form.Control as="textarea" rows={4} maxLength={2000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Col>
+            <Col md={4}><Form.Label>Mã khóa học *</Form.Label><Form.Control required maxLength={50} {...register('code')} isInvalid={!!errors.code} /><Form.Control.Feedback type="invalid">{errors.code?.message}</Form.Control.Feedback></Col>
+            <Col md={8}><Form.Label>Tên khóa học *</Form.Label><Form.Control required maxLength={200} {...register('name')} isInvalid={!!errors.name} /><Form.Control.Feedback type="invalid">{errors.name?.message}</Form.Control.Feedback></Col>
+            <Col md={8}><Form.Label>Bộ môn *</Form.Label><Form.Select required {...register('disciplineId')} isInvalid={!!errors.disciplineId}><option value="">-- Chọn bộ môn --</option>{disciplines.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Form.Select><Form.Control.Feedback type="invalid">{errors.disciplineId?.message}</Form.Control.Feedback></Col>
+            <Col md={4}><Form.Label>Số đăng ký tối thiểu *</Form.Label><Form.Control required type="number" min={1} {...register('defaultMinimumEnrollment')} isInvalid={!!errors.defaultMinimumEnrollment} /><Form.Control.Feedback type="invalid">{errors.defaultMinimumEnrollment?.message}</Form.Control.Feedback></Col>
+            <Col xs={12}><Form.Label>Ảnh khóa học (URL)</Form.Label><Form.Control maxLength={500} {...register('imageUrl')} isInvalid={!!errors.imageUrl} /><Form.Control.Feedback type="invalid">{errors.imageUrl?.message}</Form.Control.Feedback></Col>
+            <Col xs={12}><Form.Label>Mô tả</Form.Label><Form.Control as="textarea" rows={4} maxLength={2000} {...register('description')} isInvalid={!!errors.description} /><Form.Control.Feedback type="invalid">{errors.description?.message}</Form.Control.Feedback></Col>
           </Row></Modal.Body>
           <Modal.Footer><Button variant="outline-secondary" onClick={() => setShowCreate(false)}>Hủy</Button><Button type="submit" variant="danger" disabled={saving}>{saving ? 'Đang lưu...' : 'Tạo khóa học'}</Button></Modal.Footer>
         </Form>

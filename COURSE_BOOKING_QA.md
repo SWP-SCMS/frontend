@@ -31,3 +31,10 @@ Backend reference: 6fdd77d. Backend read-only. Tests intentionally not run; user
 - Transfer queue/offer lacks business names; transfer UI deferred.
 - Session response lacks isMakeup; cancelled makeup can appear eligible in UI but BE rejects replacing a makeup session. BE validation remains authoritative.
 - No fabricated Run status or settlement completion. UNRESOLVED does not mean money was paid.
+
+## Form convention review
+- Course forms now use React Hook Form and Zod resolvers with inline validation feedback.
+- Date/time fields reuse the shared DateInput and use gym UTC+07 on submission.
+- Verify empty/whitespace inputs, invalid dates, reversed dates, fractional/negative amounts, minimum above capacity, modal reopen/reset and failed submission retry.
+- Numbers above JavaScript safe integer are rejected rather than silently rounded.
+- Focused lint and diff checks passed; functional tests remain user-owned and were not run.

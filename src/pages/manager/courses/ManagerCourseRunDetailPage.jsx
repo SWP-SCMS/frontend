@@ -1,3 +1,7 @@
+import CourseDateTimeInput from '../../../components/common/CourseDateTimeInput';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { minimumEnrollmentSchema, courseOpenSchema, courseSessionSchema } from '../../../schemas/courseSchemas';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
@@ -15,11 +19,11 @@ import {
   COURSE_RUN_STATUS_LABELS, COURSE_SESSION_STATUS_LABELS, getCourseStatusLabel,
 } from '../../../utils/courseUi';
 
-const toIso = (value) => value ? new Date(value).toISOString() : null;
+const toIso = (value) => value ? new Date(`${value}:00+07:00`).toISOString() : null;
 const toLocalInput = (value) => {
   if (!value) return '';
   const date = new Date(value);
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  return new Date(date.getTime() + 7 * 60 * 60000).toISOString().slice(0, 16);
 };
 const emptySession = { unitNumber: '', roomId: '', coachId: '', startAt: '', endAt: '', allocationVnd: '' };
 
@@ -35,11 +39,17 @@ export default function ManagerCourseRunDetailPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState('');
-  const [minimumEnrollment, setMinimumEnrollment] = useState('');
-  const [policyVersion, setPolicyVersion] = useState('course-mvp-v1');
-  const [sessionForm, setSessionForm] = useState(emptySession);
+
+
+
   const [editingSession, setEditingSession] = useState(null);
   const [makeup, setMakeup] = useState(false);
+  const minimumForm = useForm({ resolver: zodResolver(minimumEnrollmentSchema(run?.capacity)), defaultValues: { minimumEnrollment: '' } });
+  const openForm = useForm({ resolver: zodResolver(courseOpenSchema), defaultValues: { policyVersion: 'course-mvp-v1' } });
+  const sessionFields = useForm({ resolver: zodResolver(courseSessionSchema(!!editingSession, run?.totalUnits)), defaultValues: emptySession });
+  const { reset: resetMinimum } = minimumForm;
+  const { reset: setSessionForm } = sessionFields;
+
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -48,22 +58,22 @@ export default function ManagerCourseRunDetailPage() {
         getManagerCourseRun(runId), listManagerCourseSessions(runId), listRooms(),
         searchStaffAccounts({ role: 'COACH', status: 'ACTIVE', page: 0, size: 100 }),
       ]);
-      setRun(runData); setMinimumEnrollment(runData.minimumEnrollment); setSessions(sessionData);
+      setRun(runData); resetMinimum({ minimumEnrollment: runData.minimumEnrollment }); setSessions(sessionData);
       setRooms(Array.isArray(roomData) ? roomData : []); setCoaches(coachPage?.content || []);
     } catch (err) { setError(getCourseErrorMessage(err, 'Không tải được đợt mở khóa học.')); }
     finally { setLoading(false); }
-  }, [runId]);
+  }, [runId, resetMinimum]);
   useEffect(() => { load(); }, [load]);
 
-  async function saveMinimum(event) {
-    event.preventDefault(); setBusy(true); setError('');
+  async function saveMinimum({ minimumEnrollment }) {
+     setBusy(true); setError('');
     try { setRun(await updateManagerCourseRun(runId, { expectedVersion: run.version, minimumEnrollment: Number(minimumEnrollment) })); setModal(''); }
     catch (err) { setError(getCourseErrorMessage(err, 'Không cập nhật được số đăng ký tối thiểu.')); }
     finally { setBusy(false); }
   }
 
-  async function openRegistration(event) {
-    event.preventDefault(); setBusy(true); setError('');
+  async function openRegistration({ policyVersion }) {
+     setBusy(true); setError('');
     try { setRun(await openManagerCourseRunRegistration(runId, run.version, policyVersion)); setModal(''); }
     catch (err) { setError(getCourseErrorMessage(err, 'Không thể mở đăng ký.')); }
     finally { setBusy(false); }
@@ -85,8 +95,8 @@ export default function ManagerCourseRunDetailPage() {
     setModal('session');
   }
 
-  async function saveSession(event) {
-    event.preventDefault(); setBusy(true); setError('');
+  async function saveSession(sessionForm) {
+     setBusy(true); setError('');
     try {
       if (makeup) {
         await createManagerCourseMakeup(runId, editingSession.id, { expectedVersion: editingSession.version, roomId: sessionForm.roomId, coachId: sessionForm.coachId, startAt: toIso(sessionForm.startAt), endAt: toIso(sessionForm.endAt) });
@@ -119,17 +129,17 @@ export default function ManagerCourseRunDetailPage() {
 
     <div className="bg-white rounded shadow-sm p-3"><div className="d-flex justify-content-between align-items-center mb-3"><h2 className="h5 mb-0">Lịch buổi học</h2><Button variant="danger" size="sm" onClick={openNewSession}>+ Thêm buổi học</Button></div><Table responsive hover className="align-middle mb-0"><thead><tr><th>Buổi</th><th>Thời gian</th><th>Phòng</th><th>Huấn luyện viên</th><th>Phân bổ học phí</th><th>Trạng thái</th><th /></tr></thead><tbody>{sessions.map((item) => <tr key={item.id}><td>{item.unitNumber}</td><td>{formatCourseDateTime(item.startAt)}<br /><small className="text-muted">đến {formatCourseDateTime(item.endAt)}</small></td><td>{item.roomName || '—'}</td><td>{item.coachName || '—'}</td><td>{formatCourseMoney(item.allocationVnd)}</td><td>{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, item.status)}</td><td className="text-end"><Button size="sm" variant="outline-danger" disabled={busy || !['SCHEDULED', 'MAKEUP_SCHEDULED'].includes(item.status)} onClick={() => openEditSession(item)}>Chỉnh sửa</Button>
       {operational && ['SCHEDULED', 'MAKEUP_SCHEDULED'].includes(item.status) && <Button className="ms-2" size="sm" variant="outline-danger" disabled={busy || Date.parse(item.startAt) <= now} onClick={() => cancelSession(item)}>Hủy buổi</Button>}
-      {operational && item.status === 'CANCELLED_PENDING_MAKEUP' && !item.replacementSessionId && <Button className="ms-2" size="sm" disabled={busy} onClick={() => { openEditSession(item); setMakeup(true); setSessionForm((form) => ({ ...form, startAt: '', endAt: '' })); }}>Xếp buổi bù</Button>}
+      {operational && item.status === 'CANCELLED_PENDING_MAKEUP' && !item.replacementSessionId && <Button className="ms-2" size="sm" disabled={busy} onClick={() => { openEditSession(item); setMakeup(true); setSessionForm({ ...sessionFields.getValues(), startAt: '', endAt: '' }); }}>Xếp buổi bù</Button>}
       {item.replacementSessionId && <small className="d-block">Đã liên kết buổi bù</small>}</td></tr>)}{!sessions.length && <tr><td colSpan={7} className="text-center text-muted py-4">Chưa có lịch buổi học.</td></tr>}</tbody></Table></div>
 
-    <Modal show={modal === 'minimum'} onHide={() => setModal('')} centered><Form onSubmit={saveMinimum}><Modal.Header closeButton><Modal.Title>Sửa số đăng ký tối thiểu</Modal.Title></Modal.Header><Modal.Body><Form.Control required type="number" min={1} max={run.capacity} value={minimumEnrollment} onChange={(e) => setMinimumEnrollment(e.target.value)} /></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setModal('')}>Hủy</Button><Button variant="danger" type="submit" disabled={busy}>Lưu</Button></Modal.Footer></Form></Modal>
-    <Modal show={modal === 'open'} onHide={() => setModal('')} centered><Form onSubmit={openRegistration}><Modal.Header closeButton><Modal.Title>Mở đăng ký</Modal.Title></Modal.Header><Modal.Body><Form.Label>Phiên bản chính sách *</Form.Label><Form.Control required maxLength={100} value={policyVersion} onChange={(e) => setPolicyVersion(e.target.value)} /></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setModal('')}>Hủy</Button><Button variant="success" type="submit" disabled={busy}>Xác nhận mở đăng ký</Button></Modal.Footer></Form></Modal>
-    <Modal show={modal === 'session'} onHide={() => setModal('')} centered size="lg"><Form onSubmit={saveSession}><Modal.Header closeButton><Modal.Title>{makeup ? `Xếp bù buổi ${editingSession.unitNumber}` : editingSession ? `Chỉnh sửa buổi ${editingSession.unitNumber}` : 'Thêm buổi học'}</Modal.Title></Modal.Header><Modal.Body><Row className="g-3">
-      {!editingSession && <Col md={4}><Form.Label>Số thứ tự buổi *</Form.Label><Form.Control required type="number" min={1} max={run.totalUnits} value={sessionForm.unitNumber} onChange={(e) => setSessionForm({ ...sessionForm, unitNumber: e.target.value })} /></Col>}
-      <Col md={editingSession ? 6 : 4}><Form.Label>Phòng *</Form.Label><Form.Select required value={sessionForm.roomId} onChange={(e) => setSessionForm({ ...sessionForm, roomId: e.target.value })}><option value="">-- Chọn phòng --</option>{rooms.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}</Form.Select></Col>
-      <Col md={editingSession ? 6 : 4}><Form.Label>Huấn luyện viên *</Form.Label><Form.Select required value={sessionForm.coachId} onChange={(e) => setSessionForm({ ...sessionForm, coachId: e.target.value })}><option value="">-- Chọn huấn luyện viên --</option>{coaches.map((coach) => <option key={coach.id} value={coach.id}>{coach.fullName || coach.name || coach.email}</option>)}</Form.Select></Col>
-      <Col md={6}><Form.Label>Bắt đầu *</Form.Label><Form.Control required type="datetime-local" value={sessionForm.startAt} onChange={(e) => setSessionForm({ ...sessionForm, startAt: e.target.value })} /></Col><Col md={6}><Form.Label>Kết thúc *</Form.Label><Form.Control required type="datetime-local" value={sessionForm.endAt} onChange={(e) => setSessionForm({ ...sessionForm, endAt: e.target.value })} /></Col>
-      {!editingSession && <Col md={6}><Form.Label>Học phí phân bổ (VND) *</Form.Label><Form.Control required type="number" min={1} value={sessionForm.allocationVnd} onChange={(e) => setSessionForm({ ...sessionForm, allocationVnd: e.target.value })} /></Col>}
+    <Modal show={modal === 'minimum'} onHide={() => setModal('')} centered><Form noValidate onSubmit={minimumForm.handleSubmit(saveMinimum)}><Modal.Header closeButton><Modal.Title>Sửa số đăng ký tối thiểu</Modal.Title></Modal.Header><Modal.Body><Form.Control required type="number" min={1} max={run.capacity} {...minimumForm.register('minimumEnrollment')} isInvalid={!!minimumForm.formState.errors.minimumEnrollment} /><Form.Control.Feedback type="invalid" className="d-block">{minimumForm.formState.errors.minimumEnrollment?.message}</Form.Control.Feedback></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setModal('')}>Hủy</Button><Button variant="danger" type="submit" disabled={busy}>Lưu</Button></Modal.Footer></Form></Modal>
+    <Modal show={modal === 'open'} onHide={() => setModal('')} centered><Form noValidate onSubmit={openForm.handleSubmit(openRegistration)}><Modal.Header closeButton><Modal.Title>Mở đăng ký</Modal.Title></Modal.Header><Modal.Body><Form.Label>Phiên bản chính sách *</Form.Label><Form.Control required maxLength={100} {...openForm.register('policyVersion')} isInvalid={!!openForm.formState.errors.policyVersion} /><Form.Control.Feedback type="invalid" className="d-block">{openForm.formState.errors.policyVersion?.message}</Form.Control.Feedback></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setModal('')}>Hủy</Button><Button variant="success" type="submit" disabled={busy}>Xác nhận mở đăng ký</Button></Modal.Footer></Form></Modal>
+    <Modal show={modal === 'session'} onHide={() => setModal('')} centered size="lg"><Form noValidate onSubmit={sessionFields.handleSubmit(saveSession)}><Modal.Header closeButton><Modal.Title>{makeup ? `Xếp bù buổi ${editingSession.unitNumber}` : editingSession ? `Chỉnh sửa buổi ${editingSession.unitNumber}` : 'Thêm buổi học'}</Modal.Title></Modal.Header><Modal.Body><Row className="g-3">
+      {!editingSession && <Col md={4}><Form.Label>Số thứ tự buổi *</Form.Label><Form.Control required type="number" min={1} max={run.totalUnits} {...sessionFields.register('unitNumber')} isInvalid={!!sessionFields.formState.errors.unitNumber} /><Form.Control.Feedback type="invalid" className="d-block">{sessionFields.formState.errors.unitNumber?.message}</Form.Control.Feedback></Col>}
+      <Col md={editingSession ? 6 : 4}><Form.Label>Phòng *</Form.Label><Form.Select required {...sessionFields.register('roomId')} isInvalid={!!sessionFields.formState.errors.roomId}><option value="">-- Chọn phòng --</option>{rooms.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}</Form.Select><Form.Control.Feedback type="invalid" className="d-block">{sessionFields.formState.errors.roomId?.message}</Form.Control.Feedback></Col>
+      <Col md={editingSession ? 6 : 4}><Form.Label>Huấn luyện viên *</Form.Label><Form.Select required {...sessionFields.register('coachId')} isInvalid={!!sessionFields.formState.errors.coachId}><option value="">-- Chọn huấn luyện viên --</option>{coaches.map((coach) => <option key={coach.id} value={coach.id}>{coach.fullName || coach.name || coach.email}</option>)}</Form.Select><Form.Control.Feedback type="invalid" className="d-block">{sessionFields.formState.errors.coachId?.message}</Form.Control.Feedback></Col>
+      <Col md={6}><Form.Label>Bắt đầu *</Form.Label><CourseDateTimeInput control={sessionFields.control} name="startAt" /><Form.Control.Feedback type="invalid" className="d-block">{sessionFields.formState.errors.startAt?.message}</Form.Control.Feedback></Col><Col md={6}><Form.Label>Kết thúc *</Form.Label><CourseDateTimeInput control={sessionFields.control} name="endAt" /><Form.Control.Feedback type="invalid" className="d-block">{sessionFields.formState.errors.endAt?.message}</Form.Control.Feedback></Col>
+      {!editingSession && <Col md={6}><Form.Label>Học phí phân bổ (VND) *</Form.Label><Form.Control required type="number" min={1} {...sessionFields.register('allocationVnd')} isInvalid={!!sessionFields.formState.errors.allocationVnd} /><Form.Control.Feedback type="invalid" className="d-block">{sessionFields.formState.errors.allocationVnd?.message}</Form.Control.Feedback></Col>}
     </Row></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setModal('')}>Hủy</Button><Button variant="danger" type="submit" disabled={busy}>Lưu buổi học</Button></Modal.Footer></Form></Modal>
   </div>;
 }

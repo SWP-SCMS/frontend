@@ -1,3 +1,7 @@
+import CourseDateTimeInput from '../../../components/common/CourseDateTimeInput';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { courseRunSchema } from '../../../schemas/courseSchemas';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
@@ -10,7 +14,7 @@ const emptyForm = {
   runCode: '', courseId: '', primaryCoachId: '', tuitionVnd: '', capacity: '', minimumEnrollment: '',
   registrationOpensAt: '', registrationClosesAt: '', plannedStartAt: '', plannedEndAt: '', totalUnits: '', namedCoachCommitment: true,
 };
-const toIso = (value) => value ? new Date(value).toISOString() : null;
+const toIso = (value) => value ? new Date(`${value}:00+07:00`).toISOString() : null;
 
 export default function ManagerCourseRunsPage() {
   const [page, setPage] = useState(0);
@@ -20,7 +24,8 @@ export default function ManagerCourseRunsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const courseForm = useForm({ resolver: zodResolver(courseRunSchema), defaultValues: emptyForm });
+  const { register, handleSubmit, reset: setForm, setValue, formState: { errors } } = courseForm;
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -37,8 +42,8 @@ export default function ManagerCourseRunsPage() {
   }, [page]);
   useEffect(() => { load(); }, [load]);
 
-  async function handleCreate(event) {
-    event.preventDefault(); setSaving(true); setError('');
+  async function handleCreate(form) {
+     setSaving(true); setError('');
     try {
       await createManagerCourseRun({
         ...form,
@@ -62,19 +67,19 @@ export default function ManagerCourseRunsPage() {
       <div className="d-flex justify-content-end gap-2 mt-3"><Button size="sm" variant="outline-secondary" disabled={page === 0 || loading} onClick={() => setPage((v) => v - 1)}>Trang trước</Button><Button size="sm" variant="outline-secondary" disabled={result.last || loading} onClick={() => setPage((v) => v + 1)}>Trang sau</Button></div>
     </div>
 
-    <Modal show={showCreate} onHide={() => setShowCreate(false)} centered size="xl"><Form onSubmit={handleCreate}><Modal.Header closeButton><Modal.Title>Tạo đợt mở khóa học</Modal.Title></Modal.Header><Modal.Body><Row className="g-3">
-      <Col md={4}><Form.Label>Mã đợt *</Form.Label><Form.Control required value={form.runCode} onChange={(e) => setForm({ ...form, runCode: e.target.value })} /></Col>
-      <Col md={4}><Form.Label>Khóa học *</Form.Label><Form.Select required value={form.courseId} onChange={(e) => { const c = courses.find((item) => item.id === e.target.value); setForm({ ...form, courseId: e.target.value, minimumEnrollment: c?.defaultMinimumEnrollment || form.minimumEnrollment }); }}><option value="">-- Chọn khóa học --</option>{courses.filter((c) => c.status === 'PUBLISHED').map((c) => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}</Form.Select></Col>
-      <Col md={4}><Form.Label>Huấn luyện viên chính *</Form.Label><Form.Select required value={form.primaryCoachId} onChange={(e) => setForm({ ...form, primaryCoachId: e.target.value })}><option value="">-- Chọn huấn luyện viên --</option>{coaches.map((c) => <option key={c.id} value={c.id}>{c.fullName || c.name || c.email}</option>)}</Form.Select></Col>
-      <Col md={3}><Form.Label>Học phí (VND) *</Form.Label><Form.Control required type="number" min={1} value={form.tuitionVnd} onChange={(e) => setForm({ ...form, tuitionVnd: e.target.value })} /></Col>
-      <Col md={3}><Form.Label>Sức chứa *</Form.Label><Form.Control required type="number" min={1} value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} /></Col>
-      <Col md={3}><Form.Label>Đăng ký tối thiểu *</Form.Label><Form.Control required type="number" min={1} value={form.minimumEnrollment} onChange={(e) => setForm({ ...form, minimumEnrollment: e.target.value })} /></Col>
-      <Col md={3}><Form.Label>Số buổi *</Form.Label><Form.Control required type="number" min={1} value={form.totalUnits} onChange={(e) => setForm({ ...form, totalUnits: e.target.value })} /></Col>
-      <Col md={3}><Form.Label>Mở đăng ký *</Form.Label><Form.Control required type="datetime-local" value={form.registrationOpensAt} onChange={(e) => setForm({ ...form, registrationOpensAt: e.target.value })} /></Col>
-      <Col md={3}><Form.Label>Đóng đăng ký *</Form.Label><Form.Control required type="datetime-local" value={form.registrationClosesAt} onChange={(e) => setForm({ ...form, registrationClosesAt: e.target.value })} /></Col>
-      <Col md={3}><Form.Label>Dự kiến khai giảng *</Form.Label><Form.Control required type="datetime-local" value={form.plannedStartAt} onChange={(e) => setForm({ ...form, plannedStartAt: e.target.value })} /></Col>
-      <Col md={3}><Form.Label>Dự kiến kết thúc *</Form.Label><Form.Control required type="datetime-local" value={form.plannedEndAt} onChange={(e) => setForm({ ...form, plannedEndAt: e.target.value })} /></Col>
-      <Col xs={12}><Form.Check type="switch" label="Cam kết đúng huấn luyện viên đã công bố" checked={form.namedCoachCommitment} onChange={(e) => setForm({ ...form, namedCoachCommitment: e.target.checked })} /></Col>
+    <Modal show={showCreate} onHide={() => setShowCreate(false)} centered size="xl"><Form noValidate onSubmit={handleSubmit(handleCreate)}><Modal.Header closeButton><Modal.Title>Tạo đợt mở khóa học</Modal.Title></Modal.Header><Modal.Body><Row className="g-3">
+      <Col md={4}><Form.Label>Mã đợt *</Form.Label><Form.Control required {...register('runCode')} isInvalid={!!errors.runCode} /><Form.Control.Feedback type="invalid" className="d-block">{errors.runCode?.message}</Form.Control.Feedback></Col>
+      <Col md={4}><Form.Label>Khóa học *</Form.Label><Form.Select required {...register('courseId', { onChange: (e) => { const c = courses.find((item) => item.id === e.target.value); if (c?.defaultMinimumEnrollment) setValue('minimumEnrollment', c.defaultMinimumEnrollment, { shouldValidate: true }); } })} isInvalid={!!errors.courseId}><option value="">-- Chọn khóa học --</option>{courses.filter((c) => c.status === 'PUBLISHED').map((c) => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}</Form.Select><Form.Control.Feedback type="invalid" className="d-block">{errors.courseId?.message}</Form.Control.Feedback></Col>
+      <Col md={4}><Form.Label>Huấn luyện viên chính *</Form.Label><Form.Select required {...register('primaryCoachId')} isInvalid={!!errors.primaryCoachId}><option value="">-- Chọn huấn luyện viên --</option>{coaches.map((c) => <option key={c.id} value={c.id}>{c.fullName || c.name || c.email}</option>)}</Form.Select><Form.Control.Feedback type="invalid" className="d-block">{errors.primaryCoachId?.message}</Form.Control.Feedback></Col>
+      <Col md={3}><Form.Label>Học phí (VND) *</Form.Label><Form.Control required type="number" min={1} {...register('tuitionVnd')} isInvalid={!!errors.tuitionVnd} /><Form.Control.Feedback type="invalid" className="d-block">{errors.tuitionVnd?.message}</Form.Control.Feedback></Col>
+      <Col md={3}><Form.Label>Sức chứa *</Form.Label><Form.Control required type="number" min={1} {...register('capacity')} isInvalid={!!errors.capacity} /><Form.Control.Feedback type="invalid" className="d-block">{errors.capacity?.message}</Form.Control.Feedback></Col>
+      <Col md={3}><Form.Label>Đăng ký tối thiểu *</Form.Label><Form.Control required type="number" min={1} {...register('minimumEnrollment')} isInvalid={!!errors.minimumEnrollment} /><Form.Control.Feedback type="invalid" className="d-block">{errors.minimumEnrollment?.message}</Form.Control.Feedback></Col>
+      <Col md={3}><Form.Label>Số buổi *</Form.Label><Form.Control required type="number" min={1} {...register('totalUnits')} isInvalid={!!errors.totalUnits} /><Form.Control.Feedback type="invalid" className="d-block">{errors.totalUnits?.message}</Form.Control.Feedback></Col>
+      <Col md={3}><Form.Label>Mở đăng ký *</Form.Label><CourseDateTimeInput control={courseForm.control} name="registrationOpensAt" /><Form.Control.Feedback type="invalid" className="d-block">{errors.registrationOpensAt?.message}</Form.Control.Feedback></Col>
+      <Col md={3}><Form.Label>Đóng đăng ký *</Form.Label><CourseDateTimeInput control={courseForm.control} name="registrationClosesAt" /><Form.Control.Feedback type="invalid" className="d-block">{errors.registrationClosesAt?.message}</Form.Control.Feedback></Col>
+      <Col md={3}><Form.Label>Dự kiến khai giảng *</Form.Label><CourseDateTimeInput control={courseForm.control} name="plannedStartAt" /><Form.Control.Feedback type="invalid" className="d-block">{errors.plannedStartAt?.message}</Form.Control.Feedback></Col>
+      <Col md={3}><Form.Label>Dự kiến kết thúc *</Form.Label><CourseDateTimeInput control={courseForm.control} name="plannedEndAt" /><Form.Control.Feedback type="invalid" className="d-block">{errors.plannedEndAt?.message}</Form.Control.Feedback></Col>
+      <Col xs={12}><Form.Check type="switch" label="Cam kết đúng huấn luyện viên đã công bố" {...register('namedCoachCommitment')} isInvalid={!!errors.namedCoachCommitment} /><Form.Control.Feedback type="invalid" className="d-block">{errors.namedCoachCommitment?.message}</Form.Control.Feedback></Col>
     </Row></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setShowCreate(false)}>Hủy</Button><Button type="submit" variant="danger" disabled={saving}>{saving ? 'Đang lưu...' : 'Tạo đợt mở'}</Button></Modal.Footer></Form></Modal>
   </div>;
 }
