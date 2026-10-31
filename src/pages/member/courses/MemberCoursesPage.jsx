@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { listCatalogCourseRuns } from '../../../services/courseCatalogService';
 import { listMyCourseEnrollments } from '../../../services/courseEnrollmentService';
@@ -20,7 +20,7 @@ import {
 import CourseScheduleChanges from './CourseScheduleChanges';
 import './MemberCoursesPage.css';
 
-const ACTIVE_WAITLIST_STATUSES = new Set(['WAITING', 'INVITED']);
+
 
 export default function MemberCoursesPage() {
   const navigate = useNavigate();
@@ -30,19 +30,23 @@ export default function MemberCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
+  const acceptKeys = useRef({});
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [enrollmentData, waitlistData, runData] = await Promise.all([
+      const [enrollmentData, waitlistData, runData] = await Promise.allSettled([
         listMyCourseEnrollments(),
         listMyCourseWaitlists(),
         listCatalogCourseRuns({ size: 100 }),
       ]);
-      setEnrollments(Array.isArray(enrollmentData) ? enrollmentData : []);
-      setWaitlists(Array.isArray(waitlistData) ? waitlistData : []);
-      setRuns(runData?.content || []);
+      setEnrollments(enrollmentData.status === 'fulfilled' ? enrollmentData.value : []);
+      setWaitlists(waitlistData.status === 'fulfilled' ? waitlistData.value : []);
+      setRuns(runData.status === 'fulfilled' ? runData.value.content || [] : []);
+      if ([enrollmentData, waitlistData, runData].some((result) => result.status === 'rejected')) setError('Một phần dữ liệu chưa tải được. Vui lòng tải lại.');
     } catch (requestError) {
       setError(getCourseErrorMessage(requestError, 'Không tải được thông tin khóa học của bạn.'));
     } finally {
@@ -78,7 +82,7 @@ export default function MemberCoursesPage() {
     try {
       const order = await acceptCourseWaitlistInvitation(
         item.id,
-        createCourseIdempotencyKey('course-waitlist-accept'),
+        acceptKeys.current[item.id] ||= createCourseIdempotencyKey('course-waitlist-accept'),
       );
       navigate(`/member/courses/${item.courseRunId}/register?orderId=${order.orderId}`);
     } catch (requestError) {
@@ -88,7 +92,7 @@ export default function MemberCoursesPage() {
     }
   }
 
-  const activeWaitlists = waitlists.filter((item) => ACTIVE_WAITLIST_STATUSES.has(item.status));
+  const activeWaitlists = waitlists;
 
   return (
     <div className="member-course-page">
@@ -101,6 +105,7 @@ export default function MemberCoursesPage() {
         <Link className="member-course-primary-link" to="/courses">Khám phá khóa học</Link>
       </header>
 
+      <button type="button" disabled={loading || !!busyId} onClick={load}>Tải lại dữ liệu</button>
       {error && <div className="member-course-alert">{error}</div>}
       {loading ? (
         <div className="member-course-state">Đang tải dữ liệu khóa học…</div>
@@ -173,14 +178,14 @@ export default function MemberCoursesPage() {
                         <p>Giữ chỗ đến {formatCourseDateTime(item.invitationExpiresAt)}.</p>
                       )}
                       <div className="member-course-actions">
-                        {item.status === 'INVITED' && (
-                          <button type="button" disabled={busyId === item.id} onClick={() => handleAccept(item)}>
-                            Nhận chỗ và thanh toán
+                        {['INVITED', 'ACCEPTED'].includes(item.status) && (
+                          <button type="button" disabled={!!busyId || (item.status === 'INVITED' && Date.parse(item.invitationExpiresAt) <= now)} onClick={() => handleAccept(item)}>
+                            {item.status === 'ACCEPTED' ? 'Xem đơn thanh toán' : Date.parse(item.invitationExpiresAt) <= now ? 'Lời mời đã hết hạn' : 'Nhận chỗ và thanh toán'}
                           </button>
                         )}
-                        <button className="is-secondary" type="button" disabled={busyId === item.id} onClick={() => handleLeave(item)}>
+                        {['WAITING', 'INVITED'].includes(item.status) && <button className="is-secondary" type="button" disabled={!!busyId} onClick={() => handleLeave(item)}>
                           Rời danh sách chờ
-                        </button>
+                        </button>}
                       </div>
                     </article>
                   );

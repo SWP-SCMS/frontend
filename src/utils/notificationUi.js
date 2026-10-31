@@ -1,4 +1,6 @@
 const TYPE_LABELS = {
+  COURSE_WAITLIST_INVITED: 'Đã có chỗ trống cho khóa học bạn đang chờ',
+  COURSE_WAITLIST_CANCELLED: 'Danh sách chờ khóa học đã bị hủy',
   COURSE_SCHEDULE_CHANGED: 'Lịch khóa học đã thay đổi',
   COURSE_SESSION_CANCELLED: 'Buổi học khóa đã hủy, chờ xếp bù',
   COURSE_SESSION_MAKEUP_SCHEDULED: 'Đã xếp buổi học bù cho khóa học',
