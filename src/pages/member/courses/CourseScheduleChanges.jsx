@@ -4,6 +4,8 @@ import { formatCourseDateTime, getCourseErrorMessage } from '../../../utils/cour
 
 const statuses = { PENDING: 'Chờ phản hồi', RESPONDED: 'Đã phản hồi', SUPERSEDED: 'Đã có thay đổi mới thay thế', EXPIRED: 'Đã hết hạn' };
 export default function CourseScheduleChanges({ enrollments }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
   const [changes, setChanges] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ export default function CourseScheduleChanges({ enrollments }) {
       <h3>{sessions.get(change.enrollmentSessionId) || 'Buổi học của bạn'}</h3>
       <p>Lịch cũ: {formatCourseDateTime(change.oldStartAt)} – {formatCourseDateTime(change.oldEndAt)}</p>
       <p>Lịch mới: {formatCourseDateTime(change.newStartAt)} – {formatCourseDateTime(change.newEndAt)}</p>
-      <p>{change.status === 'PENDING' && Date.parse(change.responseDeadline) <= Date.now() ? 'Đã hết hạn phản hồi' : statuses[change.status] || 'Đang cập nhật'} · Hạn phản hồi: {formatCourseDateTime(change.responseDeadline)}</p>
+      <p>{change.status === 'PENDING' && Date.parse(change.responseDeadline) <= now ? 'Đã hết hạn phản hồi' : statuses[change.status] || 'Đang cập nhật'} · Hạn phản hồi: {formatCourseDateTime(change.responseDeadline)}</p>
     </article>)}
   </section>;
 }

@@ -189,8 +189,7 @@ export default function MemberClassSchedulePage() {
           <MemberBreadcrumb current="Lịch của tôi" />
           <h1 className="mcs-title">Lịch của tôi</h1>
           <p className="mcs-sub">
-            Các buổi tập bạn đã đăng ký, theo từng tuần. Muốn đặt thêm hoặc hủy
-            lịch, vào mục Đăng ký lớp.
+            Lịch khóa học, lớp gym và PT đã đăng ký theo từng tuần. Quản lý khóa học trong mục Khóa học của tôi.
           </p>
         </div>
       </header>

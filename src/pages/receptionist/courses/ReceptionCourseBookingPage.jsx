@@ -7,6 +7,8 @@ import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils
 import { COURSE_ORDER_STATUS_LABELS, formatCourseMoney, formatCourseDateTime, getCourseStatusLabel, getCourseErrorMessage } from '../../../utils/courseUi';
 
 export default function ReceptionCourseBookingPage() {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('memberId');
   const [member, setMember] = useState(null);
@@ -44,7 +46,7 @@ export default function ReceptionCourseBookingPage() {
     const updated = await getReceptionCourseOrder(member.accountId, order.orderId);
     setOrder(updated); setPayment(updated.payment);
   }
-  const payable = order?.orderStatus === 'PENDING_PAYMENT' && Date.parse(order.expiresAt) > Date.now();
+  const payable = order?.orderStatus === 'PENDING_PAYMENT' && Date.parse(order.expiresAt) > now;
   return <div className="container-fluid py-3">
     <h1>Đăng ký khóa học</h1>
     <p>Đăng ký theo đợt học. Học phí khóa học độc lập với gói tập gym.</p>

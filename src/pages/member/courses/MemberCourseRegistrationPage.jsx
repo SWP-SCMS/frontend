@@ -48,7 +48,7 @@ export default function MemberCourseRegistrationPage() {
       setError('');
       try {
         const [runData, orderData] = await Promise.all([
-          getCatalogCourseRun(runId),
+          getCatalogCourseRun(runId).catch((error) => { if (initialOrderId && error?.response?.status === 404) return null; throw error; }),
           initialOrderId ? getMyCourseOrder(initialOrderId) : Promise.resolve(null),
         ]);
         if (!active) return;

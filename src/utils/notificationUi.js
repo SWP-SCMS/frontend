@@ -60,7 +60,6 @@ const TYPE_LABELS = {
   MEMBERSHIP_REFUND_CASH_DISBURSED: 'Đã ghi nhận giao tiền hoàn',
   MEMBERSHIP_REFUND_COMPLETED: 'Yêu cầu hoàn tiền đã hoàn tất',
   MEMBERSHIP_REFUND_REJECTED: 'Yêu cầu hoàn tiền bị từ chối',
-  MANUAL_ACTIVATION_REVIEW_REQUIRED: 'Có yêu cầu kích hoạt tài khoản cần duyệt',
 };
 
 const REASON_LABELS = {

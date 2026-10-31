@@ -31,7 +31,7 @@ export default function MemberCoursesPage() {
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
   const acceptKeys = useRef({});
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
 
   const load = useCallback(async () => {
