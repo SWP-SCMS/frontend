@@ -17,6 +17,7 @@ import {
   getCourseErrorMessage,
   getCourseStatusLabel,
 } from '../../../utils/courseUi';
+import MemberCourseWithdrawals from './MemberCourseWithdrawals';
 import CourseScheduleChanges from './CourseScheduleChanges';
 import './MemberCoursesPage.css';
 
@@ -152,6 +153,9 @@ export default function MemberCoursesPage() {
             )}
           </section>
 
+          <MemberCourseWithdrawals enrollments={enrollments} onRequested={(enrollmentId) => {
+            setEnrollments((items) => items.map((item) => item.enrollmentId === enrollmentId ? { ...item, lifecycleStatus: 'WITHDRAWAL_PENDING' } : item));
+          }} />
           <CourseScheduleChanges enrollments={enrollments} />
           <section className="member-course-section">
             <div className="member-course-section-title">

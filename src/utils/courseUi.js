@@ -76,6 +76,14 @@ export function formatCourseDateTime(value) {
 }
 
 const COURSE_ERROR_MESSAGES = {
+  COURSE_WITHDRAWAL_INVALID: 'Vui lòng nhập lý do hợp lệ, tối đa 1000 ký tự.',
+  COURSE_WITHDRAWAL_NOT_FOUND: 'Không tìm thấy yêu cầu rút hoặc đăng ký khóa học.',
+  COURSE_WITHDRAWAL_ALREADY_PENDING: 'Bạn đã có yêu cầu rút đang chờ duyệt. Kiểm tra lịch sử yêu cầu.',
+  COURSE_WITHDRAWAL_ENROLLMENT_INACTIVE: 'Trạng thái đăng ký hiện tại không cho phép xin rút. Vui lòng tải lại dữ liệu.',
+  COURSE_WITHDRAWAL_TRANSFER_OPEN: 'Đang có yêu cầu chuyển đợt học chưa xử lý xong.',
+  COURSE_WITHDRAWAL_WINDOW_CLOSED: 'Đã hết thời gian xin rút vì buổi học cuối đã bắt đầu.',
+  COURSE_WITHDRAWAL_INVALID_TRANSITION: 'Yêu cầu đã đổi trạng thái. Vui lòng tải lại dữ liệu.',
+
   COURSE_VALIDATION_ERROR: 'Thông tin chưa hợp lệ. Vui lòng kiểm tra các trường đã nhập.',
   COURSE_RUN_CHANGED: 'Đợt học vừa được cập nhật. Vui lòng tải lại trang.',
   COURSE_CHANGED: 'Khóa học vừa được cập nhật. Vui lòng tải lại trang.',

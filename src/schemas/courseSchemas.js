@@ -28,3 +28,8 @@ export const courseMemberSearchSchema = z.object({ kind: z.enum(['memberId', 'ph
   if (v.kind === 'phone' && !normalizePhone(v.query)) ctx.addIssue({ code: 'custom', path: ['query'], message: 'Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.' });
   if (v.kind === 'memberId' && !/^MB-[0-9]+$/.test(v.query)) ctx.addIssue({ code: 'custom', path: ['query'], message: 'Mã hội viên có dạng MB-… (chỉ chữ số sau dấu gạch).'});
 });
+
+export const courseWithdrawalSchema = z.object({
+  enrollmentId: z.string().min(1, 'Vui lòng chọn đợt học cần rút.'),
+  reason: z.string().trim().min(1, 'Vui lòng nhập lý do xin rút.').max(1000, 'Lý do không quá 1000 ký tự.'),
+});
