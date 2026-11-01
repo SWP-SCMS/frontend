@@ -1,3 +1,4 @@
+import ManagerCourseApprovalsPage from '../pages/manager/courses/ManagerCourseApprovalsPage';
 import CoachCourseSessionsPage from '../pages/coach/courses/CoachCourseSessionsPage';
 // Centralized route table. Keeping routes here makes it easy to grep for
 // "where is /login wired up" and to enforce the role-route pairing.
@@ -775,6 +776,7 @@ export default function AppRoutes() {
         <Route path="courses" element={withSuspense(<ManagerCoursesPage />)} />
         <Route path="course-withdrawals" element={withSuspense(<ManagerCourseWorkflowPage key="withdrawals" kind="withdrawals" />)} />
         <Route path="course-transfers" element={withSuspense(<ManagerCourseWorkflowPage key="transfers" kind="transfers" />)} />
+        <Route path="course-approvals" element={withSuspense(<ManagerCourseApprovalsPage />)} />
         <Route path="course-refunds" element={withSuspense(<ManagerCourseWorkflowPage key="refunds" kind="refunds" />)} />
         <Route path="courses/:courseId" element={withSuspense(<ManagerCourseDetailPage />)} />
         <Route path="course-runs" element={withSuspense(<ManagerCourseRunsPage />)} />

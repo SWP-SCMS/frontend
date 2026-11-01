@@ -1,0 +1,17 @@
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Button, Form, Modal, Table } from 'react-bootstrap';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { courseDecisionSchema } from '../../../schemas/courseWorkflowSchemas';
+import { listCourseApprovals, decideCourseApproval } from '../../../services/courseAdminService';
+import { getCourseErrorMessage, COURSE_STATUS_LABELS } from '../../../utils/courseUi';
+export default function ManagerCourseApprovalsPage() {
+ const [page,setPage]=useState(0), [data,setData]=useState(null), [revision,setRevision]=useState(0), [error,setError]=useState(''), [selected,setSelected]=useState(null), [busy,setBusy]=useState(false);
+ const lock=useRef(false);
+ const {register,handleSubmit,reset,formState:{errors}}=useForm({resolver:zodResolver(courseDecisionSchema),defaultValues:{reason:''}});
+ useEffect(()=>{let active=true;setData(null);setError('');listCourseApprovals(page).then(v=>{if(active)setData(v);}).catch(e=>{if(active)setError(getCourseErrorMessage(e));});return()=>{active=false;};},[page,revision]);
+ async function submit(values){if(lock.current||!selected)return;lock.current=true;setBusy(true);setError('');try{await decideCourseApproval(selected.item.id,selected.action,{...values,expectedVersion:selected.item.version});setSelected(null);setRevision(v=>v+1);}catch(e){setError(getCourseErrorMessage(e));}finally{lock.current=false;setBusy(false);}}
+ return <div className="container-fluid py-4"><h1 className="h3">Duyệt khóa học do lễ tân gửi</h1><Button onClick={()=>setRevision(v=>v+1)} disabled={busy}>Tải lại</Button>{error&&!selected&&<Alert variant="danger">{error}</Alert>}{!data&&!error&&<p>Đang tải…</p>}{data&&<><Table responsive><thead><tr><th>Khóa học</th><th>Bộ môn</th><th>Trạng thái</th><th /></tr></thead><tbody>{data.content.map(item=><tr key={item.id}><td>{item.code} · {item.name}<p>{item.description}</p></td><td>{item.disciplineName}</td><td>{COURSE_STATUS_LABELS[item.status]||'Chưa xác định'}</td><td>{['approve','reject'].map(action=><Button key={action} disabled={busy||item.status!=='PENDING_APPROVAL'} onClick={()=>{reset({reason:''});setError('');setSelected({item,action});}}>{action==='approve'?'Duyệt':'Từ chối'}</Button>)}</td></tr>)}</tbody></Table>{!data.content.length&&<p>Không có khóa học chờ duyệt.</p>}</>}
+ <Button disabled={!page} onClick={()=>setPage(page-1)}>Trang trước</Button><span className="mx-3">Trang {page+1}</span><Button disabled={!data||page+1>=data.totalPages} onClick={()=>setPage(page+1)}>Trang sau</Button>
+ <Modal show={!!selected} onHide={()=>{if(!busy)setSelected(null);}} backdrop={busy?'static':true} keyboard={!busy}><Form noValidate onSubmit={(event) => handleSubmit(submit)(event)}><Modal.Header closeButton={!busy}><Modal.Title>{selected?.action==='approve'?'Duyệt':'Từ chối'} khóa học</Modal.Title></Modal.Header><Modal.Body>{error&&<Alert variant="danger">{error}</Alert>}<p>{selected?.item.name} · {selected?.item.code}</p><Form.Group controlId="course-approval-reason"><Form.Label>Lý do</Form.Label><Form.Control as="textarea" {...register('reason')} isInvalid={!!errors.reason} disabled={busy}/><Form.Control.Feedback type="invalid">{errors.reason?.message}</Form.Control.Feedback></Form.Group></Modal.Body><Modal.Footer><Button type="submit" disabled={busy}>Xác nhận</Button></Modal.Footer></Form></Modal></div>;
+}

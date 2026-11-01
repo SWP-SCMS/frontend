@@ -26,6 +26,7 @@ export const COURSE_REGISTRATION_STATUS_LABELS = {
 export const COURSE_SESSION_STATUS_LABELS = {
   SCHEDULED: 'Đã lên lịch',
   CANCELLED: 'Đã hủy',
+  REMOVED_BY_RUN_CHANGE: 'Đã bỏ do giảm số buổi',
   CANCELLED_PENDING_MAKEUP: 'Đã hủy, chờ học bù',
   MAKEUP_SCHEDULED: 'Đã xếp lịch học bù',
   COMPLETED: 'Đã hoàn thành',
