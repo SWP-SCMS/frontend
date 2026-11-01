@@ -17,7 +17,7 @@ Ngày 2026-11-02. FE: course-workflow; BE local: 7e8f551 (PR #192), diff từ 8b
 | Quyền tạo Course ở BE | BE hiện còn POST /reception/courses và workflow duyệt. Cần gỡ/chặn quyền Reception tạo Course theo rule mới; không bổ sung API tạo Run hoặc danh sách bộ môn cho mục đích này. FE ẩn UI không thay thế kiểm soát quyền API. |
 | Hoàn cuối khóa | Refund thường chỉ được chi khi Run COMPLETED. Cần xác nhận/bổ sung chuyển SETTLEMENT_PENDING sang COMPLETED; không tự coi SETTLEMENT_PENDING là đủ điều kiện chi. |
 | G12 — Chốt quyền hoàn tại lúc gửi (đã chốt) | BE hiện tính lại tại approve và chặn cả duyệt khi buổi cuối đã bắt đầu. Cần lưu snapshot khi gửi; duyệt yêu cầu cũ dùng snapshot, không mất quyền vì Manager xử lý trễ. Chi tiết bên dưới. |
-| G13 — Quyền học trong lúc chờ rút (cần hoàn thiện BR) | BE/FE hiện vẫn cho WITHDRAWAL_PENDING học và điểm danh. Cần đồng bộ với G12; phương án tạm ngừng học còn phải chốt cách xử lý buổi bị lỡ nếu từ chối. |
+| G13 — Quyền học trong lúc chờ rút (đã chốt) | Tạm ngừng học/điểm danh từ khi gửi thành công, giữ chỗ chờ duyệt. Duyệt thì rút và trả chỗ; từ chối thì khôi phục quyền học và bố trí học bù các buổi bị lỡ do tạm ngừng, không tính vắng. BE/FE hiện chưa triển khai rule mới này. |
 | Sửa lịch Run | Các session giữ lại phải nằm trong khung Run mới. UI gửi lỗi BE, không tự dời hàng loạt buổi hoặc gọi N+1. Cần kiểm thử thao tác dời cả khóa thực tế. |
 
 ## BR đã chốt
@@ -35,17 +35,19 @@ Ngày 2026-11-02. FE: course-workflow; BE local: 7e8f551 (PR #192), diff từ 8b
 - BE hiện tại: CourseWithdrawalService.create/createForScheduleChange kiểm tra remainingUnits; approve gọi refundSnapshot với thời điểm hiện tại và kiểm tra canWithdraw lần nữa. Đây là phần cần sửa.
 - Contract cần trả snapshot và trạng thái xử lý để FE trình bày; BE xác định cách xử lý các yêu cầu PENDING cũ chưa có snapshot, không tự lấy dữ liệu hiện tại rồi gọi đó là dữ liệu lúc gửi.
 
-## G13 — Quyền học/điểm danh trong thời gian chờ rút
+## G13 — Quyền học/điểm danh trong thời gian chờ rút, đã được user chốt ngày 2026-11-02
 - Hiện trạng đã đọc code: CourseEnrollmentService.roster và updateAttendance cho cả ACTIVE và WITHDRAWAL_PENDING. FE hiển thị roster BE trả; lịch Member cũng giữ WITHDRAWAL_PENDING.
 - Sau duyệt, WITHDRAWN bị loại khỏi roster và BE chặn điểm danh. Không xóa lịch sử điểm danh trong DB. FE cập nhật sau khi tải lại; phần này đã có, không yêu cầu BE làm lại.
-- Phương án đã trao đổi để tránh vừa học thêm vừa hoàn theo G12: tạm ngừng quyền học/điểm danh từ lúc gửi; vẫn giữ chỗ trong khi chờ. Duyệt thì rút chính thức và trả chỗ; từ chối thì khôi phục quyền học.
-- Còn cần chốt: buổi bị lỡ do tạm ngừng trong thời gian chờ nếu Manager từ chối sẽ được xử lý thế nào. Chưa tự chọn học bù, hoàn tiền hoặc coi là vắng.
-- Sau khi chốt đầy đủ, BE cần enforce quyền ở roster/attendance và quyền vào trung tâm theo Course; FE hiển thị rõ tạm ngừng và đồng bộ lịch. Không chỉ ẩn nút FE hoặc xóa bản ghi lịch sử.
+- Rule đã chốt, áp dụng cùng phạm vi G12: gửi yêu cầu thành công thì chốt khoản hoàn và tạm ngừng quyền học/điểm danh từ thời điểm đó; vẫn giữ chỗ trong khi chờ. Manager duyệt thì rút chính thức, giải phóng chỗ và dùng snapshot lúc gửi; từ chối thì khôi phục quyền học.
+- Nếu Manager từ chối: trung tâm phải bố trí học bù các buổi member bị lỡ do hệ thống tạm ngừng trong thời gian chờ. Không ghi nhận member vắng đối với các buổi này; không áp dụng bù cho buổi vắng trước khi gửi yêu cầu.
+- BE cần lưu khoảng tạm ngừng và các buổi bị ảnh hưởng, trả thông tin/quyền học bù để FE và nhân viên xử lý, tránh tạo bù trùng khi retry. Đây là học bù cho member bị ảnh hưởng, không mặc định hủy hoặc dời buổi chung của cả Run.
+- BE cần enforce quyền ở roster/attendance và quyền vào trung tâm theo Course; FE hiển thị rõ tạm ngừng và đồng bộ lịch. Không chỉ ẩn nút FE hoặc xóa bản ghi lịch sử.
 
 ## Cần test local
 - Retry disbursement giữ payload/key; không bấm đúp; stale version, eligibility đổi, 0/null, cash/bank transfer và Manager verify.
 - G12: gửi lúc còn 7/10, duyệt lúc còn 6/10 vẫn dùng snapshot; duyệt sau buổi cuối được phép; gửi mới sau mốc đó bị chặn.
-- Member rút do đổi lịch: tạo đúng một request, trạng thái chờ theo contract hiện tại (G13 chưa chốt đầy đủ); từ chối/duyệt cập nhật trạng thái; ngưỡng 70% và ba ngoại lệ.
+- Member rút do đổi lịch: tạo đúng một request, trạng thái chờ tạm ngừng học theo G13 sau khi BE cập nhật; từ chối/duyệt cập nhật trạng thái; ngưỡng 70% và ba ngoại lệ.
+- G13: chờ duyệt vẫn giữ chỗ nhưng không được học/điểm danh; duyệt trả chỗ; từ chối khôi phục quyền, các buổi lỡ do tạm ngừng được bù và không bị tính vắng; lịch sử cũ được giữ nguyên.
 - Coach: đúng assignment, ngoài cửa sổ điểm danh bị chặn, hết quyền giữa lúc mở roster.
 - Reception rút hộ đúng accountId, số hoàn dự kiến và lỗi hồ sơ đổi trạng thái.
 - Manager cancel-with-makeup rollback khi trùng lịch; giảm số buổi chỉ buổi chưa bắt đầu.
