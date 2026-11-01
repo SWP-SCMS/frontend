@@ -81,9 +81,9 @@ export default function ManagerDashboardPage() {
               to="/manager/members"
             />
             <Metric
-              label="Doanh thu đã thanh toán"
+              label="Doanh thu gói tập"
               value={formatPrice(data.membershipRevenue?.paidRevenue, 'VND')}
-              note={`${data.membershipRevenue?.paidPayments || 0} giao dịch thành công`}
+              note={`${data.membershipRevenue?.paidPayments || 0} giao dịch gói tập thành công`}
               to="/manager/reports/revenue"
               actionLabel="Xem báo cáo"
             />

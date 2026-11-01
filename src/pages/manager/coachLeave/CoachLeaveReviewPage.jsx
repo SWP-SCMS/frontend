@@ -133,7 +133,9 @@ export default function CoachLeaveReviewPage() {
                       <td>
                         {!row.affectedSessionIds?.length ? '0' : (
                           <div className="d-flex flex-wrap gap-1">
-                            {row.affectedSessionIds.map((id, index) => <Button key={id} as={Link} to={`/manager/class-sessions/${id}`} size="sm" variant="outline-secondary">Buổi {index + 1}</Button>)}
+                            <span className="w-100">{row.affectedSessionIds.length} buổi tập / khóa học</span>
+                            <Button as={Link} to={'/manager/class-sessions?view=list&coachId=' + encodeURIComponent(row.coachId)} size="sm" variant="outline-secondary">Lịch lớp tập</Button>
+                            <Button as={Link} to="/manager/course-runs" size="sm" variant="outline-secondary">Lịch khóa học</Button>
                           </div>
                         )}
                       </td>

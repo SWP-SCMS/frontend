@@ -12,6 +12,8 @@ import { useAuth } from '../../context/useAuth';
 import Icon from './MemberIcon';
 import useNotificationUnreadCount from './useNotificationUnreadCount';
 import NotificationBellContent from './NotificationBellContent';
+import NotificationDropdown from './NotificationDropdown';
+import ResponsiveSidebar from './ResponsiveSidebar';
 import './MemberLayout.css';
 import '../common/BrandLogo.css';
 
@@ -23,6 +25,7 @@ const COACH_SIDEBAR_ITEMS = [
   {
     label: 'Công việc',
     items: [
+      { to: '/coach/course-sessions', label: 'Buổi khóa học', icon: 'calendar' },
       { to: '/coach/schedule', label: 'Lịch phụ trách', icon: 'calendar' },
       { to: '/coach/leave-requests', label: 'Yêu cầu nghỉ', icon: 'clipboard' },
       { to: '/coach/members', label: 'Hội viên được phân công', icon: 'profile' },
@@ -81,7 +84,7 @@ export default function CoachLayout() {
 
   return (
     <div className="scms-ml">
-      <aside className="scms-ml-sidebar">
+      <ResponsiveSidebar><aside className="scms-ml-sidebar">
         <div>
           <div className="scms-ml-sidebar-logo">
             <StaticLogo />
@@ -117,11 +120,11 @@ export default function CoachLayout() {
             </button>
           </nav>
         </div>
-      </aside>
+      </aside></ResponsiveSidebar>
 
       <div className="scms-ml-body">
         <header className="scms-ml-header">
-          <Dropdown align="start">
+          <NotificationDropdown align="start">
             <Dropdown.Toggle
               as="button"
               type="button"
@@ -143,7 +146,7 @@ export default function CoachLayout() {
                 classPrefix="scms-ml"
               />
             </Dropdown.Menu>
-          </Dropdown>
+          </NotificationDropdown>
 
           <div className="scms-ml-user">
             <span className="scms-ml-role">

@@ -69,6 +69,7 @@ export function isValidPhone(raw) {
 // value. Backend is expected to respond with { message, code, ... }.
 export function extractErrorMessage(error, fallback = 'Đã có lỗi xảy ra') {
   if (!error) return fallback;
+  if (typeof error === 'string') return error.trim() || fallback;
   const data = error.response?.data;
   if (data) {
     if (typeof data === 'string') return data;

@@ -33,3 +33,5 @@ export const courseWithdrawalSchema = z.object({
   enrollmentId: z.string().min(1, 'Vui lòng chọn đợt học cần rút.'),
   reason: z.string().trim().min(1, 'Vui lòng nhập lý do xin rút.').max(1000, 'Lý do không quá 1000 ký tự.'),
 });
+
+export const courseRunScheduleSchema = z.object({ plannedStartAt: dateTime, plannedEndAt: dateTime, totalUnits: positive }).refine((v) => Date.parse(v.plannedStartAt) < Date.parse(v.plannedEndAt), { path: ['plannedEndAt'], message: 'Kết thúc phải sau khai giảng.' });

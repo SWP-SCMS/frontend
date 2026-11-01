@@ -20,6 +20,7 @@ export default function ManagerCourseDetailPage() {
   const courseForm = useForm({ resolver: zodResolver(courseEditSchema), defaultValues: {} });
   const { register, handleSubmit, reset: setForm, formState: { errors } } = courseForm;
   const [busy, setBusy] = useState(false);
+  const [statusAction, setStatusAction] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -49,10 +50,15 @@ export default function ManagerCourseDetailPage() {
     finally { setBusy(false); }
   }
 
-  async function changeStatus(action, prompt) {
-    if (!window.confirm(prompt)) return;
+  function changeStatus(action, prompt) {
+    setError('');
+    setStatusAction({ action, prompt });
+  }
+
+  async function confirmStatusChange() {
+    if (!statusAction || busy) return;
     setBusy(true); setError('');
-    try { setCourse(await action(courseId, course.version)); }
+    try { setCourse(await statusAction.action(courseId, course.version)); setStatusAction(null); }
     catch (err) { setError(getCourseErrorMessage(err, 'Không đổi được trạng thái khóa học.')); }
     finally { setBusy(false); }
   }
@@ -77,12 +83,17 @@ export default function ManagerCourseDetailPage() {
       <Col lg={4}><div className="bg-white rounded shadow-sm p-4"><dl className="row mb-0"><dt className="col-7">Đăng ký tối thiểu</dt><dd className="col-5 text-end">{course.defaultMinimumEnrollment}</dd><dt className="col-7">Phiên bản</dt><dd className="col-5 text-end">{course.version}</dd></dl></div></Col>
     </Row>
 
-    <Modal show={showEdit} onHide={() => setShowEdit(false)} centered size="lg"><Form noValidate onSubmit={handleSubmit(handleEdit)}>
-      <Modal.Header closeButton><Modal.Title>Chỉnh sửa khóa học</Modal.Title></Modal.Header><Modal.Body><Row className="g-3">
-        <Col md={8}><Form.Label>Tên khóa học *</Form.Label><Form.Control required maxLength={200} {...register('name')} isInvalid={!!errors.name} /><Form.Control.Feedback type="invalid">{errors.name?.message}</Form.Control.Feedback></Col>
-        <Col md={4}><Form.Label>Số đăng ký tối thiểu *</Form.Label><Form.Control required type="number" min={1} {...register('defaultMinimumEnrollment')} isInvalid={!!errors.defaultMinimumEnrollment} /><Form.Control.Feedback type="invalid">{errors.defaultMinimumEnrollment?.message}</Form.Control.Feedback></Col>
-        <Col xs={12}><Form.Label>Ảnh khóa học (URL)</Form.Label><Form.Control maxLength={500} {...register('imageUrl')} isInvalid={!!errors.imageUrl} /><Form.Control.Feedback type="invalid">{errors.imageUrl?.message}</Form.Control.Feedback></Col>
-        <Col xs={12}><Form.Label>Mô tả</Form.Label><Form.Control as="textarea" rows={5} maxLength={2000} {...register('description')} isInvalid={!!errors.description} /><Form.Control.Feedback type="invalid">{errors.description?.message}</Form.Control.Feedback></Col>
+    <Modal show={!!statusAction} onHide={() => { if (!busy) setStatusAction(null); }} centered backdrop={busy ? 'static' : true} keyboard={!busy}>
+      <Modal.Header closeButton={!busy}><Modal.Title>Xác nhận thay đổi khóa học</Modal.Title></Modal.Header>
+      <Modal.Body><p>{statusAction?.prompt}</p><p><strong>{course.name}</strong> · {course.code}</p>{error && <ErrorAlert error={error} />}</Modal.Body>
+      <Modal.Footer><Button variant="outline-secondary" disabled={busy} onClick={() => setStatusAction(null)}>Quay lại</Button><Button variant="danger" disabled={busy} onClick={confirmStatusChange}>{busy ? 'Đang xử lý…' : 'Xác nhận'}</Button></Modal.Footer>
+    </Modal>
+    <Modal show={showEdit} onHide={() => { if (!busy) setShowEdit(false); }} centered size="lg" backdrop={busy ? 'static' : true} keyboard={!busy}><Form noValidate onSubmit={handleSubmit(handleEdit)}>
+      <Modal.Header closeButton><Modal.Title>Chỉnh sửa khóa học</Modal.Title></Modal.Header><Modal.Body>{error && <ErrorAlert error={error} title="Không thể lưu thay đổi" />}<Row className="g-3">
+        <Col md={8}><Form.Label htmlFor="course-edit-name">Tên khóa học *</Form.Label><Form.Control id="course-edit-name" required maxLength={200} {...register('name')} isInvalid={!!errors.name} /><Form.Control.Feedback type="invalid">{errors.name?.message}</Form.Control.Feedback></Col>
+        <Col md={4}><Form.Label htmlFor="course-edit-defaultMinimumEnrollment">Số đăng ký tối thiểu *</Form.Label><Form.Control id="course-edit-defaultMinimumEnrollment" required type="number" min={1} {...register('defaultMinimumEnrollment')} isInvalid={!!errors.defaultMinimumEnrollment} /><Form.Control.Feedback type="invalid">{errors.defaultMinimumEnrollment?.message}</Form.Control.Feedback></Col>
+        <Col xs={12}><Form.Label htmlFor="course-edit-imageUrl">Ảnh khóa học (URL)</Form.Label><Form.Control id="course-edit-imageUrl" maxLength={500} {...register('imageUrl')} isInvalid={!!errors.imageUrl} /><Form.Control.Feedback type="invalid">{errors.imageUrl?.message}</Form.Control.Feedback></Col>
+        <Col xs={12}><Form.Label htmlFor="course-edit-description">Mô tả</Form.Label><Form.Control id="course-edit-description" as="textarea" rows={5} maxLength={2000} {...register('description')} isInvalid={!!errors.description} /><Form.Control.Feedback type="invalid">{errors.description?.message}</Form.Control.Feedback></Col>
       </Row></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setShowEdit(false)}>Hủy</Button><Button variant="danger" type="submit" disabled={busy}>Lưu thay đổi</Button></Modal.Footer>
     </Form></Modal>
   </div>;

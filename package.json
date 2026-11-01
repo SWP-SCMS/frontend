@@ -9,6 +9,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "test": "node --test src/utils/*.test.js",
+    "test:course-ui": "playwright test tests/course-workflows.spec.js",
     "test:benefits": "node --test src/utils/membershipBenefits.test.js",
     "preview": "vite preview"
   },
@@ -25,6 +26,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",

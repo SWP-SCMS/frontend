@@ -24,7 +24,7 @@ export default function MemberReceiptListPage() {
   return (
     <div>
       <div className="d-flex flex-wrap justify-content-between gap-3 align-items-start mb-4">
-        <div><h1 className="h3 fw-bold mb-1">Biên lai của tôi</h1><p className="text-muted mb-0">Các khoản thanh toán đã hoàn tất và biên lai tương ứng.</p></div>
+        <div><h1 className="h3 fw-bold mb-1">Biên lai của tôi</h1><p className="text-muted mb-0">Biên lai thanh toán gói tập đã hoàn tất. Đăng ký khóa học được theo dõi tại <Link to="/member/courses">Khóa học của tôi</Link>.</p></div>
         <Button variant="outline-danger" size="sm" onClick={load} disabled={loading}>Tải lại</Button>
       </div>
       <ErrorAlert error={error} title="Không tải được danh sách biên lai" />

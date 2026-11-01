@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { listMyCourseRefunds } from '../../../services/courseReportingService';
 import { formatCourseMoney, formatCourseDateTime, getCourseErrorMessage } from '../../../utils/courseUi';
-const statuses = { PENDING_REVIEW: 'Chờ duyệt', APPROVED: 'Đã duyệt, chưa ghi nhận chi', DISBURSEMENT_RECORDED: 'Đã ghi nhận chi, chờ xác minh', PENDING_VERIFICATION: 'Chờ xác minh', COMPLETED: 'Đã xác minh hoàn tất', REJECTED: 'Đã từ chối', FAILED: 'Thất bại', RETURNED: 'Khoản chi đã được trả lại' };
-const sources = { MEMBER_WITHDRAWAL: 'Rút khóa học', COURSE_RUN_CANCELLED: 'Hủy đợt học', MATERIAL_CHANGE: 'Thay đổi đáng kể', UNRESOLVED_SESSIONS: 'Buổi học chưa xử lý', TRANSFER_CREDIT_EXCESS: 'Chênh lệch chuyển đợt', PAYMENT_EXCEPTION: 'Điều chỉnh thanh toán' };
+import { COURSE_REFUND_STATUS_LABELS as statuses, COURSE_REFUND_SOURCE_LABELS as sources } from '../../../utils/courseWorkflow';
 const money = (value) => value == null ? 'Chưa xác định' : formatCourseMoney(value);
 export default function MemberCourseRefunds({ enrollments }) {
   const [page, setPage] = useState(0);

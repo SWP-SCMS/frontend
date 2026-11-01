@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { listCatalogCourseRuns } from '../../../services/courseCatalogService';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { listMyCourseEnrollments } from '../../../services/courseEnrollmentService';
 import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils';
 import {
@@ -10,6 +9,10 @@ import {
 } from '../../../services/courseWaitlistService';
 import {
   COURSE_ATTENDANCE_STATUS_LABELS,
+  COURSE_RUN_STATUS_LABELS,
+  COURSE_SESSION_STATUS_LABELS,
+  COURSE_ORDER_STATUS_LABELS,
+  formatCourseMoney,
   COURSE_ENROLLMENT_STATUS_LABELS,
   COURSE_DISPOSITION_LABELS,
   COURSE_WAITLIST_STATUS_LABELS,
@@ -20,16 +23,23 @@ import {
 import MemberCourseRefunds from './MemberCourseRefunds';
 import MemberCourseWithdrawals from './MemberCourseWithdrawals';
 import CourseScheduleChanges from './CourseScheduleChanges';
+import MemberCourseTransfers from './MemberCourseTransfers';
 import './MemberCoursesPage.css';
 
 
 
 export default function MemberCoursesPage() {
   const navigate = useNavigate();
+  const { hash } = useLocation();
   const [enrollments, setEnrollments] = useState([]);
   const [waitlists, setWaitlists] = useState([]);
-  const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const sectionId = hash.slice(1);
+    if (!loading && ['refunds', 'withdrawals', 'transfers', 'schedule-changes'].includes(sectionId)) {
+      document.getElementById(sectionId)?.scrollIntoView({ block: 'start' });
+    }
+  }, [hash, loading]);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
   const acceptKeys = useRef({});
@@ -40,15 +50,13 @@ export default function MemberCoursesPage() {
     setLoading(true);
     setError('');
     try {
-      const [enrollmentData, waitlistData, runData] = await Promise.allSettled([
+      const [enrollmentData, waitlistData] = await Promise.allSettled([
         listMyCourseEnrollments(),
         listMyCourseWaitlists(),
-        listCatalogCourseRuns({ size: 100 }),
       ]);
       setEnrollments(enrollmentData.status === 'fulfilled' ? enrollmentData.value : []);
       setWaitlists(waitlistData.status === 'fulfilled' ? waitlistData.value : []);
-      setRuns(runData.status === 'fulfilled' ? runData.value.content || [] : []);
-      if ([enrollmentData, waitlistData, runData].some((result) => result.status === 'rejected')) setError('Một phần dữ liệu chưa tải được. Vui lòng tải lại.');
+      if ([enrollmentData, waitlistData].some((result) => result.status === 'rejected')) setError('Một phần dữ liệu chưa tải được. Vui lòng tải lại.');
     } catch (requestError) {
       setError(getCourseErrorMessage(requestError, 'Không tải được thông tin khóa học của bạn.'));
     } finally {
@@ -59,11 +67,6 @@ export default function MemberCoursesPage() {
   useEffect(() => {
     load();
   }, [load]);
-
-  const runById = useMemo(
-    () => new Map(runs.map((run) => [String(run.id || run.runId), run])),
-    [runs],
-  );
 
   async function handleLeave(item) {
     setBusyId(item.id);
@@ -129,6 +132,8 @@ export default function MemberCoursesPage() {
                       </div>
                       <span className="member-course-status">{getCourseStatusLabel(COURSE_ENROLLMENT_STATUS_LABELS, enrollment.lifecycleStatus)}</span>
                     </div>
+                    <p>Đợt học: {getCourseStatusLabel(COURSE_RUN_STATUS_LABELS, enrollment.courseRunStatus)}</p>
+                    {enrollment.payment && <p>Thanh toán: {getCourseStatusLabel(COURSE_ORDER_STATUS_LABELS, enrollment.payment.status)} · {formatCourseMoney(enrollment.payment.amountVnd)}</p>}
                     <p>Đăng ký lúc {formatCourseDateTime(enrollment.enrolledAt)}</p>
                     <p>Điểm danh: {(enrollment.sessions || []).filter((s) => s.attendanceStatus === 'PRESENT').length} có mặt · {(enrollment.sessions || []).filter((s) => s.attendanceStatus === 'ABSENT').length} vắng · {(enrollment.sessions || []).filter((s) => s.attendanceStatus === 'NOT_RECORDED').length} chưa ghi nhận</p>
                     <Link to="/member/class-sessions">Xem lịch cá nhân</Link>
@@ -137,7 +142,8 @@ export default function MemberCoursesPage() {
                         .sort((a, b) => a.unitNumber - b.unitNumber)
                         .map((session) => (
                           <div className="member-course-session-row" key={session.enrollmentSessionId}>
-                            <strong>Buổi {session.unitNumber}</strong>
+                            <strong>Buổi {session.unitNumber}{session.isMakeup ? " · Học bù" : ""}</strong>
+                            <small>{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.sessionStatus)}</small>
                             <span>{formatCourseDateTime(session.startAt)}</span>
                             <small>{getCourseStatusLabel(COURSE_DISPOSITION_LABELS, session.disposition)} · {getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, session.attendanceStatus)}</small>
                           </div>
@@ -158,7 +164,8 @@ export default function MemberCoursesPage() {
             setEnrollments((items) => items.map((item) => item.enrollmentId === enrollmentId ? { ...item, lifecycleStatus: 'WITHDRAWAL_PENDING' } : item));
           }} />
           <MemberCourseRefunds enrollments={enrollments} />
-          <CourseScheduleChanges enrollments={enrollments} />
+          <CourseScheduleChanges enrollments={enrollments} onResponded={load} />
+          <MemberCourseTransfers enrollments={enrollments} onTransferred={load} />
           <section className="member-course-section">
             <div className="member-course-section-title">
               <h2>Danh sách chờ</h2>
@@ -167,7 +174,7 @@ export default function MemberCoursesPage() {
             {activeWaitlists.length ? (
               <div className="member-course-grid">
                 {activeWaitlists.map((item) => {
-                  const run = runById.get(String(item.courseRunId));
+                  const run = item;
                   return (
                     <article className="member-course-card" key={item.id}>
                       <div className="member-course-card-head">

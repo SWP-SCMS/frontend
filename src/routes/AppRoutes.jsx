@@ -16,6 +16,7 @@ import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfi
 import { useAuth } from '../context/useAuth';
 
 // Public pages
+const CoachCourseSessionsPage = lazy(() => import('../pages/coach/courses/CoachCourseSessionsPage'));
 const HomePage = lazy(() => import('../pages/public/home/HomePage'));
 const LoginPage = lazy(() => import('../pages/public/login/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/public/register/RegisterPage'));
@@ -26,6 +27,8 @@ const ForgotPasswordPage = lazy(
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
 const ReceptionCourseBookingPage = lazy(() => import('../pages/receptionist/courses/ReceptionCourseBookingPage'));
+const ReceptionCourseRefundPage = lazy(() => import('../pages/receptionist/courses/ReceptionCourseRefundPage'));
+const ManagerCourseWorkflowPage = lazy(() => import('../pages/manager/courses/ManagerCourseWorkflowPage'));
 
 const CourseCatalogPage = lazy(
   () => import('../pages/public/courses/CourseCatalogPage'),
@@ -657,6 +660,7 @@ export default function AppRoutes() {
         <Route path="membership-requests" element={withSuspense(<MembershipRequestDeskPage />)} />
         <Route path="orders/new" element={withSuspense(<CashPaymentPage />)} />
         <Route path="courses" element={withSuspense(<ReceptionCourseBookingPage />)} />
+        <Route path="course-refunds" element={withSuspense(<ReceptionCourseRefundPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
         <Route path="payments/cash" element={withSuspense(<CashPaymentPage />)} />
         <Route path="refunds" element={withSuspense(<RefundRequestDeskPage />)} />
@@ -691,6 +695,7 @@ export default function AppRoutes() {
         <Route index element={<Navigate to="/coach/dashboard" replace />} />
         <Route path="dashboard" element={withSuspense(<CoachDashboardPage />)} />
         <Route path="schedule" element={withSuspense(<CoachSchedulePage />)} />
+        <Route path="course-sessions" element={withSuspense(<CoachCourseSessionsPage />)} />
         <Route path="leave-requests" element={withSuspense(<CoachLeaveRequestsPage />)} />
         <Route
           path="schedule/:sessionId"
@@ -768,6 +773,9 @@ export default function AppRoutes() {
         <Route path="classes/:classId" element={withSuspense(<ClassDetailPage />)} />
         <Route path="classes/:classId/edit" element={withSuspense(<ClassEditPage />)} />
         <Route path="courses" element={withSuspense(<ManagerCoursesPage />)} />
+        <Route path="course-withdrawals" element={withSuspense(<ManagerCourseWorkflowPage key="withdrawals" kind="withdrawals" />)} />
+        <Route path="course-transfers" element={withSuspense(<ManagerCourseWorkflowPage key="transfers" kind="transfers" />)} />
+        <Route path="course-refunds" element={withSuspense(<ManagerCourseWorkflowPage key="refunds" kind="refunds" />)} />
         <Route path="courses/:courseId" element={withSuspense(<ManagerCourseDetailPage />)} />
         <Route path="course-runs" element={withSuspense(<ManagerCourseRunsPage />)} />
         <Route path="course-runs/:runId" element={withSuspense(<ManagerCourseRunDetailPage />)} />

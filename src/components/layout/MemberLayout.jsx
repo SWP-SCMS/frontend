@@ -18,6 +18,7 @@ import { getMembershipBenefitState } from '../../utils/membershipBenefits';
 import { MemberAreaContext } from './MemberAreaContext';
 import MemberSidebar from './MemberSidebar';
 import MemberHeader from './MemberHeader';
+import ResponsiveSidebar from './ResponsiveSidebar';
 import { MEMBER_SIDEBAR_ITEMS } from './navConfig';
 import useNotificationUnreadCount from './useNotificationUnreadCount';
 import './MemberLayout.css';
@@ -210,7 +211,7 @@ export default function MemberLayout({ children }) {
   return (
     <MemberAreaContext.Provider value={areaValue}>
       <div className="scms-ml">
-        <MemberSidebar
+        <ResponsiveSidebar><MemberSidebar
           user={user}
           activeMembership={activeMembership}
           statusText={statusText}
@@ -219,7 +220,7 @@ export default function MemberLayout({ children }) {
           getRequiredPlanLabel={getRequiredPlanLabel}
           onLockedClick={setBenefitNoticeFor}
           onRequestLogout={requestLogout}
-        />
+        /></ResponsiveSidebar>
 
         <div className="scms-ml-body">
           <MemberHeader

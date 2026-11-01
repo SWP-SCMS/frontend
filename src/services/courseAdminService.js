@@ -122,3 +122,6 @@ export async function createManagerCourseMakeup(runId, sessionId, payload) {
   const { data } = await api.post(`/manager/course-runs/${runId}/sessions/${sessionId}/makeup`, payload);
   return data;
 }
+
+export async function updateCourseRunSchedule(id, payload) { return (await api.patch(`/manager/course-runs/${id}/schedule`, payload)).data; }
+export async function cancelCourseSessionWithMakeup(runId, sessionId, payload) { return (await api.post(`/manager/course-runs/${runId}/sessions/${sessionId}/cancel-with-makeup`, payload)).data; }

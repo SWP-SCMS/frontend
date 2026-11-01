@@ -12,6 +12,7 @@
 import { Dropdown } from 'react-bootstrap';
 import Icon from './MemberIcon';
 import NotificationBellContent from './NotificationBellContent';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function MemberHeader({
   user,
@@ -27,7 +28,7 @@ export default function MemberHeader({
 
   return (
     <header className="scms-ml-header">
-      <Dropdown align="start">
+      <NotificationDropdown align="start">
         <Dropdown.Toggle
           as="button"
           type="button"
@@ -51,7 +52,7 @@ export default function MemberHeader({
             classPrefix="scms-ml"
           />
         </Dropdown.Menu>
-      </Dropdown>
+      </NotificationDropdown>
 
       <div className="scms-ml-user">
         <span className="scms-ml-role">

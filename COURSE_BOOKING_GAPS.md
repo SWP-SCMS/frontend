@@ -1,39 +1,67 @@
-# Course Booking — gap gửi Backend
+# Course Booking — đối chiếu FE/BE
 
-Ngày: 2026-11-01. Đối chiếu code BE local main `5003b72` (PR #185), không xác nhận CI/staging. FE branch `feat/course-booking-mvp`.
-Tài liệu này thay thế các mô tả gap cũ về việc chưa có API refund member/disbursement/report. Chưa chạy test chức năng.
+Ngày 2026-11-02. FE: course-workflow; BE local: 7e8f551 (PR #192), diff từ 8ba06c6. Không sửa backend. Chưa kiểm thử runtime/E2E trong đợt này.
 
-## Phần đã có, không cần yêu cầu BE làm lại
-- Member tạo/xem withdrawal; Manager duyệt/từ chối withdrawal.
-- Manager list/detail/approve/reject refund; verify/fail/return.
-- Reception POST ghi nhận disbursement.
-- Member list/detail refund đã lược bỏ evidence nội bộ.
-- Báo cáo Manager Course Run tổng hợp có tên/mã, pagination và filter.
-- FE đã nối member withdrawal, refund progress và báo cáo Course Run; service không tính refund thay BE.
+## Đã nối FE
+- Reception xem hàng chờ và ghi nhận chi hoàn: version, eligibility, idempotency, RHF + Zod, xác nhận khoản chi; không tự chuyển tiền.
+- Member timeline: Run/session status, payment summary, makeup; bỏ lịch Run hủy/buổi không còn hiệu lực.
+- Waitlist dùng tên/mã trực tiếp, bỏ lookup catalog trang đầu. Transfer, withdrawal và refund Manager dùng display fields trực tiếp.
+- Phản hồi REQUEST_WITHDRAWAL tạo yêu cầu rút theo BE; hiển thị eligibility/refundAmountVnd, reload ghi danh và lịch sử.
+- Coach /coach/course-sessions: discovery theo assignment, roster, điểm danh theo attendanceWritable. BE là nguồn quyền cuối cùng.
+- Reception tra cứu enrollment và yêu cầu rút hộ trên /reception/courses sau khi tìm hội viên.
+- Manager sửa lịch Run/số buổi, hủy kèm xếp bù qua endpoint nguyên tử; makeup không được xếp bù tiếp.
 
 ## Gap còn lại
+| Mục | Contract / việc cần bổ sung |
+|---|---|
+| Quyền tạo Course ở BE | BE hiện còn POST /reception/courses và workflow duyệt. Cần gỡ/chặn quyền Reception tạo Course theo rule mới; không bổ sung API tạo Run hoặc danh sách bộ môn cho mục đích này. FE ẩn UI không thay thế kiểm soát quyền API. |
+| Hoàn cuối khóa | Refund thường chỉ được chi khi Run COMPLETED. Cần xác nhận/bổ sung chuyển SETTLEMENT_PENDING sang COMPLETED; không tự coi SETTLEMENT_PENDING là đủ điều kiện chi. |
+| G12 — Chốt quyền hoàn tại lúc gửi (đã chốt) | BE hiện tính lại tại approve và chặn cả duyệt khi buổi cuối đã bắt đầu. Cần lưu snapshot khi gửi; duyệt yêu cầu cũ dùng snapshot, không mất quyền vì Manager xử lý trễ. Chi tiết bên dưới. |
+| G13 — Quyền học trong lúc chờ rút (đã chốt) | Tạm ngừng học/điểm danh từ khi gửi thành công, giữ chỗ chờ duyệt. Duyệt thì rút và trả chỗ; Member được hủy khi còn chờ, Reception được hủy hộ; hủy hoặc Manager từ chối thì khôi phục quyền học, không bù buổi đã lỡ. Manager duyệt/từ chối từng yêu cầu. BE/FE hiện chưa triển khai rule mới này. |
+| G14 — Reception thao tác hộ Member trong Course (đã chốt) | Đối chiếu/bổ sung API Reception cho các thao tác Member Course, gồm hủy yêu cầu rút, waitlist, phản hồi đổi lịch và chấp nhận chuyển đợt. Cùng điều kiện/thời hạn, lưu actor và audit. Không cấp quyền tạo Course/Run, duyệt/từ chối, xem giáo án hoặc kết quả tập luyện. Chi tiết G14 bên dưới. |
+| Sửa lịch Run | Các session giữ lại phải nằm trong khung Run mới. UI gửi lỗi BE, không tự dời hàng loạt buổi hoặc gọi N+1. Cần kiểm thử thao tác dời cả khóa thực tế. |
 
-| ID | Mức độ / phần | Bằng chứng code hiện tại | BE cần bổ sung hoặc xác nhận |
-|---|---|---|---|
-| G01 | Chặn giải ngân đúng rule | CourseRefundObligationService.recordDisbursement kiểm tra APPROVED, version, amount, idempotency; lock() khóa Run nhưng không đọc/kiểm tra Run đã kết thúc. | Enforce thời điểm được ghi nhận chi ở BE theo rule chỉ quyết toán sau khi Run kết thúc. Chốt cách xử lý Run CANCELLED và các nguồn PAYMENT_EXCEPTION/TRANSFER_CREDIT_EXCESS. Trả eligibility/reason cho UI; FE không tự chọn ngoại lệ. |
-| G02 | Chặn bàn giải ngân Reception | CourseRefundObligationController có POST /reception/course-refund-obligations/{id}/disburse nhưng không có GET list/detail role Reception. | API queue/detail theo quyền Reception, phân trang, số tiền đã duyệt, version, tên/mã member và Run, dữ liệu cần tác nghiệp. Không dùng API Manager hoặc nhập UUID thủ công. |
-| G03 | Chặn UI duyệt rõ đối tượng | WithdrawalRequest, RefundObligation và TransferRequest/TransferOffer chủ yếu chứa UUID, thiếu fullName/memberCode và courseName/runCode cần thiết. | Bổ sung display fields trực tiếp trong response phù hợp role (đặc biệt member, source/target Run). Không buộc FE gọi thêm API cho từng dòng. Report Run không giải quyết việc thiếu danh tính member. |
-| G04 | Chặn rút hộ tại quầy | Có POST withdrawal theo memberId/enrollmentId nhưng không có API chọn enrollment của member dành cho Reception. | Read API trả enrollment được phép thao tác, tên/mã Run, lifecycle, eligibility và lý do không đủ điều kiện. |
-| G05 | Chặn Coach discovery | CourseEnrollmentController chỉ có roster/attendance theo sessionId; chưa có danh sách Course Run/session theo assignment. | List/detail scoped coach với tên/mã, lịch, trạng thái và cửa sổ điểm danh; không quét catalog rồi thử từng session. |
-| G06 | Chặn Reception tạo Course chờ duyệt | CourseController chỉ /manager; CourseStatus/CourseRunStatus không có workflow pending approval tương ứng. | Endpoint tạo/gửi duyệt cho Reception, queue/approve/reject Manager và state transition; giữ Manager tự tạo/tự duyệt. |
-| G07 | Member lịch/trạng thái chưa đủ | MemberEnrollment/MemberSession thiếu Run status, payment summary, session status và liên kết original/makeup. | Trả dữ liệu tổng hợp trong endpoint enrollment hiện có để không hiện lịch Run đã hủy hoặc buổi chờ bù như buổi đang học; không dùng per-enrollment order/run lookups. |
-| G08 | Waitlist thiếu tên | CourseWaitlistResponse chỉ có courseRunId, status/position/timestamps. | Trả courseName/courseCode/runCode kể cả khi Run không còn public. FE hiện chỉ có tên best effort từ catalog trang đầu 100 Run; không xem đó là nguồn đầy đủ. |
-| G09 | Session makeup UI chưa đủ | CourseSessionResponse có replacementSessionId nhưng không có isMakeup; BE từ chối xếp bù trên một makeup. | Trả isMakeup/originalSessionId hoặc allowedActions để FE không mở thao tác mà BE chắc chắn từ chối. |
-| G10 | Rule material change còn cần chốt | ScheduleChangePolicy dùng lệch >30 phút/đổi ngày và response deadline. | Xác nhận riêng điều kiện rút do khai giảng dời >7 ngày, trùng lịch, giảm số buổi; phân biệt với ngưỡng 70% của tự rút. Trả eligibility phía BE, không buộc FE suy diễn. |
-| G11 | Duyệt thay đổi và buổi ảnh hưởng | Có cancel/makeup trực tiếp; chưa có workflow duyệt thay đổi buộc xử lý buổi ảnh hưởng trước khi duyệt. | Chốt/triển khai điều kiện reschedule hoặc makeup trước khi approve thay đổi liên quan theo rule đã thống nhất. |
+## BR đã chốt
+- Cập nhật 2026-11-02: chỉ Manager tạo Course và Course Run. Reception đăng ký hộ member, không tạo/gửi duyệt Course/Run. Quyết định này thay thế rule Reception tạo chờ duyệt trong handoff cũ. FE đã gỡ màn duyệt Course do Reception gửi; các quyền rút hộ/chi hoàn đã chốt riêng không bị thay đổi.
+- G01: COURSE_RUN_CANCELLED, PAYMENT_EXCEPTION, TRANSFER_CREDIT_EXCESS được chi sau Manager duyệt; khoản khác chờ Run kết thúc (contract hiện dùng COMPLETED).
+- G10: tự nguyện rút còn ít nhất 70% số buổi thì hoàn 80% giá trị còn lại; dưới ngưỡng được rút nhưng không hoàn. Dời khai giảng quá 7 ngày/trùng lịch/giảm số buổi: hoàn 80% giá trị còn lại, không áp ngưỡng 70%. FE không tự tính số tiền.
+- G11: Manager sửa và áp dụng trực tiếp; buổi bị ảnh hưởng phải có lịch dời/bù cụ thể; không cần workflow tự gửi/tự duyệt.
 
-## Ngoài phạm vi đã chốt / cần quyết định sản phẩm
-- Course ARCHIVED hiện không có restore/publish lại. INACTIVE có thể publish lại. Plan bàn giao không yêu cầu restore archive; chỉ bổ sung nếu owner quyết định cần.
-- Các màn Manager quyết định/Reception giải ngân/Coach assignment/transfer đầy đủ vẫn chưa triển khai FE do gap trên, không phải toàn bộ endpoint nghiệp vụ đều chưa có.
-- Báo cáo hiện hiển thị theo Run với bộ lọc ngày/trạng thái; API cũng có runId nhưng FE chưa có bộ chọn Run riêng.
+## G12 — Snapshot yêu cầu rút, đã được user chốt ngày 2026-11-02
+- Áp dụng cả Member tự gửi, Reception/Manager gửi hộ và yêu cầu phát sinh từ phản hồi đổi lịch.
+- Khi gửi thành công: lưu thời điểm, nguyên nhân rút, tổng số buổi, số buổi còn lại, căn cứ giá trị còn lại, quyền hoàn và số tiền hoàn do BE tính. Rule 70%/80% và ngoại lệ theo G10 giữ nguyên.
+- Khi Manager duyệt: dùng snapshot đã lưu, không tính lại vì thời gian chờ duyệt. Yêu cầu gửi lúc còn 7/10 buổi không mất quyền hoàn chỉ vì lúc duyệt còn 6/10.
+- Buổi cuối bắt đầu chỉ chặn yêu cầu mới. Yêu cầu đã gửi trước đó vẫn được Manager duyệt/từ chối; không chặn approve vì số buổi còn lại hiện tại bằng 0.
+- Chỉ giải phóng chỗ khi duyệt thành công. Thời điểm chi tiền vẫn theo G01, không chi ngay chỉ vì đã duyệt rút.
+- BE hiện tại: CourseWithdrawalService.create/createForScheduleChange kiểm tra remainingUnits; approve gọi refundSnapshot với thời điểm hiện tại và kiểm tra canWithdraw lần nữa. Đây là phần cần sửa.
+- Contract cần trả snapshot và trạng thái xử lý để FE trình bày. Yêu cầu cũ chưa có snapshot được coi là legacy; user cho phép cân nhắc dọn dữ liệu nếu cần. Không giả lập snapshot lịch sử bằng dữ liệu hiện tại. Chưa thực hiện xóa database; khi dọn cần xác định đúng tập dữ liệu và quan hệ phụ thuộc.
 
-## Kiểm tra thủ công còn lại
-- Refund member: pagination, lỗi tải/retry, null khác 0, trạng thái APPROVED khác DISBURSEMENT_RECORDED/COMPLETED, không lộ evidence hoặc UUID.
-- Report: ngày Việt Nam, [startDate,endDate), tối đa 366 ngày khi có cả hai đầu, empty/error, pagination và các số tổng hợp so với BE.
-- Notification: đúng nhãn, không diễn giải APPROVED thành đã trả tiền. Member mở /member/courses. Manager verification routing còn chờ màn queue đủ dữ liệu.
-- Regression capacity/conflict/course-only entitlement và E2E chưa chạy. Lint/diff check không thay cho nghiệm thu runtime.
+## G13 — Quyền học/điểm danh trong thời gian chờ rút, đã được user chốt ngày 2026-11-02
+- Hiện trạng đã đọc code: CourseEnrollmentService.roster và updateAttendance cho cả ACTIVE và WITHDRAWAL_PENDING. FE hiển thị roster BE trả; lịch Member cũng giữ WITHDRAWAL_PENDING.
+- Sau duyệt, WITHDRAWN bị loại khỏi roster và BE chặn điểm danh. Không xóa lịch sử điểm danh trong DB. FE cập nhật sau khi tải lại; phần này đã có, không yêu cầu BE làm lại.
+- Rule đã chốt, áp dụng cùng phạm vi G12: gửi yêu cầu thành công thì chốt khoản hoàn và tạm ngừng quyền học/điểm danh từ thời điểm đó; vẫn giữ chỗ trong khi chờ. Manager duyệt thì rút chính thức, giải phóng chỗ và dùng snapshot lúc gửi; từ chối thì khôi phục quyền học.
+- Quyết định mới nhất thay thế phương án bù sau từ chối: không bố trí học bù cho buổi bị lỡ trong lúc chờ, kể cả Member hủy yêu cầu hoặc Manager từ chối. Không phát sinh quyền bù riêng từ workflow rút. Học bù chung do trung tâm hủy/thay đổi buổi vẫn là nghiệp vụ độc lập.
+- Giữ Manager duyệt/từ chối từng yêu cầu, bắt buộc lý do và lưu audit/thông báo. Không tự động rút và không thêm duyệt hàng loạt trong MVP.
+- Member được hủy yêu cầu của mình khi còn PENDING (kể cả yêu cầu nhân viên gửi hộ); Reception được hủy hộ theo đúng điều kiện đó. Hủy thì kết thúc yêu cầu, khôi phục quyền học từ thời điểm hủy, không giải phóng chỗ và không tạo nghĩa vụ hoàn từ yêu cầu đã hủy. Không cho hủy sau khi đã duyệt/từ chối.
+- Contract cần bổ sung endpoint hủy cho Member theo quyền sở hữu và endpoint Reception hủy hộ, trạng thái kết thúc tương ứng, thời điểm hủy, snapshot G12 và trạng thái/quyền học cho FE. BE kiểm soát cạnh tranh giữa hủy và Manager duyệt/từ chối: chỉ một chuyển trạng thái thành công; retry không tạo hiệu ứng trùng. Không tự đặt tên endpoint/enum ở FE trước khi BE cung cấp.
+- FE cần xác nhận trước khi gửi: “Trong thời gian chờ xử lý, bạn tạm ngừng học. Những buổi diễn ra trong thời gian này sẽ không được học bù nếu bạn quay lại.” Khi hủy yêu cầu cũng hiển thị lại hệ quả này.
+- BE cần enforce quyền ở roster/attendance và quyền vào trung tâm theo Course; FE hiển thị rõ tạm ngừng và đồng bộ lịch. Không chỉ ẩn nút FE hoặc xóa bản ghi lịch sử.
+
+## G14 — Reception thao tác hộ Member trong nghiệp vụ Course (đã chốt)
+- Trong phạm vi Course của handoff này, thao tác nghiệp vụ Member được phép làm thì Reception cũng được làm hộ: đăng ký/thanh toán theo contract, vào/rời waitlist, nhận lời mời, phản hồi đổi lịch, gửi/hủy yêu cầu rút, xem/chấp nhận đề nghị chuyển và thanh toán chênh lệch.
+- Áp dụng cùng eligibility, deadline, capacity, xung đột lịch, snapshot/refund policy và trạng thái với Member; không vượt giới hạn chỉ vì người thao tác là Reception.
+- Quyền tạo Course/Run và duyệt/từ chối vẫn thuộc Manager. Rule làm hộ không mở rộng sang quyền xem giáo án/kế hoạch hoặc kết quả tập luyện của Member, đổi mật khẩu, truy cập phiên đăng nhập hoặc các chức năng tài khoản riêng tư.
+- BE cần đối chiếu toàn bộ endpoint Member Course và cung cấp endpoint Reception tương ứng cùng API tra cứu cần thiết. Ghi nhận actor là Reception, member thụ hưởng, audit và notification; không giả mạo token Member hoặc dùng API Manager.
+- Đã có luồng đăng ký/thanh toán và gửi rút hộ. Hủy rút hộ và các luồng làm hộ còn lại cần kiểm kê contract trước khi FE triển khai; không khẳng định toàn bộ đã được hỗ trợ.
+- FE cần chọn đúng hội viên, hiển thị tên/mã và hệ quả trước khi xác nhận thao tác hộ. Không nhập UUID thủ công hoặc N+1 workaround.
+
+## Cần test local
+- Retry disbursement giữ payload/key; không bấm đúp; stale version, eligibility đổi, 0/null, cash/bank transfer và Manager verify.
+- G12: gửi lúc còn 7/10, duyệt lúc còn 6/10 vẫn dùng snapshot; duyệt sau buổi cuối được phép; gửi mới sau mốc đó bị chặn.
+- Member rút do đổi lịch: tạo đúng một request, trạng thái chờ tạm ngừng học theo G13 sau khi BE cập nhật; từ chối/duyệt cập nhật trạng thái; ngưỡng 70% và ba ngoại lệ.
+- G13: chờ duyệt vẫn giữ chỗ nhưng không được học/điểm danh; duyệt trả chỗ; hủy/từ chối khôi phục quyền từ thời điểm xử lý, không tạo buổi bù cho buổi đã lỡ; lịch sử cũ được giữ nguyên.
+- Hủy yêu cầu: Member đúng chủ sở hữu hoặc Reception làm hộ đúng hội viên, chỉ PENDING; cạnh tranh hủy/duyệt/từ chối và retry không trả chỗ hoặc tạo khoản hoàn sai. FE tải lại khi trạng thái đã đổi.
+- Coach: đúng assignment, ngoài cửa sổ điểm danh bị chặn, hết quyền giữa lúc mở roster.
+- Reception rút hộ đúng accountId, số hoàn dự kiến và lỗi hồ sơ đổi trạng thái.
+- Manager cancel-with-makeup rollback khi trùng lịch; giảm số buổi chỉ buổi chưa bắt đầu.
+- Course-only không có quyền gym/PT; notification, trạng thái trống và lỗi tải.

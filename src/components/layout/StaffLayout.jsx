@@ -16,6 +16,7 @@ import { Button, Modal } from 'react-bootstrap';
 import { useAuth } from '../../context/useAuth';
 import StaffSidebar from './StaffSidebar';
 import StaffHeader from './StaffHeader';
+import ResponsiveSidebar from './ResponsiveSidebar';
 import useNotificationUnreadCount from './useNotificationUnreadCount';
 import './StaffLayout.css';
 
@@ -56,11 +57,11 @@ export default function StaffLayout({
 
   return (
     <div className="scms-sd">
-      <StaffSidebar
+      <ResponsiveSidebar><StaffSidebar
         sidebarLabel={sidebarLabel}
         items={sidebarItems}
         onRequestLogout={requestLogout}
-      />
+      /></ResponsiveSidebar>
 
       <div className="scms-sd-body">
         <StaffHeader
