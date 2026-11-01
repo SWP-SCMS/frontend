@@ -68,3 +68,8 @@ export async function getReceptionCourseRefund(id) {
   const { data } = await api.get(`/reception/course-refunds/${id}`);
   return data;
 }
+
+export async function disburseCourseRefund(id, payload, key) {
+  const { data } = await api.post(`/reception/course-refund-obligations/${id}/disburse`, payload, courseIdempotencyConfig(key));
+  return data;
+}

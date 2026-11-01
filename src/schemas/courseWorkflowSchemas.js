@@ -8,3 +8,10 @@ export const courseVerificationSchema = courseDecisionSchema.extend({
   disbursementReference: required(200),
   evidenceReference: required(500),
 });
+
+export const courseDisbursementSchema = z.object({
+  method: z.enum(['CASH', 'BANK_TRANSFER']),
+  reference: required(200),
+  evidenceReference: required(500),
+  confirmed: z.boolean().refine(Boolean, 'Vui lòng xác nhận đã chi đúng khoản tiền.'),
+});
