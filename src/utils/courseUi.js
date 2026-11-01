@@ -148,10 +148,6 @@ const COURSE_ERROR_MESSAGES = {
   COURSE_RUN_INVALID_OPENING: 'Kiểm tra học phí, sĩ số, lịch học và chính sách trước khi mở đăng ký.',
   COURSE_SESSION_RESOURCE_CONFLICT: 'Phòng hoặc huấn luyện viên đã có lịch vào thời gian này.',
   COURSE_SESSION_ROOM_CAPACITY_CONFLICT: 'Sĩ số đợt học vượt sức chứa của phòng.',
-  COURSE_SESSION_DISRUPTION_CONFLICT: 'Buổi học không còn ở trạng thái cho phép hủy hoặc xếp bù.',
-  COURSE_SCHEDULE_CHANGE_DEADLINE_UNAVAILABLE: 'Lịch mới không còn đủ thời gian để học viên phản hồi.',
-  COURSE_SCHEDULE_CHANGE_RESPONSE_CLOSED: 'Đã hết thời hạn phản hồi thay đổi lịch.',
-  COURSE_SCHEDULE_CHANGE_RESPONSE_CONFLICT: 'Bạn đã gửi phản hồi khác cho thay đổi này.',
 
   COURSE_IDEMPOTENCY_KEY_REQUIRED: 'Thiếu mã xác nhận thao tác. Vui lòng thử lại.',
   COURSE_IDEMPOTENCY_KEY_REUSED: 'Yêu cầu này đã được xử lý. Vui lòng tải lại trang.',

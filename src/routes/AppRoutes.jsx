@@ -1,5 +1,3 @@
-import ManagerCourseApprovalsPage from '../pages/manager/courses/ManagerCourseApprovalsPage';
-import CoachCourseSessionsPage from '../pages/coach/courses/CoachCourseSessionsPage';
 // Centralized route table. Keeping routes here makes it easy to grep for
 // "where is /login wired up" and to enforce the role-route pairing.
 
@@ -18,6 +16,8 @@ import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfi
 import { useAuth } from '../context/useAuth';
 
 // Public pages
+const ManagerCourseApprovalsPage = lazy(() => import('../pages/manager/courses/ManagerCourseApprovalsPage'));
+const CoachCourseSessionsPage = lazy(() => import('../pages/coach/courses/CoachCourseSessionsPage'));
 const HomePage = lazy(() => import('../pages/public/home/HomePage'));
 const LoginPage = lazy(() => import('../pages/public/login/LoginPage'));
 const RegisterPage = lazy(() => import('../pages/public/register/RegisterPage'));
