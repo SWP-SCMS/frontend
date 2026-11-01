@@ -309,6 +309,7 @@ const ClassEditPage = lazy(
 );
 
 // Manager – Course booking administration
+const ManagerCourseReportPage = lazy(() => import('../pages/manager/courses/ManagerCourseReportPage'));
 const ManagerCoursesPage = lazy(
   () => import('../pages/manager/courses/ManagerCoursesPage'),
 );
@@ -790,6 +791,7 @@ export default function AppRoutes() {
           element={withSuspense(<SessionAssignmentEditPage />)}
         />
         <Route path="reports" element={withSuspense(<ManagerReportsPage />)} />
+        <Route path="reports/courses" element={withSuspense(<ManagerCourseReportPage />)} />
         <Route path="reports/revenue" element={withSuspense(<RevenueReportPage />)} />
         <Route path="audit-events" element={withSuspense(<AuditHistoryPage />)} />
         <Route path="profile" element={withSuspense(<StaffProfilePage />)} />

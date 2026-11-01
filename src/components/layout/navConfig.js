@@ -93,6 +93,7 @@ export const APP_SHELL_NAV_ITEMS = {
       label: 'Theo dõi hệ thống',
       items: [
         { to: '/manager/reports', label: 'Báo cáo chi tiết' },
+        { to: '/manager/reports/courses', label: 'Báo cáo khóa học' },
         { to: '/manager/audit-events', label: 'Lịch sử hoạt động' },
         { to: '/manager/profile', label: 'Hồ sơ cá nhân' },
       ],
