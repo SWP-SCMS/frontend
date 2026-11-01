@@ -84,6 +84,12 @@ export function formatCourseDateTime(value) {
 }
 
 const COURSE_ERROR_MESSAGES = {
+  COURSE_APPROVAL_ALREADY_DECIDED: 'Khóa học đã được xử lý. Vui lòng tải lại hàng chờ.',
+  COURSE_SCHEDULE_CHANGE_RESPONSE_CLOSED: 'Đã hết thời hạn phản hồi hoặc thay đổi không còn khả dụng.',
+  COURSE_SCHEDULE_CHANGE_RESPONSE_CONFLICT: 'Bạn đã gửi phản hồi khác. Vui lòng tải lại dữ liệu.',
+  COURSE_SCHEDULE_CHANGE_DEADLINE_UNAVAILABLE: 'Lịch mới không còn đủ thời gian để hội viên phản hồi.',
+  COURSE_SESSION_DISRUPTION_CONFLICT: 'Buổi học không còn cho phép hủy hoặc xếp bù. Vui lòng tải lại lịch.',
+
   COURSE_REFUND_INVALID: 'Thông tin hoàn tiền chưa hợp lệ. Kiểm tra lý do, số tiền và chứng từ.',
   COURSE_REFUND_NOT_FOUND: 'Không tìm thấy khoản hoàn tiền khả dụng. Vui lòng tải lại hàng chờ.',
   COURSE_REFUND_CHANGED: 'Khoản hoàn vừa được cập nhật. Tải lại hồ sơ trước khi xử lý tiếp.',

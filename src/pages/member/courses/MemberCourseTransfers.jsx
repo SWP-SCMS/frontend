@@ -68,8 +68,8 @@ export default function MemberCourseTransfers({ enrollments, onTransferred }) {
     {loading ? <p>Đang tải…</p> : !error && <>
       {!offers.length && <p>Chưa có đề nghị chuyển đợt học.</p>}
       {offers.map((offer) => <article key={offer.id} className="member-course-card mt-3">
-        <h3>{sourceNames.get(offer.sourceEnrollmentId) || 'Đăng ký khóa học của bạn'}</h3>
-        {runNames.has(offer.targetRunId) && <p>Đợt học thay thế: {runNames.get(offer.targetRunId)}</p>}
+        <h3>{(offer.sourceCourseName ? offer.sourceCourseName + ' · ' + offer.sourceRunCode : sourceNames.get(offer.sourceEnrollmentId)) || 'Đăng ký khóa học của bạn'}</h3>
+        <p>Đợt học thay thế: {offer.targetCourseName ? offer.targetCourseName + ' · ' + offer.targetRunCode : runNames.get(offer.targetRunId) || 'Chưa có thông tin'}</p>
         <p>{COURSE_TRANSFER_STATUS_LABELS[offer.status] || 'Đang cập nhật'} · Hạn chấp nhận/thanh toán: {formatCourseDateTime(offer.expiresAt)}</p>
         <dl><dt>Giá trị được chuyển</dt><dd>{formatCourseMoney(offer.creditVnd)}</dd><dt>Học phí đợt mới</dt><dd>{formatCourseMoney(offer.targetTuitionVnd)}</dd><dt>Chênh lệch theo đề nghị</dt><dd>{formatCourseMoney(offer.differenceVnd)}</dd></dl>
         {canAcceptCourseTransfer(offer, now) && <Button disabled={busy} onClick={() => setSelected(offer)}>Xem đợt thay thế và chấp nhận</Button>}

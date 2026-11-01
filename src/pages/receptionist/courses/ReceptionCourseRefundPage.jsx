@@ -24,7 +24,7 @@ function RefundSummary({ item }) {
 
 function DisbursementForm({ item, onDone, onBusy }) {
   const lock = useRef(false);
-  const attempt = useRef(null);
+  const [attempt, setAttempt] = useState(null);
   const [attempted, setAttempted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -34,16 +34,17 @@ function DisbursementForm({ item, onDone, onBusy }) {
     if (lock.current || !valid) return;
     lock.current = true; setBusy(true); onBusy(true); setError('');
     // Freeze the payload with its key: a retry must repeat the same operation.
-    attempt.current ||= { key: createCourseIdempotencyKey('course-refund'), payload: { expectedVersion: item.version, amountVnd: courseAmountText(item.amount), method: values.method, reference: values.reference, evidenceReference: values.evidenceReference } };
+    const currentAttempt = attempt || { key: createCourseIdempotencyKey('course-refund'), payload: { expectedVersion: item.version, amountVnd: courseAmountText(item.amount), method: values.method, reference: values.reference, evidenceReference: values.evidenceReference } };
+    setAttempt(currentAttempt);
     setAttempted(true);
     try {
-      await disburseCourseRefund(item.refundId, attempt.current.payload, attempt.current.key);
+      await disburseCourseRefund(item.refundId, currentAttempt.payload, currentAttempt.key);
       onDone();
     } catch (err) { setError(getCourseErrorMessage(err, 'Chưa xác nhận được khoản chi. Thử lại giữ nguyên thông tin hoặc tải lại hồ sơ để kiểm tra.')); }
     finally { lock.current = false; setBusy(false); onBusy(false); }
   }
   if (!valid) return <Alert variant="warning" className="mt-3">Khoản này chưa đủ điều kiện hoặc thiếu dữ liệu để ghi nhận chi.</Alert>;
-  return <Form noValidate onSubmit={handleSubmit(submit)} className="mt-3">
+  return <Form noValidate onSubmit={(event) => handleSubmit(submit)(event)} className="mt-3">
     {error && <Alert variant="danger">{error}</Alert>}
     <fieldset disabled={busy || attempted}>
       <Form.Group controlId="refund-method"><Form.Label>Phương thức đã chi</Form.Label><Form.Select {...register('method')}><option value="CASH">Tiền mặt</option><option value="BANK_TRANSFER">Chuyển khoản</option></Form.Select></Form.Group>
