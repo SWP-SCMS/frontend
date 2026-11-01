@@ -80,7 +80,6 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/manager/course-runs', label: 'Đợt mở khóa học' },
         { to: '/manager/course-withdrawals', label: 'Rút khóa học' },
         { to: '/manager/course-transfers', label: 'Chuyển đợt học' },
-        { to: '/manager/course-approvals', label: 'Duyệt khóa học' },
         { to: '/manager/course-refunds', label: 'Hoàn tiền khóa học' },
       ],
     },

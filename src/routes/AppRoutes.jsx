@@ -16,7 +16,6 @@ import { APP_SHELL_NAV_ITEMS, STAFF_LABELS } from '../components/layout/navConfi
 import { useAuth } from '../context/useAuth';
 
 // Public pages
-const ManagerCourseApprovalsPage = lazy(() => import('../pages/manager/courses/ManagerCourseApprovalsPage'));
 const CoachCourseSessionsPage = lazy(() => import('../pages/coach/courses/CoachCourseSessionsPage'));
 const HomePage = lazy(() => import('../pages/public/home/HomePage'));
 const LoginPage = lazy(() => import('../pages/public/login/LoginPage'));
@@ -776,7 +775,6 @@ export default function AppRoutes() {
         <Route path="courses" element={withSuspense(<ManagerCoursesPage />)} />
         <Route path="course-withdrawals" element={withSuspense(<ManagerCourseWorkflowPage key="withdrawals" kind="withdrawals" />)} />
         <Route path="course-transfers" element={withSuspense(<ManagerCourseWorkflowPage key="transfers" kind="transfers" />)} />
-        <Route path="course-approvals" element={withSuspense(<ManagerCourseApprovalsPage />)} />
         <Route path="course-refunds" element={withSuspense(<ManagerCourseWorkflowPage key="refunds" kind="refunds" />)} />
         <Route path="courses/:courseId" element={withSuspense(<ManagerCourseDetailPage />)} />
         <Route path="course-runs" element={withSuspense(<ManagerCourseRunsPage />)} />
