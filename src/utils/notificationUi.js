@@ -1,4 +1,10 @@
 const TYPE_LABELS = {
+  COURSE_REFUND_DISBURSED: 'Đã ghi nhận chi tiền hoàn khóa học, chờ xác minh',
+  COURSE_REFUND_VERIFICATION_READY: 'Có khoản hoàn khóa học chờ xác minh',
+  COURSE_REFUND_COMPLETED: 'Khoản hoàn khóa học đã được xác minh hoàn tất',
+  COURSE_REFUND_FAILED: 'Xử lý khoản hoàn khóa học thất bại',
+  COURSE_REFUND_RETURNED: 'Khoản chi hoàn khóa học đã được trả lại',
+
   COURSE_WITHDRAWAL_REQUESTED: 'Đã tạo yêu cầu rút khóa học của bạn',
   COURSE_WITHDRAWAL_REVIEW_REQUIRED: 'Có yêu cầu rút khóa học cần duyệt',
   COURSE_WITHDRAWAL_APPROVED: 'Yêu cầu rút khóa học đã được duyệt',
