@@ -1,5 +1,7 @@
 export const COURSE_STATUS_LABELS = {
   DRAFT: 'Bản nháp',
+  PENDING_APPROVAL: 'Chờ duyệt',
+  REJECTED: 'Đã từ chối',
   PUBLISHED: 'Đã công bố',
   INACTIVE: 'Ngừng hoạt động',
   ARCHIVED: 'Đã lưu trữ',
@@ -23,6 +25,7 @@ export const COURSE_REGISTRATION_STATUS_LABELS = {
 
 export const COURSE_SESSION_STATUS_LABELS = {
   SCHEDULED: 'Đã lên lịch',
+  CANCELLED: 'Đã hủy',
   CANCELLED_PENDING_MAKEUP: 'Đã hủy, chờ học bù',
   MAKEUP_SCHEDULED: 'Đã xếp lịch học bù',
   COMPLETED: 'Đã hoàn thành',

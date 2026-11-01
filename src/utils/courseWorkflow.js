@@ -20,7 +20,7 @@ export const COURSE_TRANSFER_REQUEST_STATUS_LABELS = {
 };
 
 export const COURSE_WITHDRAWAL_STATUS_LABELS = { PENDING: 'Chờ duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối' };
-export const COURSE_RESPONSE_LABELS = { CONTINUE: 'Tiếp tục học', REQUEST_TRANSFER: 'Đề nghị chuyển đợt học', REQUEST_WITHDRAWAL: 'Đề nghị hỗ trợ rút do đổi lịch' };
+export const COURSE_RESPONSE_LABELS = { CONTINUE: 'Tiếp tục học', REQUEST_TRANSFER: 'Đề nghị chuyển đợt học', REQUEST_WITHDRAWAL: 'Yêu cầu rút do đổi lịch' };
 export const COURSE_ELIGIBILITY_LABELS = { ELIGIBLE: 'Đủ điều kiện chi', AWAITING_COURSE_COMPLETION: 'Chờ đợt học hoàn thành', COURSE_RUN_NOT_FOUND: 'Không tìm thấy đợt học' };
 
 export function courseRefundActions(status) {
@@ -46,12 +46,12 @@ export function courseAmountText(value) {
 }
 
 export function courseMakeupIds(sessions) {
-  return new Set(sessions.map((session) => session.replacementSessionId).filter(Boolean));
+  return new Set(sessions.flatMap((session) => [session.replacementSessionId, session.isMakeup ? session.id : null]).filter(Boolean));
 }
 
 export function courseScheduleEntries(enrollments) {
-  return enrollments.filter((item) => ['ACTIVE', 'WITHDRAWAL_PENDING'].includes(item.lifecycleStatus))
-    .flatMap((item) => (item.sessions || []).filter((session) => session.disposition === 'ENROLLED').map((session) => ({
+  return enrollments.filter((item) => ['ACTIVE', 'WITHDRAWAL_PENDING'].includes(item.lifecycleStatus) && item.courseRunStatus !== 'CANCELLED')
+    .flatMap((item) => (item.sessions || []).filter((session) => session.disposition === 'ENROLLED' && (!session.sessionStatus || ['SCHEDULED', 'MAKEUP_SCHEDULED', 'COMPLETED'].includes(session.sessionStatus))).map((session) => ({
       ...session,
       id: 'course-' + session.enrollmentSessionId,
       bookingId: 'course-' + session.enrollmentSessionId,

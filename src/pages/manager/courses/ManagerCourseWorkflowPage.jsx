@@ -3,8 +3,6 @@ import { Alert, Badge, Button, Card, Form, Modal, Table } from 'react-bootstrap'
 import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getMemberAccount } from '../../../services/memberAccountService';
-import { getManagerCourseRun } from '../../../services/courseAdminService';
 import {
   listCourseWithdrawals, getCourseWithdrawal, decideCourseWithdrawal,
   listCourseTransfers, listCourseTransferTargets, decideCourseTransfer,
@@ -101,10 +99,9 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
         : kind === 'withdrawals' ? await getCourseWithdrawal(selectedId)
           : (await listCourseTransfers()).find((entry) => entry.id === selectedId);
       if (!item) throw new Error('Request unavailable');
-      const [member, run, targetRun] = await Promise.all([
-        getMemberAccount(item.memberAccountId), getManagerCourseRun(item.courseRunId || item.sourceRunId),
-        item.targetRunId ? getManagerCourseRun(item.targetRunId) : Promise.resolve(null),
-      ]);
+      const member = { fullName: item.memberName || 'Hội viên', memberCode: item.memberCode };
+      const run = { id: item.courseRunId || item.sourceRunId, courseName: item.courseName || item.sourceCourseName, runCode: item.runCode || item.sourceRunCode };
+      const targetRun = item.targetRunId ? { id: item.targetRunId, courseName: item.targetCourseName, runCode: item.targetRunCode } : null;
       if (sequence !== detailSequence.current) return;
       setDetail(item); setContext({ member, run, targetRun });
     } catch (err) {
@@ -175,7 +172,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
         {detailError && <Alert variant="danger">{detailError}</Alert>}
         <Button size="sm" variant="outline-secondary" className="mb-3" disabled={detailLoading || busy} onClick={loadDetail}>Tải lại hồ sơ</Button>
         {detailLoading ? <p>Đang tải hồ sơ…</p> : detail && context && <>
-          <h2 className="h5">{context.member.fullName} · {context.member.memberCode || context.member.memberId || 'Hội viên'}</h2>
+          <h2 className="h5">{context.member.fullName} · {context.member.memberCode || 'Chưa có mã hội viên'}</h2>
           <p><Link to={'/manager/members/' + detail.memberAccountId}>Hồ sơ hội viên</Link> · <Link to={'/manager/course-runs/' + context.run.id}>{context.run.courseName} · {context.run.runCode}</Link></p>
           {context.targetRun && <p>Đợt học thay thế: <Link to={'/manager/course-runs/' + context.targetRun.id}>{context.targetRun.courseName} · {context.targetRun.runCode}</Link></p>}
           <Badge bg="secondary" className="mb-3">{labels[kind][detail.status] || 'Đang cập nhật'}</Badge>
