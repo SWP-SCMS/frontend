@@ -1,4 +1,25 @@
 const TYPE_LABELS = {
+  COURSE_REFUND_DISBURSED: 'Đã ghi nhận chi tiền hoàn khóa học, chờ xác minh',
+  COURSE_REFUND_VERIFICATION_READY: 'Có khoản hoàn khóa học chờ xác minh',
+  COURSE_REFUND_COMPLETED: 'Khoản hoàn khóa học đã được xác minh hoàn tất',
+  COURSE_REFUND_FAILED: 'Xử lý khoản hoàn khóa học thất bại',
+  COURSE_REFUND_RETURNED: 'Khoản chi hoàn khóa học đã được trả lại',
+
+  COURSE_WITHDRAWAL_REQUESTED: 'Đã tạo yêu cầu rút khóa học của bạn',
+  COURSE_WITHDRAWAL_REVIEW_REQUIRED: 'Có yêu cầu rút khóa học cần duyệt',
+  COURSE_WITHDRAWAL_APPROVED: 'Yêu cầu rút khóa học đã được duyệt',
+  COURSE_WITHDRAWAL_REJECTED: 'Yêu cầu rút khóa học đã bị từ chối',
+  COURSE_REFUND_APPROVED: 'Nghĩa vụ hoàn tiền khóa học đã được duyệt, chưa xác nhận chi tiền',
+  COURSE_REFUND_REJECTED: 'Nghĩa vụ hoàn tiền khóa học đã bị từ chối',
+
+  COURSE_WAITLIST_INVITED: 'Đã có chỗ trống cho khóa học bạn đang chờ',
+  COURSE_WAITLIST_CANCELLED: 'Danh sách chờ khóa học đã bị hủy',
+  COURSE_SCHEDULE_CHANGED: 'Lịch khóa học đã thay đổi',
+  COURSE_SESSION_CANCELLED: 'Buổi học khóa đã hủy, chờ xếp bù',
+  COURSE_SESSION_MAKEUP_SCHEDULED: 'Đã xếp buổi học bù cho khóa học',
+  COURSE_RUN_CONFIRMED: 'Đợt khóa học đã được xác nhận mở',
+  COURSE_RUN_CANCELLED: 'Đợt khóa học đã bị hủy',
+
   BOOKING_CREATED: 'Đặt lịch tập thành công',
   BOOKING_CANCELLED: 'Lịch đặt đã bị hủy',
   SESSION_CANCELLED: 'Buổi tập đã bị hủy',
@@ -52,7 +73,6 @@ const TYPE_LABELS = {
   MEMBERSHIP_REFUND_CASH_DISBURSED: 'Đã ghi nhận giao tiền hoàn',
   MEMBERSHIP_REFUND_COMPLETED: 'Yêu cầu hoàn tiền đã hoàn tất',
   MEMBERSHIP_REFUND_REJECTED: 'Yêu cầu hoàn tiền bị từ chối',
-  MANUAL_ACTIVATION_REVIEW_REQUIRED: 'Có yêu cầu kích hoạt tài khoản cần duyệt',
 };
 
 const REASON_LABELS = {
@@ -76,6 +96,7 @@ export function humanize(value) {
 
 export function notificationSummary(item) {
   const payload = item?.payload || {};
+  if (item?.notificationType?.startsWith('COURSE_')) return TYPE_LABELS[item.notificationType] || 'Có cập nhật về khóa học';
   return payload.message || TYPE_LABELS[item?.notificationType] ||
     humanize(item?.notificationType) || 'Thông báo hệ thống';
 }

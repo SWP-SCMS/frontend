@@ -25,6 +25,17 @@ const ForgotPasswordPage = lazy(
 );
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
+const ReceptionCourseBookingPage = lazy(() => import('../pages/receptionist/courses/ReceptionCourseBookingPage'));
+
+const CourseCatalogPage = lazy(
+  () => import('../pages/public/courses/CourseCatalogPage'),
+);
+const CourseDetailPage = lazy(
+  () => import('../pages/public/courses/CourseDetailPage'),
+);
+const CourseRunDetailPage = lazy(
+  () => import('../pages/public/courses/CourseRunDetailPage'),
+);
 const NotFoundPage = lazy(() => import('../pages/public/notFound/NotFoundPage'));
 const ForbiddenPage = lazy(() => import('../pages/public/forbidden/ForbiddenPage'));
 
@@ -63,6 +74,12 @@ const MembershipRequestsPage = lazy(
 // Member – thanh toán gói tập (chuyển khoản SePay)
 const MemberCheckoutPage = lazy(
   () => import('../pages/member/checkout/MemberCheckoutPage'),
+);
+const MemberCoursesPage = lazy(
+  () => import('../pages/member/courses/MemberCoursesPage'),
+);
+const MemberCourseRegistrationPage = lazy(
+  () => import('../pages/member/courses/MemberCourseRegistrationPage'),
 );
 
 // Member – View Class Schedule (US32)
@@ -291,6 +308,21 @@ const ClassEditPage = lazy(
   () => import('../pages/manager/classes/ClassEditPage'),
 );
 
+// Manager – Course booking administration
+const ManagerCourseReportPage = lazy(() => import('../pages/manager/courses/ManagerCourseReportPage'));
+const ManagerCoursesPage = lazy(
+  () => import('../pages/manager/courses/ManagerCoursesPage'),
+);
+const ManagerCourseDetailPage = lazy(
+  () => import('../pages/manager/courses/ManagerCourseDetailPage'),
+);
+const ManagerCourseRunsPage = lazy(
+  () => import('../pages/manager/courses/ManagerCourseRunsPage'),
+);
+const ManagerCourseRunDetailPage = lazy(
+  () => import('../pages/manager/courses/ManagerCourseRunDetailPage'),
+);
+
 // Manager – Room management (US25)
 const RoomListPage = lazy(
   () => import('../pages/manager/rooms/RoomListPage'),
@@ -393,6 +425,15 @@ export default function AppRoutes() {
         path="/offers/:offerId"
         element={withSuspense(<OfferDetailPage />)}
       />
+      <Route path="/courses" element={withSuspense(<CourseCatalogPage />)} />
+      <Route
+        path="/courses/:courseId"
+        element={withSuspense(<CourseDetailPage />)}
+      />
+      <Route
+        path="/course-runs/:runId"
+        element={withSuspense(<CourseRunDetailPage />)}
+      />
 
       {/* ---------- Member ---------- */}
       <Route
@@ -448,6 +489,30 @@ export default function AppRoutes() {
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
                 {withSuspense(<MemberCheckoutPage />)}
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/courses"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<MemberCoursesPage />)}
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/courses/:runId/register"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<MemberCourseRegistrationPage />)}
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
@@ -524,12 +589,7 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
-                <MemberBenefitRouteGuard
-                  benefitCode="CLASS_BOOKING"
-                  serviceName="Lịch lớp của tôi"
-                >
-                  <MemberClassSchedulePage />
-                </MemberBenefitRouteGuard>
+                <MemberClassSchedulePage />
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>
@@ -596,6 +656,7 @@ export default function AppRoutes() {
         <Route path="membership-offers" element={withSuspense(<ReceptionistMembershipOfferListPage />)} />
         <Route path="membership-requests" element={withSuspense(<MembershipRequestDeskPage />)} />
         <Route path="orders/new" element={withSuspense(<CashPaymentPage />)} />
+        <Route path="courses" element={withSuspense(<ReceptionCourseBookingPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
         <Route path="payments/cash" element={withSuspense(<CashPaymentPage />)} />
         <Route path="refunds" element={withSuspense(<RefundRequestDeskPage />)} />
@@ -706,6 +767,10 @@ export default function AppRoutes() {
         <Route path="classes/new" element={withSuspense(<ClassCreatePage />)} />
         <Route path="classes/:classId" element={withSuspense(<ClassDetailPage />)} />
         <Route path="classes/:classId/edit" element={withSuspense(<ClassEditPage />)} />
+        <Route path="courses" element={withSuspense(<ManagerCoursesPage />)} />
+        <Route path="courses/:courseId" element={withSuspense(<ManagerCourseDetailPage />)} />
+        <Route path="course-runs" element={withSuspense(<ManagerCourseRunsPage />)} />
+        <Route path="course-runs/:runId" element={withSuspense(<ManagerCourseRunDetailPage />)} />
         <Route path="rooms" element={withSuspense(<RoomListPage />)} />
         <Route path="rooms/new" element={withSuspense(<RoomCreatePage />)} />
         <Route path="rooms/:roomId" element={withSuspense(<RoomDetailPage />)} />
@@ -726,6 +791,7 @@ export default function AppRoutes() {
           element={withSuspense(<SessionAssignmentEditPage />)}
         />
         <Route path="reports" element={withSuspense(<ManagerReportsPage />)} />
+        <Route path="reports/courses" element={withSuspense(<ManagerCourseReportPage />)} />
         <Route path="reports/revenue" element={withSuspense(<RevenueReportPage />)} />
         <Route path="audit-events" element={withSuspense(<AuditHistoryPage />)} />
         <Route path="profile" element={withSuspense(<StaffProfilePage />)} />

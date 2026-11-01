@@ -51,6 +51,9 @@ export default function PublicHeader({ active = 'home' }) {
         <Link to="/offers" className={active === 'offers' ? 'active' : ''}>
           Gói tập
         </Link>
+        <Link to="/courses" className={active === 'courses' ? 'active' : ''}>
+          Khóa học
+        </Link>
       </nav>
 
       <div className="scms-home-actions">

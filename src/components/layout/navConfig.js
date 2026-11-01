@@ -30,6 +30,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/reception/membership-offers', label: 'Gói tập' },
         { to: '/reception/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/reception/orders/new', label: 'Tạo đơn gói tập' },
+        { to: '/reception/courses', label: 'Đăng ký khóa học' },
         { to: '/reception/payments/reconcile', label: 'Đối soát' },
         { to: '/reception/refunds', label: 'Hoàn tiền' },
       ],
@@ -72,6 +73,13 @@ export const APP_SHELL_NAV_ITEMS = {
       ],
     },
     {
+      label: 'Khóa học',
+      items: [
+        { to: '/manager/courses', label: 'Danh mục khóa học' },
+        { to: '/manager/course-runs', label: 'Đợt mở khóa học' },
+      ],
+    },
+    {
       label: 'Kinh doanh',
       items: [
         { to: '/manager/membership-plans', label: 'Loại gói & quyền lợi' },
@@ -85,6 +93,7 @@ export const APP_SHELL_NAV_ITEMS = {
       label: 'Theo dõi hệ thống',
       items: [
         { to: '/manager/reports', label: 'Báo cáo chi tiết' },
+        { to: '/manager/reports/courses', label: 'Báo cáo khóa học' },
         { to: '/manager/audit-events', label: 'Lịch sử hoạt động' },
         { to: '/manager/profile', label: 'Hồ sơ cá nhân' },
       ],
@@ -131,7 +140,6 @@ export const MEMBER_SIDEBAR_ITEMS = [
         to: '/member/class-sessions',
         label: 'Lịch của tôi',
         icon: 'calendar',
-        requiredBenefit: 'CLASS_BOOKING',
       },
     ],
   },
@@ -162,6 +170,13 @@ export const MEMBER_SIDEBAR_ITEMS = [
         icon: 'profile',
         requiredBenefit: 'TRAINING_FEEDBACK',
       },
+    ],
+  },
+  {
+    label: 'Khóa học',
+    items: [
+      { to: '/courses', label: 'Khám phá khóa học', icon: 'clipboard' },
+      { to: '/member/courses', label: 'Khóa học của tôi', icon: 'calendar' },
     ],
   },
   {
