@@ -1,3 +1,4 @@
+import CoachCourseSessionsPage from '../pages/coach/courses/CoachCourseSessionsPage';
 // Centralized route table. Keeping routes here makes it easy to grep for
 // "where is /login wired up" and to enforce the role-route pairing.
 
@@ -694,6 +695,7 @@ export default function AppRoutes() {
         <Route index element={<Navigate to="/coach/dashboard" replace />} />
         <Route path="dashboard" element={withSuspense(<CoachDashboardPage />)} />
         <Route path="schedule" element={withSuspense(<CoachSchedulePage />)} />
+        <Route path="course-sessions" element={withSuspense(<CoachCourseSessionsPage />)} />
         <Route path="leave-requests" element={withSuspense(<CoachLeaveRequestsPage />)} />
         <Route
           path="schedule/:sessionId"

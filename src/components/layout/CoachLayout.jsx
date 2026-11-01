@@ -25,6 +25,7 @@ const COACH_SIDEBAR_ITEMS = [
   {
     label: 'Công việc',
     items: [
+      { to: '/coach/course-sessions', label: 'Buổi khóa học', icon: 'calendar' },
       { to: '/coach/schedule', label: 'Lịch phụ trách', icon: 'calendar' },
       { to: '/coach/leave-requests', label: 'Yêu cầu nghỉ', icon: 'clipboard' },
       { to: '/coach/members', label: 'Hội viên được phân công', icon: 'profile' },
