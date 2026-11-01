@@ -1,3 +1,4 @@
+import ReceptionCourseWithdrawals from './ReceptionCourseWithdrawals';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseMemberSearchSchema } from '../../../schemas/courseSchemas';
@@ -106,6 +107,7 @@ export default function ReceptionCourseBookingPage() {
         <Button type="submit" disabled={busy || !!order}>Tra cứu</Button>
       </Form>
       {member && <p className="mt-3">{member.fullName} · {member.memberId} · {member.phone}</p>}
+      {member && <ReceptionCourseWithdrawals key={member.accountId} member={member} />}
       {member && member.status !== 'ACTIVE' && <Alert variant="warning">Hội viên chưa ở trạng thái hoạt động.</Alert>}
     </Card.Body></Card>
     {!order && <Card className="mb-3"><Card.Body>

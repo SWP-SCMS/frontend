@@ -73,3 +73,6 @@ export async function disburseCourseRefund(id, payload, key) {
   const { data } = await api.post(`/reception/course-refund-obligations/${id}/disburse`, payload, courseIdempotencyConfig(key));
   return data;
 }
+
+export async function listReceptionCourseEnrollments(memberId, page = 0) { return (await api.get(`/reception/members/${memberId}/course-enrollments`, { params: { page, size: 20 } })).data; }
+export async function requestReceptionCourseWithdrawal(memberId, enrollmentId, reason) { return (await api.post(`/reception/members/${memberId}/course-enrollments/${enrollmentId}/withdrawal-requests`, { reason })).data; }
