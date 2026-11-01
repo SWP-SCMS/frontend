@@ -11,6 +11,7 @@
 import { Dropdown } from 'react-bootstrap';
 import StaffIcon from './StaffIcon';
 import NotificationBellContent from './NotificationBellContent';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function StaffHeader({
   user,
@@ -27,7 +28,7 @@ export default function StaffHeader({
   return (
     <header className="scms-sd-header">
       <nav className="scms-sd-topnav">
-        <Dropdown align="start">
+        <NotificationDropdown align="start">
           <Dropdown.Toggle
             as="button"
             type="button"
@@ -49,7 +50,7 @@ export default function StaffHeader({
               classPrefix="scms-sd"
             />
           </Dropdown.Menu>
-        </Dropdown>
+        </NotificationDropdown>
       </nav>
 
       <div className="scms-sd-user">

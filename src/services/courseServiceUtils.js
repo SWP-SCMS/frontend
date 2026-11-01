@@ -24,5 +24,7 @@ export function normalizeCoursePage(data) {
   return {
     ...data,
     content: Array.isArray(data?.content) ? data.content : [],
+    last: typeof data?.last === 'boolean' ? data.last
+      : Number.isInteger(data?.totalPages) ? (data?.page || 0) + 1 >= data.totalPages : true,
   };
 }

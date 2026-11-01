@@ -48,3 +48,4 @@
 .member-course-complete .member-course-primary-link { margin-top: .75rem; }
 .member-course-complete.is-expired { color: #8b302c; }
 @media (max-width: 900px) { .member-course-registration-grid { grid-template-columns: 1fr; } }
+.member-course-section[id] { scroll-margin-top: 100px; }

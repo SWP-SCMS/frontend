@@ -83,13 +83,14 @@ export default function OpenCenterVisitsPage() {
       ) : (
         <div className="table-responsive">
           <Table hover className="align-middle bg-white shadow-sm">
-            <thead><tr><th>Hội viên</th><th>Check-in lúc</th><th className="text-end">Thao tác</th></tr></thead>
+            <thead><tr><th>Hội viên</th><th>Quyền vào trung tâm</th><th>Check-in lúc</th><th className="text-end">Thao tác</th></tr></thead>
             <tbody>{rows.map((visit) => (
               <tr key={visit.id}>
                 <td>
                   <div className="fw-semibold">{visit.memberName || 'Chưa có tên hội viên'}</div>
                   {visit.memberCode ? <Link className="small" to={`/reception/members/${encodeURIComponent(visit.memberCode)}`}>{visit.memberCode}</Link> : <span className="small text-muted">Chưa có mã hội viên</span>}
                 </td>
+                <td>{visit.source === 'COURSE' ? 'Buổi khóa học' : visit.source === 'MEMBERSHIP' ? 'Gói tập' : 'Chưa có thông tin'}</td>
                 <td>{formatGymDate(visit.checkedInAt)} · {formatGymTime(visit.checkedInAt)}</td>
                 <td className="text-end"><Button size="sm" variant="outline-danger" onClick={() => openCheckout(visit)}>Checkout</Button></td>
               </tr>

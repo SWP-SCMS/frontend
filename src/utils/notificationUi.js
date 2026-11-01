@@ -1,4 +1,11 @@
 const TYPE_LABELS = {
+  COURSE_TRANSFER_REQUESTED: 'Có yêu cầu chuyển đợt học cần duyệt',
+  COURSE_TRANSFER_OFFERED: 'Bạn có đề nghị chuyển đợt học cần chấp nhận',
+  COURSE_TRANSFER_REJECTED: 'Yêu cầu chuyển đợt học đã bị từ chối',
+  COURSE_TRANSFER_COMPLETED: 'Đã hoàn tất chuyển đợt học',
+  COURSE_TRANSFER_EXPIRED: 'Đề nghị chuyển đợt học đã hết hạn',
+  COURSE_PAYMENT_PAID: 'Đã ghi nhận thanh toán khóa học',
+  COURSE_RUN_SETTLEMENT_PENDING: 'Đợt học đang chờ quyết toán',
   COURSE_REFUND_DISBURSED: 'Đã ghi nhận chi tiền hoàn khóa học, chờ xác minh',
   COURSE_REFUND_VERIFICATION_READY: 'Có khoản hoàn khóa học chờ xác minh',
   COURSE_REFUND_COMPLETED: 'Khoản hoàn khóa học đã được xác minh hoàn tất',

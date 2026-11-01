@@ -10,6 +10,17 @@ import { listAuditEvents } from '../../../services/auditService';
 import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 
 const ACTION_LABELS = {
+  COURSE_CREATED: 'Tạo khóa học', COURSE_UPDATED: 'Cập nhật khóa học', COURSE_PUBLISHED: 'Công khai khóa học',
+  COURSE_DEACTIVATED: 'Ngừng hoạt động khóa học', COURSE_ARCHIVED: 'Lưu trữ khóa học',
+  COURSE_RUN_CREATED: 'Tạo đợt học', COURSE_RUN_UPDATED: 'Cập nhật đợt học', COURSE_RUN_OPENED: 'Mở đăng ký đợt học',
+  COURSE_RUN_CANCELLED: 'Hủy đợt học', COURSE_RUN_CONFIRMED: 'Xác nhận mở lớp', COURSE_RUN_SETTLEMENT_PENDING: 'Đợt học chờ quyết toán',
+  COURSE_SESSION_CREATED: 'Tạo buổi khóa học', COURSE_SESSION_RESCHEDULED: 'Đổi lịch buổi khóa học',
+  COURSE_SESSION_CANCELLED: 'Hủy buổi khóa học', COURSE_SESSION_MAKEUP_SCHEDULED: 'Xếp buổi học bù',
+  COURSE_ORDER_CREATED: 'Tạo đơn khóa học', COURSE_PAYMENT_PAID: 'Thanh toán khóa học', COURSE_ENROLLMENT_CREATED: 'Ghi danh khóa học',
+  COURSE_WITHDRAWAL_REQUESTED: 'Yêu cầu rút khóa học', COURSE_WITHDRAWAL_APPROVED: 'Duyệt rút khóa học', COURSE_WITHDRAWAL_REJECTED: 'Từ chối rút khóa học',
+  COURSE_TRANSFER_REQUESTED: 'Yêu cầu chuyển đợt học', COURSE_TRANSFER_APPROVED: 'Duyệt chuyển đợt học', COURSE_TRANSFER_REJECTED: 'Từ chối chuyển đợt học', COURSE_TRANSFER_COMPLETED: 'Hoàn tất chuyển đợt học',
+  COURSE_REFUND_APPROVED: 'Duyệt hoàn tiền khóa học', COURSE_REFUND_REJECTED: 'Từ chối hoàn tiền khóa học',
+  COURSE_REFUND_DISBURSED: 'Ghi nhận chi hoàn tiền khóa học', COURSE_REFUND_VERIFIED: 'Xác minh hoàn tiền khóa học', COURSE_REFUND_FAILED: 'Hoàn tiền khóa học thất bại', COURSE_REFUND_RETURNED: 'Tiền hoàn khóa học bị trả lại',
   ACCOUNT_ACTIVATED: 'Kích hoạt tài khoản',
   ACCOUNT_ACTIVATED_MANUALLY: 'Kích hoạt tài khoản tại quầy',
   ACCOUNT_CREATED: 'Tạo tài khoản',
@@ -104,6 +115,9 @@ const ACTION_LABELS = {
 };
 
 const TARGET_LABELS = {
+  COURSE: 'Khóa học', COURSE_RUN: 'Đợt học', COURSE_SESSION: 'Buổi khóa học', COURSE_ORDER: 'Đơn khóa học',
+  COURSE_ENROLLMENT: 'Đăng ký khóa học', COURSE_REFUND_OBLIGATION: 'Khoản hoàn khóa học',
+  COURSE_WITHDRAWAL_REQUEST: 'Yêu cầu rút khóa học', COURSE_TRANSFER_REQUEST: 'Yêu cầu chuyển đợt học', COURSE_TRANSFER_OFFER: 'Đề nghị chuyển đợt học',
   DISCIPLINE: 'Bộ môn',
   MANUAL_ACTIVATION_REQUEST: 'Yêu cầu kích hoạt tài khoản',
   ATTENDANCE: 'Lượt điểm danh',
@@ -143,6 +157,13 @@ const ROLE_LABELS = {
 };
 
 const FIELD_LABELS = {
+  code: 'Mã', runCode: 'Mã đợt học', courseCode: 'Mã khóa học', courseName: 'Tên khóa học',
+  startAt: 'Bắt đầu', endAt: 'Kết thúc', plannedStartAt: 'Dự kiến khai giảng', plannedEndAt: 'Dự kiến kết thúc',
+  registrationOpensAt: 'Mở đăng ký', registrationClosesAt: 'Đóng đăng ký', unitNumber: 'Buổi số',
+  minimumEnrollment: 'Số đăng ký tối thiểu', defaultMinimumEnrollment: 'Số đăng ký tối thiểu mặc định',
+  tuitionVnd: 'Học phí (VND)', allocationVnd: 'Phân bổ học phí (VND)', amountVnd: 'Số tiền (VND)',
+  totalUnits: 'Số buổi', remainingUnits: 'Số buổi còn lại', policyVersion: 'Chính sách',
+  refundAmountVnd: 'Tiền hoàn (VND)', refundBasisVnd: 'Cơ sở hoàn tiền (VND)', creditVnd: 'Giá trị chuyển (VND)', cashPaidVnd: 'Tiền trả thêm (VND)',
   status: 'Trạng thái',
   name: 'Tên',
   email: 'Email',
@@ -180,6 +201,12 @@ const FIELD_LABELS = {
 };
 
 const VALUE_LABELS = {
+  DRAFT: 'Bản nháp', PUBLISHED: 'Đã công bố', ARCHIVED: 'Đã lưu trữ',
+  OPEN_FOR_REGISTRATION: 'Đang mở đăng ký', CONFIRMED: 'Đã xác nhận mở lớp', SETTLEMENT_PENDING: 'Chờ quyết toán',
+  CANCELLED_PENDING_MAKEUP: 'Đã hủy, chờ học bù', MAKEUP_SCHEDULED: 'Đã xếp buổi bù', UNRESOLVED: 'Chưa xử lý',
+  PENDING_REVIEW: 'Chờ duyệt', DISBURSEMENT_RECORDED: 'Đã ghi nhận chi', PENDING_VERIFICATION: 'Chờ xác minh',
+  OFFERED: 'Chờ chấp nhận đề nghị', PENDING_PAYMENT: 'Chờ thanh toán', TRANSFERRED: 'Đã chuyển đợt học',
+  MEMBER_WITHDRAWAL: 'Rút khóa học', COURSE_RUN_CANCELLED: 'Hủy đợt học', TRANSFER_CREDIT_EXCESS: 'Chênh lệch chuyển đợt',
   EMAIL_DELIVERY_FAILED: 'Gửi email thất bại',
   MEMBER_CANNOT_ACCESS_EMAIL: 'Hội viên không truy cập được email',
   ACCESSIBILITY_SUPPORT: 'Cần hỗ trợ tiếp cận',
@@ -267,7 +294,7 @@ function visibleDetails(data) {
   return Object.entries(data)
     .filter(([, value]) => value == null || typeof value !== 'object')
     .filter(([key]) => !key.toLocaleLowerCase('en-US').endsWith('id'))
-    .map(([key, value]) => ({ label: FIELD_LABELS[key] || 'Thông tin khác', value: displayValue(value) }));
+    .map(([key, value]) => ({ key, label: FIELD_LABELS[key] || 'Thông tin khác', value: displayValue(value) }));
 }
 
 function DetailList({ title, data }) {
@@ -277,7 +304,7 @@ function DetailList({ title, data }) {
     <div className="mt-2">
       <strong className="small">{title}</strong>
       <ul className="small mb-0 ps-3">
-        {details.map((item) => <li key={item.label}>{item.label}: {item.value}</li>)}
+        {details.map((item) => <li key={item.key}>{item.label}: {item.value}</li>)}
       </ul>
     </div>
   );

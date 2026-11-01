@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { listCatalogCourseRuns } from '../../../services/courseCatalogService';
 import { listMyCourseEnrollments } from '../../../services/courseEnrollmentService';
 import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils';
@@ -20,16 +20,24 @@ import {
 import MemberCourseRefunds from './MemberCourseRefunds';
 import MemberCourseWithdrawals from './MemberCourseWithdrawals';
 import CourseScheduleChanges from './CourseScheduleChanges';
+import MemberCourseTransfers from './MemberCourseTransfers';
 import './MemberCoursesPage.css';
 
 
 
 export default function MemberCoursesPage() {
   const navigate = useNavigate();
+  const { hash } = useLocation();
   const [enrollments, setEnrollments] = useState([]);
   const [waitlists, setWaitlists] = useState([]);
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const sectionId = hash.slice(1);
+    if (!loading && ['refunds', 'withdrawals', 'transfers', 'schedule-changes'].includes(sectionId)) {
+      document.getElementById(sectionId)?.scrollIntoView({ block: 'start' });
+    }
+  }, [hash, loading]);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
   const acceptKeys = useRef({});
@@ -159,6 +167,7 @@ export default function MemberCoursesPage() {
           }} />
           <MemberCourseRefunds enrollments={enrollments} />
           <CourseScheduleChanges enrollments={enrollments} />
+          <MemberCourseTransfers enrollments={enrollments} onTransferred={load} />
           <section className="member-course-section">
             <div className="member-course-section-title">
               <h2>Danh sách chờ</h2>

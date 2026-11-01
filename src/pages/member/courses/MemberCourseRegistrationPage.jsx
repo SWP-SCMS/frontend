@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getCatalogCourseRun } from '../../../services/courseCatalogService';
 import {
@@ -31,6 +31,8 @@ export default function MemberCourseRegistrationPage() {
   const [error, setError] = useState('');
   const [capacityFull, setCapacityFull] = useState(false);
   const [waitlisted, setWaitlisted] = useState(false);
+  const retryKeys = useRef({});
+  const mutationLock = useRef(false);
 
   const orderId = order?.orderId || initialOrderId;
 
@@ -84,13 +86,15 @@ export default function MemberCourseRegistrationPage() {
   );
 
   async function handleCreateOrder() {
+    if (mutationLock.current) return;
+    mutationLock.current = true;
     setBusy(true);
     setError('');
     setCapacityFull(false);
     try {
       const created = await createMyCourseOrder(
         runId,
-        createCourseIdempotencyKey('course-order-create'),
+        retryKeys.current['order:' + runId] ||= createCourseIdempotencyKey('course-order-create'),
       );
       setOrder(created);
       setPayment(created?.payment || null);
@@ -99,11 +103,14 @@ export default function MemberCourseRegistrationPage() {
       if (getCourseErrorCode(requestError) === 'COURSE_CAPACITY_FULL') setCapacityFull(true);
       setError(getCourseErrorMessage(requestError, 'Không thể tạo đơn đăng ký khóa học.'));
     } finally {
+      mutationLock.current = false;
       setBusy(false);
     }
   }
 
   async function handleJoinWaitlist() {
+    if (mutationLock.current) return;
+    mutationLock.current = true;
     setBusy(true);
     setError('');
     try {
@@ -113,23 +120,27 @@ export default function MemberCourseRegistrationPage() {
     } catch (requestError) {
       setError(getCourseErrorMessage(requestError, 'Không thể tham gia danh sách chờ.'));
     } finally {
+      mutationLock.current = false;
       setBusy(false);
     }
   }
 
   async function handleStartPayment() {
+    if (mutationLock.current) return;
+    mutationLock.current = true;
     setBusy(true);
     setError('');
     try {
       const result = await startMyCourseSepayPayment(
         orderId,
-        createCourseIdempotencyKey('course-payment-start'),
+        retryKeys.current['payment:' + orderId] ||= createCourseIdempotencyKey('course-payment-start'),
       );
       setPayment(result?.payment || result);
       await refreshOrder(orderId);
     } catch (requestError) {
       setError(getCourseErrorMessage(requestError, 'Không thể tạo thông tin thanh toán.'));
     } finally {
+      mutationLock.current = false;
       setBusy(false);
     }
   }
@@ -170,7 +181,7 @@ export default function MemberCourseRegistrationPage() {
         <section className="member-course-panel member-course-payment-panel">
           {isPaid ? (
             <div className="member-course-complete">
-              <span>✓</span><h2>Đăng ký thành công</h2><p>Thanh toán đã được xác nhận và bạn đã có tên trong khóa học.</p>
+              <span>✓</span><h2>Thanh toán đã được xác nhận</h2><p>Xem Khóa học của tôi để theo dõi trạng thái đăng ký, lịch học và các yêu cầu rút hoặc chuyển đợt.</p>
               <Link className="member-course-primary-link" to="/member/courses">Xem khóa học của tôi</Link>
             </div>
           ) : isExpired ? (
@@ -187,7 +198,8 @@ export default function MemberCourseRegistrationPage() {
           ) : (
             <>
               <div className="member-course-card-head"><h2>Thanh toán học phí</h2><span className="member-course-status">{getCourseStatusLabel(COURSE_ORDER_STATUS_LABELS, order?.orderStatus)}</span></div>
-              <p>Đơn {order?.orderReference || orderId} giữ chỗ đến {formatCourseDateTime(order?.expiresAt)}.</p>
+              <p>Đơn {order?.orderReference || 'đăng ký khóa học'} giữ chỗ đến {formatCourseDateTime(order?.expiresAt)}.</p>
+              <p>Số tiền của đơn: <strong>{formatCourseMoney(order?.tuitionVnd, order?.currencyCode || 'VND')}</strong>.</p>
               {!displayedPayment ? (
                 <button type="button" disabled={busy} onClick={handleStartPayment}>{busy ? 'Đang tạo…' : 'Tạo mã QR thanh toán'}</button>
               ) : (

@@ -136,15 +136,15 @@ export default function CoachLeaveRequestsPage() {
         <Card.Body className="p-4">
           <h2 className="h5 fw-bold mb-3">Tạo yêu cầu nghỉ</h2>
           <Form onSubmit={submit} className="row g-3 align-items-end">
-            <Form.Group className="col-lg-3">
+            <Form.Group className="col-lg-3" controlId="coach-leave-start">
               <Form.Label>Từ thời điểm *</Form.Label>
               <Form.Control type="datetime-local" min={minimum} value={form.startTime} onChange={(event) => setForm((value) => ({ ...value, startTime: event.target.value }))} />
             </Form.Group>
-            <Form.Group className="col-lg-3">
+            <Form.Group className="col-lg-3" controlId="coach-leave-end">
               <Form.Label>Đến thời điểm *</Form.Label>
               <Form.Control type="datetime-local" min={form.startTime || minimum} value={form.endTime} onChange={(event) => setForm((value) => ({ ...value, endTime: event.target.value }))} />
             </Form.Group>
-            <Form.Group className="col-lg-4">
+            <Form.Group className="col-lg-4" controlId="coach-leave-reason">
               <Form.Label>Lý do *</Form.Label>
               <Form.Control as="textarea" rows={2} maxLength={1000} value={form.reason} onChange={(event) => setForm((value) => ({ ...value, reason: event.target.value }))} />
             </Form.Group>

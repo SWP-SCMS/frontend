@@ -145,7 +145,6 @@ export default function RoomListPage() {
                   {row.name || '—'}
                 </Link>
               </td>
-              <td>{row.usageMode === 'SHARED' ? 'Dùng chung' : 'Dùng riêng'}</td>
               <td>
                 {row.capacity != null ? (
                   <span>{row.capacity}</span>
@@ -153,13 +152,14 @@ export default function RoomListPage() {
                   <span className="text-muted">—</span>
                 )}
               </td>
+              <td>{row.usageMode === 'SHARED' ? 'Dùng chung' : 'Dùng riêng'}</td>
               <td>
                 <span
                   className={`badge ${
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
-                  {row.status || '—'}
+                  {STATUS_FILTERS.find((status) => status.value === row.status)?.label || '—'}
                 </span>
               </td>
               <td className="text-end">

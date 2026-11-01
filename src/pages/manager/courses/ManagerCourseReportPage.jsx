@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Card, Form, Table } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,6 +23,8 @@ const groups = [
   ['Chuyển đợt', [['transferPending','Chờ duyệt'],['transferOffered','Đã đề nghị'],['transferRejected','Từ chối'],['transferCompleted','Hoàn tất'],['transferExpired','Hết hạn']]],
 ];
 export default function ManagerCourseReportPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const runId = searchParams.get('runId');
   const { register, control, handleSubmit, reset, formState: { errors } } = useForm({ resolver: zodResolver(schema), defaultValues: { startDate: '', endDate: '', status: '' } });
   const [filters, setFilters] = useState({});
   const [page, setPage] = useState(0);
@@ -32,12 +34,13 @@ export default function ManagerCourseReportPage() {
   useEffect(() => {
     let active = true;
     setLoading(true); setError(''); setData(null);
-    getCourseRunReport({ ...filters, page }).then((result) => { if (active) setData(result); })
+    getCourseRunReport({ ...filters, ...(runId ? { runId } : {}), page }).then((result) => { if (active) setData(result); })
       .catch((err) => { if (active) setError(getCourseErrorMessage(err, 'Không tải được báo cáo khóa học.')); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [filters, page]);
+  }, [filters, page, runId]);
   return <div className="container-fluid py-4"><h1>Báo cáo khóa học</h1>
+    {runId && <Alert variant="info">Đang xem riêng đợt học đã chọn. <Link to={'/manager/course-runs/' + encodeURIComponent(runId)}>Xem chi tiết đợt học</Link>. <Button size="sm" variant="outline-secondary" onClick={() => { setSearchParams({}); setPage(0); }}>Xem tất cả đợt học</Button></Alert>}
     <Form noValidate className="d-flex flex-wrap gap-3 mb-3" onSubmit={handleSubmit((values) => { setPage(0); setFilters(Object.fromEntries(Object.entries(values).filter(([,v]) => v))); })}>
       <Form.Group controlId="course-report-start"><Form.Label>Khai giảng từ ngày</Form.Label><RhfDateInput control={control} name="startDate" isInvalid={!!errors.startDate} /><Form.Control.Feedback type="invalid">{errors.startDate?.message}</Form.Control.Feedback></Form.Group>
       <Form.Group controlId="course-report-end"><Form.Label>Đến trước ngày</Form.Label><RhfDateInput control={control} name="endDate" isInvalid={!!errors.endDate} /><Form.Control.Feedback type="invalid">{errors.endDate?.message}</Form.Control.Feedback></Form.Group>

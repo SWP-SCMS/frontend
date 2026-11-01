@@ -4,10 +4,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { markAllNotificationsRead, markNotificationRead } from '../../services/notificationService';
 import { formatGymDate, formatGymTime } from '../../utils/gymTime';
 import { notificationDetail, notificationSummary } from '../../utils/notificationUi';
+import { courseNotificationDestination } from '../../utils/courseWorkflow';
 
 function notificationDestination(item, pathname) {
   const role = pathname.split('/')[1];
   const type = item.notificationType;
+  const courseDestination = courseNotificationDestination(item, role);
+  if (courseDestination) return courseDestination;
   const payload = item.payload || {};
   const sessionId = payload.sessionId || (item.targetType === 'CLASS_SESSION' ? item.targetId : null);
 

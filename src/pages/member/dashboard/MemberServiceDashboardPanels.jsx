@@ -9,6 +9,8 @@ import { Spinner } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
 import { listAllMyBookedBookings } from '../../../services/memberBookingService';
+import { listMyCourseEnrollments } from '../../../services/courseEnrollmentService';
+import { courseScheduleEntries } from '../../../utils/courseWorkflow';
 import { listMyFeedback } from '../../../services/memberFeedbackService';
 import { formatDate, formatDateTime } from '../../../utils';
 import { hasBenefitContract } from '../../../utils/membershipBenefits';
@@ -54,12 +56,13 @@ export default function MemberServiceDashboardPanels({ membership }) {
     Promise.allSettled([
       listAllMyBookedBookings(),
       listMyFeedback({ page: 0, size: MAX_FEEDBACK }),
+      listMyCourseEnrollments(),
     ]).then(
-      ([b, f]) => {
+      ([b, f, c]) => {
         if (cancelled) return;
-        if (b.status === 'fulfilled') setBookings(b.value);
+        setBookings([...(b.status === 'fulfilled' ? b.value : []), ...(c.status === 'fulfilled' ? courseScheduleEntries(c.value) : [])]);
         if (f.status === 'fulfilled') setFeedback(f.value.content);
-        const failed = [b, f].find((r) => r.status === 'rejected');
+        const failed = [b, f, c].find((r) => r.status === 'rejected');
         if (failed) setError(failed.reason);
         setLoading(false);
       },
@@ -177,7 +180,7 @@ export default function MemberServiceDashboardPanels({ membership }) {
                 <div>
                   <div className="scms-pd-title">{b.className || '—'}</div>
                   <div className="scms-pd-muted">
-                    {b.coachName || '—'} · {b.roomName || '—'}
+                    {b.classType === 'COURSE' ? <Link to="/member/courses">Khóa học · Xem chi tiết</Link> : <>{b.coachName || '—'} · {b.roomName || '—'}</>}
                   </div>
                 </div>
               </li>

@@ -326,6 +326,10 @@ export default function RoomImpactPage() {
   }
 
   async function handleApply() {
+    if (preview?.courseSessionIds?.length) {
+      setNotice('Cần xử lý các buổi khóa học ở đợt học tương ứng trước khi áp dụng thay đổi phòng.');
+      return;
+    }
     if (!(await trigger())) return;
     const values = getValues();
     setActionError(null);
@@ -414,6 +418,11 @@ export default function RoomImpactPage() {
     setApplying(true);
     try {
       const fresh = await previewRoomImpact(roomId, impactPayload(values));
+      if (fresh.courseSessionIds?.length) {
+        setPreview(fresh);
+        setNotice('Có buổi khóa học bị ảnh hưởng. Xử lý lịch khóa học rồi xem trước ảnh hưởng lại.');
+        return;
+      }
       const previousIds = (preview?.sessions || []).map((session) => session.sessionId);
       const freshIds = fresh.sessions.map((session) => session.sessionId);
       if (!sameIds(previousIds, freshIds)) {
@@ -629,8 +638,11 @@ export default function RoomImpactPage() {
         {preview ? (
           <Card className="border-0 shadow-sm"><Card.Body>
             <h2 className="h5">{preview.count} buổi tập bị ảnh hưởng</h2>
+            {preview.courseSessionIds?.length > 0 && <Alert variant="warning">
+              Có {preview.courseSessionIds.length} buổi khóa học dùng phòng này. Cần đổi phòng hoặc xử lý lịch tại <Link to="/manager/course-runs">đợt học tương ứng</Link>, sau đó xem trước ảnh hưởng lại.
+            </Alert>}
             {preview.sessions.length === 0 ? (
-              <Alert variant="success">Không có buổi tập cần xử lý. Bạn có thể áp dụng ngay.</Alert>
+              !preview.courseSessionIds?.length && <Alert variant="success">Không có buổi tập cần xử lý. Bạn có thể áp dụng ngay.</Alert>
             ) : (
               <>
                 <Card className="border bg-light mb-3">
@@ -773,7 +785,7 @@ export default function RoomImpactPage() {
                 </Table>
               </>
             )}
-            <Button type="button" variant="danger" onClick={handleApply} disabled={applying || previewing}>
+            <Button type="button" variant="danger" onClick={handleApply} disabled={applying || previewing || !!preview.courseSessionIds?.length}>
               {applying ? 'Đang áp dụng…' : 'Kiểm tra lại và áp dụng'}
             </Button>
           </Card.Body></Card>

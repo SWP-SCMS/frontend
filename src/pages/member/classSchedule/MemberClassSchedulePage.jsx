@@ -21,6 +21,7 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import { listMyCourseEnrollments } from '../../../services/courseEnrollmentService';
+import { courseScheduleEntries } from '../../../utils/courseWorkflow';
 import { COURSE_ATTENDANCE_STATUS_LABELS, getCourseStatusLabel, formatCourseDateTime } from '../../../utils/courseUi';
 import SessionDetailModal from './SessionDetailModal';
 import { getAttendanceDisplay } from './attendance';
@@ -101,12 +102,7 @@ export default function MemberClassSchedulePage() {
       const results = await Promise.allSettled([listAllMyBookedBookings(), listMyCourseEnrollments()]);
       const gym = results[0].status === 'fulfilled' ? results[0].value : [];
       const courses = results[1].status === 'fulfilled' ? results[1].value : [];
-      setBookings([...gym, ...courses.filter((e) => ['ACTIVE', 'WITHDRAWAL_PENDING'].includes(e.lifecycleStatus)).flatMap((e) =>
-        (e.sessions || []).filter((s) => s.disposition === 'ENROLLED').map((s) => ({
-          ...s, id: `course-${s.enrollmentSessionId}`, classType: 'COURSE',
-          className: `${e.courseName} · ${e.runCode} · Buổi ${s.unitNumber}`,
-          startTime: s.startAt, endTime: s.endAt,
-        }))) ]);
+      setBookings([...gym, ...courseScheduleEntries(courses)]);
       if (results.some((result) => result.status === 'rejected')) {
         setError(new Error('Một phần lịch chưa tải được. Vui lòng tải lại trang.'));
       }
@@ -404,11 +400,11 @@ function SessionCard({ session, onClick }) {
         {formatGymTime(s.startTime)} – {formatGymTime(s.endTime)}
       </div>
       <div className="mcs-cal-session-class">{s.className || '—'}</div>
-      <div className="mcs-cal-session-meta">
+      {s.classType !== 'COURSE' && <div className="mcs-cal-session-meta">
         <span>{s.coachName || '—'}</span>
         <span> · </span>
         <span>{s.roomName || '—'}</span>
-      </div>
+      </div>}
       <div className="mcs-cal-session-foot">
         <ClassTypePill classType={s.classType} small />
         {/* Xám: chưa điểm danh. Xanh: đã điểm danh. Đỏ: vắng (quá hạn mà chưa PRESENT). */}
