@@ -18,6 +18,7 @@ Ngày 2026-11-02. FE: course-workflow; BE local: 7e8f551 (PR #192), diff từ 8b
 | Hoàn cuối khóa | Refund thường chỉ được chi khi Run COMPLETED. Cần xác nhận/bổ sung chuyển SETTLEMENT_PENDING sang COMPLETED; không tự coi SETTLEMENT_PENDING là đủ điều kiện chi. |
 | G12 — Chốt quyền hoàn tại lúc gửi (đã chốt) | BE hiện tính lại tại approve và chặn cả duyệt khi buổi cuối đã bắt đầu. Cần lưu snapshot khi gửi; duyệt yêu cầu cũ dùng snapshot, không mất quyền vì Manager xử lý trễ. Chi tiết bên dưới. |
 | G13 — Quyền học trong lúc chờ rút (đã chốt) | Tạm ngừng học/điểm danh từ khi gửi thành công, giữ chỗ chờ duyệt. Duyệt thì rút và trả chỗ; Member được hủy khi còn chờ, Reception được hủy hộ; hủy hoặc Manager từ chối thì khôi phục quyền học, không bù buổi đã lỡ. Manager duyệt/từ chối từng yêu cầu. BE/FE hiện chưa triển khai rule mới này. |
+| G14 — Reception thao tác hộ Member trong Course (đã chốt) | Đối chiếu/bổ sung API Reception cho các thao tác Member Course, gồm hủy yêu cầu rút, waitlist, phản hồi đổi lịch và chấp nhận chuyển đợt. Cùng điều kiện/thời hạn, lưu actor và audit. Không cấp quyền tạo Course/Run, duyệt/từ chối, xem giáo án hoặc kết quả tập luyện. Chi tiết G14 bên dưới. |
 | Sửa lịch Run | Các session giữ lại phải nằm trong khung Run mới. UI gửi lỗi BE, không tự dời hàng loạt buổi hoặc gọi N+1. Cần kiểm thử thao tác dời cả khóa thực tế. |
 
 ## BR đã chốt
@@ -49,7 +50,7 @@ Ngày 2026-11-02. FE: course-workflow; BE local: 7e8f551 (PR #192), diff từ 8b
 ## G14 — Reception thao tác hộ Member trong nghiệp vụ Course (đã chốt)
 - Trong phạm vi Course của handoff này, thao tác nghiệp vụ Member được phép làm thì Reception cũng được làm hộ: đăng ký/thanh toán theo contract, vào/rời waitlist, nhận lời mời, phản hồi đổi lịch, gửi/hủy yêu cầu rút, xem/chấp nhận đề nghị chuyển và thanh toán chênh lệch.
 - Áp dụng cùng eligibility, deadline, capacity, xung đột lịch, snapshot/refund policy và trạng thái với Member; không vượt giới hạn chỉ vì người thao tác là Reception.
-- Quyền tạo Course/Run và duyệt/từ chối vẫn thuộc Manager. Rule làm hộ không mở rộng sang đổi mật khẩu, truy cập phiên đăng nhập hoặc các chức năng tài khoản riêng tư.
+- Quyền tạo Course/Run và duyệt/từ chối vẫn thuộc Manager. Rule làm hộ không mở rộng sang quyền xem giáo án/kế hoạch hoặc kết quả tập luyện của Member, đổi mật khẩu, truy cập phiên đăng nhập hoặc các chức năng tài khoản riêng tư.
 - BE cần đối chiếu toàn bộ endpoint Member Course và cung cấp endpoint Reception tương ứng cùng API tra cứu cần thiết. Ghi nhận actor là Reception, member thụ hưởng, audit và notification; không giả mạo token Member hoặc dùng API Manager.
 - Đã có luồng đăng ký/thanh toán và gửi rút hộ. Hủy rút hộ và các luồng làm hộ còn lại cần kiểm kê contract trước khi FE triển khai; không khẳng định toàn bộ đã được hỗ trợ.
 - FE cần chọn đúng hội viên, hiển thị tên/mã và hệ quả trước khi xác nhận thao tác hộ. Không nhập UUID thủ công hoặc N+1 workaround.
