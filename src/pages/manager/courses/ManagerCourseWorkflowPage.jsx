@@ -184,7 +184,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
           </> : <>
             <p>Lý do: {detail.requestReason || detail.reason || 'Yêu cầu chuyển đợt học do thay đổi lịch'}</p>
             {detail.decisionReason && <p>Kết quả: {detail.decisionReason}</p>}
-            {kind === 'withdrawals' && <p>Số tiền hoàn được xác định: <strong>{money(detail.refundAmountVnd)}</strong>{detail.remainingUnits != null && <> · {detail.remainingUnits}/{detail.totalUnits} buổi còn lại</>}</p>}
+            {kind === 'withdrawals' && <p>Khoản hoàn đã chốt theo BE: <strong>{detail.snapshotSource === 'UNAVAILABLE' ? 'Chưa có snapshot' : money(detail.refundAmountVnd)}</strong>{detail.remainingUnits != null && <> · {detail.remainingUnits}/{detail.totalUnits} buổi còn lại</>}</p>}
           </>}
           {kind === 'refunds' && courseAmountText(detail.grossObligationVnd) == null && <Alert variant="warning">Số tiền chưa thể hiển thị chính xác. Chưa thể duyệt khoản hoàn này; vui lòng kiểm tra lại hồ sơ.</Alert>}
           <div className="d-flex flex-wrap gap-2">{available.map((value) => <Button key={value} variant={action === value ? 'primary' : 'outline-primary'} disabled={busy || (value === 'verify' && courseAmountText(detail.disbursedAmountVnd) == null) || (kind === 'refunds' && value === 'approve' && courseAmountText(detail.grossObligationVnd) == null)} onClick={() => chooseAction(value)}>{actions[value]}</Button>)}</div>

@@ -91,7 +91,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
         <p>{request.snapshotSource === 'REQUEST_TIME' ? 'Khoản hoàn chốt lúc gửi' : request.snapshotSource === 'LEGACY_APPROVAL' ? 'Khoản hoàn lịch sử lúc duyệt' : 'Khoản hoàn chưa có snapshot'}: {request.snapshotSource === 'UNAVAILABLE' || request.refundAmountVnd == null ? 'Chưa xác định' : formatCourseMoney(request.refundAmountVnd)}</p>
         {request.remainingUnits != null && request.totalUnits != null && <p>Số buổi tại thời điểm chốt: {request.remainingUnits}/{request.totalUnits}</p>}
         {request.learningSuspended && <p>Tạm ngừng học và điểm danh trong khi chờ xử lý.</p>}
-        {request.cancelledAt && <p>Đã hủy lúc {formatCourseDateTime(request.cancelledAt)} · {request.cancellationReason === 'LEGACY_SNAPSHOT_MISSING' ? 'Yêu cầu cũ không có dữ liệu chốt khoản hoàn' : request.cancellationReason}</p>}
+        {request.cancelledAt && <p>Đã hủy lúc {formatCourseDateTime(request.cancelledAt)} · {request.cancellationReason === 'LEGACY_SNAPSHOT_MISSING' ? 'Yêu cầu cũ không có dữ liệu chốt khoản hoàn' : request.cancellationReason === 'COURSE_RUN_CANCELLED' ? 'Đợt học đã hủy' : request.cancellationReason}</p>}
         <CancelCourseWithdrawal request={request} onCancelled={async () => { await load(); await onRequested(); }} />
         {request.status === 'APPROVED' && <p>Trạng thái này xác nhận việc rút khóa; chưa xác nhận đã nhận tiền hoàn.</p>}
       </article>;
