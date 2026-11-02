@@ -1,5 +1,5 @@
 import api from './api';
-import { normalizeCoursePage } from './courseServiceUtils';
+import { normalizeCoursePage, courseIdempotencyConfig } from './courseServiceUtils';
 
 export async function listManagerCourses({ page = 0, size = 20 } = {}) {
   const { data } = await api.get('/manager/courses', {
@@ -125,3 +125,5 @@ export async function createManagerCourseMakeup(runId, sessionId, payload) {
 
 export async function updateCourseRunSchedule(id, payload) { return (await api.patch(`/manager/course-runs/${id}/schedule`, payload)).data; }
 export async function cancelCourseSessionWithMakeup(runId, sessionId, payload) { return (await api.post(`/manager/course-runs/${runId}/sessions/${sessionId}/cancel-with-makeup`, payload)).data; }
+
+export async function rescheduleCourseRun(id, payload, key) { return (await api.post(`/manager/course-runs/${id}/reschedule`, payload, courseIdempotencyConfig(key))).data; }
