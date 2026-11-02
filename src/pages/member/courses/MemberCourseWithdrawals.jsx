@@ -1,3 +1,4 @@
+import CancelCourseWithdrawal from './CancelCourseWithdrawal';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
@@ -6,7 +7,7 @@ import { courseWithdrawalSchema } from '../../../schemas/courseSchemas';
 import { createMyCourseWithdrawal, listMyCourseWithdrawals } from '../../../services/courseWithdrawalService';
 import { formatCourseDateTime, formatCourseMoney, getCourseErrorMessage } from '../../../utils/courseUi';
 
-const STATUS_LABELS = { PENDING: 'Chờ Manager duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối' };
+const STATUS_LABELS = { PENDING: 'Chờ Manager duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối', CANCELLED: 'Đã hủy' };
 
 export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
   const [requests, setRequests] = useState([]);
@@ -38,13 +39,14 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
 
   async function submit({ enrollmentId, reason }) {
     if (submitting.current || !ready || !available.some((e) => e.enrollmentId === enrollmentId)) return;
+    if (!window.confirm('Gửi yêu cầu sẽ tạm ngừng học và điểm danh, vẫn giữ chỗ. Nếu hủy hoặc bị từ chối, các buổi đã lỡ không được học bù. Tiếp tục?')) return;
     submitting.current = true; setBusy(true); setError(''); setNotice('');
     try {
       const created = await createMyCourseWithdrawal(enrollmentId, reason);
       setRequests((current) => [created, ...current.filter((r) => r.id !== created.id)]);
-      onRequested(enrollmentId);
+      await onRequested(enrollmentId);
       reset();
-      setNotice('Đã gửi yêu cầu rút. Bạn vẫn giữ suất học trong thời gian chờ duyệt.');
+      setNotice('Đã gửi yêu cầu rút. Bạn giữ chỗ nhưng tạm ngừng học và điểm danh trong thời gian chờ duyệt.');
     } catch (err) {
       // A timeout may have committed on BE. Refresh before allowing another submission.
       await load();
@@ -59,7 +61,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
     </div>
     {error && <Alert variant="danger" role="alert">{error}</Alert>}
     {notice && <Alert variant="success" role="status">{notice}</Alert>}
-    <p>Yêu cầu cần Manager duyệt. Số tiền hoàn được xác định khi duyệt; duyệt rút không có nghĩa đã chi tiền hoàn.</p>
+    <p>Yêu cầu cần Manager duyệt. Số tiền hoàn được chốt khi gửi thành công; duyệt rút không có nghĩa đã chi tiền hoàn.</p>
     <p>Bạn có thể xin rút trước khi buổi cuối bắt đầu. Nếu còn ít nhất 70% số buổi, mức hoàn là 80% giá trị chưa sử dụng theo hệ thống; dưới ngưỡng này mức hoàn là 0 đồng.</p>
     {ready && available.length > 0 && <Form noValidate onSubmit={(event) => handleSubmit(submit)(event)} className="member-course-card">
       <Form.Group controlId="course-withdrawal-enrollment" className="mb-3">
@@ -86,8 +88,11 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
         <p>Lý do xin rút: {request.requestReason}</p>
         {request.decisionReason && <p>Lý do quyết định: {request.decisionReason}</p>}
         {request.decidedAt && <p>Thời điểm quyết định: {formatCourseDateTime(request.decidedAt)}</p>}
-        <p>Số tiền hoàn theo quyết định rút: {request.refundAmountVnd == null ? 'Chưa xác định' : formatCourseMoney(request.refundAmountVnd)}</p>
-        {request.remainingUnits != null && request.totalUnits != null && <p>Số buổi còn lại tại lúc duyệt: {request.remainingUnits}/{request.totalUnits}</p>}
+        <p>{request.snapshotSource === 'REQUEST_TIME' ? 'Khoản hoàn chốt lúc gửi' : request.snapshotSource === 'LEGACY_APPROVAL' ? 'Khoản hoàn lịch sử lúc duyệt' : 'Khoản hoàn chưa có snapshot'}: {request.snapshotSource === 'UNAVAILABLE' || request.refundAmountVnd == null ? 'Chưa xác định' : formatCourseMoney(request.refundAmountVnd)}</p>
+        {request.remainingUnits != null && request.totalUnits != null && <p>Số buổi tại thời điểm chốt: {request.remainingUnits}/{request.totalUnits}</p>}
+        {request.learningSuspended && <p>Tạm ngừng học và điểm danh trong khi chờ xử lý.</p>}
+        {request.cancelledAt && <p>Đã hủy lúc {formatCourseDateTime(request.cancelledAt)} · {request.cancellationReason === 'LEGACY_SNAPSHOT_MISSING' ? 'Yêu cầu cũ không có dữ liệu chốt khoản hoàn' : request.cancellationReason}</p>}
+        <CancelCourseWithdrawal request={request} onCancelled={async () => { await load(); await onRequested(); }} />
         {request.status === 'APPROVED' && <p>Trạng thái này xác nhận việc rút khóa; chưa xác nhận đã nhận tiền hoàn.</p>}
       </article>;
     })}

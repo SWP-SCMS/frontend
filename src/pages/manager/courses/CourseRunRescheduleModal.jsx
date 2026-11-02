@@ -46,7 +46,7 @@ export default function CourseRunRescheduleModal({ run, sessions, onClose, onSav
     } finally { lock.current = false; setBusy(false); }
   }
   return <Modal show size="lg" onHide={() => { if (!busy && !retry) onClose(); }} backdrop="static" keyboard={false}>
-    <Form noValidate onSubmit={handleSubmit(submit)}><Modal.Header closeButton={!busy && !retry}><Modal.Title>Áp dụng lịch đợt học</Modal.Title></Modal.Header><Modal.Body>
+    <Form noValidate onSubmit={event => handleSubmit(submit)(event)}><Modal.Header closeButton={!busy && !retry}><Modal.Title>Áp dụng lịch đợt học</Modal.Title></Modal.Header><Modal.Body>
       {error && <Alert variant="danger">{error}</Alert>}
       {retry && <Alert variant="warning">Chưa xác định kết quả. Bấm thử lại để gửi đúng lịch vừa xác nhận, tránh tạo thay đổi trùng.</Alert>}
       <p>Chỉnh khung đợt học và lịch các buổi bên dưới. Các buổi giữ lại phải nằm trong khung mới. Toàn bộ thay đổi được áp dụng cùng nhau; buổi đã bắt đầu giữ nguyên.</p>
