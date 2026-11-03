@@ -93,7 +93,7 @@ export default function ReceptionCourseBookingPage() {
         if (previousMemberId !== selected.accountId) { keys.current = {}; setRun(null); }
         setMember(selected);
       });
-  const payable = order?.orderStatus === 'PENDING_PAYMENT' && Date.parse(order.expiresAt) > now;
+  const payable = order?.orderStatus === 'PENDING_PAYMENT' && payment?.status !== 'PAID' && Date.parse(order.expiresAt) > now;
   if (resuming) return <div className="container-fluid py-4"><h1>Đăng ký khóa học</h1><p>Đang mở lại đơn khóa học…</p></div>;
   if (requestedOrderId && !order) return <div className="container-fluid py-4"><h1>Đăng ký khóa học</h1><Alert variant="danger">{error || 'Không tìm thấy đơn khóa học.'}</Alert><Button onClick={() => setResumeRevision((value) => value + 1)}>Thử lại</Button><Button className="ms-2" variant="outline-secondary" onClick={() => setSearchParams({})}>Về danh sách đợt học</Button></div>;
   return <div className="container-fluid py-3">
@@ -111,8 +111,8 @@ export default function ReceptionCourseBookingPage() {
         <Button type="submit" disabled={busy || !!order}>Tra cứu</Button>
       </Form>
       {member && <p className="mt-3">{member.fullName} · {member.memberId} · {member.phone}</p>}
-      {member && <ReceptionCourseWithdrawals key={member.accountId} member={member} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
-      {member && <ReceptionCourseActions key={member.accountId} member={member} run={run} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
+      {member && <ReceptionCourseWithdrawals key={"withdrawals-" + member.accountId} member={member} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
+      {member && <ReceptionCourseActions key={"actions-" + member.accountId} member={member} run={run} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
       {member && member.status !== 'ACTIVE' && <Alert variant="warning">Hội viên chưa ở trạng thái hoạt động.</Alert>}
     </Card.Body></Card>
     {!order && <Card className="mb-3"><Card.Body>
@@ -167,9 +167,18 @@ export default function ReceptionCourseBookingPage() {
         <p>Chỉ xác nhận khi đã nhận đủ tiền mặt. Hội viên sẽ được ghi danh sau khi xác nhận thành công.</p>
       </Modal.Body>
       <Modal.Footer><Button variant="outline-secondary" disabled={busy} onClick={() => setShowCashConfirmation(false)}>Quay lại</Button><Button variant="danger" disabled={busy || !payable || !!payment} onClick={() => perform(async () => {
-        await confirmReceptionCourseCashPayment(member.accountId, order.orderId, key('course-cash'));
+        let confirmed;
+        try {
+          confirmed = await confirmReceptionCourseCashPayment(member.accountId, order.orderId, key('course-cash'));
+        } catch (e) {
+          setError(getCourseErrorMessage(e, 'Chưa xác nhận được kết quả thu tiền. Kiểm tra thanh toán trước khi thử lại; thông tin gửi lại được giữ nguyên.'));
+          return;
+        }
+        setPayment(confirmed);
+        setShowCashConfirmation(false);
         refreshMemberPanels();
-        await refresh(false); setShowCashConfirmation(false);
+        try { await refresh(false); }
+        catch { setError('Đã ghi nhận thanh toán, chưa tải lại được dữ liệu. Bấm Cập nhật thanh toán để tải lại; không cần xác nhận thu tiền lần nữa.'); }
       })}>{busy ? 'Đang xử lý…' : 'Xác nhận thu tiền'}</Button></Modal.Footer>
     </Modal>
   </div>;
