@@ -62,6 +62,7 @@ jobs:
         if: always()
         with:
           name: course-runtime-${{ github.event_name }}
+          include-hidden-files: true
           path: |
             test-results/runtime-report.json
             test-results/runtime-browser/**/*.png
