@@ -1,14 +1,15 @@
+import CourseRunRescheduleModal from './CourseRunRescheduleModal';
 import CourseDateTimeInput from '../../../components/common/CourseDateTimeInput';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { courseRunScheduleSchema, minimumEnrollmentSchema, courseOpenSchema, courseSessionSchema } from '../../../schemas/courseSchemas';
+import { minimumEnrollmentSchema, courseOpenSchema, courseSessionSchema } from '../../../schemas/courseSchemas';
 import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { courseMakeupIds } from '../../../utils/courseWorkflow';
 import {
-  updateCourseRunSchedule, cancelCourseSessionWithMakeup, createManagerCourseMakeup,
+  cancelCourseSessionWithMakeup, createManagerCourseMakeup,
   cancelManagerCourseRun, createManagerCourseSession, getManagerCourseRun,
   listManagerCourseSessions, openManagerCourseRunRegistration,
   updateManagerCourseRun, updateManagerCourseSession,
@@ -45,7 +46,6 @@ export default function ManagerCourseRunDetailPage() {
 
   const [editingSession, setEditingSession] = useState(null);
   const [makeup, setMakeup] = useState(false);
-  const scheduleForm = useForm({ resolver: zodResolver(courseRunScheduleSchema) });
   const minimumForm = useForm({ resolver: zodResolver(minimumEnrollmentSchema(run?.capacity)), defaultValues: { minimumEnrollment: '' } });
   const openForm = useForm({ resolver: zodResolver(courseOpenSchema), defaultValues: { policyVersion: 'course-mvp-v1' } });
   const sessionFields = useForm({ resolver: zodResolver(courseSessionSchema(!!editingSession, run?.totalUnits)), defaultValues: emptySession });
@@ -112,12 +112,6 @@ export default function ManagerCourseRunDetailPage() {
     finally { setBusy(false); }
   }
 
-  async function saveRunSchedule(values) {
-    setBusy(true); setError('');
-    try { await updateCourseRunSchedule(runId, { expectedVersion: run.version, plannedStartAt: toIso(values.plannedStartAt), plannedEndAt: toIso(values.plannedEndAt), totalUnits: values.totalUnits }); setModal(''); await load(); }
-    catch (err) { setError(getCourseErrorMessage(err, 'Không áp dụng được lịch mới.')); }
-    finally { setBusy(false); }
-  }
   const operational = ['OPEN_FOR_REGISTRATION', 'CONFIRMED', 'IN_PROGRESS'].includes(run?.status);
   const makeupIds = courseMakeupIds(sessions);
   if (loading) return <div className="text-center py-5"><Spinner /></div>;
@@ -127,13 +121,8 @@ export default function ManagerCourseRunDetailPage() {
     <Link to="/manager/course-runs" className="text-decoration-none">← Quay lại danh sách đợt mở</Link>
     <Link to={'/manager/reports/courses?runId=' + encodeURIComponent(runId)} className="ms-3">Báo cáo đợt học này</Link>
     <div className="d-flex justify-content-between align-items-start mt-2 mb-4"><div><div className="d-flex align-items-center gap-2"><h1 className="h3 mb-0">{run.courseName}</h1><Badge bg="secondary">{getCourseStatusLabel(COURSE_RUN_STATUS_LABELS, run.status)}</Badge></div><p className="text-muted mb-0">{run.runCode}</p></div><div className="d-flex flex-wrap gap-2"><Button variant="outline-secondary" disabled={busy || run.status !== 'DRAFT'} onClick={() => setModal('minimum')}>Sửa số tối thiểu</Button>{run.status === 'DRAFT' && <Button variant="success" onClick={() => setModal('open')}>Mở đăng ký</Button>}{['DRAFT', 'OPEN_FOR_REGISTRATION', 'CONFIRMED', 'IN_PROGRESS'].includes(run.status) && <Button variant="outline-danger" disabled={busy} onClick={cancelRun}>Hủy đợt mở</Button>}</div></div>
-    {operational && <Button className="mb-3" disabled={busy} onClick={() => { scheduleForm.reset({ plannedStartAt: toLocalInput(run.plannedStartAt), plannedEndAt: toLocalInput(run.plannedEndAt), totalUnits: run.totalUnits }); setModal('schedule'); }}>Sửa lịch / số buổi đợt học</Button>}
-    <Modal show={modal === 'schedule'} onHide={() => { if (!busy) setModal(''); }} backdrop={busy ? 'static' : true} keyboard={!busy}><Form noValidate onSubmit={scheduleForm.handleSubmit(saveRunSchedule)}><Modal.Header closeButton={!busy}><Modal.Title>Áp dụng lịch đợt học</Modal.Title></Modal.Header><Modal.Body>
-      {error && <ErrorAlert error={error} />}
-      <p>Thay đổi áp dụng trực tiếp. Hệ thống kiểm tra lịch các buổi, thông báo học viên và xác định quyền rút.</p>
-      {['plannedStartAt', 'plannedEndAt'].map((name) => <div key={name}><CourseDateTimeInput control={scheduleForm.control} name={name} label={name === 'plannedStartAt' ? 'Khai giảng' : 'Kết thúc'} /><p className="text-danger">{scheduleForm.formState.errors[name]?.message}</p></div>)}
-      <Form.Group controlId="schedule-total"><Form.Label>Tổng số buổi</Form.Label><Form.Control type="number" min={1} max={run.totalUnits} {...scheduleForm.register('totalUnits')} /><p className="text-danger">{scheduleForm.formState.errors.totalUnits?.message}</p></Form.Group>
-    </Modal.Body><Modal.Footer><Button type="submit" disabled={busy}>Xác nhận áp dụng</Button></Modal.Footer></Form></Modal>
+    {operational && <Button className="mb-3" disabled={busy} onClick={() => setModal('schedule')}>Sửa lịch / số buổi đợt học</Button>}
+    {modal === 'schedule' && <CourseRunRescheduleModal run={run} sessions={sessions} onClose={() => setModal('')} onSaved={(result) => { setRun(result.run); setSessions(result.sessions); setModal(''); setError(''); }} />}
     {error && <ErrorAlert error={error} title="Không thể xử lý đợt mở khóa học" onClose={() => setError('')} />}
     <Row className="g-3 mb-4"><Col lg={8}><div className="bg-white rounded shadow-sm p-4 h-100"><Row className="g-3"><Col md={6}><strong>Huấn luyện viên chính</strong><div>{run.primaryCoachName}</div></Col><Col md={3}><strong>Học phí</strong><div>{formatCourseMoney(run.tuitionVnd)}</div></Col><Col md={3}><strong>Sĩ số</strong><div>{run.minimumEnrollment}–{run.capacity}</div></Col><Col md={6}><strong>Thời gian đăng ký</strong><div>{formatCourseDateTime(run.registrationOpensAt)} – {formatCourseDateTime(run.registrationClosesAt)}</div></Col><Col md={6}><strong>Thời gian dự kiến</strong><div>{formatCourseDateTime(run.plannedStartAt)} – {formatCourseDateTime(run.plannedEndAt)}</div></Col></Row></div></Col><Col lg={4}><div className="bg-white rounded shadow-sm p-4"><strong>Số buổi</strong><div className="display-6">{run.totalUnits}</div><small className="text-muted">Chính sách: {run.policyVersionSnapshot || 'Chưa chốt'}</small></div></Col></Row>
 

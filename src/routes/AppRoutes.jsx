@@ -371,6 +371,7 @@ const SessionAssignmentEditPage = lazy(
 // Receptionist / Manager – Manual Payment Reconciliation (US19)
 // Shared by both roles: the backend authorises `/payments/**` with
 // hasAnyRole("MANAGER", "RECEPTIONIST").
+const CoursePaymentReconciliationPage = lazy(() => import('../pages/receptionist/payments/CoursePaymentReconciliationPage'));
 const PaymentReconciliationPage = lazy(
   () => import('../pages/receptionist/payments/PaymentReconciliationPage'),
 );
@@ -662,6 +663,7 @@ export default function AppRoutes() {
         <Route path="courses" element={withSuspense(<ReceptionCourseBookingPage />)} />
         <Route path="course-refunds" element={withSuspense(<ReceptionCourseRefundPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
+        <Route path="course-payments/reconcile" element={withSuspense(<CoursePaymentReconciliationPage />)} />
         <Route path="payments/cash" element={withSuspense(<CashPaymentPage />)} />
         <Route path="refunds" element={withSuspense(<RefundRequestDeskPage />)} />
       </Route>
@@ -806,6 +808,7 @@ export default function AppRoutes() {
         <Route path="profile/email" element={withSuspense(<StaffChangeEmailPage />)} />
         <Route path="profile/password" element={withSuspense(<StaffChangePasswordPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
+        <Route path="course-payments/reconcile" element={withSuspense(<CoursePaymentReconciliationPage />)} />
         <Route path="refunds" element={withSuspense(<RefundReviewPage />)} />
       </Route>
 

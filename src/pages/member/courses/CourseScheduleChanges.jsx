@@ -58,7 +58,7 @@ export default function CourseScheduleChanges({ enrollments, onResponded }) {
       <Modal.Header closeButton={!busy}><Modal.Title>Xác nhận phản hồi đổi lịch</Modal.Title></Modal.Header><Modal.Body>
         {submitError && <Alert variant="danger">{submitError}</Alert>}
         <p>{COURSE_RESPONSE_LABELS[choice?.response]}. Phản hồi đã gửi không thể thay đổi.</p>
-        {choice?.response === 'REQUEST_WITHDRAWAL' && <p>Thao tác này tạo yêu cầu rút để Manager duyệt. Khoản hoàn được xử lý riêng, chưa phải đã chi tiền.</p>}
+        {choice?.response === 'REQUEST_WITHDRAWAL' && <p>Thao tác này tạo yêu cầu rút để Manager duyệt và tạm ngừng học/điểm danh, vẫn giữ chỗ. Không bù buổi đã lỡ nếu hủy hoặc bị từ chối. Khoản hoàn được xử lý riêng, chưa phải đã chi tiền.</p>}
       </Modal.Body><Modal.Footer><Button variant="secondary" disabled={busy} onClick={() => setChoice(null)}>Đóng</Button><Button disabled={busy || !choice || !canRespondToCourseChange(choice.change, now)} onClick={respond}>Gửi phản hồi</Button></Modal.Footer>
     </Modal>
   </section>;

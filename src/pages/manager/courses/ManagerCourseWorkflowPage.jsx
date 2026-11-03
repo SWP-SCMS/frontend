@@ -47,7 +47,7 @@ function DecisionForm({ kind, item, action, targets, onSubmit, busy }) {
       </Form.Group>)}
     </>}
     {kind === 'refunds' && action === 'approve' && <p>Số tiền đề nghị: <strong>{money(item.grossObligationVnd)}</strong>. Duyệt khoản hoàn chưa phải xác nhận đã chi.</p>}
-    {kind === 'withdrawals' && action === 'approve' && <p>Hệ thống xác định số buổi còn lại và số tiền hoàn tại thời điểm duyệt. Khoản hoàn được xử lý riêng.</p>}
+    {kind === 'withdrawals' && action === 'approve' && <p>Số buổi còn lại và khoản hoàn được chốt khi gửi yêu cầu thành công theo hồ sơ. Duyệt không tính lại theo lịch hiện tại; khoản hoàn được xử lý riêng.</p>}
     <Form.Group controlId="course-decision-reason" className="mb-3">
       <Form.Label>Lý do / kết quả đối chiếu</Form.Label>
       <Form.Control as="textarea" rows={3} {...register('reason')} maxLength={1000} disabled={busy} isInvalid={!!errors.reason} />
@@ -184,7 +184,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
           </> : <>
             <p>Lý do: {detail.requestReason || detail.reason || 'Yêu cầu chuyển đợt học do thay đổi lịch'}</p>
             {detail.decisionReason && <p>Kết quả: {detail.decisionReason}</p>}
-            {kind === 'withdrawals' && <p>Số tiền hoàn được xác định: <strong>{money(detail.refundAmountVnd)}</strong>{detail.remainingUnits != null && <> · {detail.remainingUnits}/{detail.totalUnits} buổi còn lại</>}</p>}
+            {kind === 'withdrawals' && <p>Khoản hoàn đã chốt theo BE: <strong>{detail.snapshotSource === 'UNAVAILABLE' ? 'Chưa có snapshot' : money(detail.refundAmountVnd)}</strong>{detail.remainingUnits != null && <> · {detail.remainingUnits}/{detail.totalUnits} buổi còn lại</>}</p>}
           </>}
           {kind === 'refunds' && courseAmountText(detail.grossObligationVnd) == null && <Alert variant="warning">Số tiền chưa thể hiển thị chính xác. Chưa thể duyệt khoản hoàn này; vui lòng kiểm tra lại hồ sơ.</Alert>}
           <div className="d-flex flex-wrap gap-2">{available.map((value) => <Button key={value} variant={action === value ? 'primary' : 'outline-primary'} disabled={busy || (value === 'verify' && courseAmountText(detail.disbursedAmountVnd) == null) || (kind === 'refunds' && value === 'approve' && courseAmountText(detail.grossObligationVnd) == null)} onClick={() => chooseAction(value)}>{actions[value]}</Button>)}</div>

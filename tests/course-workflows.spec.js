@@ -253,3 +253,60 @@ test('manager cannot decide when the member identity fails to load', async ({ pa
   expect(calls.some((call) => call.path.endsWith('/approve'))).toBe(false);
   expect(errors).toEqual([]);
 });
+
+test('Course reconciliation keeps the exact decision and key after an uncertain response', async ({ page }) => {
+  const payment = { paymentId: 'course-pay-qa', orderId: 'course-order-qa', orderReference: 'COR-QA', memberName: 'Hội viên QA', memberCode: 'MB-QA', paymentReference: 'COR-QA', amount: 1000, status: 'PENDING', deadlineAt: nextMonth };
+  let posts = 0;
+  const { calls, errors } = await mockApi(page, 'MANAGER', ({ path, method }) => {
+    if (path === '/course-payments/reconciliation-queue') return { body: { content: posts > 1 ? [] : [payment], page: 0, totalPages: 1 } };
+    if (path === '/course-payments/course-pay-qa') return { body: { payment, bankCode: 'QA', bankAccountNumber: '123', bankAccountName: 'QA ACCOUNT', transferContent: 'COR-QA', canConfirmPaid: true, canConfirmFailed: false } };
+    if (path === '/course-payments/course-pay-qa/reconcile' && method === 'POST') {
+      posts++;
+      return posts === 1 ? { status: 503, body: { code: 'UNAVAILABLE' } } : { body: { ...payment, status: 'PAID', enrollment: { enrollmentId: 'qa-enrollment' } } };
+    }
+  });
+  await page.goto('/manager/course-payments/reconcile');
+  await page.getByRole('button', { name: 'Đối soát', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Số tiền thực nhận (VND)').fill('1000');
+  await dialog.getByLabel('Nội dung chuyển khoản thực tế').fill('COR-QA');
+  await dialog.getByLabel('Mã giao dịch ngân hàng').fill('QA-TX');
+  await dialog.getByLabel('Chứng từ đối soát').fill('QA receipt');
+  await dialog.getByLabel('Lý do / kết quả đối chiếu').fill('QA matched');
+  await dialog.getByRole('button', { name: 'Xác nhận đối soát', exact: true }).click();
+  await expect(dialog.getByText('Không xác nhận được kết quả.', { exact: false })).toBeVisible();
+  await expect(dialog.getByLabel('Số tiền thực nhận (VND)')).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Thử lại quyết định đã gửi' }).click();
+  await expect(dialog).toContainText('Hệ thống đã ghi nhận đăng ký khóa học.');
+  const writes = calls.filter(c => c.method === 'POST' && c.path.endsWith('/reconcile'));
+  expect(writes).toHaveLength(2);
+  expect(writes[0].headers['idempotency-key']).toBeTruthy();
+  expect(writes[1].headers['idempotency-key']).toBe(writes[0].headers['idempotency-key']);
+  expect(writes[1].body).toEqual(writes[0].body);
+  expect(calls.some(c => c.path.startsWith('/payments/'))).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('Course reconciliation Reception cannot confirm paid after the backend blocks expiry', async ({ page }) => {
+  const payment = { paymentId: 'expired-qa', orderReference: 'COR-EXPIRED', memberName: 'Hội viên QA', memberCode: 'MB-QA', amount: 1000, deadlineAt: yesterday };
+  const { calls, errors } = await mockApi(page, 'RECEPTIONIST', ({ path, method, body }) => {
+    if (path === '/course-payments/reconciliation-queue') return { body: { content: [payment], page: 0, totalPages: 1 } };
+    if (path === '/course-payments/expired-qa') return { body: { payment, canConfirmPaid: false, canConfirmFailed: true, blockedReason: 'PAYMENT_WINDOW_EXPIRED' } };
+    if (path === '/course-payments/expired-qa/reconcile' && method === 'POST') {
+      expect(body).toEqual({ status: 'FAILED', evidence: 'QA expired receipt', reason: 'QA expired hold' });
+      return { body: { ...payment, status: 'FAILED' } };
+    }
+  });
+  await page.goto('/reception/course-payments/reconcile');
+  await page.getByRole('button', { name: 'Đối soát', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('Đã hết hạn thanh toán');
+  await expect(dialog.getByRole('button', { name: 'Xác nhận đối soát', exact: true })).toBeDisabled();
+  await dialog.getByLabel('Kết quả đối soát').selectOption('FAILED');
+  await dialog.getByLabel('Chứng từ đối soát').fill('QA expired receipt');
+  await dialog.getByLabel('Lý do / kết quả đối chiếu').fill('QA expired hold');
+  await dialog.getByRole('button', { name: 'Xác nhận đối soát', exact: true }).click();
+  await expect(dialog).toContainText('Đã ghi nhận thất bại');
+  expect(calls.filter(c => c.method === 'POST' && c.path.endsWith('/reconcile'))).toHaveLength(1);
+  expect(errors).toEqual([]);
+});

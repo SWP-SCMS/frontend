@@ -10,6 +10,7 @@ import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils
 import { joinCourseWaitlist } from '../../../services/courseWaitlistService';
 import {
   COURSE_ORDER_STATUS_LABELS,
+  COURSE_SESSION_STATUS_LABELS,
   formatCourseDateTime,
   formatCourseMoney,
   getCourseErrorCode,
@@ -166,13 +167,17 @@ export default function MemberCourseRegistrationPage() {
           <dl className="member-course-info-list">
             <div><dt>Huấn luyện viên</dt><dd>{run?.primaryCoachName || 'Đang cập nhật'}</dd></div>
             <div><dt>Thời gian</dt><dd>{formatCourseDateTime(run?.plannedStartAt)} – {formatCourseDateTime(run?.plannedEndAt)}</dd></div>
-            <div><dt>Số buổi</dt><dd>{run?.totalUnits ?? sortedSessions.length} buổi</dd></div>
+            <div><dt>Số buổi</dt><dd>{run?.totalUnits != null ? `${run.totalUnits} buổi` : 'Đang cập nhật'}</dd></div>
             <div><dt>Sức chứa</dt><dd>{run?.capacity || '—'} học viên</dd></div>
           </dl>
           <div className="member-course-session-stack">
             {sortedSessions.map((session) => (
               <div className="member-course-session-row" key={session.id}>
-                <strong>Buổi {session.unitNumber}</strong><span>{formatCourseDateTime(session.startAt)}</span>
+                <strong>Buổi {session.unitNumber}{session.isMakeup ? ' · Học bù' : ''}</strong>
+                <span>{formatCourseDateTime(session.startAt)}</span>
+                <span>{session.status === 'CANCELLED_PENDING_MAKEUP'
+                  ? 'Đã hủy (buổi gốc)'
+                  : getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.status)}</span>
               </div>
             ))}
           </div>

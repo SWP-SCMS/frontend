@@ -33,6 +33,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/reception/courses', label: 'Đăng ký khóa học' },
         { to: '/reception/course-refunds', label: 'Hoàn tiền khóa học' },
         { to: '/reception/payments/reconcile', label: 'Đối soát' },
+        { to: '/reception/course-payments/reconcile', label: 'Đối soát khóa học' },
         { to: '/reception/refunds', label: 'Hoàn tiền' },
       ],
     },
@@ -91,6 +92,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/manager/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/manager/refunds', label: 'Duyệt hoàn tiền' },
         { to: '/manager/payments/reconcile', label: 'Đối soát' },
+        { to: '/manager/course-payments/reconcile', label: 'Đối soát khóa học' },
       ],
     },
     {
