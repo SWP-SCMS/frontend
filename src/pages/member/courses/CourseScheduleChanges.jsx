@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Modal } from 'react-bootstrap';
 import { listMyCourseScheduleChanges, respondToCourseScheduleChange } from '../../../services/courseEnrollmentService';
@@ -17,14 +18,14 @@ export default function CourseScheduleChanges({ enrollments, onResponded }) {
   const [notice, setNotice] = useState('');
   const [submitError, setSubmitError] = useState('');
   const mutationLock = useRef(false);
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setLoading(true); setError('');
-    listMyCourseScheduleChanges().then((data) => { if (active) setChanges(data); })
-      .catch((e) => { if (active) setError(getCourseErrorMessage(e, 'Không tải được thay đổi lịch.')); })
-      .finally(() => { if (active) setLoading(false); });
+    if (!background) commitValue(setLoading, true); commitError(setError, '');
+    track(listMyCourseScheduleChanges().then((data) => { if (active) commitValue(setChanges, data); })
+      .catch((e) => { failed(e);  if (active) commitError(setError, getCourseErrorMessage(e, 'Không tải được thay đổi lịch.')); })
+      .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
-  }, [revision]);
+  }, [revision], !busy);
   async function respond() {
     if (mutationLock.current || !choice || !canRespondToCourseChange(choice.change)) return;
     mutationLock.current = true; setBusy(true); setSubmitError('');

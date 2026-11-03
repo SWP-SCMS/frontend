@@ -1,7 +1,8 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseCreateSchema } from '../../../schemas/courseSchemas';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Badge, Button, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -22,24 +23,24 @@ export default function ManagerCoursesPage() {
   const { register, handleSubmit, reset: setForm, formState: { errors } } = courseForm;
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, '');
     try {
       const [coursePage, disciplineList] = await Promise.all([
         listManagerCourses({ page, size: 20 }),
         listDisciplines(),
       ]);
-      setResult(coursePage);
-      setDisciplines(Array.isArray(disciplineList) ? disciplineList : []);
-    } catch (err) {
-      setError(getCourseErrorMessage(err, 'Không tải được danh sách khóa học.'));
+      commitValue(setResult, coursePage);
+      commitValue(setDisciplines, Array.isArray(disciplineList) ? disciplineList : []);
+    } catch (err) { failed(err);
+      commitError(setError, getCourseErrorMessage(err, 'Không tải được danh sách khóa học.'));
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [page]);
 
-  useEffect(() => { load(); }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !saving);
 
   async function handleCreate(form) {
 

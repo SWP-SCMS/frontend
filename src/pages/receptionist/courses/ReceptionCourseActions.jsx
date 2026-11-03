@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useRef, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import api from '../../../services/api';
@@ -11,13 +12,13 @@ export default function ReceptionCourseActions({ member, run, refreshRevision, o
   const [data, setData] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0), [page, setPage] = useState(0), [orderId, setOrderId] = useState(null);
   const keys = useRef({}), lock = useRef(false);
   const base = `/reception/members/${member.accountId}`;
-  useEffect(() => {
-    let active = true; setData(null); setError('');
-    Promise.all(['course-waitlists', 'course-schedule-changes', 'course-transfer-offers', 'course-withdrawal-requests', `course-refund-obligations?page=${page}&size=20`].map(path => api.get(`${base}/${path}`).then(r => r.data)))
-      .then(([waitlists, changes, offers, withdrawals, refunds]) => { if (active) setData({ waitlists, changes, offers, withdrawals, refunds }); })
-      .catch(e => { if (active) setError(getCourseErrorMessage(e)); });
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    let active = true; if (!background) commitValue(setData, null); commitError(setError, '');
+    track(Promise.all(['course-waitlists', 'course-schedule-changes', 'course-transfer-offers', 'course-withdrawal-requests', `course-refund-obligations?page=${page}&size=20`].map(path => api.get(`${base}/${path}`).then(r => r.data)))
+      .then(([waitlists, changes, offers, withdrawals, refunds]) => { if (active) commitValue(setData, { waitlists, changes, offers, withdrawals, refunds }); })
+      .catch(e => { failed(e);  if (active) commitError(setError, getCourseErrorMessage(e)); }));
     return () => { active = false; };
-  }, [base, revision, page, refreshRevision]);
+  }, [base, revision, page, refreshRevision], !busy);
   async function act(path, payload, keyed = false, method = 'post', confirmation = 'Xác nhận thao tác khóa học') {
     if (lock.current || member.status !== 'ACTIVE') return;
     if (!window.confirm(`${confirmation}

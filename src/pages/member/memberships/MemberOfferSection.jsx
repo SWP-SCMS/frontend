@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Danh sách gói tập đang mở bán, hiện ngay trên trang "Gói tập" của Hội viên
 // (/member/plan) để không phải sang trang công khai /offers.
 //
@@ -7,7 +8,7 @@
 // Member có Membership ACTIVE vẫn được mua một gói gia hạn. Nút chỉ bị khóa
 // khi caller phát hiện gói RESERVED hoặc đơn PENDING_PAYMENT hiện hữu.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -38,20 +39,20 @@ export default function MemberOfferSection({ blockedReason = null }) {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
-      setOffers((await listActiveOffers()).filter(isDisplayableOffer));
-    } catch (err) {
-      setError(err);
+      commitValue(setOffers, (await listActiveOffers()).filter(isDisplayableOffer));
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   const pricing = useMemo(() => computeOfferPricing(offers), [offers]);

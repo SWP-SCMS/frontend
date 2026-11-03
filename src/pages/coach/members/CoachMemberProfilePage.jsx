@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
@@ -15,12 +16,12 @@ export default function CoachMemberProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    getCoachAssignedMember(memberAccountId)
-      .then((data) => { if (!cancelled) setProfile(data); })
-      .catch((err) => { if (!cancelled) setError(err); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    track(getCoachAssignedMember(memberAccountId)
+      .then((data) => { if (!cancelled) commitValue(setProfile, data); })
+      .catch((err) => { failed(err);  if (!cancelled) commitError(setError, err); })
+      .finally(() => { if (!cancelled) if (!background) commitValue(setLoading, false); }));
     return () => { cancelled = true; };
   }, [memberAccountId]);
 

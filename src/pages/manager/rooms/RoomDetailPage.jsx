@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Room detail (US25).
 //
 // Read-only view of a single room. Loads via the dedicated
@@ -7,7 +8,7 @@
 //   { id, name, capacity, status, usageMode }
 // createdAt / updatedAt / version are NOT in the response DTO.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
@@ -30,29 +31,29 @@ export default function RoomDetailPage() {
   const [suspensionsError, setSuspensionsError] = useState(null);
   const [loadedAt, setLoadedAt] = useState(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setSuspensionsError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
+    commitError(setSuspensionsError, null);
     try {
       const data = await getRoom(roomId);
-      setRoom(data);
+      commitValue(setRoom, data);
       try {
-        setSuspensions(await listRoomSuspensions(roomId));
-      } catch (suspensionError) {
-        setSuspensions([]);
-        setSuspensionsError(suspensionError);
+        commitValue(setSuspensions, await listRoomSuspensions(roomId));
+      } catch (suspensionError) { failed(suspensionError);
+        if (!background) commitValue(setSuspensions, []);
+        commitError(setSuspensionsError, suspensionError);
       }
-    } catch (err) {
-      setError(err);
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoadedAt(Date.now());
-      setLoading(false);
+      commitValue(setLoadedAt, Date.now());
+      if (!background) commitValue(setLoading, false);
     }
   }, [roomId]);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   if (loading) {

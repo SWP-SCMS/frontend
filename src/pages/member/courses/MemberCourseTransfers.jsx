@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
@@ -23,23 +24,23 @@ export default function MemberCourseTransfers({ enrollments, onTransferred }) {
   const keys = useRef({});
   const mutationLock = useRef(false);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setLoading(true); setError('');
-    listMyCourseTransferOffers().then((data) => { if (active) setOffers(data); })
-      .catch((err) => { if (active) setError(getCourseErrorMessage(err, 'Không tải được đề nghị chuyển đợt học.')); })
-      .finally(() => { if (active) setLoading(false); });
+    if (!background) commitValue(setLoading, true); commitError(setError, '');
+    track(listMyCourseTransferOffers().then((data) => { if (active) commitValue(setOffers, data); })
+      .catch((err) => { failed(err);  if (active) commitError(setError, getCourseErrorMessage(err, 'Không tải được đề nghị chuyển đợt học.')); })
+      .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
-  }, [revision]);
-  useEffect(() => {
+  }, [revision], !busy);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setTarget(null); setTargetError(''); setTargetLoading(!!selected);
-    if (selected) getCatalogCourseRun(selected.targetRunId)
-      .then((data) => { if (active) setTarget(data); })
-      .catch((err) => { if (active) setTargetError(getCourseErrorMessage(err, 'Chưa tải được lịch đợt học thay thế. Đợt học có thể không còn công khai; vui lòng liên hệ lễ tân.')); })
-      .finally(() => { if (active) setTargetLoading(false); });
+    if (!background) commitValue(setTarget, null); commitError(setTargetError, ''); if (!background) commitValue(setTargetLoading, !!selected);
+    if (selected) track(getCatalogCourseRun(selected.targetRunId)
+      .then((data) => { if (active) commitValue(setTarget, data); })
+      .catch((err) => { failed(err);  if (active) commitError(setTargetError, getCourseErrorMessage(err, 'Chưa tải được lịch đợt học thay thế. Đợt học có thể không còn công khai; vui lòng liên hệ lễ tân.')); })
+      .finally(() => { if (active) if (!background) commitValue(setTargetLoading, false); }));
     return () => { active = false; };
-  }, [selected]);
+  }, [selected], !busy);
 
   async function accept() {
     if (mutationLock.current || !target || !canAcceptCourseTransfer(selected)) return;

@@ -67,20 +67,20 @@ export default function MembershipRequestDeskPage() {
   const [termination, setTermination] = useState({ mode: 'END_OF_CYCLE', reason: '' });
   const [freeze, setFreeze] = useState({ startDate: '', endDate: '', reason: '' });
 
-  const refreshForCurrentMember = useCallback(async () => {
+  const refreshForCurrentMember = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     if (!memberCode) return;
     try {
       const [terminations, freezes] = await Promise.all([
         listReceptionTerminationRequests(memberCode),
         listReceptionFreezeRequests(memberCode),
       ]);
-      setTerminationRows(terminations.content || []);
-      setFreezeRows(freezes.content || []);
+      commitValue(setTerminationRows, terminations.content || []);
+      commitValue(setFreezeRows, freezes.content || []);
     } catch {
       // Preserve the last visible member requests if a background refresh fails.
     }
   }, [memberCode]);
-  useAutoRefresh(refreshForCurrentMember, 30_000, Boolean(memberCode) && !busy && !paymentTarget && !endEarlyTarget);
+  useAutoRefresh(refreshForCurrentMember, 7_000, Boolean(memberCode) && !busy && !paymentTarget && !endEarlyTarget);
 
   async function loadFor(code) {
     const normalized = code.trim().toUpperCase();

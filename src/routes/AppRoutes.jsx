@@ -498,6 +498,19 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      {[
+        ['/member/course-catalog', <CourseCatalogPage key="catalog" memberView />],
+        ['/member/course-catalog/:courseId', <CourseDetailPage key="course" memberView />],
+        ['/member/course-runs/:runId', <CourseRunDetailPage key="run" memberView />],
+      ].map(([path, page]) => (
+        <Route key={path} path={path} element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>{withSuspense(page)}</MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        } />
+      ))}
       <Route
         path="/member/courses"
         element={

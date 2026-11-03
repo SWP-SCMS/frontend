@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import CourseRunRescheduleModal from './CourseRunRescheduleModal';
 import CourseDateTimeInput from '../../../components/common/CourseDateTimeInput';
 import { useForm } from 'react-hook-form';
@@ -53,19 +54,19 @@ export default function ManagerCourseRunDetailPage() {
   const { reset: setSessionForm } = sessionFields;
 
 
-  const load = useCallback(async () => {
-    setLoading(true); setError('');
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true); commitError(setError, '');
     try {
       const [runData, sessionData, roomData, coachPage] = await Promise.all([
         getManagerCourseRun(runId), listManagerCourseSessions(runId), listRooms(),
         searchStaffAccounts({ role: 'COACH', status: 'ACTIVE', page: 0, size: 100 }),
       ]);
-      setRun(runData); resetMinimum({ minimumEnrollment: runData.minimumEnrollment }); setSessions(sessionData);
-      setRooms(Array.isArray(roomData) ? roomData : []); setCoaches(coachPage?.content || []);
-    } catch (err) { setError(getCourseErrorMessage(err, 'Không tải được đợt mở khóa học.')); }
-    finally { setLoading(false); }
+      commitValue(setRun, runData); if (!background) commitValue(resetMinimum, { minimumEnrollment: runData.minimumEnrollment }); commitValue(setSessions, sessionData);
+      commitValue(setRooms, Array.isArray(roomData) ? roomData : []); commitValue(setCoaches, coachPage?.content || []);
+    } catch (err) { failed(err);  commitError(setError, getCourseErrorMessage(err, 'Không tải được đợt mở khóa học.')); }
+    finally { if (!background) commitValue(setLoading, false); }
   }, [runId, resetMinimum]);
-  useEffect(() => { load(); }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !modal && !busy);
 
   async function saveMinimum({ minimumEnrollment }) {
      setBusy(true); setError('');

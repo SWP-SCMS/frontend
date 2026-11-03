@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import PublicDarkLayout from '../../../components/layout/PublicDarkLayout';
+import CourseCatalogLayout from '../../../components/layout/CourseCatalogLayout';
 import { listCatalogCourses } from '../../../services/courseCatalogService';
 import './CourseCatalogPage.css';
 
-function CourseCard({ course }) {
+function CourseCard({ course, memberView }) {
   return (
     <article className="course-card">
       <div className="course-card-media">
@@ -21,7 +22,7 @@ function CourseCard({ course }) {
         </div>
         <h2>{course.name}</h2>
         <p>{course.description || 'Thông tin chi tiết đang được cập nhật.'}</p>
-        <Link className="course-primary-link" to={`/courses/${course.id}`}>
+        <Link className="course-primary-link" to={`${memberView ? "/member/course-catalog" : "/courses"}/${course.id}`}>
           Xem khóa học
         </Link>
       </div>
@@ -29,30 +30,30 @@ function CourseCard({ course }) {
   );
 }
 
-export default function CourseCatalogPage() {
+export default function CourseCatalogPage({ memberView = false }) {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(false);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, false);
     try {
       const page = await listCatalogCourses({ page: 0, size: 100 });
-      setCourses(page.content || []);
-    } catch {
-      setError(true);
+      commitValue(setCourses, page.content || []);
+    } catch { failed();
+      commitError(setError, true);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   return (
-    <PublicDarkLayout active="courses">
+    <CourseCatalogLayout memberView={memberView}>
       <section className="course-hero">
         <div className="scms-home-wrap">
           <span className="scms-home-eyebrow">Chương trình chuyên đề</span>
@@ -86,12 +87,12 @@ export default function CourseCatalogPage() {
           ) : (
             <div className="course-grid">
               {courses.map((course) => (
-                <CourseCard course={course} key={course.id} />
+                <CourseCard memberView={memberView} course={course} key={course.id} />
               ))}
             </div>
           )}
         </div>
       </section>
-    </PublicDarkLayout>
+    </CourseCatalogLayout>
   );
 }

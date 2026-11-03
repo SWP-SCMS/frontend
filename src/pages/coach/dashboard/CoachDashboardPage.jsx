@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Trang tổng quan của Huấn luyện viên.
 //
 // API: GET /coach/class-sessions. Danh sách đã có đủ ngữ cảnh hiển thị.
@@ -9,7 +10,7 @@
 //
 // Ba ô thống kê bấm được: mở hộp danh sách tương ứng.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge, Button, Modal, Spinner, Table } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -87,7 +88,7 @@ export default function CoachDashboardPage() {
   // Hộp đang mở: 'today' | 'classes' | 'members' | null.
   const [panel, setPanel] = useState(null);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     async function load() {
       try {
@@ -114,18 +115,18 @@ export default function CoachDashboardPage() {
           ...(scheduled.content ?? []),
           ...(inProgress.content ?? []),
         ];
-        setToday(todayList);
-        setUpcoming(upcomingRes.content ?? []);
-        setOpenSessions(openSessions);
-        setLoading(false);
-      } catch (err) {
+        commitValue(setToday, todayList);
+        commitValue(setUpcoming, upcomingRes.content ?? []);
+        commitValue(setOpenSessions, openSessions);
+        if (!background) commitValue(setLoading, false);
+      } catch (err) { failed(err);
         if (!cancelled) {
-          setError(err);
-          setLoading(false);
+          commitError(setError, err);
+          if (!background) commitValue(setLoading, false);
         }
       }
     }
-    load();
+    track(load());
     return () => {
       cancelled = true;
     };

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   Alert,
@@ -173,21 +174,21 @@ export default function CoachMemberTrainingPage({ kind }) {
     defaultValues: EMPTY_PLAN_FORM,
   });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
-      setResult(await config.load(memberAccountId, { page, size: 20 }));
-    } catch (err) {
-      setError(err);
+      commitValue(setResult, await config.load(memberAccountId, { page, size: 20 }));
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [config, memberAccountId, page]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
+  }, [load], !modalMode && !archiveTarget && !replacementSubmitting && !archivingId);
 
   function openCreateModal() {
     setSelectedPlan(null);

@@ -58,14 +58,14 @@ export default function CoachLeaveReviewPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
-      setRows(await listManagerCoachLeaveRequests(status));
+      commitValue(setRows, await listManagerCoachLeaveRequests(status));
     } catch {
       // Keep the current queue visible if a background refresh fails.
     }
   }, [status]);
-  useAutoRefresh(refreshInBackground, 15_000, !decision && !busy);
+  useAutoRefresh(refreshInBackground, 7_000, !decision && !busy);
 
   function openDecision(row, action) {
     setActionError(null);

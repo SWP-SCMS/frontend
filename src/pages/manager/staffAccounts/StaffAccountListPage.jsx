@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Staff/Manager account list & search (US05).
 //
 // BE: GET /api/v1/manager/staff-accounts?query&role&status&page&size
@@ -74,12 +75,12 @@ export default function StaffAccountListPage() {
   }, [query]);
 
   // Fetch whenever URL params change.
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
 
-    searchStaffAccounts({
+    track(searchStaffAccounts({
       query: query || undefined,
       role: role || undefined,
       status: status || undefined,
@@ -88,15 +89,15 @@ export default function StaffAccountListPage() {
     })
       .then((result) => {
         if (cancelled) return;
-        setData(result);
+        commitValue(setData, result);
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setError(err);
+        commitError(setError, err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
 
     return () => {
       cancelled = true;

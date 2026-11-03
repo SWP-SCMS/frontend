@@ -1,7 +1,8 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseEditSchema } from '../../../schemas/courseSchemas';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Badge, Button, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -22,13 +23,13 @@ export default function ManagerCourseDetailPage() {
   const [busy, setBusy] = useState(false);
   const [statusAction, setStatusAction] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true); setError('');
-    try { setCourse(await getManagerCourse(courseId)); }
-    catch (err) { setError(getCourseErrorMessage(err, 'Không tải được khóa học.')); }
-    finally { setLoading(false); }
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true); commitError(setError, '');
+    try { commitValue(setCourse, await getManagerCourse(courseId)); }
+    catch (err) { failed(err);  commitError(setError, getCourseErrorMessage(err, 'Không tải được khóa học.')); }
+    finally { if (!background) commitValue(setLoading, false); }
   }, [courseId]);
-  useEffect(() => { load(); }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !showEdit && !busy && !statusAction);
 
   function openEdit() {
     setForm({ name: course.name, description: course.description || '', imageUrl: course.imageUrl || '', defaultMinimumEnrollment: course.defaultMinimumEnrollment });

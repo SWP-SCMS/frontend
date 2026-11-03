@@ -34,9 +34,9 @@ export default function CoachAssignedMemberListPage() {
     load();
   }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
-      setResult(await listCoachAssignedMembers({ q: query, page, size: 20 }));
+      commitValue(setResult, await listCoachAssignedMembers({ q: query, page, size: 20 }));
     } catch {
       // Keep the current assigned-member list if a background refresh fails.
     }

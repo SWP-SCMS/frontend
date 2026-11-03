@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Session detail (US29) + Cancel (US31).
 //
 // Read-only view of a single Class Session. Loads via the dedicated
@@ -250,41 +251,41 @@ export default function SessionDetailPage() {
     }
   }
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const data = await getManagerSessionDetail(sessionId);
-      setSession(data);
-    } catch (err) {
-      setSession(null);
-      setError(err);
+      commitValue(setSession, data);
+    } catch (err) { failed(err);
+      if (!background) commitValue(setSession, null);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [sessionId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
+  }, [load], !cancelling);
 
-  const loadWaitlist = useCallback(async () => {
-    setWaitlistLoading(true);
-    setWaitlistError(null);
+  const loadWaitlist = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setWaitlistLoading, true);
+    commitError(setWaitlistError, null);
     try {
       const rows = await listManagerSessionWaitlist(sessionId);
-      setWaitlistRows(rows);
-    } catch (err) {
-      setWaitlistRows([]);
-      setWaitlistError(err);
+      commitValue(setWaitlistRows, rows);
+    } catch (err) { failed(err);
+      if (!background) commitValue(setWaitlistRows, []);
+      commitError(setWaitlistError, err);
     } finally {
-      setWaitlistLoading(false);
+      if (!background) commitValue(setWaitlistLoading, false);
     }
   }, [sessionId]);
 
-  useEffect(() => {
-    loadWaitlist();
-  }, [loadWaitlist]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(loadWaitlist({ background, commitValue, commitError, failed }));
+  }, [loadWaitlist], !cancelling);
 
   if (loading) {
     return (

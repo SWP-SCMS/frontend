@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Revenue / Membership report (US22).
 //
 // BE: GET /api/v1/manager/reports/membership-revenue
@@ -15,7 +16,7 @@
 //      selected range — the BE counts today's membership state. We label
 //      them as a snapshot so the manager doesn't read them as period totals.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Button,
@@ -78,22 +79,22 @@ export default function RevenueReportPage() {
 
   const rangeError = useMemo(() => buildRangeError(from, to), [from, to]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const data = await fetchRevenueReport({ from, to, includeTestData });
-      setReport({ ...EMPTY_REPORT, ...data });
-    } catch (err) {
-      setError(err);
+      commitValue(setReport, { ...EMPTY_REPORT, ...data });
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [from, to, includeTestData]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
+  }, [load], !rangeError);
 
   function handleReset() {
     setFrom(EMPTY);

@@ -1,9 +1,10 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Ba thẻ dành cho hội viên đang có gói tập ACTIVE trên trang tổng quan:
 //   1. Thời gian còn lại của gói  : từ Membership ACTIVE (startsAt / endsAt)
 //   2. Lịch tập sắp tới           : GET /members/me/bookings?status=BOOKED
 //   3. Đánh giá của Coach         : GET /members/me/feedback (BR-FDB-02)
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -50,23 +51,25 @@ export default function MemberServiceDashboardPanels({ membership }) {
   const [error, setError] = useState(null);
   const [now] = useState(() => Date.now()); // mốc "bây giờ" lúc mở trang
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     // Hai API độc lập: một cái lỗi thì cái kia vẫn hiện.
-    Promise.allSettled([
+    track(Promise.allSettled([
       listAllMyBookedBookings(),
       listMyFeedback({ page: 0, size: MAX_FEEDBACK }),
       listMyCourseEnrollments(),
     ]).then(
       ([b, f, c]) => {
         if (cancelled) return;
-        setBookings([...(b.status === 'fulfilled' ? b.value : []), ...(c.status === 'fulfilled' ? courseScheduleEntries(c.value) : [])]);
-        if (f.status === 'fulfilled') setFeedback(f.value.content);
-        const failed = [b, f, c].find((r) => r.status === 'rejected');
-        if (failed) setError(failed.reason);
-        setLoading(false);
+        const rejected = [b, f, c].find(result => result.status === 'rejected');
+        if (background && rejected) { failed(rejected.reason); return; }
+        commitValue(setBookings, [...(b.status === 'fulfilled' ? b.value : []), ...(c.status === 'fulfilled' ? courseScheduleEntries(c.value) : [])]);
+        if (f.status === 'fulfilled') commitValue(setFeedback, f.value.content);
+        const failure = [b, f, c].find((r) => r.status === 'rejected');
+        if (failure) commitError(setError, failure.reason);
+        if (!background) commitValue(setLoading, false);
       },
-    );
+    ));
     return () => {
       cancelled = true;
     };

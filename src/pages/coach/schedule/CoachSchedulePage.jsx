@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Lịch phụ trách của Huấn luyện viên: lịch tuần (Thứ Hai → Chủ Nhật) các buổi
 // MÌNH đứng lớp. Giao diện dùng lại CSS của "Lịch của tôi" bên Hội viên (mcs-*).
 //
@@ -6,7 +7,7 @@
 //   - Danh sách đã trả sẵn tên lớp, phòng, loại lớp và số lượt đặt.
 // Bấm một thẻ để xem chi tiết + điểm danh (CoachSessionInfoModal).
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Badge, Button, Card, Form, Spinner } from 'react-bootstrap';
 
@@ -68,32 +69,26 @@ export default function CoachSchedulePage() {
 
   const weekRange = useMemo(() => getWeekRangeDates(calYmd), [calYmd]);
 
-  // `isStale()` cho biết tuần đã đổi trong lúc đang tải: bỏ kết quả cũ để
-  // không ghi đè dữ liệu của tuần mới.
-  const load = useCallback(async (isStale = () => false) => {
+  // commitValue ignores responses from a previous week or an unmounted page.
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
     if (!weekRange) return;
     const from = gymLocalDateToIsoInstant(weekRange.mondayYmd, '00:00');
     const to = gymLocalDateToIsoInstant(weekRange.nextMondayYmd, '00:00');
-    setLoading(true);
-    setError(null);
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const res = await listCoachSessions({ from, to, size: 100 });
       const list = res.content ?? [];
-      if (isStale()) return;
-      setSessions(list);
-    } catch (err) {
-      if (!isStale()) setError(err);
+      commitValue(setSessions, list);
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      if (!isStale()) setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [weekRange]);
 
-  useEffect(() => {
-    let stale = false;
-    load(() => stale);
-    return () => {
-      stale = true;
-    };
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   const setWeek = useCallback(

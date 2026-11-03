@@ -101,19 +101,19 @@ export default function MembershipRequestsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
       const [terminations, freezes] = await Promise.all([
         listMyTerminationRequests(),
         listMyFreezeRequests(),
       ]);
-      setTerminationRows(terminations.content || []);
-      setFreezeRows(freezes.content || []);
+      commitValue(setTerminationRows, terminations.content || []);
+      commitValue(setFreezeRows, freezes.content || []);
     } catch {
       // Preserve the current request lists during temporary failures.
     }
   }, []);
-  useAutoRefresh(refreshInBackground, 30_000, !withdrawTarget && !busyKey);
+  useAutoRefresh(refreshInBackground, 7_000, !withdrawTarget && !busyKey);
 
   const hasOpenTermination = useMemo(
     () => terminationRows.some((row) => row.status === 'PENDING'),

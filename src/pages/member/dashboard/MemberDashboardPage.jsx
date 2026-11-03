@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Trang tổng quan Hội viên (nằm trong MemberLayout).
 //
 // Dữ liệu và API:
@@ -7,7 +8,7 @@
 //   - Đơn đang chờ thanh toán         : GET /members/me/membership-orders/pending
 //   - Nút "Chọn gói"                  : mở xác nhận rồi chuyển sang checkout
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Modal, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../../context/useAuth';
@@ -283,35 +284,36 @@ export default function MemberDashboardPage() {
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [actionError, setActionError] = useState(null);
 
-  const refreshPending = useCallback(async () => {
+  const refreshPending = useCallback(async ({ commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
     try {
-      setPendingOrder(await getMyPendingMembershipOrder());
+      commitValue(setPendingOrder, await getMyPendingMembershipOrder());
     } catch (err) {
-      setActionError({
+      failed(err);
+      commitError(setActionError, {
         message: problemMessage(err, 'Không tải được đơn chờ thanh toán.'),
       });
     } finally {
-      setPendingLoading(false);
+      commitValue(setPendingLoading, false);
     }
   }, []);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    listActiveOffers()
+    track(listActiveOffers()
       .then((data) => {
-        if (!cancelled) setOffers(data);
+        if (!cancelled) commitValue(setOffers, data);
       })
-      .catch((err) => {
-        if (!cancelled) setOffersError(err);
+      .catch((err) => { failed(err);
+        if (!cancelled) commitError(setOffersError, err);
       })
       .finally(() => {
-        if (!cancelled) setOffersLoading(false);
-      });
-    refreshPending();
+        if (!cancelled) if (!background) commitValue(setOffersLoading, false);
+      }));
+    track(refreshPending({ commitValue, commitError, failed }));
     return () => {
       cancelled = true;
     };
-  }, [refreshPending]);
+  }, [refreshPending], !selectedOffer);
 
   // Dashboard chỉ chọn gói và chuyển sang checkout. Order và yêu cầu thanh toán
   // được tạo tại checkout để không để lại đơn PENDING_PAYMENT mà người dùng

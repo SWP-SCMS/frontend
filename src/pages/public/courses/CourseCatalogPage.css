@@ -55,3 +55,26 @@
   .course-code-box, .course-price-box { width: 100%; }
   .course-session { grid-template-columns: 1fr; }
 }
+
+/* Member discovery shares catalog content while retaining the member shell. */
+.member-course-catalog { padding: 1.5rem; color: #182230; }
+.member-course-catalog .scms-home-wrap { width: 100%; max-width: 1200px; margin: 0 auto; }
+.member-course-catalog .course-hero { padding: 1rem 0 2rem; background: none; text-align: left; }
+.member-course-catalog .course-hero p { margin: 0; }
+.member-course-catalog .course-section { padding: 1rem 0 2rem; background: transparent; color: inherit; min-height: auto; }
+.member-course-catalog .course-hero h1,
+.member-course-catalog .course-detail-hero h1 { font-size: clamp(1.7rem, 3vw, 2.5rem); color: inherit; }
+.member-course-catalog :is(.course-card, .course-run-card, .course-state, .course-facts, .course-session-list, .course-code-box, .course-price-box) { background: #fff; border-color: #e1e5eb; }
+.member-course-catalog :is(.course-card h2, .course-run-card h3, .course-facts dd, .course-code-box strong, .course-price-box strong) { color: #182230; }
+.member-course-catalog :is(.course-hero p, .course-detail-hero p, .course-card p, .course-state p, .course-back-link, .course-facts dt, .course-session p, .course-session-status, .course-title-row p, .course-card-meta small, .course-run-card small, .course-code-box small, .course-price-box small) { color: #596579; }
+.member-course-catalog :is(.course-detail-hero, .course-facts div, .course-session) { border-color: #e1e5eb; }
+.member-course-catalog .course-detail-hero { padding: 2rem 0; }
+.member-course-catalog .course-title-row { margin-top: 2rem; }
+.member-course-catalog .course-card-media { background: #f1f3f6; }
+.member-course-catalog :is(.scms-home-eyebrow, .course-session-unit, .course-card-meta span, .course-status) { color: #b7322b; }
+.member-course-catalog .course-status.is-open { color: #187343; }
+.member-course-catalog .course-status.is-closed { color: #596579; }
+@media (max-width: 720px) {
+  .member-course-catalog { padding: 1rem; }
+  .member-course-catalog :is(.course-grid, .course-run-grid) { grid-template-columns: minmax(0, 1fr); }
+}

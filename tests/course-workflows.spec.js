@@ -250,6 +250,7 @@ test('manager cannot decide when refund detail fails to load', async ({ page }) 
   await expect(dialog).toContainText('Không tải được đầy đủ hồ sơ và đợt học');
   await expect(dialog.getByRole('button', { name: 'Duyệt', exact: true })).toHaveCount(0);
   expect(calls.some((call) => call.path.endsWith('/approve'))).toBe(false);
+  expect(calls.some((call) => call.path === '/manager/members/member-1')).toBe(false);
   expect(errors).toEqual([]);
 });
 

@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Room list (US25).
 //
 // BE: GET /api/v1/manager/rooms
@@ -51,23 +52,23 @@ export default function RoomListPage() {
   }, [query]);
 
   // Single fetch on mount. Filter / search is purely client-side.
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
 
-    listRooms()
+    track(listRooms()
       .then((result) => {
         if (cancelled) return;
-        setRooms(result);
+        commitValue(setRooms, result);
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setError(err);
+        commitError(setError, err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
 
     return () => {
       cancelled = true;

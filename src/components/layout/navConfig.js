@@ -181,7 +181,7 @@ export const MEMBER_SIDEBAR_ITEMS = [
   {
     label: 'Khóa học',
     items: [
-      { to: '/courses', label: 'Khám phá khóa học', icon: 'clipboard' },
+      { to: '/member/course-catalog', label: 'Khám phá khóa học', icon: 'clipboard' },
       { to: '/member/courses', label: 'Khóa học của tôi', icon: 'calendar' },
     ],
   },

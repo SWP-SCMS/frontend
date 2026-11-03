@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Spinner } from 'react-bootstrap';
 
@@ -15,11 +16,11 @@ export default function MembershipPlanDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    Promise.all([getMembershipPlan(planCode), listMembershipBenefits()])
-      .then(([nextPlan, catalog]) => { setPlan(nextPlan); setBenefits(catalog); })
-      .catch(setError)
-      .finally(() => setLoading(false));
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(Promise.all([getMembershipPlan(planCode), listMembershipBenefits()])
+      .then(([nextPlan, catalog]) => { commitValue(setPlan, nextPlan); commitValue(setBenefits, catalog); })
+      .catch(error => { failed(error); commitError(setError, error); })
+      .finally(() => (!background && commitValue(setLoading, false))));
   }, [planCode]);
 
   if (loading) return <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>;

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Form, Spinner, Table } from 'react-bootstrap';
 
@@ -15,11 +16,11 @@ export default function MembershipPlanListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    listMembershipPlans()
-      .then(setPlans)
-      .catch(setError)
-      .finally(() => setLoading(false));
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(listMembershipPlans()
+      .then(value => commitValue(setPlans, value))
+      .catch(error => { failed(error); commitError(setError, error); })
+      .finally(() => (!background && commitValue(setLoading, false))));
   }, []);
 
   const filtered = useMemo(() => {

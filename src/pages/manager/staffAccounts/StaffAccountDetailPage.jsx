@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Staff/Manager account detail (US06).
 //
 // Read-only view of a single account. Provides Edit + Reset Password +
@@ -5,7 +6,7 @@
 // (must remain at least one ACTIVE MANAGER) — the backend enforces this
 // and surfaces a 4xx with a clear message.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -33,22 +34,22 @@ export default function StaffAccountDetailPage() {
   const [resetMessage, setResetMessage] = useState(null);
   const [resetError, setResetError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const data = await getStaffAccount(accountId);
-      setAccount(data);
-    } catch (err) {
-      setError(err);
+      commitValue(setAccount, data);
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [accountId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
+  }, [load], !showDeactivate && !resetting);
 
   async function handleDeactivate() {
     setDeactivateError(null);

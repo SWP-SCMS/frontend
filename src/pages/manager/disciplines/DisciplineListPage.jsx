@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Discipline list & search (US23).
 //
 // BE: GET /api/v1/manager/disciplines
@@ -55,23 +56,23 @@ export default function DisciplineListPage() {
   }, [query]);
 
   // Single fetch on mount. Filter / search is purely client-side.
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
 
-    listDisciplines()
+    track(listDisciplines()
       .then((result) => {
         if (cancelled) return;
-        setDisciplines(result);
+        commitValue(setDisciplines, result);
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setError(err);
+        commitError(setError, err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
 
     return () => {
       cancelled = true;

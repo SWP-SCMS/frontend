@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import usePollingEffect from '../../hooks/usePollingEffect';
+import { useCallback, useState } from 'react';
 import { Badge, Button, Card, Spinner, Table } from 'react-bootstrap';
 
 import ErrorAlert from './ErrorAlert';
@@ -41,9 +42,9 @@ export default function StaffMembershipHistory({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       let data;
       if (managerMemberAccountId) {
@@ -53,16 +54,16 @@ export default function StaffMembershipHistory({
       } else {
         throw new Error('Thiếu định danh hội viên để tải lịch sử gói tập.');
       }
-      setMemberships(data);
-    } catch (err) {
-      setError(err);
+      commitValue(setMemberships, data);
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [managerMemberAccountId, receptionMemberCode]);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   return (

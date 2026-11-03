@@ -17,8 +17,8 @@ export default function MemberReceiptListPage() {
     try { setReceipts(await listMyReceipts()); } catch (err) { setError(err); } finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
-  const refreshInBackground = useCallback(async () => {
-    try { setReceipts(await listMyReceipts()); } catch { /* Keep the current receipts on transient failures. */ }
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
+    try { commitValue(setReceipts, await listMyReceipts()); } catch { /* Keep the current receipts on transient failures. */ }
   }, []);
   useAutoRefresh(refreshInBackground);
   return (

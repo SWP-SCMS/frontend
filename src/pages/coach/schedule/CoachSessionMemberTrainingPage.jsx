@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Card, Col, Row, Spinner } from 'react-bootstrap';
 
@@ -17,24 +18,24 @@ export default function CoachSessionMemberTrainingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    Promise.all([
+    track(Promise.all([
       getCoachSessionTrainingResult(sessionId, memberAccountId),
       getCoachSessionFeedback(sessionId, memberAccountId),
     ])
       .then(([resultValue, feedbackValue]) => {
         if (!cancelled) {
-          setResult(resultValue);
-          setFeedback(feedbackValue);
+          commitValue(setResult, resultValue);
+          commitValue(setFeedback, feedbackValue);
         }
       })
-      .catch((err) => {
-        if (!cancelled) setError(err);
+      .catch((err) => { failed(err);
+        if (!cancelled) commitError(setError, err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
     return () => {
       cancelled = true;
     };

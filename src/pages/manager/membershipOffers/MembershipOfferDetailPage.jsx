@@ -1,9 +1,10 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Membership Offer detail (US08).
 //
 // Read-only view of a single offer. The dedicated detail endpoint returns
 // MembershipOfferAdminDetailResponse, including status and resolved Benefits.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
@@ -32,21 +33,21 @@ export default function MembershipOfferDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
-      setOffer(await getMembershipOfferAdmin(offerId));
-    } catch (err) {
-      setOffer(null);
-      setError(err);
+      commitValue(setOffer, await getMembershipOfferAdmin(offerId));
+    } catch (err) { failed(err);
+      if (!background) commitValue(setOffer, null);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [offerId]);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   if (loading) {

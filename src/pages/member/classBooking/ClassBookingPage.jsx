@@ -330,7 +330,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
       loadWaitlists(),
     ]);
   }, [loadSessions, loadBookings, loadWaitlists]);
-  useAutoRefresh(refreshBookingData, 30_000, !bookTarget && !cancelTarget && !busyId);
+  useAutoRefresh(refreshBookingData, 7_000, !bookTarget && !cancelTarget && !busyId);
 
   // ----- Dữ liệu cho bộ lọc -----
   const disciplines = useMemo(

@@ -136,7 +136,7 @@ export default function PaymentReconciliationPage() {
     load();
   }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
       const data = await listReconciliationQueue({
         status: filter,
@@ -144,12 +144,12 @@ export default function PaymentReconciliationPage() {
         page,
         size: PAGE_SIZE,
       });
-      setQueue({ ...EMPTY_QUEUE, ...data });
+      commitValue(setQueue, { ...EMPTY_QUEUE, ...data });
     } catch {
       // Keep the current payment queue visible if a background refresh fails.
     }
   }, [filter, query, page]);
-  useAutoRefresh(refreshInBackground, 15_000, !active && !submitting);
+  useAutoRefresh(refreshInBackground, 7_000, !active && !submitting);
 
   function handleSubmitSearch(e) {
     e.preventDefault();
