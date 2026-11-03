@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { env, api, login, key, cash, enrollment, clock, evidence } from './support.js';
+import { env, api, login, key, cash, enrollment, clock, evidence, buy } from './support.js';
 import { installEvidenceHooks } from './support.js';
 installEvidenceHooks(test);
 
@@ -9,6 +9,7 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   const f = env.fixtures.attendance;
   await cash(request, f);
   const late = env.fixtures.transfer; await cash(request, late);
+  await buy(request, { id: env.fixtures.reconcile.runId }, 'member2');
   const e = await enrollment(request, f.runId);
   const lateEnrollment = await enrollment(request, late.runId);
   const sessions = [...e.sessions].sort((a,b) => a.unitNumber-b.unitNumber);
@@ -48,6 +49,10 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   const visit = { memberId: env.accounts.member.memberCode, identityVerified: true, courseSessionId: sessions[0].courseSessionId };
   await api(request, 'reception', 'POST', '/reception/center-visits', visit, 201, key());
   await api(request, 'reception', 'POST', '/reception/center-visits', { memberId: env.accounts.member.memberCode, identityVerified: true }, 409, key());
+  const bEnrollment = (await api(request, 'member2', 'GET', '/members/me/course-enrollments')).find(x => x.courseRunId === env.fixtures.reconcile.runId);
+  const bPending = await api(request, 'member2', 'POST', `/members/me/course-enrollments/${bEnrollment.enrollmentId}/withdrawal-requests`, { reason: 'QA Membership remains usable during own Course suspension' }, 201);
+  expect(bPending.learningSuspended).toBe(true);
+  expect(await api(request, 'member', 'GET', '/members/me/memberships')).toEqual([]);
   await api(request, 'reception', 'POST', '/reception/center-visits', { memberId: env.accounts.member2.memberCode, identityVerified: true }, 201, key());
   clock(Date.parse(sessions[2].startAt) + 1000);
   const pending = await api(request, 'member', 'POST', `/members/me/course-enrollments/${e.enrollmentId}/withdrawal-requests`, { reason: 'QA snapshot 7 of 10' }, 201);
@@ -60,6 +65,8 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   await api(request, 'coach', 'PATCH', `/coach/course-sessions/${sessions[2].courseSessionId}/roster/${sessions[2].enrollmentSessionId}/attendance`, { status: 'PRESENT' }, 404);
   await api(request, 'reception', 'POST', '/reception/center-visits', { ...visit, courseSessionId: sessions[2].courseSessionId }, 409, key());
   await api(request, 'reception', 'POST', '/reception/center-visits', { memberId: env.accounts.member2.memberCode, identityVerified: true }, 201, key());
+  await api(request, 'member2', 'POST', `/members/me/course-withdrawal-requests/${bPending.id}/cancel`, { reason: 'QA restore Course while preserving Membership' });
+  expect((await api(request, 'member2', 'GET', '/members/me/course-enrollments')).find(x => x.enrollmentId === bEnrollment.enrollmentId).learningSuspended).toBe(false);
   clock(Date.parse(sessions[3].startAt) + 2000);
   const approved = await api(request, 'manager', 'POST', `/manager/course-withdrawal-requests/${pending.id}/approve`, { reason: 'QA at 6/10' });
   expect(approved.refundAmountVnd).toBe(280000); expect(approved.remainingUnits).toBe(7);
