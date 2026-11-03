@@ -5,7 +5,7 @@ const member = { accountId: 'member-1', memberId: 'MB-001', fullName: 'Nguyễn 
 const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString();
 const yesterday = new Date(Date.now() - 86400000).toISOString();
 const enrollment = { enrollmentId: 'enrollment-1', courseRunId: run.id, courseName: run.courseName, courseCode: run.courseCode, runCode: run.runCode, lifecycleStatus: 'ACTIVE', enrolledAt: yesterday, sessions: [{ enrollmentSessionId: 'enrollment-session-1', courseSessionId: 'session-1', unitNumber: 1, startAt: nextMonth, endAt: nextMonth, disposition: 'ENROLLED', attendanceStatus: 'NOT_RECORDED' }] };
-const refund = { id: 'refund-1', memberAccountId: member.accountId, courseRunId: run.id, enrollmentId: enrollment.enrollmentId, source: 'MEMBER_WITHDRAWAL', status: 'PENDING_REVIEW', grossObligationVnd: 700000, approvedAmountVnd: null, disbursedAmountVnd: null, verifiedAmountVnd: null, version: 3, createdAt: yesterday, requestReason: 'Đổi lịch làm việc' };
+const refund = { memberName: member.fullName, memberCode: member.memberId, courseName: run.courseName, runCode: run.runCode, id: 'refund-1', memberAccountId: member.accountId, courseRunId: run.id, enrollmentId: enrollment.enrollmentId, source: 'MEMBER_WITHDRAWAL', status: 'PENDING_REVIEW', grossObligationVnd: 700000, approvedAmountVnd: null, disbursedAmountVnd: null, verifiedAmountVnd: null, version: 3, createdAt: yesterday, requestReason: 'Đổi lịch làm việc' };
 const pageOf = (items) => ({ items, page: 0, size: 20, totalElements: items.length, totalPages: items.length ? 1 : 0 });
 
 async function mockApi(page, role, handler) {
@@ -240,11 +240,10 @@ test('member order creation keeps its retry key after an uncertain failure', asy
   expect(errors).toEqual([]);
 });
 
-test('manager cannot decide when the member identity fails to load', async ({ page }) => {
+test('manager cannot decide when refund detail fails to load', async ({ page }) => {
   const { calls, errors } = await mockApi(page, 'MANAGER', ({ path }) => {
     if (path === '/manager/course-refund-obligations') return { body: pageOf([refund]) };
-    if (path === '/manager/course-refund-obligations/refund-1') return { body: refund };
-    if (path === '/manager/members/member-1') return { status: 404, body: {} };
+    if (path === '/manager/course-refund-obligations/refund-1') return { status: 503, body: {} };
   });
   await page.goto('/manager/course-refunds?id=refund-1');
   const dialog = page.getByRole('dialog');
@@ -309,4 +308,57 @@ test('Course reconciliation Reception cannot confirm paid after the backend bloc
   await expect(dialog).toContainText('Đã ghi nhận thất bại');
   expect(calls.filter(c => c.method === 'POST' && c.path.endsWith('/reconcile'))).toHaveLength(1);
   expect(errors).toEqual([]);
+});
+
+test('QA cash succeeds but refresh fails: successful mutation must not remain submittable', async ({ page }) => {
+  let paid = false; let allowRefresh = false;
+  const order = { orderId: 'order-1', courseRunId: run.id, orderReference: 'COR-QA', orderStatus: 'PENDING_PAYMENT', tuitionVnd: 1000, expiresAt: nextMonth, payment: null };
+  const { calls } = await mockApi(page, 'RECEPTIONIST', ({ path, method }) => {
+    if (path === '/reception/members/search') return { body: { ...member, status: 'ACTIVE' } };
+    if (path === '/course-runs/run-1') return { body: { ...run, status: 'OPEN_FOR_REGISTRATION', sessions: [] } };
+    if (path === '/reception/members/member-1/course-orders/order-1') return paid && !allowRefresh ? { status: 503, body: { code: 'UNAVAILABLE' } } : { body: paid ? { ...order, orderStatus: 'PAID', payment: { status: 'PAID', method: 'CASH' } } : order };
+    if (path.endsWith('/payments/cash') && method === 'POST') { paid = true; return { body: { paymentId: 'cash-1', status: 'PAID', method: 'CASH' } }; }
+    if (path === '/reception/members/member-1/course-enrollments') return { body: { content: [], page: 0, totalPages: 0 } };
+    if (path === '/reception/members/member-1/course-refund-obligations') return { body: pageOf([]) };
+    if (path.startsWith('/reception/members/member-1/')) return { body: [] };
+  });
+  await page.goto('/reception/courses?orderId=order-1&memberCode=MB-001');
+  await page.getByRole('button', { name: 'Xác nhận đã nhận đủ tiền mặt', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Xác nhận thu tiền', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByText('Đã ghi nhận thanh toán, chưa tải lại được dữ liệu.', { exact: false })).toBeVisible();
+  expect(calls.filter(c => c.path.endsWith('/payments/cash'))).toHaveLength(1);
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Xác nhận đã nhận đủ tiền mặt', exact: true })).toHaveCount(0);
+  allowRefresh = true;
+  await page.getByRole('button', { name: 'Cập nhật thanh toán', exact: true }).click();
+  await expect(page.getByText('Đã ghi nhận thanh toán, chưa tải lại được dữ liệu.', { exact: false })).toHaveCount(0);
+  expect(calls.filter(c => c.path.endsWith('/payments/cash'))).toHaveLength(1);
+});
+
+test('cash uncertain response retries the same key without claiming success', async ({ page }) => {
+  let paid = false; let allowRefresh = true; let attempts = 0;
+  const order = { orderId: 'order-1', courseRunId: run.id, orderReference: 'COR-QA', orderStatus: 'PENDING_PAYMENT', tuitionVnd: 1000, expiresAt: nextMonth, payment: null };
+  const { calls } = await mockApi(page, 'RECEPTIONIST', ({ path, method }) => {
+    if (path === '/reception/members/search') return { body: { ...member, status: 'ACTIVE' } };
+    if (path === '/course-runs/run-1') return { body: { ...run, status: 'OPEN_FOR_REGISTRATION', sessions: [] } };
+    if (path === '/reception/members/member-1/course-orders/order-1') return paid && !allowRefresh ? { status: 503, body: { code: 'UNAVAILABLE' } } : { body: paid ? { ...order, orderStatus: 'PAID', payment: { status: 'PAID', method: 'CASH' } } : order };
+    if (path.endsWith('/payments/cash') && method === 'POST') { attempts++; if (attempts === 1) return { status: 503, body: {} }; paid = true; return { body: { paymentId: 'cash-1', status: 'PAID', method: 'CASH' } }; }
+    if (path === '/reception/members/member-1/course-enrollments') return { body: { content: [], page: 0, totalPages: 0 } };
+    if (path === '/reception/members/member-1/course-refund-obligations') return { body: pageOf([]) };
+    if (path.startsWith('/reception/members/member-1/')) return { body: [] };
+  });
+  await page.goto('/reception/courses?orderId=order-1&memberCode=MB-001');
+  await page.getByRole('button', { name: 'Xác nhận đã nhận đủ tiền mặt', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Xác nhận thu tiền', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Chưa xác nhận được kết quả thu tiền');
+  await dialog.getByRole('button', { name: 'Xác nhận thu tiền', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  const posts = calls.filter(c => c.path.endsWith('/payments/cash'));
+  expect(posts).toHaveLength(2);
+  expect(posts[0].headers['idempotency-key']).toBeTruthy();
+  expect(posts[1].headers['idempotency-key']).toBe(posts[0].headers['idempotency-key']);
+  expect(posts[1].body).toEqual(posts[0].body);
 });
