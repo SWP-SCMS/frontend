@@ -146,7 +146,7 @@ export default function MemberCoursesPage() {
                             <strong>Buổi {session.unitNumber}{session.isMakeup ? " · Học bù" : ""}</strong>
                             <small>{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.sessionStatus)}</small>
                             <span>{formatCourseDateTime(session.startAt)}</span>
-                            <small>{getCourseStatusLabel(COURSE_DISPOSITION_LABELS, session.disposition)} · {getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, session.attendanceStatus)}</small>
+                            <small>{session.disposition === 'ENROLLED' ? 'Đã phân bổ buổi học (lịch sử)' : getCourseStatusLabel(COURSE_DISPOSITION_LABELS, session.disposition)} · {getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, session.attendanceStatus)}</small>
                           </div>
                         ))}
                     </div>

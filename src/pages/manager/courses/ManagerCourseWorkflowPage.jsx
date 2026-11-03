@@ -47,7 +47,7 @@ function DecisionForm({ kind, item, action, targets, onSubmit, busy }) {
       </Form.Group>)}
     </>}
     {kind === 'refunds' && action === 'approve' && <p>Số tiền đề nghị: <strong>{money(item.grossObligationVnd)}</strong>. Duyệt khoản hoàn chưa phải xác nhận đã chi.</p>}
-    {kind === 'withdrawals' && action === 'approve' && <p>Hệ thống xác định số buổi còn lại và số tiền hoàn tại thời điểm duyệt. Khoản hoàn được xử lý riêng.</p>}
+    {kind === 'withdrawals' && action === 'approve' && <p>Số buổi còn lại và khoản hoàn được chốt khi gửi yêu cầu thành công theo hồ sơ. Duyệt không tính lại theo lịch hiện tại; khoản hoàn được xử lý riêng.</p>}
     <Form.Group controlId="course-decision-reason" className="mb-3">
       <Form.Label>Lý do / kết quả đối chiếu</Form.Label>
       <Form.Control as="textarea" rows={3} {...register('reason')} maxLength={1000} disabled={busy} isInvalid={!!errors.reason} />

@@ -20,6 +20,8 @@ export default function ReceptionCourseBookingPage() {
   const [resuming, setResuming] = useState(!!requestedOrderId);
   const [resumeRevision, setResumeRevision] = useState(0);
   const [catalogRevision, setCatalogRevision] = useState(0);
+  const [memberRevision, setMemberRevision] = useState(0);
+  const refreshMemberPanels = () => setMemberRevision(value => value + 1);
   const [showCashConfirmation, setShowCashConfirmation] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
@@ -79,9 +81,10 @@ export default function ReceptionCourseBookingPage() {
     try { await action(); } catch (e) { setError(getCourseErrorMessage(e)); }
     finally { inFlight.current = false; setBusy(false); }
   }
-  async function refresh() {
+  async function refresh(refreshPanels = true) {
     const updated = await getReceptionCourseOrder(member.accountId, order.orderId);
     setOrder(updated); setPayment(updated.payment);
+    if (refreshPanels) refreshMemberPanels();
   }
   const searchMember = ({ kind, query }) => perform(async () => {
         const previousMemberId = member?.accountId;
@@ -108,8 +111,8 @@ export default function ReceptionCourseBookingPage() {
         <Button type="submit" disabled={busy || !!order}>Tra cứu</Button>
       </Form>
       {member && <p className="mt-3">{member.fullName} · {member.memberId} · {member.phone}</p>}
-      {member && <ReceptionCourseWithdrawals key={member.accountId} member={member} />}
-      {member && <ReceptionCourseActions key={member.accountId} member={member} run={run} />}
+      {member && <ReceptionCourseWithdrawals key={member.accountId} member={member} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
+      {member && <ReceptionCourseActions key={member.accountId} member={member} run={run} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
       {member && member.status !== 'ACTIVE' && <Alert variant="warning">Hội viên chưa ở trạng thái hoạt động.</Alert>}
     </Card.Body></Card>
     {!order && <Card className="mb-3"><Card.Body>
@@ -165,7 +168,8 @@ export default function ReceptionCourseBookingPage() {
       </Modal.Body>
       <Modal.Footer><Button variant="outline-secondary" disabled={busy} onClick={() => setShowCashConfirmation(false)}>Quay lại</Button><Button variant="danger" disabled={busy || !payable || !!payment} onClick={() => perform(async () => {
         await confirmReceptionCourseCashPayment(member.accountId, order.orderId, key('course-cash'));
-        await refresh(); setShowCashConfirmation(false);
+        refreshMemberPanels();
+        await refresh(false); setShowCashConfirmation(false);
       })}>{busy ? 'Đang xử lý…' : 'Xác nhận thu tiền'}</Button></Modal.Footer>
     </Modal>
   </div>;

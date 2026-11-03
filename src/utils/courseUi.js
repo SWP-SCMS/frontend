@@ -129,7 +129,7 @@ const COURSE_ERROR_MESSAGES = {
   COURSE_SESSION_INVALID: 'Buổi học chưa hợp lệ hoặc đã có số thứ tự này. Kiểm tra thời gian, phòng và huấn luyện viên.',
   COURSE_SESSION_NOT_FOUND: 'Không tìm thấy buổi học.',
   COURSE_ATTENDANCE_CHANGED: 'Điểm danh đã được cập nhật. Vui lòng tải lại danh sách.',
-  COURSE_ATTENDANCE_WINDOW_CLOSED: 'Đã ngoài thời gian cho phép điểm danh khóa học.',
+  COURSE_ATTENDANCE_WINDOW_CLOSED: 'Chưa thể điểm danh: kiểm tra trạng thái đợt học và thời gian cho phép.',
   COURSE_SCHEDULE_CHANGE_NOT_FOUND: 'Không tìm thấy thay đổi lịch cần phản hồi.',
   COURSE_SCHEDULE_CHANGE_RESPONSE_INVALID: 'Lựa chọn phản hồi chưa hợp lệ.',
   COURSE_WITHDRAWAL_INVALID: 'Vui lòng nhập lý do hợp lệ, tối đa 1000 ký tự.',
