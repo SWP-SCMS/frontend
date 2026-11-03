@@ -64,14 +64,14 @@ export default function CoachLeaveRequestsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
-      setRows(await listMyCoachLeaveRequests());
+      commitValue(setRows, await listMyCoachLeaveRequests());
     } catch {
       // Keep the current request list visible if a background refresh fails.
     }
   }, []);
-  useAutoRefresh(refreshInBackground, 30_000, !busy);
+  useAutoRefresh(refreshInBackground, 7_000, !busy);
 
   async function submit(event) {
     event.preventDefault();

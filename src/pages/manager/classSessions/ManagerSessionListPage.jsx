@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Session List / Calendar (US28).
 //
 // Read-only manager browser over GET /api/v1/manager/class-sessions.
@@ -208,64 +209,64 @@ export default function ManagerSessionListPage() {
   const [coachesLoading, setCoachesLoading] = useState(true);
   const [coachesError, setCoachesError] = useState(null);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setClassesLoading(true);
-    setClassesError(null);
-    listClasses()
+    if (!background) commitValue(setClassesLoading, true);
+    commitError(setClassesError, null);
+    track(listClasses()
       .then((data) => {
         if (cancelled) return;
-        setClasses(Array.isArray(data) ? data : []);
+        commitValue(setClasses, Array.isArray(data) ? data : []);
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setClassesError(err);
+        commitError(setClassesError, err);
       })
       .finally(() => {
-        if (!cancelled) setClassesLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setClassesLoading, false);
+      }));
     return () => {
       cancelled = true;
     };
   }, []);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setRoomsLoading(true);
-    setRoomsError(null);
-    listRooms()
+    if (!background) commitValue(setRoomsLoading, true);
+    commitError(setRoomsError, null);
+    track(listRooms()
       .then((data) => {
         if (cancelled) return;
-        setRooms(Array.isArray(data) ? data : []);
+        commitValue(setRooms, Array.isArray(data) ? data : []);
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setRoomsError(err);
+        commitError(setRoomsError, err);
       })
       .finally(() => {
-        if (!cancelled) setRoomsLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setRoomsLoading, false);
+      }));
     return () => {
       cancelled = true;
     };
   }, []);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setCoachesLoading(true);
-    setCoachesError(null);
-    fetchAllCoaches()
+    if (!background) commitValue(setCoachesLoading, true);
+    commitError(setCoachesError, null);
+    track(fetchAllCoaches()
       .then((result) => {
         if (cancelled) return;
-        setCoaches(result);
+        commitValue(setCoaches, result);
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setCoachesError(err);
+        commitError(setCoachesError, err);
       })
       .finally(() => {
-        if (!cancelled) setCoachesLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setCoachesLoading, false);
+      }));
     return () => {
       cancelled = true;
     };
@@ -352,20 +353,20 @@ export default function ManagerSessionListPage() {
   }, [weekRange]);
 
   // Whenever list-mode URL state changes, refetch the list page.
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     if (view !== 'list') return undefined;
     // Suppress request when the list-range is invalid (would 400).
     if (listRangeIso?.invalid) {
-      setSessions([]);
-      setTotalElements(0);
-      setTotalPages(0);
-      setLoading(false);
-      setError(null);
+      if (!background) commitValue(setSessions, []);
+      commitValue(setTotalElements, 0);
+      commitValue(setTotalPages, 0);
+      if (!background) commitValue(setLoading, false);
+      commitError(setError, null);
       return undefined;
     }
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     const paramsForBe = {
       ...baseFilterParams,
       page: listPage,
@@ -373,25 +374,25 @@ export default function ManagerSessionListPage() {
     };
     if (listRangeIso?.fromIso) paramsForBe.from = listRangeIso.fromIso;
     if (listRangeIso?.toIso) paramsForBe.to = listRangeIso.toIso;
-    listManagerSessions(paramsForBe)
+    track(listManagerSessions(paramsForBe)
       .then((data) => {
         if (cancelled) return;
-        setSessions(Array.isArray(data?.content) ? data.content : []);
-        setPage(typeof data?.page === 'number' ? data.page : listPage);
-        setTotalElements(
+        commitValue(setSessions, Array.isArray(data?.content) ? data.content : []);
+        commitValue(setPage, typeof data?.page === 'number' ? data.page : listPage);
+        commitValue(setTotalElements,
           typeof data?.totalElements === 'number' ? data.totalElements : 0,
         );
-        setTotalPages(
+        commitValue(setTotalPages,
           typeof data?.totalPages === 'number' ? data.totalPages : 0,
         );
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setError(err);
+        commitError(setError, err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
     return () => {
       cancelled = true;
     };
@@ -409,26 +410,26 @@ export default function ManagerSessionListPage() {
   }, [sessions]);
 
   // Whenever calendar-mode URL state changes, fetch EVERY page of the bounded week.
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     if (view !== 'calendar') return undefined;
     if (!weekRangeIso) {
-      setCalSessions([]);
-      setCalFetchedPages(0);
-      setCalTotalPages(0);
-      setCalTotalElements(0);
-      setCalLoading(false);
-      setCalError(null);
+      if (!background) commitValue(setCalSessions, []);
+      commitValue(setCalFetchedPages, 0);
+      commitValue(setCalTotalPages, 0);
+      commitValue(setCalTotalElements, 0);
+      if (!background) commitValue(setCalLoading, false);
+      commitError(setCalError, null);
       return undefined;
     }
     let cancelled = false;
-    setCalLoading(true);
-    setCalError(null);
-    setCalSessions([]);
-    setCalFetchedPages(0);
-    setCalTotalPages(0);
-    setCalTotalElements(0);
+    if (!background) commitValue(setCalLoading, true);
+    commitError(setCalError, null);
+    if (!background) commitValue(setCalSessions, []);
+    if (!background) commitValue(setCalFetchedPages, 0);
+    if (!background) commitValue(setCalTotalPages, 0);
+    if (!background) commitValue(setCalTotalElements, 0);
 
-    (async () => {
+    track((async () => {
       try {
         const aggregated = [];
         let pageIdx = 0;
@@ -450,22 +451,23 @@ export default function ManagerSessionListPage() {
           const totalElements =
             typeof data?.totalElements === 'number' ? data.totalElements : 0;
           if (cancelled) return;
-          setCalFetchedPages(pageIdx + 1);
-          setCalTotalPages(totalPages);
-          setCalTotalElements(totalElements);
-          setCalSessions([...aggregated]);
+          commitValue(setCalFetchedPages, pageIdx + 1);
+          commitValue(setCalTotalPages, totalPages);
+          commitValue(setCalTotalElements, totalElements);
+          if (!background) commitValue(setCalSessions, [...aggregated]);
           if (totalPages > 0 && pageIdx + 1 >= totalPages) break;
           // Defensive: stop if BE reports no more elements yet totalPages === 0.
           if (aggregated.length >= totalElements) break;
           pageIdx += 1;
         }
-      } catch (err) {
+        commitValue(setCalSessions, aggregated);
+      } catch (err) { failed(err);
         if (cancelled) return;
-        setCalError(err);
+        commitError(setCalError, err);
       } finally {
-        if (!cancelled) setCalLoading(false);
+        if (!cancelled) if (!background) commitValue(setCalLoading, false);
       }
-    })();
+    })());
 
     return () => {
       cancelled = true;

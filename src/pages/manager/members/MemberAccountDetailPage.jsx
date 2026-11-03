@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Member account detail (US06).
 //
 // Read-only view of a single Member account. Provides Edit + Suspend /
@@ -5,7 +6,7 @@
 // (no INACTIVE — Members aren't deactivated, they're suspended or frozen).
 // Suspending a Member cancels all their future bookings (BR-ACC-19).
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 
@@ -58,22 +59,22 @@ export default function MemberAccountDetailPage() {
   const [receiptsLoading, setReceiptsLoading] = useState(false);
   const [receiptsError, setReceiptsError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const data = await getMemberAccount(accountId);
-      setAccount(data);
-    } catch (err) {
-      setError(err);
+      commitValue(setAccount, data);
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [accountId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
+  }, [load], !showStatus);
 
   function openStatusModal(target) {
     setNextStatus(target);

@@ -78,19 +78,19 @@ export default function MembershipRequestReviewPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
       const [terminations, freezes] = await Promise.all([
         listManagerTerminationRequests(),
         listManagerFreezeRequests(),
       ]);
-      setTerminationRows(terminations.content || []);
-      setFreezeRows(freezes.content || []);
+      commitValue(setTerminationRows, terminations.content || []);
+      commitValue(setFreezeRows, freezes.content || []);
     } catch {
       // Preserve the visible queues during temporary network failures.
     }
   }, []);
-  useAutoRefresh(refreshInBackground, 15_000, !decision && !busy);
+  useAutoRefresh(refreshInBackground, 7_000, !decision && !busy);
 
   function openDecision(kind, action, row) {
     setActionError(null);

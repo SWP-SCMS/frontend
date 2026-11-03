@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { listMyCourseRefunds } from '../../../services/courseReportingService';
 import { formatCourseMoney, formatCourseDateTime, getCourseErrorMessage } from '../../../utils/courseUi';
@@ -10,12 +11,12 @@ export default function MemberCourseRefunds({ enrollments }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setLoading(true); setError(''); setData(null);
-    listMyCourseRefunds(page).then((result) => { if (active) setData(result); })
-      .catch((err) => { if (active) setError(getCourseErrorMessage(err, 'Không tải được khoản hoàn tiền.')); })
-      .finally(() => { if (active) setLoading(false); });
+    if (!background) commitValue(setLoading, true); commitError(setError, ''); if (!background) commitValue(setData, null);
+    track(listMyCourseRefunds(page).then((result) => { if (active) commitValue(setData, result); })
+      .catch((err) => { failed(err);  if (active) commitError(setError, getCourseErrorMessage(err, 'Không tải được khoản hoàn tiền.')); })
+      .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
   }, [page, revision]);
   const names = new Map(enrollments.map((e) => [e.enrollmentId, `${e.courseName} · ${e.runCode}`]));

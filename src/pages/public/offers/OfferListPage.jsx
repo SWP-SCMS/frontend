@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Bảng gói tập công khai (/offers), giao diện tối đồng bộ với trang chủ.
 //
 // API: GET /api/v1/membership-offers  (công khai, chỉ trả Offer ACTIVE)
@@ -8,7 +9,7 @@
 // Nút Chọn gói (xem OfferCtaButton.jsx): chưa đăng nhập -> Đăng nhập; Hội viên
 // đã đăng nhập -> trang thanh toán gói (/member/checkout/:offerId).
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import PublicDarkLayout from '../../../components/layout/PublicDarkLayout';
 import Icon from '../../../components/layout/PublicIcon';
 import { listActiveOffers } from '../../../services/membershipService';
@@ -41,21 +42,21 @@ export default function OfferListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       // Bỏ các gói chưa có mô tả hợp lệ (xem isDisplayableOffer).
-      setOffers((await listActiveOffers()).filter(isDisplayableOffer));
-    } catch (err) {
-      setError(err);
+      commitValue(setOffers, (await listActiveOffers()).filter(isDisplayableOffer));
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   // Giá mỗi tháng / % tiết kiệm tính trên TOÀN BỘ Offer của cùng gói.

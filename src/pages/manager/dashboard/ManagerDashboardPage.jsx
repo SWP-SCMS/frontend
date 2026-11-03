@@ -39,8 +39,8 @@ export default function ManagerDashboardPage() {
     try { setData(await getManagerDashboard()); } catch (err) { setError(err); } finally { setLoading(false); }
   }, []);
   useEffect(() => { load(); }, [load]);
-  const refreshInBackground = useCallback(async () => {
-    try { setData(await getManagerDashboard()); } catch { /* Keep the last dashboard snapshot on transient failures. */ }
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
+    try { commitValue(setData, await getManagerDashboard()); } catch { /* Keep the last dashboard snapshot on transient failures. */ }
   }, []);
   useAutoRefresh(refreshInBackground);
 

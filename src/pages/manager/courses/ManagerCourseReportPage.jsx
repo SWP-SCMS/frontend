@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useState } from 'react';
 import { Alert, Button, Card, Form, Table } from 'react-bootstrap';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -31,12 +32,12 @@ export default function ManagerCourseReportPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setLoading(true); setError(''); setData(null);
-    getCourseRunReport({ ...filters, ...(runId ? { runId } : {}), page }).then((result) => { if (active) setData(result); })
-      .catch((err) => { if (active) setError(getCourseErrorMessage(err, 'Không tải được báo cáo khóa học.')); })
-      .finally(() => { if (active) setLoading(false); });
+    if (!background) commitValue(setLoading, true); commitError(setError, ''); if (!background) commitValue(setData, null);
+    track(getCourseRunReport({ ...filters, ...(runId ? { runId } : {}), page }).then((result) => { if (active) commitValue(setData, result); })
+      .catch((err) => { failed(err);  if (active) commitError(setError, getCourseErrorMessage(err, 'Không tải được báo cáo khóa học.')); })
+      .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
   }, [filters, page, runId]);
   return <div className="container-fluid py-4"><h1>Báo cáo khóa học</h1>

@@ -180,7 +180,7 @@ export default function CoachAssignmentQueuePage() {
     loadWorkloads();
   }, [loadWorkloads]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
       const [data, workloadData] = await Promise.all([
         listCoachAssignmentCandidates({
@@ -191,8 +191,8 @@ export default function CoachAssignmentQueuePage() {
         }),
         listCoachAssignmentWorkloads(),
       ]);
-      setCandidates({ ...EMPTY_PAGE, ...data });
-      setWorkloads(
+      commitValue(setCandidates, { ...EMPTY_PAGE, ...data });
+      commitValue(setWorkloads,
         [...workloadData].sort(
           (left, right) =>
             Number(left.activeMemberCount || 0) - Number(right.activeMemberCount || 0)
@@ -203,7 +203,7 @@ export default function CoachAssignmentQueuePage() {
       // Keep the visible candidate and workload data on transient failures.
     }
   }, [assignmentStatus, page, query]);
-  useAutoRefresh(refreshInBackground, 30_000, !assignMember && !historyMember && !submitting);
+  useAutoRefresh(refreshInBackground, 7_000, !assignMember && !historyMember && !submitting);
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);

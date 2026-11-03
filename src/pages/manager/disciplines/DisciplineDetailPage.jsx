@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Discipline detail (US23).
 //
 // Read-only view of a single discipline. Loads via the dedicated
@@ -8,7 +9,7 @@
 // createdAt / updatedAt / version are NOT in the response DTO and are NOT
 // rendered here (per plan §L).
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
@@ -29,25 +30,25 @@ export default function DisciplineDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const [data, catalog] = await Promise.all([
         getDiscipline(disciplineId),
         listMembershipBenefits(),
       ]);
-      setDiscipline(data);
-      setBenefits(catalog);
-    } catch (err) {
-      setError(err);
+      commitValue(setDiscipline, data);
+      commitValue(setBenefits, catalog);
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [disciplineId]);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   if (loading) {

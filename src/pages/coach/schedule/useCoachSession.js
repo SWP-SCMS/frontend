@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Hook dùng chung cho 3 trang của một buổi dạy (chi tiết / học viên / điểm danh).
 //
 // - GET /coach/class-sessions/{id}            : thông tin buổi + học viên đã đặt
@@ -26,20 +27,20 @@ export function useCoachSession(sessionId) {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    getCoachSession(sessionId)
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
+    track(getCoachSession(sessionId)
       .then((data) => {
-        if (!cancelled) setSession(data);
+        if (!cancelled) commitValue(setSession, data);
       })
-      .catch((err) => {
-        if (!cancelled) setError(err);
+      .catch((err) => { failed(err);
+        if (!cancelled) commitError(setError, err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
     return () => {
       cancelled = true;
     };
@@ -49,16 +50,16 @@ export function useCoachSession(sessionId) {
   const started = session != null && now >= new Date(session.startTime).getTime();
 
   // Tải điểm danh khi buổi vừa bắt đầu.
-  useEffect(() => {
+  usePollingEffect(({ track, commitValue, commitError, failed }) => {
     if (!started) return undefined;
     let cancelled = false;
-    listSessionAttendance(sessionId)
+    track(listSessionAttendance(sessionId)
       .then((data) => {
-        if (!cancelled) setAttendance(data);
+        if (!cancelled) commitValue(setAttendance, data);
       })
-      .catch((err) => {
-        if (!cancelled) setError(err);
-      });
+      .catch((err) => { failed(err);
+        if (!cancelled) commitError(setError, err);
+      }));
     return () => {
       cancelled = true;
     };

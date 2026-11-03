@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getCatalogCourseRun } from '../../../services/courseCatalogService';
 import {
@@ -69,13 +70,13 @@ export default function MemberCourseRegistrationPage() {
     return () => { active = false; };
   }, [initialOrderId, runId]);
 
-  useEffect(() => {
-    if (!orderId || order?.orderStatus !== 'PENDING_PAYMENT') return undefined;
-    const timer = window.setInterval(() => {
-      refreshOrder(orderId).catch(() => {});
-    }, 5000);
-    return () => window.clearInterval(timer);
-  }, [order?.orderStatus, orderId, refreshOrder]);
+  usePollingEffect(({ track, commitValue }) => {
+    if (!orderId || order?.orderStatus !== 'PENDING_PAYMENT') return;
+    track(getMyCourseOrder(orderId).then(next => {
+      commitValue(setOrder, next);
+      commitValue(setPayment, next.payment || null);
+    }));
+  }, [order?.orderStatus, orderId], !busy && !loading);
 
   const displayedPayment = payment || order?.payment;
   const isPaid = order?.orderStatus === 'PAID';
@@ -151,7 +152,7 @@ export default function MemberCourseRegistrationPage() {
 
   return (
     <div className="member-course-page">
-      <Link className="member-course-back" to={`/course-runs/${runId}`}>← Quay lại chi tiết khóa học</Link>
+      <Link className="member-course-back" to={`/member/course-runs/${runId}`}>← Quay lại chi tiết khóa học</Link>
       <header className="member-course-heading compact">
         <div><p className="member-course-eyebrow">Đăng ký khóa học</p><h1>{run?.courseName || 'Khóa học'}</h1></div>
       </header>

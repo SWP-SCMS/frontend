@@ -444,7 +444,7 @@ export default function ReceptionistMemberBookingPage() {
   }, [accountId, loadSessions, loadHistory]);
   useAutoRefresh(
     refreshBookingData,
-    30_000,
+    7_000,
     Boolean(accountId) && !bookTarget && !cancelTarget && !waitlistTarget && !busyId && !waitlistSubmitting,
   );
 

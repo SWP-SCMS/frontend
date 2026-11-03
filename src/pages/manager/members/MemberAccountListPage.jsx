@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Member account list & search (US06).
 //
 // BE: GET /api/v1/manager/members?query&status&page&size
@@ -65,12 +66,12 @@ export default function MemberAccountListPage() {
     setSearchInput(query);
   }, [query]);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
 
-    searchMemberAccounts({
+    track(searchMemberAccounts({
       query: query || undefined,
       status: status || undefined,
       page,
@@ -78,15 +79,15 @@ export default function MemberAccountListPage() {
     })
       .then((result) => {
         if (cancelled) return;
-        setData(result);
+        commitValue(setData, result);
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setError(err);
+        commitError(setError, err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
 
     return () => {
       cancelled = true;

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 import { listNotifications } from '../../services/notificationService';
 
-const REFRESH_INTERVAL_MS = 30_000;
 const PAGE_SIZE = 5;
 
 function uniqueNotifications(pages) {
@@ -22,8 +22,11 @@ export default function useNotificationUnreadCount() {
   const [loadMoreError, setLoadMoreError] = useState('');
   const loadedPageRef = useRef(0);
   const loadingMoreRef = useRef(false);
+  const refreshingRef = useRef(false);
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
+    if (refreshingRef.current || loadingMoreRef.current) return;
+    refreshingRef.current = true;
     try {
       const pages = await Promise.all(
         Array.from({ length: loadedPageRef.current + 1 }, (_, page) =>
@@ -31,16 +34,18 @@ export default function useNotificationUnreadCount() {
         ),
       );
       const firstPage = pages[0];
-      setUnreadCount(firstPage.unreadCount);
-      setNotifications(uniqueNotifications(pages));
-      setHasMore(loadedPageRef.current + 1 < firstPage.totalPages);
+      commitValue(setUnreadCount, firstPage.unreadCount);
+      commitValue(setNotifications, uniqueNotifications(pages));
+      commitValue(setHasMore, loadedPageRef.current + 1 < firstPage.totalPages);
     } catch {
       // Keep the last successful notification list visible.
+    } finally {
+      refreshingRef.current = false;
     }
   }, []);
 
   const loadMoreNotifications = useCallback(async () => {
-    if (loadingMoreRef.current || !hasMore) return;
+    if (loadingMoreRef.current || refreshingRef.current || !hasMore) return;
     loadingMoreRef.current = true;
     setLoadingMore(true);
     setLoadMoreError('');
@@ -64,15 +69,12 @@ export default function useNotificationUnreadCount() {
 
   useEffect(() => {
     loadNotifications();
-    const intervalId = window.setInterval(loadNotifications, REFRESH_INTERVAL_MS);
-    window.addEventListener('focus', loadNotifications);
     window.addEventListener('scms:notifications-changed', loadNotifications);
     return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('focus', loadNotifications);
       window.removeEventListener('scms:notifications-changed', loadNotifications);
     };
   }, [loadNotifications]);
+  useAutoRefresh(loadNotifications);
 
   return {
     unreadCount,

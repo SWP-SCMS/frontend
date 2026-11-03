@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useRef, useState } from 'react';
 import { Alert, Button, Modal, Table } from 'react-bootstrap';
 import { listCoachCourseSessions, getCoachCourseSession, getCoachCourseRoster, updateCourseAttendance } from '../../../services/courseCoachService';
 import { formatCourseDateTime, getCourseErrorMessage, COURSE_SESSION_STATUS_LABELS, COURSE_ATTENDANCE_STATUS_LABELS } from '../../../utils/courseUi';
@@ -14,16 +15,16 @@ export default function CoachCourseSessionsPage() {
   const [detailError, setDetailError] = useState('');
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
-  useEffect(() => {
-    let active = true; setData(null); setError('');
-    listCoachCourseSessions(page).then((value) => { if (active) setData(value); }).catch((e) => { if (active) setError(getCourseErrorMessage(e, 'Không tải được lịch khóa học.')); });
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    let active = true; if (!background) commitValue(setData, null); commitError(setError, '');
+    track(listCoachCourseSessions(page).then((value) => { if (active) commitValue(setData, value); }).catch((e) => { failed(e);  if (active) commitError(setError, getCourseErrorMessage(e, 'Không tải được lịch khóa học.')); }));
     return () => { active = false; };
-  }, [page, revision]);
-  useEffect(() => {
-    let active = true; setDetail(null); setRoster([]); setDetailError('');
-    if (selected) Promise.all([getCoachCourseSession(selected), getCoachCourseRoster(selected)]).then(([session, students]) => { if (active) { setDetail(session); setRoster(students); } }).catch((e) => { if (active) setDetailError(getCourseErrorMessage(e, 'Không tải được danh sách học viên.')); });
+  }, [page, revision], !busy);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    let active = true; if (!background) commitValue(setDetail, null); if (!background) commitValue(setRoster, []); commitError(setDetailError, '');
+    if (selected) track(Promise.all([getCoachCourseSession(selected), getCoachCourseRoster(selected)]).then(([session, students]) => { if (active) { commitValue(setDetail, session); commitValue(setRoster, students); } }).catch((e) => { failed(e);  if (active) commitError(setDetailError, getCourseErrorMessage(e, 'Không tải được danh sách học viên.')); }));
     return () => { active = false; };
-  }, [selected, revision]);
+  }, [selected, revision], !busy);
   async function mark(row, status) {
     if (lock.current || !detail?.attendanceWritable) return;
     lock.current = true; setBusy(true); setDetailError('');

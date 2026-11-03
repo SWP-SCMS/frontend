@@ -1,3 +1,5 @@
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
 
@@ -100,68 +102,25 @@ export default function RefundRequestDeskPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     if (document.visibilityState === 'hidden') return;
     try {
-      setResult(await listReceptionRefundRequests({ page, size: PAGE_SIZE }));
+      commitValue(setResult, await listReceptionRefundRequests({ page, size: PAGE_SIZE }));
     } catch {
       // Keep the current list visible when a background refresh temporarily fails.
     }
   }, [page]);
 
-  useEffect(() => {
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') refreshInBackground();
-    };
-    const intervalId = window.setInterval(refreshInBackground, 15_000);
-    window.addEventListener('focus', refreshWhenVisible);
-    document.addEventListener('visibilitychange', refreshWhenVisible);
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('focus', refreshWhenVisible);
-      document.removeEventListener('visibilitychange', refreshWhenVisible);
-    };
-  }, [refreshInBackground]);
+  useAutoRefresh(refreshInBackground, 7_000, !submitting && !cashTarget);
 
-  useEffect(() => {
-    const memberCode = form.memberCode;
-    if (!memberCode) return undefined;
-
-    let active = true;
-    const refreshEligibleSources = async () => {
-      if (document.visibilityState === 'hidden') return;
-      try {
-        const candidates = await listRefundEligibleSources(memberCode);
-        if (!active) return;
-        setSourceCandidates(candidates);
-        setForm((current) => {
-          if (current.memberCode !== memberCode || !current.paymentId) return current;
-          const stillEligible = candidates.some(
-            (candidate) =>
-              candidate.paymentId === current.paymentId &&
-              candidate.membershipId === current.membershipId,
-          );
-          return stillEligible
-            ? current
-            : { ...current, paymentId: '', membershipId: '', requestedAmount: '' };
-        });
-      } catch {
-        // Keep the last known eligible sources when a background refresh fails.
-      }
-    };
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') refreshEligibleSources();
-    };
-    const intervalId = window.setInterval(refreshEligibleSources, 15_000);
-    window.addEventListener('focus', refreshWhenVisible);
-    document.addEventListener('visibilitychange', refreshWhenVisible);
-    return () => {
-      active = false;
-      window.clearInterval(intervalId);
-      window.removeEventListener('focus', refreshWhenVisible);
-      document.removeEventListener('visibilitychange', refreshWhenVisible);
-    };
-  }, [form.memberCode]);
+  const sourceMemberCode = form.memberCode;
+  usePollingEffect(({ track, commitValue }) => {
+    if (!sourceMemberCode) return;
+    track(listRefundEligibleSources(sourceMemberCode).then(candidates => {
+      commitValue(setSourceCandidates, candidates);
+      // Preserve the entered amount/reason. Submission still validates eligibility.
+    }));
+  }, [sourceMemberCode], !submitting && !sourceLoading);
 
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }));

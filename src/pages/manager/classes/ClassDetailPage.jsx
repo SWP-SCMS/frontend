@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Class detail (US24).
 //
 // Read-only view of a single class. Loads via the dedicated
@@ -10,7 +11,7 @@
 // capacity / price are NOT in the response DTO and are NOT rendered
 // here (per audit §D.1, §D.5 / plan §L).
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
@@ -35,21 +36,21 @@ export default function ClassDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const data = await getClass(classId);
-      setClassData(data);
-    } catch (err) {
-      setError(err);
+      commitValue(setClassData, data);
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [classId]);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   if (loading) {

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import PublicDarkLayout from '../../../components/layout/PublicDarkLayout';
+import CourseCatalogLayout from '../../../components/layout/CourseCatalogLayout';
 import { ROLES } from '../../../constants';
 import { useAuth } from '../../../context/useAuth';
 import { getCatalogCourseRun } from '../../../services/courseCatalogService';
@@ -14,34 +15,34 @@ import {
 } from '../../../utils/courseUi';
 import './CourseCatalogPage.css';
 
-export default function CourseRunDetailPage() {
+export default function CourseRunDetailPage({ memberView = false }) {
   const { runId } = useParams();
   const { isAuthenticated, role } = useAuth();
   const [run, setRun] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(false);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, false);
     try {
-      setRun(await getCatalogCourseRun(runId));
-    } catch {
-      setError(true);
+      commitValue(setRun, await getCatalogCourseRun(runId));
+    } catch { failed();
+      commitError(setError, true);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [runId]);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   return (
-    <PublicDarkLayout active="courses">
+    <CourseCatalogLayout memberView={memberView}>
       <section className="course-section course-detail-section">
         <div className="scms-home-wrap">
-          <Link className="course-back-link" to={run?.courseId ? `/courses/${run.courseId}` : '/courses'}>
+          <Link className="course-back-link" to={`${memberView ? "/member/course-catalog" : "/courses"}${run?.courseId ? `/${run.courseId}` : ""}`}>
             ← Quay lại khóa học
           </Link>
           {loading ? (
@@ -98,6 +99,6 @@ export default function CourseRunDetailPage() {
           )}
         </div>
       </section>
-    </PublicDarkLayout>
+    </CourseCatalogLayout>
   );
 }

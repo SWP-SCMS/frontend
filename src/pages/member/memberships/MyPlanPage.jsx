@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Gói tập hiện tại của Hội viên — xem sau khi đăng ký thành công.
 //
 // Dữ liệu: dùng chung useMemberArea() (MemberLayout tải sẵn từ
@@ -10,7 +11,7 @@
 // Hợp đồng hiện tại trả record camelCase. `pick()` vẫn chấp nhận snake_case để
 // dữ liệu cũ hoặc môi trường chưa cập nhật không làm hỏng giao diện.
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
@@ -83,18 +84,18 @@ export default function MyPlanPage() {
   const [pendingOrder, setPendingOrder] = useState(null);
   const [pendingLoading, setPendingLoading] = useState(true);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, failed }) => {
     let cancelled = false;
-    getMyPendingMembershipOrder()
+    track(getMyPendingMembershipOrder()
       .then((order) => {
-        if (!cancelled) setPendingOrder(order);
+        if (!cancelled) commitValue(setPendingOrder, order);
       })
-      .catch(() => {
+      .catch(() => { failed();
         // BE vẫn kiểm tra khi tạo đơn; lỗi đọc đơn chờ không nên khóa cả trang.
       })
       .finally(() => {
-        if (!cancelled) setPendingLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setPendingLoading, false);
+      }));
     return () => {
       cancelled = true;
     };

@@ -1,10 +1,11 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseDisbursementSchema } from '../../../schemas/courseWorkflowSchemas';
 import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils';
 import { courseAmountText } from '../../../utils/courseWorkflow';
 import { disburseCourseRefund } from '../../../services/courseWorkflowService';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Table } from 'react-bootstrap';
 import { listReceptionCourseRefunds, getReceptionCourseRefund } from '../../../services/courseWorkflowService';
 import { COURSE_ELIGIBILITY_LABELS, COURSE_REFUND_SOURCE_LABELS } from '../../../utils/courseWorkflow';
@@ -69,24 +70,24 @@ export default function ReceptionCourseRefundPage() {
   const [detailError, setDetailError] = useState('');
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailRevision, setDetailRevision] = useState(0);
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setLoading(true); setError(''); setData(null);
-    listReceptionCourseRefunds({ page, eligible: eligible === '' ? undefined : eligible === 'true' })
-      .then((result) => { if (active) setData(result); })
-      .catch((err) => { if (active) setError(getCourseErrorMessage(err, 'Không tải được hàng chờ hoàn tiền khóa học.')); })
-      .finally(() => { if (active) setLoading(false); });
+    if (!background) commitValue(setLoading, true); commitError(setError, ''); if (!background) commitValue(setData, null);
+    track(listReceptionCourseRefunds({ page, eligible: eligible === '' ? undefined : eligible === 'true' })
+      .then((result) => { if (active) commitValue(setData, result); })
+      .catch((err) => { failed(err);  if (active) commitError(setError, getCourseErrorMessage(err, 'Không tải được hàng chờ hoàn tiền khóa học.')); })
+      .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
-  }, [page, eligible, revision]);
-  useEffect(() => {
+  }, [page, eligible, revision], !busy);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setDetail(null); setDetailError(''); setDetailLoading(!!selectedId);
-    if (selectedId) getReceptionCourseRefund(selectedId)
-      .then((result) => { if (active) setDetail(result); })
-      .catch((err) => { if (active) setDetailError(getCourseErrorMessage(err, 'Không tải được khoản hoàn. Khoản này có thể đã được xử lý và rời hàng chờ.')); })
-      .finally(() => { if (active) setDetailLoading(false); });
+    if (!background) commitValue(setDetail, null); commitError(setDetailError, ''); if (!background) commitValue(setDetailLoading, !!selectedId);
+    if (selectedId) track(getReceptionCourseRefund(selectedId)
+      .then((result) => { if (active) commitValue(setDetail, result); })
+      .catch((err) => { failed(err);  if (active) commitError(setDetailError, getCourseErrorMessage(err, 'Không tải được khoản hoàn. Khoản này có thể đã được xử lý và rời hàng chờ.')); })
+      .finally(() => { if (active) if (!background) commitValue(setDetailLoading, false); }));
     return () => { active = false; };
-  }, [selectedId, detailRevision]);
+  }, [selectedId, detailRevision], !busy);
   return <div className="container-fluid py-4">
     <h1 className="h3">Hàng chờ hoàn tiền khóa học</h1>
     <p>Các khoản đã được quản lý duyệt. Điều kiện chi được cập nhật theo trạng thái đợt học.</p>

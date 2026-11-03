@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useCallback, useRef, useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Modal, Table } from 'react-bootstrap';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -77,22 +78,22 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
   const mutationLock = useRef(false);
   const detailSequence = useRef(0);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setLoading(true); setError(''); setData(null);
+    if (!background) commitValue(setLoading, true); commitError(setError, ''); if (!background) commitValue(setData, null);
     const request = kind === 'refunds' ? listCourseRefunds({ page, status })
       : kind === 'withdrawals' ? listCourseWithdrawals() : listCourseTransfers();
-    request.then((result) => { if (active) setData(result); })
-      .catch((err) => { if (active) setError(getCourseErrorMessage(err, 'Không tải được danh sách yêu cầu.')); })
-      .finally(() => { if (active) setLoading(false); });
+    track(request.then((result) => { if (active) commitValue(setData, result); })
+      .catch((err) => { failed(err);  if (active) commitError(setError, getCourseErrorMessage(err, 'Không tải được danh sách yêu cầu.')); })
+      .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
-  }, [kind, page, status, revision]);
+  }, [kind, page, status, revision], !busy);
 
-  const loadDetail = useCallback(async () => {
+  const loadDetail = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
     const sequence = ++detailSequence.current;
-    setDetail(null); setContext(null); setTargets([]); setAction(''); setDetailError('');
-    if (!selectedId) { setDetailLoading(false); return; }
-    setDetailLoading(true);
+    if (!background) commitValue(setDetail, null); if (!background) commitValue(setContext, null); if (!background) commitValue(setTargets, []); if (!background) commitValue(setAction, ''); commitError(setDetailError, '');
+    if (!selectedId) { if (!background) commitValue(setDetailLoading, false); return; }
+    if (!background) commitValue(setDetailLoading, true);
     try {
       // Fetch identities only for the opened request; never one request per queue row.
       const item = kind === 'refunds' ? await getCourseRefund(selectedId)
@@ -103,13 +104,13 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
       const run = { id: item.courseRunId || item.sourceRunId, courseName: item.courseName || item.sourceCourseName, runCode: item.runCode || item.sourceRunCode };
       const targetRun = item.targetRunId ? { id: item.targetRunId, courseName: item.targetCourseName, runCode: item.targetRunCode } : null;
       if (sequence !== detailSequence.current) return;
-      setDetail(item); setContext({ member, run, targetRun });
-    } catch (err) {
-      if (sequence === detailSequence.current) setDetailError(getCourseErrorMessage(err, 'Không tải được đầy đủ hồ sơ và đợt học. Vui lòng thử lại trước khi quyết định.'));
-    } finally { if (sequence === detailSequence.current) setDetailLoading(false); }
+      commitValue(setDetail, item); commitValue(setContext, { member, run, targetRun });
+    } catch (err) { failed(err);
+      if (sequence === detailSequence.current) commitError(setDetailError, getCourseErrorMessage(err, 'Không tải được đầy đủ hồ sơ và đợt học. Vui lòng thử lại trước khi quyết định.'));
+    } finally { if (sequence === detailSequence.current) if (!background) commitValue(setDetailLoading, false); }
   }, [kind, selectedId]);
   const invalidateDetail = useCallback(() => { detailSequence.current++; }, []);
-  useEffect(() => { loadDetail(); return invalidateDetail; }, [loadDetail, invalidateDetail]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(loadDetail({ background, commitValue, commitError, failed })); return invalidateDetail; }, [loadDetail, invalidateDetail], !action && !busy);
 
   async function chooseAction(next) {
     if (mutationLock.current) return;

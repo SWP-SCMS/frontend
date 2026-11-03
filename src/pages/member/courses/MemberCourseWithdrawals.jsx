@@ -1,5 +1,6 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import CancelCourseWithdrawal from './CancelCourseWithdrawal';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,16 +23,16 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
     defaultValues: { enrollmentId: '', reason: '' },
   });
 
-  const load = useCallback(async () => {
-    setLoading(true); setReady(false); setError('');
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true); if (!background) commitValue(setReady, false); commitError(setError, '');
     try {
       const data = await listMyCourseWithdrawals();
-      setRequests(data); setReady(true);
-    } catch (err) {
-      setError(getCourseErrorMessage(err, 'Không tải được yêu cầu rút. Vui lòng tải lại trước khi gửi.'));
-    } finally { setLoading(false); }
+      commitValue(setRequests, data); commitValue(setReady, true);
+    } catch (err) { failed(err);
+      commitError(setError, getCourseErrorMessage(err, 'Không tải được yêu cầu rút. Vui lòng tải lại trước khi gửi.'));
+    } finally { if (!background) commitValue(setLoading, false); }
   }, []);
-  useEffect(() => { load(); }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !busy);
 
   const pendingIds = new Set(requests.filter((r) => r.status === 'PENDING').map((r) => r.enrollmentId));
   const available = enrollments.filter((e) => e.lifecycleStatus === 'ACTIVE' && !pendingIds.has(e.enrollmentId));

@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Member – Lịch của tôi: lịch tuần các buổi tập MÀ HỘI VIÊN ĐÃ ĐẶT.
 //
 // Dữ liệu: GET /api/v1/members/me/bookings?status=BOOKED (đủ mọi trang), rồi
@@ -95,26 +96,27 @@ export default function MemberClassSchedulePage() {
   }, [weekRange]);
 
   // Tải toàn bộ lịch đang BOOKED của hội viên (mọi trang).
-  const loadBookings = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadBookings = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const results = await Promise.allSettled([listAllMyBookedBookings(), listMyCourseEnrollments()]);
+      if (background && results.some(result => result.status === 'rejected')) throw results.find(result => result.status === 'rejected').reason;
       const gym = results[0].status === 'fulfilled' ? results[0].value : [];
       const courses = results[1].status === 'fulfilled' ? results[1].value : [];
-      setBookings([...gym, ...courseScheduleEntries(courses)]);
+      commitValue(setBookings, [...gym, ...courseScheduleEntries(courses)]);
       if (results.some((result) => result.status === 'rejected')) {
-        setError(new Error('Một phần lịch chưa tải được. Vui lòng tải lại trang.'));
+        commitError(setError, new Error('Một phần lịch chưa tải được. Vui lòng tải lại trang.'));
       }
-    } catch (err) {
-      setError(err);
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, []);
 
-  useEffect(() => {
-    loadBookings();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(loadBookings({ background, commitValue, commitError, failed }));
   }, [loadBookings]);
 
   // Các buổi đã đặt nằm trong tuần đang xem.

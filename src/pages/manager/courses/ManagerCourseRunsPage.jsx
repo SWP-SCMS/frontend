@@ -1,8 +1,9 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import CourseDateTimeInput from '../../../components/common/CourseDateTimeInput';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseRunSchema } from '../../../schemas/courseSchemas';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Badge, Button, Col, Form, Modal, Row, Spinner, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -28,19 +29,19 @@ export default function ManagerCourseRunsPage() {
   const { register, handleSubmit, reset: setForm, setValue, formState: { errors } } = courseForm;
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true); setError('');
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true); commitError(setError, '');
     try {
       const [runPage, coursePage, coachPage] = await Promise.all([
         listManagerCourseRuns({ page, size: 20 }),
         listManagerCourses({ page: 0, size: 100 }),
         searchStaffAccounts({ role: 'COACH', status: 'ACTIVE', page: 0, size: 100 }),
       ]);
-      setResult(runPage); setCourses(coursePage.content || []); setCoaches(coachPage?.content || []);
-    } catch (err) { setError(getCourseErrorMessage(err, 'Không tải được danh sách đợt mở khóa học.')); }
-    finally { setLoading(false); }
+      commitValue(setResult, runPage); commitValue(setCourses, coursePage.content || []); commitValue(setCoaches, coachPage?.content || []);
+    } catch (err) { failed(err);  commitError(setError, getCourseErrorMessage(err, 'Không tải được danh sách đợt mở khóa học.')); }
+    finally { if (!background) commitValue(setLoading, false); }
   }, [page]);
-  useEffect(() => { load(); }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !saving);
 
   async function handleCreate(form) {
      setSaving(true); setError('');

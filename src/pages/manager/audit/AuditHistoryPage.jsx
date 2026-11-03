@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, Card, Col, Form, Row, Spinner, Table } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
@@ -321,14 +322,14 @@ export default function AuditHistoryPage() {
     defaultValues: EMPTY_FILTERS,
   });
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setLoading(true);
-    setError(null);
-    listAuditEvents({ ...filters, page, size: 20 })
-      .then((data) => { if (active) setResult(data); })
-      .catch((err) => { if (active) setError(err); })
-      .finally(() => { if (active) setLoading(false); });
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
+    track(listAuditEvents({ ...filters, page, size: 20 })
+      .then((data) => { if (active) commitValue(setResult, data); })
+      .catch((err) => { failed(err);  if (active) commitError(setError, err); })
+      .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
   }, [filters, page]);
 

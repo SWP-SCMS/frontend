@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useRef, useState } from 'react';
 import { Alert, Button, Form, Modal, Table } from 'react-bootstrap';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,13 +37,13 @@ function Decision({ item, attemptRef, onDone, onBusy }) {
     defaultValues: attempt ? { ...attempt.payload, receivedAmount: String(attempt.payload.receivedAmount ?? '') } : { status: 'PAID', receivedAmount: '', transferContent: '', providerTransactionId: '', evidence: '', reason: '' },
   });
   const status = useWatch({ control, name: 'status' });
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
-    setDetail(null);
-    getCourseReconciliationDetail(item.paymentId).then(value => { if (active) setDetail(value); })
-      .catch(e => { if (active) setError(errorText(e)); });
+    if (!background) commitValue(setDetail, null);
+    track(getCourseReconciliationDetail(item.paymentId).then(value => { if (active) commitValue(setDetail, value); })
+      .catch(e => { failed(e);  if (active) commitError(setError, errorText(e)); }));
     return () => { active = false; };
-  }, [item.paymentId, revision]);
+  }, [item.paymentId, revision], !busy);
   async function submit(values) {
     if (lock.current || (!attempt && !(status === 'PAID' ? detail?.canConfirmPaid : detail?.canConfirmFailed))) return;
     lock.current = true; setBusy(true); onBusy(true); setError('');
@@ -109,12 +110,12 @@ export default function CoursePaymentReconciliationPage() {
   const [selected, setSelected] = useState(null), [busy, setBusy] = useState(false);
   const attempts = useRef({});
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(courseReconciliationSearchSchema), defaultValues: { query: '' } });
-  useEffect(() => {
-    let active = true; setData(null); setError('');
-    listCourseReconciliationQueue({ status: filter, query, page, size: 20 }).then(value => { if (active) setData(value); })
-      .catch(e => { if (active) setError(errorText(e)); });
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    let active = true; if (!background) commitValue(setData, null); commitError(setError, '');
+    track(listCourseReconciliationQueue({ status: filter, query, page, size: 20 }).then(value => { if (active) commitValue(setData, value); })
+      .catch(e => { failed(e);  if (active) commitError(setError, errorText(e)); }));
     return () => { active = false; };
-  }, [query, filter, page, revision]);
+  }, [query, filter, page, revision], !busy);
   return <div className="container-fluid py-4">
     <h1 className="h3">Đối soát thanh toán khóa học</h1>
     <p>Các giao dịch chuyển khoản Course đang chờ xử lý. Giao dịch đã xử lý sẽ rời danh sách.</p>

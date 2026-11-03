@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import PublicDarkLayout from '../../../components/layout/PublicDarkLayout';
+import CourseCatalogLayout from '../../../components/layout/CourseCatalogLayout';
 import {
   getCatalogCourse,
   listCatalogCourseRuns,
@@ -13,7 +14,7 @@ import {
 } from '../../../utils/courseUi';
 import './CourseCatalogPage.css';
 
-function RunCard({ run }) {
+function RunCard({ run, memberView }) {
   const registrationLabel = getCourseStatusLabel(
     COURSE_REGISTRATION_STATUS_LABELS,
     run.registrationStatus,
@@ -36,39 +37,39 @@ function RunCard({ run }) {
         <div><dt>Số buổi</dt><dd>{run.totalUnits ?? '—'}</dd></div>
         <div><dt>Học phí</dt><dd>{formatCourseMoney(run.tuitionVnd)}</dd></div>
       </dl>
-      <Link className="course-primary-link" to={`/course-runs/${run.id}`}>
+      <Link className="course-primary-link" to={`${memberView ? "/member/course-runs" : "/course-runs"}/${run.id}`}>
         Xem đợt học
       </Link>
     </article>
   );
 }
 
-export default function CourseDetailPage() {
+export default function CourseDetailPage({ memberView = false }) {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(false);
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, false);
     try {
       const [courseData, runPage] = await Promise.all([
         getCatalogCourse(courseId),
         listCatalogCourseRuns({ page: 0, size: 100 }),
       ]);
-      setCourse(courseData);
-      setRuns((runPage.content || []).filter((run) => String(run.courseId) === String(courseId)));
-    } catch {
-      setError(true);
+      commitValue(setCourse, courseData);
+      commitValue(setRuns, (runPage.content || []).filter((run) => String(run.courseId) === String(courseId)));
+    } catch { failed();
+      commitError(setError, true);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, [courseId]);
 
-  useEffect(() => {
-    load();
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
   }, [load]);
 
   const sortedRuns = useMemo(
@@ -77,10 +78,10 @@ export default function CourseDetailPage() {
   );
 
   return (
-    <PublicDarkLayout active="courses">
+    <CourseCatalogLayout memberView={memberView}>
       <section className="course-section course-detail-section">
         <div className="scms-home-wrap">
-          <Link className="course-back-link" to="/courses">← Tất cả khóa học</Link>
+          <Link className="course-back-link" to={memberView ? "/member/course-catalog" : "/courses"}>← Tất cả khóa học</Link>
           {loading ? (
             <div className="course-state"><p>Đang tải khóa học…</p></div>
           ) : error || !course ? (
@@ -107,13 +108,13 @@ export default function CourseDetailPage() {
                 <div className="course-state"><h3>Chưa có đợt học đang công bố</h3><p>Vui lòng quay lại sau.</p></div>
               ) : (
                 <div className="course-run-grid">
-                  {sortedRuns.map((run) => <RunCard run={run} key={run.id} />)}
+                  {sortedRuns.map((run) => <RunCard memberView={memberView} run={run} key={run.id} />)}
                 </div>
               )}
             </>
           )}
         </div>
       </section>
-    </PublicDarkLayout>
+    </CourseCatalogLayout>
   );
 }

@@ -1,3 +1,4 @@
+import useAutoRefresh from '../../../hooks/useAutoRefresh';
 // Member – Thanh toán gói tập (/member/checkout/:offerId).
 //
 // Luồng:
@@ -36,7 +37,6 @@ import { formatDateTime, formatPrice } from '../../../utils';
 import { buildFeatures, formatDuration } from '../../public/offers/offerUtils';
 import './MemberCheckoutPage.css';
 
-const POLL_INTERVAL_MS = 5000;
 
 // Thông báo theo mã lỗi / trạng thái của BE (xử lý theo status và code).
 const ERROR_MESSAGES = {
@@ -148,11 +148,11 @@ export default function MemberCheckoutPage() {
   }, []);
 
   // ----- Hỏi kết quả thanh toán -----
-  const checkResult = useCallback(async () => {
+  const checkResult = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     if (!payment?.paymentId) return;
     try {
       const r = await getPaymentResult(payment.paymentId);
-      setResult(r);
+      commitValue(setResult, r);
       if (r?.status === 'PAID') reloadMemberships();
     } catch {
       // Lỗi tạm thời: bỏ qua, lần hỏi sau sẽ thử lại.
@@ -160,11 +160,7 @@ export default function MemberCheckoutPage() {
   }, [payment, reloadMemberships]);
 
   const settled = result?.status === 'PAID' || result?.status === 'FAILED';
-  useEffect(() => {
-    if (!payment || settled) return undefined;
-    const timer = setInterval(checkResult, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [payment, settled, checkResult]);
+  useAutoRefresh(checkResult, 7_000, Boolean(payment) && !settled && !busy);
 
   // ----- Bấm "Xác nhận & thanh toán" -----
   async function handlePay() {

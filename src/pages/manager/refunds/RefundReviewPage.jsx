@@ -78,14 +78,14 @@ export default function RefundReviewPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
-      setResult(await listManagerRefundRequests({ page, size: PAGE_SIZE }));
+      commitValue(setResult, await listManagerRefundRequests({ page, size: PAGE_SIZE }));
     } catch {
       // Keep the current queue visible if a background refresh fails.
     }
   }, [page]);
-  useAutoRefresh(refreshInBackground, 15_000, !action && !submitting);
+  useAutoRefresh(refreshInBackground, 7_000, !action && !submitting);
 
   function openAction(kind, row) {
     setError(null);

@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import ReceptionCourseActions from './ReceptionCourseActions';
 import ReceptionCourseWithdrawals from './ReceptionCourseWithdrawals';
 import { useForm } from 'react-hook-form';
@@ -62,18 +63,18 @@ export default function ReceptionCourseBookingPage() {
     resume();
     return () => { active = false; };
   }, [requestedOrderId, requestedMemberCode, resumeRevision, reset]);
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     if (requestedOrderId) return;
     let active = true;
-    setLoading(true);
-    listCatalogCourseRuns({ page, size: 20 }).then((data) => {
+    if (!background) commitValue(setLoading, true);
+    track(listCatalogCourseRuns({ page, size: 20 }).then((data) => {
       if (!active) return;
-      setRuns(data.content || []);
-      setLast(page + 1 >= data.totalPages);
-    }).catch((e) => { if (active) setError(getCourseErrorMessage(e)); })
-      .finally(() => { if (active) setLoading(false); });
+      commitValue(setRuns, data.content || []);
+      commitValue(setLast, page + 1 >= data.totalPages);
+    }).catch((e) => { failed(e);  if (active) commitError(setError, getCourseErrorMessage(e)); })
+      .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
-  }, [page, catalogRevision, requestedOrderId]);
+  }, [page, catalogRevision, requestedOrderId], !busy);
   async function perform(action) {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -86,6 +87,15 @@ export default function ReceptionCourseBookingPage() {
     setOrder(updated); setPayment(updated.payment);
     if (refreshPanels) refreshMemberPanels();
   }
+  const activeOrderId = order?.orderId;
+  const activeMemberId = member?.accountId;
+  usePollingEffect(({ track, commitValue }) => {
+    if (!activeOrderId || !activeMemberId) return;
+    track(getReceptionCourseOrder(activeMemberId, activeOrderId).then(updated => {
+      commitValue(setOrder, updated);
+      commitValue(setPayment, updated.payment);
+    }));
+  }, [activeMemberId, activeOrderId], !busy && !resuming);
   const searchMember = ({ kind, query }) => perform(async () => {
         const previousMemberId = member?.accountId;
         setMember(null);

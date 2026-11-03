@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
+import { useCallback, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Accordion, Button, Card, Col, Form, ProgressBar, Row, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
@@ -82,6 +83,7 @@ function ReportSection({ eventKey, title, description, children }) {
 }
 
 export default function ManagerReportsPage() {
+  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -90,9 +92,10 @@ export default function ManagerReportsPage() {
     defaultValues: DEFAULT_FILTERS,
   });
 
-  const loadReports = useCallback(async (filters) => {
-    setLoading(true);
-    setError(null);
+  const loadReports = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    const filters = appliedFilters;
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
     try {
       const [members, bookings, attendance, centerVisits, classUtilization] = await Promise.all([
         getMemberReport(filters),
@@ -101,21 +104,21 @@ export default function ManagerReportsPage() {
         getCenterVisitReport(filters),
         getClassUtilizationReport(filters),
       ]);
-      setReports({ members, bookings, attendance, centerVisits, classUtilization });
-    } catch (err) {
-      setError(err);
+      commitValue(setReports, { members, bookings, attendance, centerVisits, classUtilization });
+    } catch (err) { failed(err);
+      commitError(setError, err);
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
-  }, []);
+  }, [appliedFilters]);
 
-  useEffect(() => {
-    loadReports(DEFAULT_FILTERS);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(loadReports({ background, commitValue, commitError, failed }));
   }, [loadReports]);
 
   function clear() {
     reset(DEFAULT_FILTERS);
-    loadReports(DEFAULT_FILTERS);
+    setAppliedFilters(DEFAULT_FILTERS);
   }
 
   return (
@@ -130,7 +133,7 @@ export default function ManagerReportsPage() {
 
       <Card className="border-0 shadow-sm mb-4">
         <Card.Body>
-          <Form onSubmit={handleSubmit(loadReports)}>
+          <Form onSubmit={handleSubmit(setAppliedFilters)}>
             <Row className="g-3 align-items-end">
               <Col md={3}>
                 <Form.Label>Từ ngày</Form.Label>

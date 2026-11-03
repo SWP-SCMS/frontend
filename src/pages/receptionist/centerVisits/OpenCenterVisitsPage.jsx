@@ -30,14 +30,14 @@ export default function OpenCenterVisitsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
-      setResult(await listOpenCenterVisits({ page, size: 20 }));
+      commitValue(setResult, await listOpenCenterVisits({ page, size: 20 }));
     } catch {
       // Keep the current list visible if a background refresh fails.
     }
   }, [page]);
-  useAutoRefresh(refreshInBackground, 15_000, !selected && !checkingOut);
+  useAutoRefresh(refreshInBackground, 7_000, !selected && !checkingOut);
 
   function openCheckout(visit) {
     setSelected(visit);

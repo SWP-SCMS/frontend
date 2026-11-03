@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Receptionist – Membership Offer list (US12).
 //
 // BE: GET /api/v1/membership-offers?planCode={dynamicPlanCode}
@@ -63,23 +64,23 @@ export default function MembershipOfferListPage() {
     setSearchInput(query);
   }, [query]);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
 
-    listActiveOffers()
+    track(listActiveOffers()
       .then((result) => {
         if (cancelled) return;
-        setOffers(result);
+        commitValue(setOffers, result);
       })
-      .catch((err) => {
+      .catch((err) => { failed(err);
         if (cancelled) return;
-        setError(err);
+        commitError(setError, err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
 
     return () => {
       cancelled = true;

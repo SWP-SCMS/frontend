@@ -92,9 +92,9 @@ export default function ManualActivationPage() {
   }, [status, page]);
 
   useEffect(() => { load(); }, [load]);
-  const refreshInBackground = useCallback(async () => {
+  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
-      setResult(await listReceptionManualActivationRequests({ status, page, size: 20 }));
+      commitValue(setResult, await listReceptionManualActivationRequests({ status, page, size: 20 }));
     } catch {
       // Keep the current request list visible if a background refresh fails.
     }

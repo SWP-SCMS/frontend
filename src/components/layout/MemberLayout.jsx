@@ -1,3 +1,4 @@
+import usePollingEffect from '../../hooks/usePollingEffect';
 // Khung giao diện cho khu vực Hội viên: sidebar tối bên trái, header phía
 // trên, nội dung sáng ở giữa. Không dùng AppShell vì AppShell còn dùng chung
 // cho Lễ tân / HLV / Quản lý.
@@ -62,28 +63,28 @@ export default function MemberLayout({ children }) {
     loadMemberships();
   }, [loadMemberships]);
 
-  const refreshMembershipsInBackground = useCallback(async () => {
+  const refreshMembershipsInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
-      setMemberships(await getMyMemberships());
+      commitValue(setMemberships, await getMyMemberships());
     } catch {
       // Keep the last known membership state if a background refresh fails.
     }
   }, []);
   useAutoRefresh(refreshMembershipsInBackground);
 
-  useEffect(() => {
+  usePollingEffect(({ track, commitValue, failed }) => {
     let cancelled = false;
-    listActiveOffers()
+    track(listActiveOffers()
       .then((offers) => {
-        if (!cancelled) setActiveOffers(offers);
+        if (!cancelled) commitValue(setActiveOffers, offers);
       })
-      .catch(() => {
-        if (!cancelled) setActiveOffers([]);
-      });
+      .catch(() => { failed();
+        if (!cancelled) commitValue(setActiveOffers, []);
+      }));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [], !loggingOut);
 
   // Membership ACTIVE cấp quyền sử dụng hiện tại. Membership RESERVED là gói
   // gia hạn đã thanh toán và sẽ được BE tự kích hoạt khi gói hiện tại hết hạn.

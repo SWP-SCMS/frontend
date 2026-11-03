@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { listMyCourseEnrollments } from '../../../services/courseEnrollmentService';
@@ -46,27 +47,31 @@ export default function MemberCoursesPage() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, '');
     try {
       const [enrollmentData, waitlistData] = await Promise.allSettled([
         listMyCourseEnrollments(),
         listMyCourseWaitlists(),
       ]);
-      setEnrollments(enrollmentData.status === 'fulfilled' ? enrollmentData.value : []);
-      setWaitlists(waitlistData.status === 'fulfilled' ? waitlistData.value : []);
-      if ([enrollmentData, waitlistData].some((result) => result.status === 'rejected')) setError('Một phần dữ liệu chưa tải được. Vui lòng tải lại.');
-    } catch (requestError) {
-      setError(getCourseErrorMessage(requestError, 'Không tải được thông tin khóa học của bạn.'));
+      if (background) {
+        const rejected = [enrollmentData, waitlistData].find(result => result.status === 'rejected');
+        if (rejected) throw rejected.reason;
+      }
+      commitValue(setEnrollments, enrollmentData.status === 'fulfilled' ? enrollmentData.value : []);
+      commitValue(setWaitlists, waitlistData.status === 'fulfilled' ? waitlistData.value : []);
+      if ([enrollmentData, waitlistData].some((result) => result.status === 'rejected')) commitError(setError, 'Một phần dữ liệu chưa tải được. Vui lòng tải lại.');
+    } catch (requestError) { failed(requestError);
+      commitError(setError, getCourseErrorMessage(requestError, 'Không tải được thông tin khóa học của bạn.'));
     } finally {
-      setLoading(false);
+      if (!background) commitValue(setLoading, false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(load({ background, commitValue, commitError, failed }));
+  }, [load], !busyId);
 
   async function handleLeave(item) {
     setBusyId(item.id);
@@ -107,7 +112,7 @@ export default function MemberCoursesPage() {
           <h1>Khóa học của tôi</h1>
           <p>Theo dõi khóa đã đăng ký, lịch học và vị trí trong danh sách chờ.</p>
         </div>
-        <Link className="member-course-primary-link" to="/courses">Khám phá khóa học</Link>
+        <Link className="member-course-primary-link" to="/member/course-catalog">Khám phá khóa học</Link>
       </header>
 
       <button type="button" disabled={loading || !!busyId} onClick={load}>Tải lại dữ liệu</button>

@@ -1,3 +1,4 @@
+import usePollingEffect from '../../../hooks/usePollingEffect';
 // Receptionist – Unified membership sale at the front desk.
 //
 // BE: POST /api/v1/reception/members/{memberId}/cash-payments
@@ -170,27 +171,12 @@ export default function CashPaymentPage() {
     };
   }, []);
 
-  // Poll GET /payments/{paymentId}/result every 5s until PAID/FAILED.
-  // QR display alone is never confirmation (BR-PAY-04).
-  useEffect(() => {
-    if (!sepayPayment?.paymentId) return undefined;
-    if (sepayResult?.status === 'PAID' || sepayResult?.status === 'FAILED') {
-      return undefined;
-    }
-    let cancelled = false;
-    const timer = setInterval(async () => {
-      try {
-        const r = await getPaymentResult(sepayPayment.paymentId);
-        if (!cancelled) setSepayResult(r);
-      } catch {
-        // Transient error: the next poll retries.
-      }
-    }, 5000);
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [sepayPayment, sepayResult?.status]);
+  // Read payment status in the background; creating a QR never confirms payment.
+  const polledPaymentId = sepayPayment?.paymentId;
+  usePollingEffect(({ track, commitValue }) => {
+    if (!polledPaymentId || ['PAID', 'FAILED'].includes(sepayResult?.status)) return;
+    track(getPaymentResult(polledPaymentId).then(value => commitValue(setSepayResult, value)));
+  }, [polledPaymentId, sepayResult?.status]);
 
   // A terminal transfer is no longer a cancellable pending order. Refresh the
   // member and membership card after success so the newly activated package is

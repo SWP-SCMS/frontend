@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import usePollingEffect from '../../../hooks/usePollingEffect';
 import {
   Alert,
   Button,
@@ -151,6 +152,12 @@ export default function ReceptionCenterCheckInPage() {
     setCheckInSuccess(null);
     resetCheckIn({ identityVerified: false });
   }, [selectedMember?.memberId, resetCheckIn]);
+
+  const watchedMemberCode = selectedMember?.memberId;
+  usePollingEffect(({ track, commitValue }) => {
+    if (!watchedMemberCode) return;
+    track(searchReceptionMember({ memberId: watchedMemberCode }).then(value => commitValue(setSelectedMember, value)));
+  }, [watchedMemberCode], !searchSubmitting && !checkInSubmitting);
 
   async function searchMember(values) {
     setSearchError(null);

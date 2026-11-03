@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import usePollingEffect from '../../hooks/usePollingEffect';
+import { useState } from 'react';
 import { Alert, Spinner } from 'react-bootstrap';
 
 import { getMyActiveCoachAssignment } from '../../services/coachAssignmentService';
@@ -9,18 +10,18 @@ export default function MemberCoachCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
+  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
-    getMyActiveCoachAssignment()
+    track(getMyActiveCoachAssignment()
       .then((value) => {
-        if (!cancelled) setCoach(value);
+        if (!cancelled) commitValue(setCoach, value);
       })
-      .catch(() => {
-        if (!cancelled) setError(true);
+      .catch(() => { failed();
+        if (!cancelled) commitError(setError, true);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        if (!cancelled) if (!background) commitValue(setLoading, false);
+      }));
     return () => {
       cancelled = true;
     };
