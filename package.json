@@ -11,7 +11,8 @@
     "test": "node --test src/utils/*.test.js",
     "test:course-ui": "playwright test tests/course-workflows.spec.js",
     "test:benefits": "node --test src/utils/membershipBenefits.test.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:course-runtime": "node scripts/course-runtime.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

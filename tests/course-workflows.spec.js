@@ -317,7 +317,7 @@ test('QA cash succeeds but refresh fails: successful mutation must not remain su
     if (path === '/reception/members/search') return { body: { ...member, status: 'ACTIVE' } };
     if (path === '/course-runs/run-1') return { body: { ...run, status: 'OPEN_FOR_REGISTRATION', sessions: [] } };
     if (path === '/reception/members/member-1/course-orders/order-1') return paid && !allowRefresh ? { status: 503, body: { code: 'UNAVAILABLE' } } : { body: paid ? { ...order, orderStatus: 'PAID', payment: { status: 'PAID', method: 'CASH' } } : order };
-    if (path.endsWith('/payments/cash') && method === 'POST') { paid = true; return { body: { paymentId: 'cash-1', status: 'PAID', method: 'CASH' } }; }
+    if (path.endsWith('/payments/cash') && method === 'POST') { paid = true; return { body: { enrollmentId: 'enrollment-1', orderId: 'order-1', memberId: 'member-1', courseRunId: 'run-1', amountPaidVnd: 1000, totalUnits: 1, enrolledAt: yesterday } }; }
     if (path === '/reception/members/member-1/course-enrollments') return { body: { content: [], page: 0, totalPages: 0 } };
     if (path === '/reception/members/member-1/course-refund-obligations') return { body: pageOf([]) };
     if (path.startsWith('/reception/members/member-1/')) return { body: [] };
@@ -344,7 +344,7 @@ test('cash uncertain response retries the same key without claiming success', as
     if (path === '/reception/members/search') return { body: { ...member, status: 'ACTIVE' } };
     if (path === '/course-runs/run-1') return { body: { ...run, status: 'OPEN_FOR_REGISTRATION', sessions: [] } };
     if (path === '/reception/members/member-1/course-orders/order-1') return paid && !allowRefresh ? { status: 503, body: { code: 'UNAVAILABLE' } } : { body: paid ? { ...order, orderStatus: 'PAID', payment: { status: 'PAID', method: 'CASH' } } : order };
-    if (path.endsWith('/payments/cash') && method === 'POST') { attempts++; if (attempts === 1) return { status: 503, body: {} }; paid = true; return { body: { paymentId: 'cash-1', status: 'PAID', method: 'CASH' } }; }
+    if (path.endsWith('/payments/cash') && method === 'POST') { attempts++; if (attempts === 1) return { status: 503, body: {} }; paid = true; return { body: { enrollmentId: 'enrollment-1', orderId: 'order-1', memberId: 'member-1', courseRunId: 'run-1', amountPaidVnd: 1000, totalUnits: 1, enrolledAt: yesterday } }; }
     if (path === '/reception/members/member-1/course-enrollments') return { body: { content: [], page: 0, totalPages: 0 } };
     if (path === '/reception/members/member-1/course-refund-obligations') return { body: pageOf([]) };
     if (path.startsWith('/reception/members/member-1/')) return { body: [] };

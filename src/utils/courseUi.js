@@ -180,3 +180,7 @@ export const COURSE_ENROLLMENT_STATUS_LABELS = {
 export const COURSE_DISPOSITION_LABELS = {
   ENROLLED: 'Có suất học', NOT_ENROLLED: 'Không có suất học', UNRESOLVED: 'Chờ xử lý buổi học',
 };
+
+export function effectiveCourseSessions(sessions = []) {
+  return sessions.filter(session => ['SCHEDULED', 'MAKEUP_SCHEDULED', 'COMPLETED'].includes(session.status));
+}
