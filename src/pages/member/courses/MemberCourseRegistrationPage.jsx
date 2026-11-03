@@ -10,6 +10,7 @@ import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils
 import { joinCourseWaitlist } from '../../../services/courseWaitlistService';
 import {
   COURSE_ORDER_STATUS_LABELS,
+  effectiveCourseSessions,
   COURSE_SESSION_STATUS_LABELS,
   formatCourseDateTime,
   formatCourseMoney,
@@ -82,7 +83,7 @@ export default function MemberCourseRegistrationPage() {
   const canRegister = run?.registrationStatus === 'OPEN';
 
   const sortedSessions = useMemo(
-    () => [...(run?.sessions || [])].sort((a, b) => a.unitNumber - b.unitNumber),
+    () => effectiveCourseSessions(run?.sessions).sort((a, b) => a.unitNumber - b.unitNumber),
     [run?.sessions],
   );
 
@@ -173,11 +174,9 @@ export default function MemberCourseRegistrationPage() {
           <div className="member-course-session-stack">
             {sortedSessions.map((session) => (
               <div className="member-course-session-row" key={session.id}>
-                <strong>Buổi {session.unitNumber}{session.isMakeup ? ' · Học bù' : ''}</strong>
+                <strong>Buổi {session.unitNumber}{session.status === 'MAKEUP_SCHEDULED' ? ' · Học bù' : ''}</strong>
                 <span>{formatCourseDateTime(session.startAt)}</span>
-                <span>{session.status === 'CANCELLED_PENDING_MAKEUP'
-                  ? 'Đã hủy (buổi gốc)'
-                  : getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.status)}</span>
+                <span>{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.status)}</span>
               </div>
             ))}
           </div>

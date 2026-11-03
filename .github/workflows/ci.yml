@@ -26,3 +26,46 @@ jobs:
           path: |
             test-results/
             playwright-report/
+
+  course-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: SWP-SCMS/backend
+          ref: 12fa1df7b651f40eb770502139a738a701339c8d
+          path: .qa-backend
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: .qa-backend/pom.xml
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Compile test-only backend launcher
+        working-directory: .qa-backend
+        run: |
+          chmod +x mvnw
+          ./mvnw -ntp test-compile dependency:build-classpath -Dmdep.includeScope=test -Dmdep.outputFile=target/qa-classpath.txt
+      - name: Isolated real HTTP and browser regression
+        env:
+          COURSE_QA_BACKEND: .qa-backend
+        run: npm run test:course-runtime
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: course-runtime-${{ github.event_name }}
+          include-hidden-files: true
+          path: |
+            test-results/runtime-report.json
+            test-results/runtime-browser/**/*.png
+            test-results/runtime-browser/**/attachments/*.json
+            .course-qa/**/database-counts.json
+            .course-qa/**/sources.json

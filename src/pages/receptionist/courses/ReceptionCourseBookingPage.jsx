@@ -174,7 +174,8 @@ export default function ReceptionCourseBookingPage() {
           setError(getCourseErrorMessage(e, 'Chưa xác nhận được kết quả thu tiền. Kiểm tra thanh toán trước khi thử lại; thông tin gửi lại được giữ nguyên.'));
           return;
         }
-        setPayment(confirmed);
+        // Cash returns the fulfilled enrollment, not a payment DTO.
+        setOrder(current => ({ ...current, orderId: confirmed.orderId, orderStatus: 'PAID', reservationStatus: 'ENROLLED' }));
         setShowCashConfirmation(false);
         refreshMemberPanels();
         try { await refresh(false); }
