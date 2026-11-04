@@ -30,7 +30,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -224,7 +224,6 @@ export default function RecurringScheduleCreatePage() {
     control,
     handleSubmit,
     reset,
-    watch,
     setError,
     setValue,
     getValues,
@@ -305,14 +304,14 @@ export default function RecurringScheduleCreatePage() {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [activeRooms]);
 
-  const availabilityStartDate = watch('startDate');
-  const availabilityWeekdays = watch('weekdays');
+  const availabilityStartDate = useWatch({ control, name: 'startDate' });
+  const availabilityWeekdays = useWatch({ control, name: 'weekdays' });
   const availabilityWeekdayKey = Array.isArray(availabilityWeekdays)
     ? availabilityWeekdays.join(',')
     : '';
-  const availabilityStartTime = watch('startTime');
-  const availabilityEndTime = watch('endTime');
-  const availabilitySessionCount = watch('sessionCount');
+  const availabilityStartTime = useWatch({ control, name: 'startTime' });
+  const availabilityEndTime = useWatch({ control, name: 'endTime' });
+  const availabilitySessionCount = useWatch({ control, name: 'sessionCount' });
   const occurrenceWindows = useMemo(
     () => buildRecurringWindows({
       startDate: availabilityStartDate,
@@ -400,7 +399,7 @@ export default function RecurringScheduleCreatePage() {
     coachOptions.length > 0;
 
   // Selected room helper text.
-  const selectedRoomId = watch('roomId');
+  const selectedRoomId = useWatch({ control, name: 'roomId' });
   const selectedRoomCapacity = useMemo(() => {
     const found = activeRooms.find((r) => r.id === selectedRoomId);
     return found ? found.capacity : null;

@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import CourseCatalogLayout from '../../../components/layout/CourseCatalogLayout';
@@ -48,9 +48,9 @@ export default function CourseCatalogPage({ memberView = false }) {
     }
   }, []);
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     track(load({ background, commitValue, commitError, failed }));
-  }, [load]);
+  }, [load], { key: ['course-catalog'], setters: [setCourses], setLoading });
 
   return (
     <CourseCatalogLayout memberView={memberView}>

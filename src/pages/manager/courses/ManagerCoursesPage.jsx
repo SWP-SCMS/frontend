@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseCreateSchema } from '../../../schemas/courseSchemas';
@@ -40,7 +40,7 @@ export default function ManagerCoursesPage() {
     }
   }, [page]);
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !saving);
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], { key: ['manager-courses', page], setters: [setResult, setDisciplines], setLoading }, !saving);
 
   async function handleCreate(form) {
 
@@ -64,8 +64,8 @@ export default function ManagerCoursesPage() {
   }
 
   return (
-    <div className="container-fluid py-4">
-      <div className="d-flex justify-content-between align-items-start mb-4">
+    <div className="scms-course-workspace">
+      <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
         <div><h1 className="h3 mb-1">Danh mục khóa học</h1><p className="text-muted mb-0">Quản lý khóa học độc lập với lớp tập thường.</p></div>
         <Button variant="danger" onClick={() => setShowCreate(true)}>+ Tạo khóa học</Button>
       </div>

@@ -34,7 +34,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { RhfDateInput } from '../../../components/common/DateInput';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -158,7 +158,6 @@ export default function SingleSessionCreatePage() {
     control,
     handleSubmit,
     reset,
-    watch,
     setError,
     setValue,
     getValues,
@@ -227,10 +226,10 @@ export default function SingleSessionCreatePage() {
     [rooms],
   );
 
-  const availabilityDate = watch('sessionDate');
-  const availabilityStart = watch('startTime');
-  const availabilityEnd = watch('endTime');
-  const availabilityCapacity = watch('capacity');
+  const availabilityDate = useWatch({ control, name: 'sessionDate' });
+  const availabilityStart = useWatch({ control, name: 'startTime' });
+  const availabilityEnd = useWatch({ control, name: 'endTime' });
+  const availabilityCapacity = useWatch({ control, name: 'capacity' });
   useEffect(() => {
     const startTime = gymLocalDateToIsoInstant(availabilityDate, availabilityStart);
     const endTime = gymLocalDateToIsoInstant(availabilityDate, availabilityEnd);
@@ -350,7 +349,7 @@ export default function SingleSessionCreatePage() {
     coachOptions.length > 0;
 
   // Selected room helper text.
-  const selectedRoomId = watch('roomId');
+  const selectedRoomId = useWatch({ control, name: 'roomId' });
   const selectedRoomCapacity = useMemo(() => {
     const found = roomOptions.find((r) => r.value === selectedRoomId);
     return found ? found.capacity : null;

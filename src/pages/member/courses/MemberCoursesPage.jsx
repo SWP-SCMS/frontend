@@ -115,7 +115,7 @@ export default function MemberCoursesPage() {
         <Link className="member-course-primary-link" to="/member/course-catalog">Khám phá khóa học</Link>
       </header>
 
-      <button type="button" disabled={loading || !!busyId} onClick={load}>Tải lại dữ liệu</button>
+      <button className="btn btn-outline-secondary btn-sm" type="button" disabled={loading || !!busyId} onClick={load}>Tải lại dữ liệu</button>
       {error && <div className="member-course-alert">{error}</div>}
       {loading ? (
         <div className="member-course-state">Đang tải dữ liệu khóa học…</div>

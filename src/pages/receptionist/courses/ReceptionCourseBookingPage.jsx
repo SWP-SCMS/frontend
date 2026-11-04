@@ -106,7 +106,7 @@ export default function ReceptionCourseBookingPage() {
   const payable = order?.orderStatus === 'PENDING_PAYMENT' && payment?.status !== 'PAID' && Date.parse(order.expiresAt) > now;
   if (resuming) return <div className="container-fluid py-4"><h1>Đăng ký khóa học</h1><p>Đang mở lại đơn khóa học…</p></div>;
   if (requestedOrderId && !order) return <div className="container-fluid py-4"><h1>Đăng ký khóa học</h1><Alert variant="danger">{error || 'Không tìm thấy đơn khóa học.'}</Alert><Button onClick={() => setResumeRevision((value) => value + 1)}>Thử lại</Button><Button className="ms-2" variant="outline-secondary" onClick={() => setSearchParams({})}>Về danh sách đợt học</Button></div>;
-  return <div className="container-fluid py-3">
+  return <div className="scms-course-workspace">
     <h1>Đăng ký khóa học</h1>
     <p>Đăng ký theo đợt học. Học phí khóa học độc lập với gói tập gym.</p>
     {error && <Alert variant="danger" role="alert">{error}</Alert>}

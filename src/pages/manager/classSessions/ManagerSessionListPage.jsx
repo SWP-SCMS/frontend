@@ -1237,7 +1237,7 @@ function CalendarView({
 
   // YYYY-MM-DD for "today" in the gym zone — used to subtly highlight
   // today's column when it belongs to the displayed week.
-  const todayYmd = useMemo(() => {
+  const [todayYmd] = useState(() => {
     const now = new Date();
     if (Number.isNaN(now.getTime())) return '';
     return now.toLocaleDateString('en-CA', {
@@ -1246,7 +1246,7 @@ function CalendarView({
       month: '2-digit',
       day: '2-digit',
     });
-  }, []);
+  });
 
   return (
     <div className="msl-cal">

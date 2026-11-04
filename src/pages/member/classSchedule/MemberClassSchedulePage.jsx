@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Member – Lịch của tôi: lịch tuần các buổi tập MÀ HỘI VIÊN ĐÃ ĐẶT.
 //
 // Dữ liệu: GET /api/v1/members/me/bookings?status=BOOKED (đủ mọi trang), rồi
@@ -115,9 +115,9 @@ export default function MemberClassSchedulePage() {
     }
   }, []);
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     track(loadBookings({ background, commitValue, commitError, failed }));
-  }, [loadBookings]);
+  }, [loadBookings], { key: ['member-schedule'], setters: [setBookings], setLoading });
 
   // Các buổi đã đặt nằm trong tuần đang xem.
   const weekSessions = useMemo(() => {

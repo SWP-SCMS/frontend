@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Member account list & search (US06).
 //
 // BE: GET /api/v1/manager/members?query&status&page&size
@@ -66,7 +66,7 @@ export default function MemberAccountListPage() {
     setSearchInput(query);
   }, [query]);
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
@@ -92,7 +92,7 @@ export default function MemberAccountListPage() {
     return () => {
       cancelled = true;
     };
-  }, [query, status, page]);
+  }, [query, status, page], { key: ['manager-members', query, status, page], setters: [setData], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);
@@ -112,7 +112,7 @@ export default function MemberAccountListPage() {
     setParam('query', '');
   }
 
-  const rows = data.content ?? [];
+  const rows = useMemo(() => data.content ?? [], [data.content]);
   const totalPages = Math.max(1, data.totalPages || 1);
   const canPrev = page > 0;
   const canNext = data.totalPages > 0 && page < data.totalPages - 1;

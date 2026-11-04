@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import useAutoRefresh from '../../../hooks/useAutoRefresh';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 import { useAuth } from '../../../context/useAuth';
 import { getManagerDashboard } from '../../../services/managerReportingService';
 import { formatPrice } from '../../../utils';
@@ -34,15 +34,15 @@ export default function ManagerDashboardPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    try { setData(await getManagerDashboard()); } catch (err) { setError(err); } finally { setLoading(false); }
-  }, []);
-  useEffect(() => { load(); }, [load]);
-  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
-    try { commitValue(setData, await getManagerDashboard()); } catch { /* Keep the last dashboard snapshot on transient failures. */ }
-  }, []);
-  useAutoRefresh(refreshInBackground);
+  const [revision, setRevision] = useState(0);
+  const load = () => setRevision(value => value + 1);
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    if (!background) commitValue(setLoading, true);
+    commitError(setError, null);
+    track(getManagerDashboard().then(value => commitValue(setData, value))
+      .catch(err => { failed(err); commitError(setError, err); })
+      .finally(() => { if (!background) commitValue(setLoading, false); }));
+  }, [revision], { key: ['manager-dashboard'], setters: [setData], setLoading });
 
   return (
     <div>

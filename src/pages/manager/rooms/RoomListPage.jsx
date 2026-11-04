@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Room list (US25).
 //
 // BE: GET /api/v1/manager/rooms
@@ -52,7 +52,7 @@ export default function RoomListPage() {
   }, [query]);
 
   // Single fetch on mount. Filter / search is purely client-side.
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
@@ -73,7 +73,7 @@ export default function RoomListPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [], { key: ['manager-rooms'], setters: [setRooms], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);

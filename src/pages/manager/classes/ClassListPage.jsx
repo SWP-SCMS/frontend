@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Class list (US24).
 //
 // BE: GET /api/v1/manager/classes
@@ -70,7 +70,7 @@ export default function ClassListPage() {
   }, [query]);
 
   // Single fetch on mount. Filter / search is purely client-side.
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
@@ -91,7 +91,7 @@ export default function ClassListPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [], { key: ['manager-classes'], setters: [setClasses], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);

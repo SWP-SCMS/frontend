@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 import CourseDateTimeInput from '../../../components/common/CourseDateTimeInput';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,7 +41,7 @@ export default function ManagerCourseRunsPage() {
     } catch (err) { failed(err);  commitError(setError, getCourseErrorMessage(err, 'Không tải được danh sách đợt mở khóa học.')); }
     finally { if (!background) commitValue(setLoading, false); }
   }, [page]);
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !saving);
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], { key: ['manager-runs', page], setters: [setResult, setCourses, setCoaches], setLoading }, !saving);
 
   async function handleCreate(form) {
      setSaving(true); setError('');

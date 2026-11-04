@@ -1,3 +1,4 @@
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useRef, useState } from 'react';
 import { Alert, Button, Modal, Table } from 'react-bootstrap';
@@ -15,11 +16,11 @@ export default function CoachCourseSessionsPage() {
   const [detailError, setDetailError] = useState('');
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true; if (!background) commitValue(setData, null); commitError(setError, '');
     track(listCoachCourseSessions(page).then((value) => { if (active) commitValue(setData, value); }).catch((e) => { failed(e);  if (active) commitError(setError, getCourseErrorMessage(e, 'Không tải được lịch khóa học.')); }));
     return () => { active = false; };
-  }, [page, revision], !busy);
+  }, [page, revision], { key: ['coach-course-sessions', page], setters: [setData] }, !busy);
   usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true; if (!background) commitValue(setDetail, null); if (!background) commitValue(setRoster, []); commitError(setDetailError, '');
     if (selected) track(Promise.all([getCoachCourseSession(selected), getCoachCourseRoster(selected)]).then(([session, students]) => { if (active) { commitValue(setDetail, session); commitValue(setRoster, students); } }).catch((e) => { failed(e);  if (active) commitError(setDetailError, getCourseErrorMessage(e, 'Không tải được danh sách học viên.')); }));

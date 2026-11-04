@@ -21,7 +21,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Button, Form, Spinner } from 'react-bootstrap';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -103,7 +103,7 @@ export default function ClassCreatePage() {
     register,
     handleSubmit,
     setError,
-    watch,
+    control,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -119,7 +119,7 @@ export default function ClassCreatePage() {
   // Controlled value for disciplineId so the selector can be reset to
   // '' after a DISCIPLINE_INACTIVE 409 without firing a re-render with
   // an undefined form value.
-  const disciplineIdValue = watch('disciplineId');
+  const disciplineIdValue = useWatch({ control, name: 'disciplineId' });
 
   async function fetchDisciplines() {
     setLoadingDisciplines(true);

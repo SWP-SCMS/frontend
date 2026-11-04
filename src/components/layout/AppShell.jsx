@@ -15,6 +15,7 @@ import {
 } from './navConfig';
 
 export default function AppShell({ children }) {
+  const [copyrightYear] = useState(() => new Date().getFullYear());
   const { user, role, isAuthenticated, logout } = useAuth();
   const [showSidebar, setShowSidebar] = useState(false);
   const navigate = useNavigate();
@@ -123,7 +124,7 @@ export default function AppShell({ children }) {
 
       <footer className="bg-dark text-white-50 py-3 mt-auto">
         <Container fluid="lg" className="d-flex flex-wrap justify-content-between align-items-center gap-2">
-          <small>© {new Date().getFullYear()} SWP GYM — SCMS</small>
+          <small>© {copyrightYear} SWP GYM — SCMS</small>
           <small>Phiên bản dành cho desktop</small>
         </Container>
       </footer>

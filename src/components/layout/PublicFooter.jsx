@@ -1,3 +1,4 @@
+import { useState } from 'react';
 // Footer (giao diện tối) của các trang công khai. Tách ra từ HomePage.jsx để
 // dùng chung. Nội dung chữ lấy từ content/homeContent.js (FOOTER_INFO).
 
@@ -5,6 +6,7 @@ import { FOOTER_INFO } from '../../content/homeContent';
 import PublicIcon from './PublicIcon';
 
 export default function PublicFooter() {
+  const [copyrightYear] = useState(() => new Date().getFullYear());
   return (
     <footer className="scms-home-footer">
       <div className="scms-home-wrap">
@@ -35,7 +37,7 @@ export default function PublicFooter() {
         </div>
         <div className="d-flex flex-wrap justify-content-between gap-2 mt-5 pt-3 scms-home-muted small">
           <span>
-            © {new Date().getFullYear()} SCMS Sports Center. All rights reserved.
+            © {copyrightYear} SCMS Sports Center. All rights reserved.
           </span>
           <span>{FOOTER_INFO.standard}</span>
         </div>

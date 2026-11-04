@@ -70,7 +70,7 @@ function buildRangeError(from, to) {
 
 export default function RevenueReportPage() {
   const [from, setFrom] = useState(toDateInputValue(daysAgo(29)));
-  const [to, setTo] = useState(toDateInputValue(new Date()));
+  const [to, setTo] = useState(() => toDateInputValue(new Date()));
   const [includeTestData, setIncludeTestData] = useState(false);
 
   const [report, setReport] = useState(EMPTY_REPORT);

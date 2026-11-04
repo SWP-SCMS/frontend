@@ -48,6 +48,7 @@ const staffCreateSchema = z.object({
 });
 
 export default function StaffAccountCreatePage() {
+  const [maxBirthDate] = useState(() => new Date().toISOString().slice(0, 10));
   const navigate = useNavigate();
   const [serverError, setServerError] = useState(null);
 
@@ -176,7 +177,7 @@ export default function StaffAccountCreatePage() {
               <RhfDateInput
                 control={control}
                 name="birthDate"
-                max={new Date().toISOString().slice(0, 10)}
+                max={maxBirthDate}
                 isInvalid={Boolean(errors.birthDate)}
               />
               <Form.Control.Feedback type="invalid">

@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Staff/Manager account list & search (US05).
 //
 // BE: GET /api/v1/manager/staff-accounts?query&role&status&page&size
@@ -75,7 +75,7 @@ export default function StaffAccountListPage() {
   }, [query]);
 
   // Fetch whenever URL params change.
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
@@ -102,7 +102,7 @@ export default function StaffAccountListPage() {
     return () => {
       cancelled = true;
     };
-  }, [query, role, status, page]);
+  }, [query, role, status, page], { key: ['manager-staff', query, role, status, page], setters: [setData], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);
@@ -123,7 +123,7 @@ export default function StaffAccountListPage() {
     setParam('query', '');
   }
 
-  const rows = data.content ?? [];
+  const rows = useMemo(() => data.content ?? [], [data.content]);
   const totalPages = Math.max(1, data.totalPages || 1);
   const canPrev = page > 0;
   const canNext = data.totalPages > 0 && page < data.totalPages - 1;
