@@ -67,22 +67,4 @@ export function isValidPhone(raw) {
 
 // Extract a human-readable error message from an Axios error or any thrown
 // value. Backend is expected to respond with { message, code, ... }.
-export function extractErrorMessage(error, fallback = 'Đã có lỗi xảy ra') {
-  if (!error) return fallback;
-  if (typeof error === 'string') return error.trim() || fallback;
-  const data = error.response?.data;
-  if (data) {
-    if (typeof data === 'string') return data;
-    if (typeof data.message === 'string' && data.message.trim()) {
-      return data.message;
-    }
-    if (Array.isArray(data.errors) && data.errors.length > 0) {
-      const first = data.errors[0];
-      if (typeof first === 'string') return first;
-      if (first?.message) return first.message;
-    }
-    if (data.code) return data.code;
-  }
-  if (error.message) return error.message;
-  return fallback;
-}
+export { extractErrorMessage } from './errorMessages.js';
