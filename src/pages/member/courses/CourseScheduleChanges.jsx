@@ -6,7 +6,7 @@ import { formatCourseMoney, formatCourseDateTime, getCourseErrorMessage } from '
 import { canRespondToCourseChange, COURSE_RESPONSE_LABELS } from '../../../utils/courseWorkflow';
 
 const statuses = { PENDING: 'Chờ phản hồi', RESPONDED: 'Đã phản hồi', SUPERSEDED: 'Đã có thay đổi mới thay thế', EXPIRED: 'Đã hết hạn' };
-export default function CourseScheduleChanges({ enrollments, onResponded }) {
+export default function CourseScheduleChanges({ enrollments, onResponded, selectedEnrollmentId = '' }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
   const [changes, setChanges] = useState([]);
@@ -45,8 +45,8 @@ export default function CourseScheduleChanges({ enrollments, onResponded }) {
     <Button variant="outline-secondary" disabled={loading || busy} onClick={() => setRevision((value) => value + 1)}>Tải lại thay đổi lịch</Button>
     {notice && <Alert variant="success" className="mt-3">{notice}</Alert>}
     {error && <p role="alert">{error}</p>}
-    {loading ? <p>Đang tải thay đổi lịch…</p> : !error && !changes.length && <p>Chưa có thay đổi lịch cần theo dõi.</p>}
-    {!loading && !error && changes.map((change) => <article className="member-course-card mt-3" key={change.id}>
+    {loading ? <p>Đang tải thay đổi lịch…</p> : !error && !changes.some(c => !selectedEnrollmentId || sessions.has(c.enrollmentSessionId)) && <p>Chưa có thay đổi lịch cần theo dõi.</p>}
+    {!loading && !error && changes.filter(c => !selectedEnrollmentId || sessions.has(c.enrollmentSessionId)).map((change) => <article className="member-course-card mt-3" key={change.id}>
       <h3>{sessions.get(change.enrollmentSessionId) || 'Buổi học của bạn'}</h3>
       <p>Lịch cũ: {formatCourseDateTime(change.oldStartAt)} – {formatCourseDateTime(change.oldEndAt)}</p>
       <p>Lịch mới: {formatCourseDateTime(change.newStartAt)} – {formatCourseDateTime(change.newEndAt)}</p>

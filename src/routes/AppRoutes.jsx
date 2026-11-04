@@ -78,6 +78,8 @@ const MembershipRequestsPage = lazy(
 const MemberCheckoutPage = lazy(
   () => import('../pages/member/checkout/MemberCheckoutPage'),
 );
+const MemberCourseWorkspacePage = lazy(() => import('../pages/member/courses/MemberCourseWorkspacePage'));
+const MemberCourseWaitlistPage = lazy(() => import('../pages/member/courses/MemberCourseWaitlistPage'));
 const MemberCoursesPage = lazy(
   () => import('../pages/member/courses/MemberCoursesPage'),
 );
@@ -511,6 +513,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         } />
       ))}
+      {[
+        ['enrollments/:enrollmentId', <MemberCourseWorkspacePage key="detail" section="detail" />],
+        ['history', <MemberCoursesPage key="history" history />],
+        ['waitlist', <MemberCourseWaitlistPage key="waitlist" />],
+        ...['refunds', 'withdrawals', 'transfers', 'schedule-changes'].map(section => [section, <MemberCourseWorkspacePage key={section} section={section} />]),
+      ].map(([path, page]) => <Route key={path} path={`/member/courses/${path}`} element={
+        <ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(page)}</MemberLayout></RoleRoute></ProtectedRoute>
+      } />)}
       <Route
         path="/member/courses"
         element={

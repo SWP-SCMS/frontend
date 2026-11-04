@@ -8,7 +8,7 @@ import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils
 import { COURSE_TRANSFER_STATUS_LABELS, canAcceptCourseTransfer } from '../../../utils/courseWorkflow';
 import { COURSE_SESSION_STATUS_LABELS, formatCourseDateTime, formatCourseMoney, getCourseErrorMessage } from '../../../utils/courseUi';
 
-export default function MemberCourseTransfers({ enrollments, onTransferred }) {
+export default function MemberCourseTransfers({ enrollments, onTransferred, selectedEnrollmentId = '' }) {
   const navigate = useNavigate();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +67,8 @@ export default function MemberCourseTransfers({ enrollments, onTransferred }) {
     <Button variant="outline-secondary" disabled={loading || busy} onClick={() => setRevision((value) => value + 1)}>Tải lại đề nghị</Button>
     {error && <Alert variant="danger" className="mt-3">{error}</Alert>}{notice && <Alert variant="success" className="mt-3">{notice}</Alert>}
     {loading ? <p>Đang tải…</p> : !error && <>
-      {!offers.length && <p>Chưa có đề nghị chuyển đợt học.</p>}
-      {offers.map((offer) => <article key={offer.id} className="member-course-card mt-3">
+      {!offers.some(o => !selectedEnrollmentId || o.sourceEnrollmentId === selectedEnrollmentId) && <p>Chưa có đề nghị chuyển đợt học.</p>}
+      {offers.filter(o => !selectedEnrollmentId || o.sourceEnrollmentId === selectedEnrollmentId).map((offer) => <article key={offer.id} className="member-course-card mt-3">
         <h3>{(offer.sourceCourseName ? offer.sourceCourseName + ' · ' + offer.sourceRunCode : sourceNames.get(offer.sourceEnrollmentId)) || 'Đăng ký khóa học của bạn'}</h3>
         <p>Đợt học thay thế: {offer.targetCourseName ? offer.targetCourseName + ' · ' + offer.targetRunCode : runNames.get(offer.targetRunId) || 'Chưa có thông tin'}</p>
         <p>{COURSE_TRANSFER_STATUS_LABELS[offer.status] || 'Đang cập nhật'} · Hạn chấp nhận/thanh toán: {formatCourseDateTime(offer.expiresAt)}</p>

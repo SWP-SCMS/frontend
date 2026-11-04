@@ -5,7 +5,7 @@
 //   - Nhận `items` qua props (KHÔNG import navConfig.js, KHÔNG dùng MemberAreaContext).
 //   - Chỉ render — không tải dữ liệu, không gọi API.
 
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import BrandLogo from '../common/BrandLogo';
 import Icon from './MemberIcon';
 
@@ -73,6 +73,7 @@ export default function MemberSidebar({
   onLockedClick = () => {},
   onRequestLogout,
 }) {
+  const { pathname } = useLocation();
   return (
     <aside className="scms-ml-sidebar">
       <div>
@@ -81,9 +82,16 @@ export default function MemberSidebar({
         </div>
         <div className="scms-ml-sidebar-label">Khu vực Hội viên</div>
         <nav className="scms-ml-nav">
-          {items.map((section) => (
+          {items.map((section) => {
+            const collapsible = section.collapsible !== false;
+            const Group = collapsible ? 'details' : 'div';
+            const isCurrentSection = section.items.some(item => item.to && (
+              pathname === item.to || (!item.end && pathname.startsWith(`${item.to}/`))
+            )) || (section.label === 'Khóa học' && pathname.startsWith('/member/courses/enrollments/'));
+            return (
             <div className="scms-ml-navgroup" key={section.label}>
-              <div className="scms-ml-navgroup-label">{section.label}</div>
+              <Group key={pathname} {...(collapsible ? { open: isCurrentSection || undefined } : {})}>
+              {collapsible ? <summary className="scms-ml-navgroup-label" style={{ cursor: 'pointer' }}>{section.label}</summary> : <div className="scms-ml-navgroup-label">{section.label}</div>}
               <div className="scms-ml-navgroup-items">
                 {section.items.map((item) => (
                   <SidebarItem
@@ -95,8 +103,9 @@ export default function MemberSidebar({
                   />
                 ))}
               </div>
+              </Group>
             </div>
-          ))}
+          ); })}
           <button
             type="button"
             className="scms-ml-navitem scms-ml-navbtn"

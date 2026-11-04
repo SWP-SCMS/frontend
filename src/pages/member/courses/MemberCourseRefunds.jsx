@@ -5,7 +5,7 @@ import { listMyCourseRefunds } from '../../../services/courseReportingService';
 import { formatCourseMoney, formatCourseDateTime, getCourseErrorMessage } from '../../../utils/courseUi';
 import { COURSE_REFUND_STATUS_LABELS as statuses, COURSE_REFUND_SOURCE_LABELS as sources } from '../../../utils/courseWorkflow';
 const money = (value) => value == null ? 'Chưa xác định' : formatCourseMoney(value);
-export default function MemberCourseRefunds({ enrollments }) {
+export default function MemberCourseRefunds({ enrollments, selectedEnrollmentId = '' }) {
   const [page, setPage] = useState(0);
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState(null);
@@ -19,6 +19,7 @@ export default function MemberCourseRefunds({ enrollments }) {
       .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
   }, [page, revision]);
+  const visibleItems = (data?.items || []).filter(item => !selectedEnrollmentId || item.enrollmentId === selectedEnrollmentId);
   const names = new Map(enrollments.map((e) => [e.enrollmentId, `${e.courseName} · ${e.runCode}`]));
   return <section className="member-course-section" id="refunds">
     <h2>Hoàn tiền khóa học</h2>
@@ -26,8 +27,8 @@ export default function MemberCourseRefunds({ enrollments }) {
     <Button variant="outline-secondary" disabled={loading} onClick={() => setRevision((v) => v + 1)}>Tải lại khoản hoàn</Button>
     {error && <Alert variant="danger">{error}</Alert>}
     {loading ? <p>Đang tải…</p> : data && <>
-      {!data.items?.length && <p>Không có khoản hoàn tiền trong trang này.</p>}
-      {data.items?.map((item) => <article className="member-course-card mt-3" key={item.id}>
+      {!visibleItems.length && <p>Không có khoản hoàn tiền trong trang này.</p>}
+      {visibleItems.map((item) => <article className="member-course-card mt-3" key={item.id}>
         <h3>{names.get(item.enrollmentId) || 'Khoản hoàn khóa học của bạn'}</h3>
         <p>{sources[item.source] || 'Hoàn tiền khóa học'} · {statuses[item.status] || 'Đang cập nhật'}</p>
         <dl><dt>Nghĩa vụ hoàn</dt><dd>{money(item.grossObligationVnd)}</dd>

@@ -71,3 +71,10 @@
   .member-course-info-list div { grid-template-columns: 1fr; gap: .25rem; }
   .member-course-card-head { flex-wrap: wrap; }
 }
+
+.member-course-card { min-width: 0; overflow-wrap: anywhere; }
+.member-course-actions { flex-wrap: wrap; }
+@media (max-width: 575px) {
+ .member-course-session-row { grid-template-columns: 1fr; gap: .35rem; }
+ .member-course-card-head { flex-wrap: wrap; }
+}

@@ -1,165 +1,115 @@
-import { formatDateTime, formatPrice } from './index';
-
-// Renders the receipt to a real .pdf file.
-//
-// jsPDF ships with Helvetica, whose WinAnsi encoding has no Vietnamese
-// vowels, so "Hội viên" would come out as mojibake. Everything here is
-// therefore ASCII-only: labels stay in English, and any value that may
-// contain Vietnamese text (member name, plan name) is transliterated to
-// plain ASCII. The Vietnamese copy stays on the on-screen receipt, which is
-// the version the customer actually reads at the counter.
-const ASCII_MAP = {
-  à: 'a', á: 'a', ả: 'a', ã: 'a', ạ: 'a',
-  ă: 'a', ằ: 'a', ắ: 'a', ẳ: 'a', ẵ: 'a', ặ: 'a',
-  â: 'a', ầ: 'a', ấ: 'a', ẩ: 'a', ẫ: 'a', ậ: 'a',
-  è: 'e', é: 'e', ẻ: 'e', ẽ: 'e', ẹ: 'e',
-  ê: 'e', ề: 'e', ế: 'e', ể: 'e', ễ: 'e', ệ: 'e',
-  ì: 'i', í: 'i', ỉ: 'i', ĩ: 'i', ị: 'i',
-  ò: 'o', ó: 'o', ỏ: 'o', õ: 'o', ọ: 'o',
-  ô: 'o', ồ: 'o', ố: 'o', ổ: 'o', ỗ: 'o', ộ: 'o',
-  ơ: 'o', ờ: 'o', ớ: 'o', ở: 'o', ỡ: 'o', ợ: 'o',
-  ù: 'u', ú: 'u', ủ: 'u', ũ: 'u', ụ: 'u',
-  ư: 'u', ừ: 'u', ứ: 'u', ử: 'u', ữ: 'u', ự: 'u',
-  ỳ: 'y', ý: 'y', ỷ: 'y', ỹ: 'y', ỵ: 'y',
-  đ: 'd', Đ: 'D',
-};
-
-export function toAscii(value) {
-  if (value == null) return '';
-  return String(value)
-    .replace(/[àáảãạăằắẳẵặâầấẩẫậ]/g, (c) => ASCII_MAP[c] ?? c)
-    .replace(/[èéẻẽẹêềếểễệ]/g, (c) => ASCII_MAP[c] ?? c)
-    .replace(/[ìíỉĩị]/g, (c) => ASCII_MAP[c] ?? c)
-    .replace(/[òóỏõọôồốổỗộơờớởỡợ]/g, (c) => ASCII_MAP[c] ?? c)
-    .replace(/[ùúủũụưừứửữự]/g, (c) => ASCII_MAP[c] ?? c)
-    .replace(/[ỳýỷỹỵđĐ]/g, (c) => ASCII_MAP[c] ?? c)
-    .replace(/[^\x20-\x7E]/g, '');
-}
+import { formatPrice } from './index';
+import { formatGymDate, formatGymTime } from './gymTime';
 
 export const RECEIPT_METHOD_LABELS = {
-  CASH: 'Cash',
-  BANK_TRANSFER: 'Bank transfer',
-};
-
-const METHOD_LABELS_VI = {
   CASH: 'Tiền mặt',
   BANK_TRANSFER: 'Chuyển khoản ngân hàng',
 };
 
 export function paymentMethodLabel(method) {
-  return METHOD_LABELS_VI[method] || method || '—';
+  return RECEIPT_METHOD_LABELS[method] || method || '—';
 }
 
-/**
- * Builds the receipt PDF.
- *
- * `memberName`, `memberCode` and `offerName` are read straight off the
- * receipt (ReceiptResponse carries all three as of backend commit af38eaa)
- * and passed in already-resolved by ReceiptPage. `durationDays` is the one
- * exception: it is not on ReceiptResponse, so the caller may omit it and the
- * row is then left off the PDF.
- *
- * jspdf is imported dynamically: it is ~350 kB and the receptionist opens
- * this page far less often than the dashboard, so there is no reason to put
- * it in the initial bundle.
- */
-export async function buildReceiptPdf({
-  receipt,
-  memberName,
-  memberCode,
-  offerName,
-  planName,
-  durationDays,
-}) {
-  const { jsPDF } = await import('jspdf');
+let fontPromise;
+async function receiptFonts() {
+  if (!fontPromise) {
+    fontPromise = Promise.all(['Regular', 'Bold'].map(async (style) => {
+      const response = await fetch(`${import.meta.env.BASE_URL}fonts/noto-sans/NotoSans-${style}.ttf`);
+      if (!response.ok) throw new Error('Không tải được phông chữ biên lai. Vui lòng thử lại.');
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += 8192) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+      }
+      return btoa(binary);
+    })).catch(() => {
+      fontPromise = undefined;
+      throw new Error('Không tải được phông chữ biên lai. Vui lòng thử lại.');
+    });
+  }
+  return fontPromise;
+}
 
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 18;
-  let y = margin;
-
-  const setFont = (size, style = 'normal') => doc.setFont('helvetica', style);
-  const text = (value, x, options = {}) => {
-    setFont(options.size ?? 10, options.style ?? 'normal');
-    doc.text(toAscii(value), x, y, { align: options.align ?? 'left' });
-    if (options.gap) y += options.gap;
+// Text remains searchable/copyable; fonts load only when exporting a receipt.
+export async function buildReceiptPdf({ receipt, memberName, memberCode, offerName }) {
+  const [{ jsPDF }, fonts] = await Promise.all([import('jspdf'), receiptFonts()]);
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', putOnlyUsedFonts: true, compress: true });
+  ['Regular', 'Bold'].forEach((style, index) => {
+    const filename = `NotoSans-${style}.ttf`;
+    doc.addFileToVFS(filename, fonts[index]);
+    doc.addFont(filename, 'NotoSans', index ? 'bold' : 'normal');
+  });
+  doc.setProperties({ title: `Biên lai ${receipt.receiptNumber || ''}`, author: 'SWP GYM' });
+  doc.setLineHeightFactor(1.4);
+  const width = doc.internal.pageSize.getWidth();
+  const bottom = doc.internal.pageSize.getHeight() - 22;
+  const margin = 22;
+  const valueX = 94;
+  const lineHeight = 5.5;
+  let y = 26;
+  const font = (size = 11, bold = false, color = '#111827') => {
+    doc.setFont('NotoSans', bold ? 'bold' : 'normal');
+    doc.setFontSize(size);
+    doc.setTextColor(color);
   };
-  const line = () => {
+  const ensureSpace = (height) => {
+    if (y + height > bottom) { doc.addPage(); y = 26; }
+  };
+  const rule = (dashed = false) => {
+    doc.setDrawColor('#d1d5db');
     doc.setLineWidth(0.2);
-    doc.line(margin, y, pageWidth - margin, y);
-    y += 6;
+    doc.setLineDashPattern(dashed ? [0.7, 0.7] : [], 0);
+    doc.line(margin, y, width - margin, y);
+    doc.setLineDashPattern([], 0);
+  };
+  const row = (label, value) => {
+    font();
+    const lines = doc.splitTextToSize(String(value ?? '—').normalize('NFC'), width - margin - valueX);
+    let offset = 0;
+    while (offset < lines.length) {
+      ensureSpace(lineHeight + 6);
+      const count = Math.min(lines.length - offset, Math.max(1, Math.floor((bottom - y - 6) / lineHeight)));
+      font(10, false, '#6b7280');
+      doc.text(label, margin, y);
+      font();
+      lines.slice(offset, offset + count).forEach((line, i) => doc.text(line, valueX, y + i * lineHeight));
+      y += count * lineHeight + 2;
+      rule(true);
+      y += 5;
+      offset += count;
+    }
   };
 
-  text('RECEIPT / BIEN LAI THU TIEN', margin, {
-    size: 15,
-    style: 'bold',
-    gap: 5,
-  });
-  text('Gym Membership Center', margin, { size: 9, gap: 8 });
-  line();
+  font(18, true);
+  doc.text('BIÊN LAI THU TIỀN', width / 2, y, { align: 'center' });
+  y += 9;
+  font(11, false, '#6b7280');
+  doc.text('SWP GYM — Trung tâm quản lý hội viên', width / 2, y, { align: 'center' });
+  y += 15;
 
-  text('Receipt No.', margin, { size: 10, style: 'bold' });
-  text(receipt.receiptNumber || '—', pageWidth - margin, {
-    size: 10,
-    style: 'bold',
-    align: 'right',
-    gap: 4,
-  });
-  text('Issued at', margin, { size: 9 });
-  text(formatDateTime(receipt.issuedAt), pageWidth - margin, {
-    size: 9,
-    align: 'right',
-    gap: 7,
-  });
+  row('Số biên lai', receipt.receiptNumber);
+  row('Ngày xuất', `${formatGymDate(receipt.issuedAt)} · ${formatGymTime(receipt.issuedAt)}`);
+  row('Hội viên', memberName ?? receipt.memberName);
+  row('Mã hội viên', memberCode ?? receipt.memberCode);
+  row('Gói tập', offerName ?? receipt.offerName);
+  row('Mã đơn', receipt.orderNumber);
+  if (receipt.paymentReference) row('Mã giao dịch', receipt.paymentReference);
+  row('Phương thức', paymentMethodLabel(receipt.paymentMethod));
 
-  text('Member', margin, { size: 9, style: 'bold' });
-  text(memberName || '—', pageWidth - margin, { size: 9, align: 'right', gap: 3 });
-  text('Member code', margin, { size: 9 });
-  text(memberCode || '—', pageWidth - margin, { size: 9, align: 'right', gap: 3 });
-  text('Plan', margin, { size: 9 });
-  text(offerName || '—', pageWidth - margin, { size: 9, align: 'right', gap: 3 });
-  if (planName) {
-    text('Plan code', margin, { size: 9 });
-    text(planName, pageWidth - margin, { size: 9, align: 'right', gap: 3 });
-  }
-  if (durationDays != null) {
-    text('Duration', margin, { size: 9 });
-    text(`${durationDays} days`, pageWidth - margin, { size: 9, align: 'right', gap: 3 });
-  }
-  line();
-
-  text('AMOUNT', margin, { size: 9, style: 'bold' });
-  text(
-    formatPrice(receipt.amount, receipt.currency).replace(/[^\x20-\x7E]/g, ''),
-    pageWidth - margin,
-    { size: 13, style: 'bold', align: 'right', gap: 4 },
-  );
-  text('Payment method', margin, { size: 9 });
-  text(RECEIPT_METHOD_LABELS[receipt.paymentMethod] || receipt.paymentMethod || '—', pageWidth - margin, {
-    size: 9,
-    align: 'right',
-    gap: 7,
-  });
-  line();
-
-  text('Order number', margin, { size: 8 });
-  text(receipt.orderNumber || '—', pageWidth - margin, { size: 8, align: 'right', gap: 3 });
-  if (receipt.paymentReference) {
-    text('Payment reference', margin, { size: 8 });
-    text(receipt.paymentReference, pageWidth - margin, { size: 8, align: 'right', gap: 8 });
-  } else {
-    y += 5;
-  }
-
-  doc.setFontSize(8);
-  doc.setTextColor(110);
-  doc.text(
-    'Thank you. Please keep this receipt for your records.',
-    pageWidth / 2,
-    y,
-    { align: 'center' },
-  );
-
+  ensureSpace(44);
+  y += 1;
+  rule();
+  y += 10;
+  font(11, false, '#6b7280');
+  doc.text('Số tiền đã thanh toán', width / 2, y, { align: 'center' });
+  y += 11;
+  font(20, true, '#dc3545');
+  doc.text(formatPrice(receipt.amount, receipt.currency), width / 2, y, { align: 'center' });
+  y += 9;
+  rule();
+  y += 10;
+  font(10, false, '#6b7280');
+  doc.text('Cảm ơn quý khách. Vui lòng giữ lại biên lai này.', width / 2, y, { align: 'center' });
   return doc;
 }
 

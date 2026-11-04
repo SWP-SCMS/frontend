@@ -165,7 +165,7 @@ test('member responds to schedule change while expired requests have no response
       return { body: { ...changes[0], status: 'RESPONDED', response: 'REQUEST_TRANSFER', respondedAt: new Date().toISOString() } };
     }
   });
-  await page.goto('/member/courses');
+  await page.goto('/member/courses/schedule-changes');
   await expect(page.getByRole('button', { name: 'Đề nghị chuyển đợt học', exact: true })).toHaveCount(1);
   await page.getByRole('button', { name: 'Đề nghị chuyển đợt học', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Gửi phản hồi' }).click();
@@ -186,7 +186,7 @@ test('member acceptance retries with a stable key and continues the difference o
     }
     if (path === '/members/me/course-orders/order-1') return { body: { orderId: 'order-1', orderStatus: 'PENDING_PAYMENT', tuitionVnd: 200000, currencyCode: 'VND', expiresAt: nextMonth } };
   });
-  await page.goto('/member/courses');
+  await page.goto('/member/courses/transfers');
   await page.getByRole('button', { name: 'Xem đợt thay thế và chấp nhận' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('YOGA-02');
@@ -362,4 +362,123 @@ test('cash uncertain response retries the same key without claiming success', as
   expect(posts[0].headers['idempotency-key']).toBeTruthy();
   expect(posts[1].headers['idempotency-key']).toBe(posts[0].headers['idempotency-key']);
   expect(posts[1].body).toEqual(posts[0].body);
+});
+
+
+test('course history separates terminal enrollments and keeps pending withdrawals accessible', async ({ page }) => {
+  const variants = [
+    ['current', 'ACTIVE', 'IN_PROGRESS'],
+    ['pending', 'WITHDRAWAL_PENDING', 'COMPLETED'],
+    ['completed', 'COMPLETED', 'COMPLETED'],
+    ['withdrawn', 'WITHDRAWN', 'IN_PROGRESS'],
+    ['transferred', 'TRANSFERRED', 'IN_PROGRESS'],
+    ['cancelled', 'ACTIVE', 'CANCELLED'],
+    ['ended-run', 'ACTIVE', 'COMPLETED'],
+  ].map(([id, lifecycleStatus, courseRunStatus]) => ({ ...enrollment, enrollmentId: id, courseName: `Khóa ${id}`, lifecycleStatus, courseRunStatus }));
+  const { errors } = await mockApi(page, 'MEMBER', ({ path }) => path === '/members/me/course-enrollments' ? { body: variants } : undefined);
+  await page.goto('/member/courses');
+  await expect(page.locator('main article')).toHaveCount(2);
+  await expect(page.locator('main')).toContainText('Khóa current');
+  await expect(page.locator('main')).toContainText('Khóa pending');
+  await page.getByRole('navigation', { name: 'Danh sách khóa học' }).getByRole('link', { name: 'Lịch sử khóa học' }).click();
+  await expect(page.locator('main article')).toHaveCount(5);
+  await expect(page.locator('main')).not.toContainText('Khóa current');
+  await expect(page.locator('main')).not.toContainText('Khóa pending');
+  await expect(page.locator('main article').filter({ hasText: 'Khóa cancelled' })).toContainText('Đã hủy');
+  await page.locator('main article').filter({ hasText: 'Khóa completed' }).getByRole('link', { name: 'Xem chi tiết' }).click();
+  await page.reload();
+  await expect(page.locator('main')).toContainText('Buổi 1');
+  await page.getByRole('link', { name: '← Lịch sử khóa học', exact: true }).click();
+  await expect(page).toHaveURL(/\/member\/courses\/history$/);
+  await expect(page.locator('main article')).toHaveCount(5);
+  expect(errors).toEqual([]);
+});
+
+test('split course pages load only their workflow and preserve details, filters and old links', async ({ page }) => {
+  const { calls, errors } = await mockApi(page, 'MEMBER', () => undefined);
+  await page.goto('/member/courses');
+  await expect(page.getByRole('link', { name: 'Xem chi tiết', exact: true })).toBeVisible();
+  await expect(page.locator('.member-course-session-stack')).toHaveCount(0);
+  expect(calls.some(c => /course-(waitlists|withdrawal-requests|refund-obligations|schedule-changes|transfer-offers)$/.test(c.path))).toBe(false);
+  await page.getByRole('link', { name: 'Xem chi tiết', exact: true }).click();
+  await expect(page).toHaveURL(/courses\/enrollments\/enrollment-1/);
+  await expect(page.locator('main')).toContainText('Buổi 1');
+  await page.reload();
+  await expect(page.locator('main')).toContainText('Buổi 1');
+  await page.getByRole('navigation', { name: 'Yêu cầu của khóa học' }).getByRole('link', { name: 'Rút khóa học' }).click();
+  await expect(page.locator('#course-withdrawal-enrollment')).toHaveValue('enrollment-1');
+  for (const [hash, heading] of [['refunds','Hoàn tiền khóa học'], ['withdrawals','Rút khóa học'], ['transfers','Chuyển đợt học'], ['schedule-changes','Thay đổi lịch học']]) {
+    await page.goto('/member/courses#' + hash);
+    await expect(page).toHaveURL(new RegExp('/member/courses/' + hash + '$'));
+    await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+  }
+  await page.goto('/member/courses/enrollments/not-owned');
+  await expect(page.locator('main')).toContainText('Không tìm thấy khóa học');
+  await page.goto('/member/courses/waitlist');
+  await expect(page.getByRole('heading', { name: 'Danh sách chờ khóa học', level: 1 })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('split withdrawal page submits the selected enrollment and shows persisted request', async ({ page }) => {
+  let requests = [];
+  const { calls, errors } = await mockApi(page, 'MEMBER', ({ path, method, body }) => {
+    if (path === '/members/me/course-withdrawal-requests' && method === 'GET') return { body: requests };
+    if (path === '/members/me/course-enrollments/enrollment-1/withdrawal-requests' && method === 'POST') {
+      requests = [{ id: 'withdraw-split', enrollmentId: enrollment.enrollmentId, status: 'PENDING', requestReason: body.reason, requestedAt: yesterday }];
+      return { body: requests[0] };
+    }
+  });
+  page.on('dialog', dialog => dialog.accept());
+  await page.goto('/member/courses/withdrawals?enrollmentId=enrollment-1');
+  await expect(page.locator('#course-withdrawal-enrollment')).toHaveValue('enrollment-1');
+  await page.getByLabel('Lý do xin rút').fill('Thay đổi lịch làm việc');
+  await page.getByRole('button', { name: 'Gửi yêu cầu rút', exact: true }).click();
+  await expect(page.locator('main')).toContainText('Thay đổi lịch làm việc');
+  expect(calls.filter(c => c.method === 'POST' && c.path.endsWith('/withdrawal-requests'))).toHaveLength(1);
+  expect(errors).toEqual([]);
+});
+
+
+test('split waitlist page leaves a queue and accepts an invitation into checkout', async ({ page }) => {
+  let items = [
+    { id: 'waiting-1', courseRunId: 'run-2', status: 'WAITING', position: 2, courseName: 'Khóa đang chờ' },
+    { id: 'invite-1', courseRunId: run.id, status: 'INVITED', invitationExpiresAt: nextMonth, courseName: 'Khóa được mời' },
+  ];
+  const { calls, errors } = await mockApi(page, 'MEMBER', ({ path, method }) => {
+    if (path === '/members/me/course-waitlists') return { body: items };
+    if (path === '/course-runs/run-2/waitlist' && method === 'DELETE') { items = items.filter(i => i.id !== 'waiting-1'); return { body: {} }; }
+    if (path === '/course-waitlists/invite-1/accept') return { body: { orderId: 'invitation-order' } };
+    if (path === '/course-runs/run-1') return { body: run };
+    if (path === '/members/me/course-orders/invitation-order') return { body: { orderId: 'invitation-order', orderStatus: 'PENDING_PAYMENT', tuitionVnd: 100000, expiresAt: nextMonth } };
+  });
+  await page.goto('/member/courses/waitlist');
+  await expect(page.getByText('#2')).toBeVisible();
+  expect(calls.some(c => c.path === '/members/me/course-enrollments')).toBe(false);
+  await page.getByRole('article').filter({ hasText: 'Khóa đang chờ' }).getByRole('button', { name: 'Rời danh sách chờ' }).click();
+  await expect(page.getByRole('article').filter({ hasText: 'Khóa đang chờ' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Nhận chỗ và thanh toán', exact: true }).click();
+  await expect(page).toHaveURL(/run-1\/register\?orderId=invitation-order/);
+  expect(calls.filter(c => c.path.endsWith('/accept'))[0].headers['idempotency-key']).toBeTruthy();
+  expect(errors).toEqual([]);
+});
+
+test('split selected-course filters hide requests belonging to another enrollment', async ({ page }) => {
+  const second = { ...enrollment, enrollmentId: 'enrollment-2', courseName: 'Khóa khác', courseRunId: 'run-2', sessions: [] };
+  await mockApi(page, 'MEMBER', ({ path }) => {
+    if (path === '/members/me/course-enrollments') return { body: [enrollment, second] };
+    if (path === '/members/me/course-withdrawal-requests') return { body: [
+      { id: 'r1', enrollmentId: enrollment.enrollmentId, status: 'REJECTED', requestReason: 'Lý do đúng khóa' },
+      { id: 'r2', enrollmentId: second.enrollmentId, status: 'REJECTED', requestReason: 'Lý do khác khóa' },
+    ] };
+    if (path === '/members/me/course-refund-obligations') return { body: pageOf([{ ...refund, id: 'own-refund' }, { ...refund, id: 'other-refund', enrollmentId: second.enrollmentId }]) };
+  });
+  await page.goto('/member/courses/withdrawals?enrollmentId=enrollment-1');
+  await expect(page.locator('main')).toContainText('Lý do đúng khóa');
+  await expect(page.locator('main')).not.toContainText('Lý do khác khóa');
+  await page.goto('/member/courses/refunds?enrollmentId=enrollment-1');
+  await expect(page.locator('main article')).toHaveCount(1);
+  await page.getByLabel('Khóa học', { exact: true }).selectOption('');
+  await expect(page.locator('main article')).toHaveCount(2);
 });

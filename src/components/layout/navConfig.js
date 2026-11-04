@@ -182,7 +182,19 @@ export const MEMBER_SIDEBAR_ITEMS = [
     label: 'Khóa học',
     items: [
       { to: '/member/course-catalog', label: 'Khám phá khóa học', icon: 'clipboard' },
-      { to: '/member/courses', label: 'Khóa học của tôi', icon: 'calendar' },
+      { to: '/member/courses', label: 'Khóa học của tôi', icon: 'calendar', end: true },
+      { to: '/member/courses/history', label: 'Lịch sử khóa học', icon: 'clipboard' },
+      { to: '/member/courses/waitlist', label: 'Danh sách chờ', icon: 'clipboard' },
+    ],
+  },
+  {
+    label: 'Yêu cầu khóa học',
+    collapsible: true,
+    items: [
+      { to: '/member/courses/schedule-changes', label: 'Thay đổi lịch học', icon: 'calendar' },
+      { to: '/member/courses/transfers', label: 'Chuyển đợt học', icon: 'calendar' },
+      { to: '/member/courses/withdrawals', label: 'Rút khóa học', icon: 'clipboard' },
+      { to: '/member/courses/refunds', label: 'Hoàn tiền khóa học', icon: 'receipt' },
     ],
   },
   {

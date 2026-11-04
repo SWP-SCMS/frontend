@@ -1,6 +1,6 @@
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import CancelCourseWithdrawal from './CancelCourseWithdrawal';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +10,7 @@ import { formatCourseDateTime, formatCourseMoney, getCourseErrorMessage } from '
 
 const STATUS_LABELS = { PENDING: 'Chờ Manager duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối', CANCELLED: 'Đã hủy' };
 
-export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
+export default function MemberCourseWithdrawals({ enrollments, onRequested, selectedEnrollmentId = '' }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
@@ -18,7 +18,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(courseWithdrawalSchema),
     defaultValues: { enrollmentId: '', reason: '' },
   });
@@ -33,6 +33,8 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
     } finally { if (!background) commitValue(setLoading, false); }
   }, []);
   usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !busy);
+
+  useEffect(() => { setValue('enrollmentId', selectedEnrollmentId); }, [selectedEnrollmentId, setValue]);
 
   const pendingIds = new Set(requests.filter((r) => r.status === 'PENDING').map((r) => r.enrollmentId));
   const available = enrollments.filter((e) => e.lifecycleStatus === 'ACTIVE' && !pendingIds.has(e.enrollmentId));
@@ -80,8 +82,8 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
       </Form.Group>
       <Button type="submit" variant="outline-danger" disabled={busy || loading}>{busy ? 'Đang gửi…' : 'Gửi yêu cầu rút'}</Button>
     </Form>}
-    {loading ? <p>Đang tải yêu cầu…</p> : ready && !requests.length && <p>Bạn chưa có yêu cầu rút khóa học.</p>}
-    {!loading && requests.map((request) => {
+    {loading ? <p>Đang tải yêu cầu…</p> : ready && !requests.some(r => !selectedEnrollmentId || r.enrollmentId === selectedEnrollmentId) && <p>Bạn chưa có yêu cầu rút khóa học.</p>}
+    {!loading && requests.filter(r => !selectedEnrollmentId || r.enrollmentId === selectedEnrollmentId).map((request) => {
       const enrollment = enrollmentById.get(request.enrollmentId);
       return <article className="member-course-card mt-3" key={request.id}>
         <h3>{enrollment ? `${enrollment.courseName} · ${enrollment.runCode}` : 'Yêu cầu rút khóa học của bạn'}</h3>

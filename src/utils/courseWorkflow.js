@@ -67,9 +67,11 @@ export function courseNotificationDestination(item, role) {
   const type = item?.notificationType || '';
   if (!type.startsWith('COURSE_')) return null;
   if (role === 'member') {
-    if (type.startsWith('COURSE_REFUND_')) return '/member/courses#refunds';
-    if (type.startsWith('COURSE_TRANSFER_')) return '/member/courses#transfers';
-    if (type === 'COURSE_SCHEDULE_CHANGED') return '/member/courses#schedule-changes';
+    if (type.startsWith('COURSE_REFUND_')) return '/member/courses/refunds';
+    if (type.startsWith('COURSE_TRANSFER_')) return '/member/courses/transfers';
+    if (type === 'COURSE_SCHEDULE_CHANGED') return '/member/courses/schedule-changes';
+    if (type.startsWith('COURSE_WITHDRAWAL_')) return '/member/courses/withdrawals';
+    if (type.startsWith('COURSE_WAITLIST_')) return '/member/courses/waitlist';
     return '/member/courses';
   }
   if (role === 'reception' && type.startsWith('COURSE_REFUND_')) return '/reception/course-refunds';
