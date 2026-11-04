@@ -270,10 +270,7 @@ export default function DisciplineEditPage() {
       </Link>
 
       <h1 className="h3 fw-bold mt-2 mb-1">Chỉnh sửa bộ môn</h1>
-      <p className="text-muted mb-4">
-        Cập nhật tên, mô tả hoặc trạng thái. Mã bộ môn{' '}
-        <code className="small">{disciplineId}</code>.
-      </p>
+
 
       <ErrorAlert
         error={serverError}

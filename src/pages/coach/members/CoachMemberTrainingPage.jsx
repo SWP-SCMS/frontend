@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -359,7 +360,7 @@ export default function CoachMemberTrainingPage({ kind }) {
                     <h2 className="h6 mb-0">{item.title || `${config.title} ${index + 1}`}</h2>
                     {isPlanPage && item.status ? (
                       <Badge bg={item.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                        {item.status}
+                        {statusLabel(item.status)}
                       </Badge>
                     ) : null}
                     {isPlanPage && item.versionNumber ? (

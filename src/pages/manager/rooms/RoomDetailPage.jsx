@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Room detail (US25).
 //
@@ -158,7 +159,7 @@ export default function RoomDetailPage() {
                     STATUS_BADGE[room.status] || 'bg-light text-dark'
                   }`}
                 >
-                  {room.status || '—'}
+                  {statusLabel(room.status)}
                 </span>
               </p>
               {room.status === 'INACTIVE' ? (

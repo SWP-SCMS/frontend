@@ -287,8 +287,7 @@ export default function RevenueReportPage() {
                   </div>
                   <div className="h4 fw-bold mb-0">{active}</div>
                   <div className="text-muted small mt-1">
-                    Ảnh chụp tại thời điểm xem — không lọc theo khoảng
-                    ngày.
+                    Số liệu tính đến thời điểm hiện tại.
                   </div>
                 </Card.Body>
               </Card>
@@ -301,8 +300,7 @@ export default function RevenueReportPage() {
                   </div>
                   <div className="h4 fw-bold mb-0">{expired}</div>
                   <div className="text-muted small mt-1">
-                    Ảnh chụp tại thời điểm xem — không lọc theo khoảng
-                    ngày.
+                    Số liệu tính đến thời điểm hiện tại.
                   </div>
                 </Card.Body>
               </Card>

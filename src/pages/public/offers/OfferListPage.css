@@ -441,3 +441,5 @@
   color: var(--h-muted);
   line-height: 1.65;
 }
+
+.sof-card.is-premium { border: 2px solid #dba64b; box-shadow: 0 6px 20px #dba64b26; }

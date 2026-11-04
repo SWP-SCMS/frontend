@@ -567,7 +567,7 @@ export default function SingleSessionCreatePage() {
         <Alert variant="success" className="d-flex flex-column gap-2">
           <div className="fw-semibold">Đã tạo buổi tập.</div>
           <div>
-            Mã buổi tập: <code>{success.id}</code>
+            Bạn có thể xem lại trong danh sách buổi tập.
           </div>
           <div>
             Thời gian: {successStart} – {successEnd}, {successDate}

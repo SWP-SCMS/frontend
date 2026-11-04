@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Membership Offer detail (US08).
 //
@@ -97,7 +98,7 @@ export default function MembershipOfferDetailPage() {
               {offer.planCode || '—'}
             </span>
             {offer.planDisplayName || ''}
-            {offer.status ? ` · ${offer.status}` : ''}
+            {offer.status ? ` · ${statusLabel(offer.status)}` : ''}
           </p>
         </div>
         <div className="d-flex gap-2 flex-wrap">
@@ -117,10 +118,6 @@ export default function MembershipOfferDetailPage() {
             <Card.Body>
               <h2 className="h6 text-uppercase text-muted">Thông tin gói tập</h2>
               <dl className="row mb-0">
-                <dt className="col-sm-4 text-muted fw-normal">Offer ID</dt>
-                <dd className="col-sm-8 text-break mb-2">
-                  <code className="small">{offer.offerId}</code>
-                </dd>
 
                 <dt className="col-sm-4 text-muted fw-normal">Loại gói</dt>
                 <dd className="col-sm-8 mb-2">
@@ -135,7 +132,7 @@ export default function MembershipOfferDetailPage() {
                       STATUS_BADGE[offer.status] || 'bg-light text-dark'
                     }`}
                   >
-                    {offer.status || '—'}
+                    {statusLabel(offer.status)}
                   </span>
                 </dd>
 

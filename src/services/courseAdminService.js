@@ -78,9 +78,14 @@ export async function openManagerCourseRunRegistration(
   return data;
 }
 
-export async function cancelManagerCourseRun(runId, expectedVersion) {
+export async function getCourseCancellationImpact(runId) {
+  return (await api.get(`/manager/course-runs/${runId}/cancellation-impact`)).data;
+}
+
+export async function cancelManagerCourseRun(runId, expectedVersion, reason) {
   const { data } = await api.post(`/manager/course-runs/${runId}/cancel`, {
     expectedVersion,
+    reason,
   });
   return data;
 }

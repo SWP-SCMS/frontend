@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Class list (US24).
 //
@@ -179,7 +180,7 @@ export default function ClassListPage() {
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
-                  {row.status || '—'}
+                  {statusLabel(row.status)}
                 </span>
               </td>
               <td className="text-end">

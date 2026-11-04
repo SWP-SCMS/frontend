@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 // Receptionist – Member profile at the front desk (US11).
 //
 // BE: GET   /api/v1/reception/members/{memberId}/profile
@@ -402,7 +403,7 @@ export default function MemberDetailPage() {
           <div className="text-muted small">
             Mã hội viên: <span className="fw-semibold">{profile.memberId}</span>
             <span className={`badge ms-2 ${STATUS_BADGE[profile.status] || 'bg-light text-dark'}`}>
-              {profile.status || '—'}
+              {statusLabel(profile.status)}
             </span>
           </div>
         </div>

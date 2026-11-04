@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Discipline list & search (US23).
 //
@@ -167,7 +168,7 @@ export default function DisciplineListPage() {
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
-                  {row.status || '—'}
+                  {statusLabel(row.status)}
                 </span>
               </td>
               <td className="text-end">

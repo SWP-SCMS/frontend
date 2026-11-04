@@ -81,7 +81,7 @@ export default function MemberCourseTransfers({ enrollments, onTransferred, sele
     <Modal show={!!selected} onHide={() => { if (!busy) setSelected(null); }} size="lg" centered backdrop={busy ? 'static' : true} keyboard={!busy}>
       <Modal.Header closeButton={!busy}><Modal.Title>Chấp nhận chuyển đợt học</Modal.Title></Modal.Header><Modal.Body>
         {targetError && <Alert variant="danger">{targetError}</Alert>}
-        {targetLoading ? <p>Đang tải lịch học thay thế…</p> : target && <>
+        {targetLoading ? <p>Đang tải lịch học thay thế…</p> : target && selected && <>
           <h3 className="h5">{target.courseName} · {target.runCode}</h3>
           <p>{formatCourseDateTime(target.plannedStartAt)} – {formatCourseDateTime(target.plannedEndAt)}</p>
           <p>Huấn luyện viên: {target.primaryCoachName || 'Đang cập nhật'}</p>

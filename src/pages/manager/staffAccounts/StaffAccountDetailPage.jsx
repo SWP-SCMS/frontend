@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Staff/Manager account detail (US06).
 //
@@ -176,7 +177,7 @@ export default function StaffAccountDetailPage() {
           <h1 className="h3 fw-bold mb-1">{account.fullName || '—'}</h1>
           <p className="text-muted mb-0">
             {ROLE_LABELS[account.role] || account.role || '—'}
-            {account.status ? ` · ${account.status}` : ''}
+            {account.status ? ` · ${statusLabel(account.status)}` : ''}
           </p>
         </div>
         <div className="d-flex gap-2 flex-wrap">

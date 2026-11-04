@@ -8,14 +8,14 @@ import {
   groupMembershipBenefits,
 } from '../../../utils/membershipBenefits';
 
-// Chỉ hiển thị trên trang công khai những gói có mô tả tối thiểu 3 ký tự.
-// Gói chưa nhập mô tả (hoặc chỉ gõ 1-2 ký tự thử) coi như chưa hoàn thiện nên
-// không đưa cho khách xem. Đây là bộ lọc hiển thị; muốn gói hiện lên thì nhập
-// mô tả cho gói đó ở trang quản lý gói tập.
-export const MIN_DESCRIPTION_LENGTH = 3;
+// API công khai chỉ trả gói đang mở bán. Không ẩn gói chỉ vì thiếu mô tả.
 
 export function isDisplayableOffer(offer) {
-  return (offer?.description ?? '').trim().length >= MIN_DESCRIPTION_LENGTH;
+  return Boolean(offer?.offerId);
+}
+
+export function isPremiumOffer(offer) {
+  return [offer.planDisplayName, offer.planCode].some(value => value?.trim().toUpperCase() === 'PREMIUM');
 }
 
 // 30 -> "1 tháng", 90 -> "3 tháng", 365 -> "1 năm", còn lại -> "N ngày".
@@ -109,4 +109,12 @@ export function buildFeatures(offer) {
         : 'Chưa gồm quyền huấn luyện viên cá nhân',
     },
   ];
+}
+
+// Mô tả ngắn/thiếu được thay bằng quyền lợi thực tế, không suy quyền lợi từ tên gói.
+export function offerDescription(offer) {
+  const description = (offer?.description || '').trim();
+  if (description.length >= 15) return description;
+  return buildFeatures(offer).filter(feature => feature.ok).map(feature => feature.text).slice(0, 3).join(' · ')
+    || 'Xem quyền lợi và thời hạn bên dưới để chọn gói phù hợp.';
 }

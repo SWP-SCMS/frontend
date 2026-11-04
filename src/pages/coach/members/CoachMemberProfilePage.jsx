@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -36,7 +37,7 @@ export default function CoachMemberProfilePage() {
       />
       <div className="d-flex align-items-center gap-3 my-3">
         <AuthenticatedProfileImage src={profile.profileImageUrl} alt={`Ảnh ${profile.fullName}`} width="96" height="96" className="rounded-circle border" style={{ objectFit: 'cover' }} fallback={<div className="rounded-circle border bg-light d-flex align-items-center justify-content-center" style={{ width: 96, height: 96 }}>HV</div>} />
-        <div><h1 className="h3 fw-bold mb-1">{profile.fullName}</h1><div className="text-muted">{profile.memberId} · {profile.status}</div></div>
+        <div><h1 className="h3 fw-bold mb-1">{profile.fullName}</h1><div className="text-muted">{profile.memberId} · {statusLabel(profile.status)}</div></div>
       </div>
       <div className="d-flex flex-wrap gap-2 mb-3">
         <Button as={Link} to={`/coach/members/${memberAccountId}/training-plans`} variant="outline-danger">Giáo án</Button>

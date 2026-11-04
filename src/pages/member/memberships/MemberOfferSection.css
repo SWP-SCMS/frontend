@@ -335,3 +335,7 @@
     flex: 1 1 calc(50% - 0.5rem);
   }
 }
+
+.scms-mo-title { font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 800; }
+.scms-mo { border-top: 3px solid #c7372f; padding-top: 24px; }
+.scms-mo-card.is-premium { border: 2px solid #dba64b; box-shadow: 0 6px 20px #dba64b26; }

@@ -510,10 +510,7 @@ export default function SessionAssignmentEditPage() {
       </Link>
 
       <h1 className="h3 fw-bold mt-2 mb-1">Cập nhật HLV / Phòng</h1>
-      <p className="text-muted mb-4">
-        Cập nhật huấn luyện viên hoặc phòng tập cho buổi tập{' '}
-        <code className="small">{sessionId}</code>.
-      </p>
+
 
       {/* ----- Read-only session context ----- */}
       <div className="border rounded p-3 mb-4 bg-light">

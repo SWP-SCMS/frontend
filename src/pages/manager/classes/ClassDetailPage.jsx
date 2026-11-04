@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Class detail (US24).
 //
@@ -146,7 +147,7 @@ export default function ClassDetailPage() {
                     STATUS_BADGE[classData.status] || 'bg-light text-dark'
                   }`}
                 >
-                  {classData.status || '—'}
+                  {statusLabel(classData.status)}
                 </span>
               </p>
               {classData.status === 'INACTIVE' ? (

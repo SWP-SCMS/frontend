@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Member account list & search (US06).
 //
@@ -12,6 +13,7 @@ import { Button, ButtonGroup, Form, InputGroup, Spinner, Table } from 'react-boo
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
 import { searchMemberAccounts } from '../../../services/memberAccountService';
+import { listMembershipPlans } from '../../../services/membershipPlanService';
 import { ACCOUNT_STATUS } from '../../../constants';
 import { formatDate } from '../../../utils';
 
@@ -55,12 +57,15 @@ export default function MemberAccountListPage() {
 
   const query = readStringParam(params, 'query');
   const status = readStringParam(params, 'status');
+  const planCode = readStringParam(params, 'planCode');
+  const [plans, setPlans] = useState([]);
   const page = Math.max(0, readNumberParam(params, 'page', 0));
 
   const [data, setData] = useState(EMPTY_PAGE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchInput, setSearchInput] = useState(query);
+  useEffect(() => { let active = true; listMembershipPlans().then(data => { if (active) setPlans(data); }).catch(err => { if (active) setError(err); }); return () => { active = false; }; }, []);
 
   useEffect(() => {
     setSearchInput(query);
@@ -74,6 +79,7 @@ export default function MemberAccountListPage() {
     track(searchMemberAccounts({
       query: query || undefined,
       status: status || undefined,
+      planCode: planCode || undefined,
       page,
       size: PAGE_SIZE,
     })
@@ -92,7 +98,7 @@ export default function MemberAccountListPage() {
     return () => {
       cancelled = true;
     };
-  }, [query, status, page], { key: ['manager-members', query, status, page], setters: [setData], setLoading });
+  }, [query, status, planCode, page], { key: ['manager-members', query, status, planCode, page], setters: [setData], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);
@@ -138,7 +144,7 @@ export default function MemberAccountListPage() {
         <thead className="table-light">
           <tr>
             <th>Họ tên</th>
-            <th>Trạng thái</th>
+            <th>Gói đang dùng</th><th>Trạng thái</th>
             <th>Số điện thoại</th>
             <th>Email</th>
             <th>Ngày sinh</th>
@@ -156,9 +162,10 @@ export default function MemberAccountListPage() {
                   {row.fullName || '—'}
                 </Link>
               </td>
+              <td>{row.activePlanCode ? (plans.find(p => p.code === row.activePlanCode)?.displayName || row.activePlanCode) : 'Chưa có gói'}</td>
               <td>
                 <span className={`badge ${STATUS_BADGE[row.status] || 'bg-light text-dark'}`}>
-                  {row.status || '—'}
+                  {statusLabel(row.status)}
                 </span>
               </td>
               <td>{row.phone || '—'}</td>
@@ -179,7 +186,7 @@ export default function MemberAccountListPage() {
         </tbody>
       </Table>
     );
-  }, [loading, rows]);
+  }, [loading, rows, plans]);
 
   return (
     <div>
@@ -187,7 +194,7 @@ export default function MemberAccountListPage() {
         <div>
           <h1 className="h3 fw-bold mb-1">Hội viên</h1>
           <p className="text-muted mb-0">
-            Danh sách tài khoản MEMBER và trạng thái hoạt động tương ứng.
+            Danh sách tài khoản hội viên và trạng thái hoạt động tương ứng.
           </p>
         </div>
       </header>
@@ -230,6 +237,13 @@ export default function MemberAccountListPage() {
         </div>
       </div>
 
+      <Form.Group controlId="member-plan-filter" className="mb-3" style={{ maxWidth: 320 }}>
+        <Form.Label>Gói đang dùng</Form.Label>
+        <Form.Select value={planCode} onChange={e => setParam('planCode', e.target.value)}>
+          <option value="">Tất cả gói tập</option>
+          {plans.map(plan => <option key={plan.code} value={plan.code}>{plan.displayName || plan.code}</option>)}
+        </Form.Select>
+      </Form.Group>
       <ErrorAlert
         error={error}
         title="Không tải được danh sách hội viên"

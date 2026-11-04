@@ -12,6 +12,7 @@ async function mockApi(page, role, handler) {
   const calls = [];
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error' && /TypeError|ErrorBoundary/.test(message.text())) errors.push(message.text()); });
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -435,6 +436,7 @@ test('split withdrawal page submits the selected enrollment and shows persisted 
   await expect(page.locator('#course-withdrawal-enrollment')).toHaveValue('enrollment-1');
   await page.getByLabel('Lý do xin rút').fill('Thay đổi lịch làm việc');
   await page.getByRole('button', { name: 'Gửi yêu cầu rút', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Xác nhận', exact: true }).click();
   await expect(page.locator('main')).toContainText('Thay đổi lịch làm việc');
   expect(calls.filter(c => c.method === 'POST' && c.path.endsWith('/withdrawal-requests'))).toHaveLength(1);
   expect(errors).toEqual([]);

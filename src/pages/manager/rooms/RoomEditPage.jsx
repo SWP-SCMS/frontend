@@ -248,10 +248,7 @@ export default function RoomEditPage() {
       </Link>
 
       <h1 className="h3 fw-bold mt-2 mb-1">Chỉnh sửa phòng</h1>
-      <p className="text-muted mb-4">
-        Cập nhật tên, sức chứa hoặc trạng thái. Mã phòng{' '}
-        <code className="small">{roomId}</code>.
-      </p>
+
 
       <ErrorAlert
         error={serverError}
@@ -318,8 +315,7 @@ export default function RoomEditPage() {
           </Form.Select>
           <Form.Text className="text-muted">
             Chuyển sang trạng thái ngưng hoạt động sẽ mở bước xem trước
-            và xử lý tất cả buổi tập bị ảnh hưởng; hệ thống không gửi PATCH
-            ngưng hoạt động trực tiếp.
+            và xử lý tất cả buổi tập bị ảnh hưởng trước khi xác nhận ngưng hoạt động.
           </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.status?.message}

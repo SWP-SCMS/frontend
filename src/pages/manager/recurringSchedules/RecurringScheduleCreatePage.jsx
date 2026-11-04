@@ -614,7 +614,7 @@ export default function RecurringScheduleCreatePage() {
         <Alert variant="success" className="d-flex flex-column gap-2">
           <div className="fw-semibold">Đã tạo lịch cố định.</div>
           <div>
-            Mã lịch: <code>{success.id}</code>
+            Bạn có thể xem lại trong danh sách buổi tập.
           </div>
           <div>Số buổi tập đã tạo: {success.sessionCount}</div>
         </Alert>

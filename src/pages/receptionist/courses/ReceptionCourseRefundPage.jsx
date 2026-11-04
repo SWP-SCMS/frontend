@@ -91,7 +91,7 @@ export default function ReceptionCourseRefundPage() {
   return <div className="container-fluid py-4">
     <h1 className="h3">Hàng chờ hoàn tiền khóa học</h1>
     <p>Các khoản đã được quản lý duyệt. Điều kiện chi được cập nhật theo trạng thái đợt học.</p>
-    <Alert variant="info">Chỉ ghi nhận sau khi đã thực hiện chi và có chứng từ. Khoản chi còn cần Manager xác minh.</Alert>
+    <Alert variant="info">Chỉ ghi nhận sau khi đã thực hiện chi và có chứng từ. Khoản chi còn cần Quản lý xác minh.</Alert>
     {notice && <Alert variant="success">{notice}</Alert>}
     <div className="d-flex flex-wrap gap-3 mb-3">
       <Form.Select aria-label="Điều kiện chi" style={{ maxWidth: 320 }} value={eligible} disabled={loading} onChange={(event) => { setEligible(event.target.value); setPage(0); }}><option value="">Tất cả khoản đã duyệt</option><option value="true">Đủ điều kiện chi</option><option value="false">Chưa đủ điều kiện chi</option></Form.Select>
@@ -105,7 +105,7 @@ export default function ReceptionCourseRefundPage() {
     <div className="d-flex gap-3 align-items-center mt-3"><Button disabled={loading || page === 0} onClick={() => setPage(page - 1)}>Trang trước</Button><span>Trang {page + 1}</span><Button disabled={loading || !data || page + 1 >= data.totalPages} onClick={() => setPage(page + 1)}>Trang sau</Button></div>
     <Modal show={!!selectedId} onHide={() => { if (!busy) setSelectedId(''); }} centered backdrop={busy ? 'static' : true} keyboard={!busy}><Modal.Header closeButton={!busy}><Modal.Title>Khoản hoàn đã duyệt</Modal.Title></Modal.Header><Modal.Body>
       {detailError && <Alert variant="danger">{detailError}</Alert>}
-      {detailLoading ? <p>Đang tải…</p> : detail && <><RefundSummary item={detail} /><DisbursementForm key={detail.refundId + ":" + detailRevision} item={detail} onBusy={setBusy} onDone={() => { setSelectedId(''); setRevision((value) => value + 1); setNotice('Đã ghi nhận chi, chờ Manager xác minh.'); }} /></>}
+      {detailLoading ? <p>Đang tải…</p> : detail && <><RefundSummary item={detail} /><DisbursementForm key={detail.refundId + ":" + detailRevision} item={detail} onBusy={setBusy} onDone={() => { setSelectedId(''); setRevision((value) => value + 1); setNotice('Đã ghi nhận chi, chờ Quản lý xác minh.'); }} /></>}
     </Modal.Body><Modal.Footer><Button variant="outline-primary" disabled={detailLoading || busy} onClick={() => setDetailRevision((value) => value + 1)}>Tải lại</Button><Button variant="secondary" disabled={busy} onClick={() => setSelectedId('')}>Đóng</Button></Modal.Footer></Modal>
   </div>;
 }

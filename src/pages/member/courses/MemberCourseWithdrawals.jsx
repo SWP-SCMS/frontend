@@ -1,3 +1,4 @@
+import useConfirmation from '../../../hooks/useConfirmation';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import CancelCourseWithdrawal from './CancelCourseWithdrawal';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -8,9 +9,10 @@ import { courseWithdrawalSchema } from '../../../schemas/courseSchemas';
 import { createMyCourseWithdrawal, listMyCourseWithdrawals } from '../../../services/courseWithdrawalService';
 import { formatCourseDateTime, formatCourseMoney, getCourseErrorMessage } from '../../../utils/courseUi';
 
-const STATUS_LABELS = { PENDING: 'Chờ Manager duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối', CANCELLED: 'Đã hủy' };
+const STATUS_LABELS = { PENDING: 'Chờ Quản lý duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối', CANCELLED: 'Đã hủy' };
 
 export default function MemberCourseWithdrawals({ enrollments, onRequested, selectedEnrollmentId = '' }) {
+  const { confirm, dialog } = useConfirmation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
@@ -42,7 +44,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested, sele
 
   async function submit({ enrollmentId, reason }) {
     if (submitting.current || !ready || !available.some((e) => e.enrollmentId === enrollmentId)) return;
-    if (!window.confirm('Gửi yêu cầu sẽ tạm ngừng học và điểm danh, vẫn giữ chỗ. Nếu hủy hoặc bị từ chối, các buổi đã lỡ không được học bù. Tiếp tục?')) return;
+    if (!(await confirm('Gửi yêu cầu sẽ tạm ngừng học và điểm danh, vẫn giữ chỗ. Nếu hủy hoặc bị từ chối, các buổi đã lỡ không được học bù. Tiếp tục?'))) return;
     submitting.current = true; setBusy(true); setError(''); setNotice('');
     try {
       const created = await createMyCourseWithdrawal(enrollmentId, reason);
@@ -57,15 +59,15 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested, sele
     } finally { submitting.current = false; setBusy(false); }
   }
 
-  return <section className="member-course-section" id="withdrawals">
+  return <section className="member-course-section" id="withdrawals">{dialog}
     <div className="member-course-section-title">
       <h2>Yêu cầu rút khóa học</h2>
       <Button variant="outline-secondary" disabled={busy || loading} onClick={load}>Tải lại yêu cầu</Button>
     </div>
     {error && <Alert variant="danger" role="alert">{error}</Alert>}
     {notice && <Alert variant="success" role="status">{notice}</Alert>}
-    <p>Yêu cầu cần Manager duyệt. Số tiền hoàn được chốt khi gửi thành công; duyệt rút không có nghĩa đã chi tiền hoàn.</p>
-    <p>Bạn có thể xin rút trước khi buổi cuối bắt đầu. Nếu còn ít nhất 70% số buổi, mức hoàn là 80% giá trị chưa sử dụng theo hệ thống; dưới ngưỡng này mức hoàn là 0 đồng.</p>
+    <p>Yêu cầu cần Quản lý duyệt. Số tiền hoàn được chốt khi gửi thành công; duyệt rút không có nghĩa đã chi tiền hoàn.</p>
+    <p>Điều kiện và số tiền hoàn được hệ thống xác định tại thời điểm gửi yêu cầu.</p>
     {ready && available.length > 0 && <Form noValidate onSubmit={(event) => handleSubmit(submit)(event)} className="member-course-card">
       <Form.Group controlId="course-withdrawal-enrollment" className="mb-3">
         <Form.Label>Đợt học cần rút</Form.Label>
