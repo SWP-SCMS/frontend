@@ -1,6 +1,7 @@
+import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import {Alert,  Button, Card, Form, Modal, Spinner, Table, Nav} from 'react-bootstrap';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import useAutoRefresh from '../../../hooks/useAutoRefresh';
@@ -45,7 +46,21 @@ function errorMessage(error, fallback) {
   return known[problem?.code] || problem?.detail || fallback;
 }
 
+async function listAllRequests(fetchPage) {
+  const first = await fetchPage(0, 50);
+  const content = [...(first.content || [])];
+  for (let page = 1; page < (first.totalPages || 1); page += 1) {
+    const next = await fetchPage(page, 50);
+    content.push(...(next.content || []));
+  }
+  return { content };
+}
+
 export default function MembershipRequestReviewPage() {
+  const [params, setParams] = useSearchParams();
+  const activeTab = params.get('tab') === 'freeze' ? 'freeze' : 'termination';
+  const [showDirect, setShowDirect] = useState(false);
+  const [filters, setFilters] = useState({ termination: '', freeze: '' });
   const [terminationRows, setTerminationRows] = useState([]);
   const [freezeRows, setFreezeRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,8 +79,8 @@ export default function MembershipRequestReviewPage() {
     setLoadError(null);
     try {
       const [terminations, freezes] = await Promise.all([
-        listManagerTerminationRequests(),
-        listManagerFreezeRequests(),
+        listAllRequests(listManagerTerminationRequests),
+        listAllRequests(listManagerFreezeRequests),
       ]);
       setTerminationRows(terminations.content || []);
       setFreezeRows(freezes.content || []);
@@ -81,8 +96,8 @@ export default function MembershipRequestReviewPage() {
   const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
       const [terminations, freezes] = await Promise.all([
-        listManagerTerminationRequests(),
-        listManagerFreezeRequests(),
+        listAllRequests(listManagerTerminationRequests),
+        listAllRequests(listManagerFreezeRequests),
       ]);
       commitValue(setTerminationRows, terminations.content || []);
       commitValue(setFreezeRows, freezes.content || []);
@@ -132,6 +147,9 @@ export default function MembershipRequestReviewPage() {
         reason: direct.reason.trim(),
       });
       setDirect({ memberAccountId: '', mode: 'END_OF_CYCLE', reason: '' });
+      setDirectQuery('');
+      setDirectResults([]);
+      setShowDirect(false);
       setNotice('Đã tạo và duyệt yêu cầu hủy gói trực tiếp.');
       await load();
     } catch (error) {
@@ -175,7 +193,33 @@ export default function MembershipRequestReviewPage() {
       {actionError ? <ErrorAlert error={actionError} title="Không thể xử lý yêu cầu" onClose={() => setActionError(null)} /> : null}
       {loadError ? <ErrorAlert error={loadError} title="Không tải được danh sách yêu cầu" /> : null}
 
-      <Card className="border-0 shadow-sm mb-4">
+      <Nav variant="tabs" role="tablist" activeKey={activeTab} onSelect={(key) => {
+        if (!key || busy) return;
+        setParams((current) => { const next = new URLSearchParams(current); next.set('tab', key); return next; });
+        setActionError(null);
+        setNotice(null);
+      }} className="mb-4" id="membership-request-tabs">
+        <Nav.Item><Nav.Link as="button" type="button" role="tab" eventKey="termination" id="membership-request-tabs-tab-termination" aria-controls="membership-request-tabs-tabpane-termination" aria-selected={activeTab === 'termination'} disabled={busy}>Hủy gói</Nav.Link></Nav.Item>
+        <Nav.Item><Nav.Link as="button" type="button" role="tab" eventKey="freeze" id="membership-request-tabs-tab-freeze" aria-controls="membership-request-tabs-tabpane-freeze" aria-selected={activeTab === 'freeze'} disabled={busy}>Đóng băng</Nav.Link></Nav.Item>
+      </Nav>
+      <div role="tabpanel" id={`membership-request-tabs-tabpane-${activeTab}`} aria-labelledby={`membership-request-tabs-tab-${activeTab}`}>
+      <div className="d-flex flex-wrap justify-content-between gap-3 mb-3">
+        <Form.Select aria-label={activeTab === 'termination' ? 'Lọc trạng thái hủy gói' : 'Lọc trạng thái đóng băng'}
+          style={{ maxWidth: 320 }} value={filters[activeTab]}
+          onChange={(event) => setFilters((current) => ({ ...current, [activeTab]: event.target.value }))}>
+          <option value="">Tất cả trạng thái</option>
+          {(activeTab === 'termination'
+            ? ['PENDING', 'APPROVED', 'EXECUTED', 'REJECTED', 'WITHDRAWN', 'OBSOLETE']
+            : ['PENDING', 'APPROVED_PENDING_PAYMENT', 'SCHEDULED', 'ACTIVE', 'COMPLETED', 'REJECTED', 'WITHDRAWN', 'OBSOLETE']
+          ).map((status) => <option key={status} value={status}>{LABELS[status][0]}</option>)}
+        </Form.Select>
+        {activeTab === 'termination' && <Button variant="danger" disabled={busy}
+          aria-expanded={showDirect} aria-controls="direct-termination-form" onClick={() => setShowDirect((value) => !value)}>
+          {showDirect ? 'Đóng form hủy' : 'Tạo yêu cầu hủy'}
+        </Button>}
+      </div>
+
+      {activeTab === 'termination' && showDirect && <Card id="direct-termination-form" className="border-0 shadow-sm mb-4">
         <Card.Body className="p-4">
           <h2 className="h5 fw-bold">Hủy trực tiếp theo quyết định quản lý</h2>
           <p className="small text-muted">Tìm và chọn hội viên. Thao tác này tạo và duyệt yêu cầu trong cùng một lần.</p>
@@ -207,15 +251,19 @@ export default function MembershipRequestReviewPage() {
             <div className="col-lg-2"><Button type="submit" variant="danger" className="w-100" disabled={busy}>Xác nhận hủy</Button></div>
           </Form>
         </Card.Body>
-      </Card>
+      </Card>}
 
       {loading ? <div className="py-5 text-center"><Spinner animation="border" variant="danger" /></div> : (
         <>
-          <ReviewTable title="Yêu cầu hủy gói" kind="termination" rows={terminationRows} onDecision={openDecision} />
-          <ReviewTable title="Yêu cầu đóng băng" kind="freeze" rows={freezeRows} onDecision={openDecision} />
+          <ReviewTable title={activeTab === 'termination' ? 'Yêu cầu hủy gói' : 'Yêu cầu đóng băng'}
+            kind={activeTab}
+            rows={(activeTab === 'termination' ? terminationRows : freezeRows).filter((row) => !filters[activeTab] || row.status === filters[activeTab])}
+            onDecision={openDecision} />
+
         </>
       )}
 
+      </div>
       <Modal show={Boolean(decision)} onHide={() => !busy && setDecision(null)} centered backdrop="static">
         <Modal.Header closeButton={!busy}>
           <Modal.Title className="h5">{decision?.action === 'approve' ? 'Duyệt yêu cầu' : 'Từ chối yêu cầu'}</Modal.Title>
@@ -249,10 +297,10 @@ function ReviewTable({ title, kind, rows, onDecision }) {
     <Card className="border-0 shadow-sm mb-4">
       <Card.Body className="p-4">
         <h2 className="h5 fw-bold mb-3">{title}</h2>
-        {!rows.length ? <p className="text-muted mb-0">Chưa có yêu cầu.</p> : (
+        {!rows.length ? <p className="text-muted mb-0">Không có yêu cầu phù hợp.</p> : (
           <div className="table-responsive">
             <Table hover className="align-middle mb-0">
-              <thead><tr><th>Hội viên</th><th>Ngày gửi</th><th>Nội dung</th><th>Lý do</th>{!termination ? <th>Phí</th> : null}<th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
+              <thead><tr><th>Hội viên</th><th>Ngày gửi</th><th>{termination ? 'Thời điểm hủy' : 'Thời gian đóng băng'}</th><th>Lý do</th>{!termination ? <th>Phí</th> : null}<th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
               <tbody>{rows.map((row) => (
                 <tr key={row.id}>
                   <td>

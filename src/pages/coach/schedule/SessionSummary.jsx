@@ -1,6 +1,7 @@
+import Badge from '../../../components/common/SystemBadge';
 // Khối thông tin buổi tập dùng chung cho 3 trang của một buổi dạy.
 
-import { Badge } from 'react-bootstrap';
+
 import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 import { SESSION_STATUS_LABELS } from './sessionStatus';
 

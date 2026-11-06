@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Class detail (US24).
@@ -142,13 +143,13 @@ export default function ClassDetailPage() {
             <Card.Body>
               <h2 className="h6 text-uppercase text-muted">Trạng thái</h2>
               <p className="mb-1">
-                <span
+                <Badge
                   className={`badge ${
                     STATUS_BADGE[classData.status] || 'bg-light text-dark'
                   }`}
                 >
                   {statusLabel(classData.status)}
-                </span>
+                </Badge>
               </p>
               {classData.status === 'INACTIVE' ? (
                 <p className="text-muted small mb-0">

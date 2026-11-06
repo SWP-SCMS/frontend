@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
@@ -30,7 +31,7 @@ export default function MemberCourseRefunds({ enrollments, selectedEnrollmentId 
       {!visibleItems.length && <p>Không có khoản hoàn tiền trong trang này.</p>}
       {visibleItems.map((item) => <article className="member-course-card mt-3" key={item.id}>
         <h3>{names.get(item.enrollmentId) || 'Khoản hoàn khóa học của bạn'}</h3>
-        <p>{sources[item.source] || 'Hoàn tiền khóa học'} · {statuses[item.status] || 'Đang cập nhật'}</p>
+        <p>{sources[item.source] || 'Hoàn tiền khóa học'} · <Badge>{statuses[item.status] || 'Đang cập nhật'}</Badge></p>
         <dl><dt>Nghĩa vụ hoàn</dt><dd>{money(item.grossObligationVnd)}</dd>
           <dt>Đã duyệt</dt><dd>{money(item.approvedAmountVnd)}</dd>
           <dt>Đã ghi nhận chi</dt><dd>{money(item.disbursedAmountVnd)}</dd>

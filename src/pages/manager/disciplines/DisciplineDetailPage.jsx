@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Discipline detail (US23).
@@ -109,13 +110,13 @@ export default function DisciplineDetailPage() {
             <Card.Body>
               <h2 className="h6 text-uppercase text-muted">Trạng thái</h2>
               <p className="mb-0">
-                <span
+                <Badge
                   className={`badge ${
                     STATUS_BADGE[discipline.status] || 'bg-light text-dark'
                   }`}
                 >
                   {statusLabel(discipline.status)}
-                </span>
+                </Badge>
               </p>
             </Card.Body>
           </Card>

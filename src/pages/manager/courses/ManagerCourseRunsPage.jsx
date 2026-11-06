@@ -1,9 +1,9 @@
+import CourseRunStatusBadge from '../../../components/common/CourseRunStatusBadge';
 import WeeklyCourseRunModal from './WeeklyCourseRunModal';
 import { listRooms } from '../../../services/roomService';
 import useCachedPollingEffect from "../../../hooks/useCachedPollingEffect";
 import { useCallback, useState } from "react";
 import {
-  Badge,
   Button,
   Spinner,
   Table,
@@ -16,11 +16,9 @@ import {
 } from "../../../services/courseAdminService";
 import { searchStaffAccounts } from "../../../services/staffAccountService";
 import {
-  COURSE_RUN_STATUS_LABELS,
   formatCourseDateTime,
   formatCourseMoney,
   getCourseErrorMessage,
-  getCourseStatusLabel,
 } from "../../../utils/courseUi";
 
 export default function ManagerCourseRunsPage() {
@@ -133,12 +131,7 @@ export default function ManagerCourseRunsPage() {
                   <td>{formatCourseMoney(run.tuitionVnd)}</td>
                   <td>{formatCourseDateTime(run.plannedStartAt)}</td>
                   <td>
-                    <Badge bg="secondary">
-                      {getCourseStatusLabel(
-                        COURSE_RUN_STATUS_LABELS,
-                        run.status,
-                      )}
-                    </Badge>
+                    <CourseRunStatusBadge status={run.status} />
                   </td>
                   <td className="text-end">
                     <Button

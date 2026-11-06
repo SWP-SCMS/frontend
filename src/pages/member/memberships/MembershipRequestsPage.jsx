@@ -1,5 +1,6 @@
+import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
+import {Alert,  Button, Card, Form, Modal, Spinner, Table} from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 import { DateInput } from '../../../components/common/DateInput';

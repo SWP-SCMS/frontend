@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
@@ -652,9 +653,9 @@ export default function ReceptionistMemberBookingPage() {
                 Mã hội viên: <span className="fw-semibold">{profile.memberId}</span>
               </div>
             </div>
-            <span className={`badge ${STATUS_BADGE[profile.status] || 'bg-light text-dark'}`}>
+            <Badge className={`badge ${STATUS_BADGE[profile.status] || 'bg-light text-dark'}`}>
               {statusLabel(profile.status)}
-            </span>
+            </Badge>
           </div>
           <Row className="g-3 mt-1">
             <Col sm={6} lg={4}>
@@ -958,7 +959,7 @@ export default function ReceptionistMemberBookingPage() {
                           <div className="small text-muted">{booking.roomName || '—'}</div>
                         </td>
                         <td>
-                          <span
+                          <Badge
                             className={`badge ${
                               booking.status === 'BOOKED'
                                 ? 'bg-success-subtle text-success-emphasis'
@@ -966,7 +967,7 @@ export default function ReceptionistMemberBookingPage() {
                             }`}
                           >
                             {BOOKING_STATUS_LABEL[booking.status] || booking.status || '—'}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="small">
                           <div>Đặt: {instantText(booking.bookedAt)}</div>

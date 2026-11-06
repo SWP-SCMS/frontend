@@ -1,6 +1,8 @@
+import './ManagerCourseWorkflowPage.css';
+import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useRef, useState } from 'react';
-import { Alert, Badge, Button, Card, Form, Modal, Table } from 'react-bootstrap';
+import { Alert, Button, Card, Form, Modal, Table } from 'react-bootstrap';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -161,10 +163,67 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
     </div>
     {notice && <Alert variant="success" dismissible onClose={() => setNotice('')}>{notice}</Alert>}
     {error && <Alert variant="danger">{error}</Alert>}
-    {loading ? <p>Đang tải…</p> : !error && <Card><Table responsive hover className="mb-0 align-middle"><thead><tr><th>Ngày tạo</th><th>Nội dung</th><th>Trạng thái</th><th /></tr></thead><tbody>
-      {rows.map((row) => <tr key={row.id}><td>{formatCourseDateTime(row.createdAt || row.requestedAt)}</td><td><strong>{row.memberName || 'Hội viên'} · {row.memberCode || 'Chưa có mã'}</strong><p>{row.courseName || row.sourceCourseName} · {row.runCode || row.sourceRunCode}</p>{kind === 'refunds' ? <>{COURSE_REFUND_SOURCE_LABELS[row.source] || 'Hoàn tiền khóa học'}<br />{money(row.grossObligationVnd)}</> : row.requestReason || row.reason || 'Chuyển đợt do thay đổi lịch'}</td><td>{labels[kind][row.status] || 'Đang cập nhật'}</td><td><Button size="sm" variant="outline-primary" onClick={() => setParams({ id: row.id })}>Xem hồ sơ</Button></td></tr>)}
-      {!rows.length && <tr><td colSpan={4} className="text-center py-4">Không có yêu cầu phù hợp.</td></tr>}
-    </tbody></Table></Card>}
+    {loading ? <p>Đang tải…</p> : !error && <Card>
+      <Table responsive hover className={`mb-0 align-middle ${kind === 'refunds' ? 'course-refund-table' : 'course-request-table'}`}>
+        {kind === 'refunds' && <colgroup>
+          <col style={{ width: '11%' }} />
+          <col style={{ width: '16%' }} />
+          <col style={{ width: '23%' }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: '10%' }} />
+          <col style={{ width: '17%' }} />
+          <col style={{ width: '9%' }} />
+        </colgroup>}
+        {kind !== 'refunds' && <colgroup>
+          <col style={{ width: '12%' }} />
+          <col style={{ width: '17%' }} />
+          <col style={{ width: '24%' }} />
+          <col style={{ width: '23%' }} />
+          <col style={{ width: '15%' }} />
+          <col style={{ width: '9%' }} />
+        </colgroup>}
+        <thead><tr>
+          <th>Ngày tạo</th>
+          <th>Hội viên</th>
+          {kind !== 'transfers' && <th>Khóa học / Đợt học</th>}
+          {kind === 'withdrawals' && <th>Lý do rút</th>}
+          {kind === 'transfers' && <><th>Khóa học / Đợt gốc</th><th>Lý do chuyển</th></>}
+          {kind === 'refunds' && <>
+            <th>Loại hoàn</th>
+            <th className="text-end text-nowrap">Số tiền hoàn</th>
+          </>}
+          <th>Trạng thái</th>
+          <th className="text-end">Thao tác</th>
+        </tr></thead>
+        <tbody>
+          {rows.map((row) => <tr key={row.id}>
+            <td className="text-nowrap">{formatCourseDateTime(row.createdAt || row.requestedAt)}</td>
+
+              <td>
+                <strong>{row.memberName || 'Hội viên'}</strong>
+                <div className="text-muted small mt-1">{row.memberCode || 'Chưa có mã hội viên'}</div>
+              </td>
+              <td>
+                <div>{row.courseName || row.sourceCourseName || 'Chưa có tên khóa học'}</div>
+                <div className="text-muted small mt-1">{row.runCode || row.sourceRunCode || 'Chưa có mã đợt học'}</div>
+              </td>
+            {kind === 'withdrawals' && <td>{row.requestReason || row.reason || 'Chưa có lý do'}</td>}
+            {kind === 'transfers' && <td>{row.requestReason || row.reason || 'Chuyển đợt do thay đổi lịch'}</td>}
+            {kind === 'refunds' && <>
+              <td>{COURSE_REFUND_SOURCE_LABELS[row.source] || 'Hoàn tiền khóa học'}</td>
+              <td className="text-end text-nowrap fw-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {money(row.grossObligationVnd)}
+              </td>
+            </>}
+            <td><CourseWorkflowStatusBadge kind={kind} status={row.status} /></td>
+            <td className="text-end text-nowrap">
+              <Button size="sm" variant="outline-primary" onClick={() => setParams({ id: row.id })}>Xem hồ sơ</Button>
+            </td>
+          </tr>)}
+          {!rows.length && <tr><td colSpan={kind === 'refunds' ? 7 : 6} className="text-center py-4">Không có yêu cầu phù hợp.</td></tr>}
+        </tbody>
+      </Table>
+    </Card>}
     <div className="d-flex gap-3 align-items-center mt-3"><Button disabled={loading || page === 0} onClick={() => setPage(page - 1)}>Trang trước</Button><span>Trang {page + 1}</span><Button disabled={loading || page + 1 >= totalPages} onClick={() => setPage(page + 1)}>Trang sau</Button></div>
 
     <Modal show={!!selectedId} onHide={() => { if (!busy) setParams({}); }} size="lg" centered backdrop={busy ? 'static' : true} keyboard={!busy}>
@@ -176,7 +235,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
           <h2 className="h5">{context.member.fullName} · {context.member.memberCode || 'Chưa có mã hội viên'}</h2>
           <p><Link to={'/manager/members/' + detail.memberAccountId}>Hồ sơ hội viên</Link> · <Link to={'/manager/course-runs/' + context.run.id}>{context.run.courseName} · {context.run.runCode}</Link></p>
           {context.targetRun && <p>Đợt học thay thế: <Link to={'/manager/course-runs/' + context.targetRun.id}>{context.targetRun.courseName} · {context.targetRun.runCode}</Link></p>}
-          <Badge bg="secondary" className="mb-3">{labels[kind][detail.status] || 'Đang cập nhật'}</Badge>
+          <CourseWorkflowStatusBadge kind={kind} status={detail.status} className="mb-3" />
           {kind === 'refunds' ? <>
             <p>{COURSE_REFUND_SOURCE_LABELS[detail.source] || 'Hoàn tiền khóa học'}</p>
             <dl className="row">{[['grossObligationVnd', 'Nghĩa vụ hoàn'], ['approvedAmountVnd', 'Đã duyệt'], ['disbursedAmountVnd', 'Đã ghi nhận chi'], ['verifiedAmountVnd', 'Đã xác minh']].map(([field, label]) => <div key={field} className="col-sm-6"><dt>{label}</dt><dd>{money(detail[field])}</dd></div>)}</dl>

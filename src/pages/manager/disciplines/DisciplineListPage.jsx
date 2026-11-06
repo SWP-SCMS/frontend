@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Discipline list & search (US23).
@@ -163,13 +164,13 @@ export default function DisciplineListPage() {
                 )}
               </td>
               <td>
-                <span
+                <Badge
                   className={`badge ${
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
                   {statusLabel(row.status)}
-                </span>
+                </Badge>
               </td>
               <td className="text-end">
                 <Button

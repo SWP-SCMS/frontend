@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import useConfirmation from '../../../hooks/useConfirmation';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import CancelCourseWithdrawal from './CancelCourseWithdrawal';
@@ -89,7 +90,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested, sele
       const enrollment = enrollmentById.get(request.enrollmentId);
       return <article className="member-course-card mt-3" key={request.id}>
         <h3>{enrollment ? `${enrollment.courseName} · ${enrollment.runCode}` : 'Yêu cầu rút khóa học của bạn'}</h3>
-        <p>{STATUS_LABELS[request.status] || 'Đang cập nhật'} · Gửi lúc {formatCourseDateTime(request.requestedAt)}</p>
+        <p><Badge>{STATUS_LABELS[request.status] || 'Đang cập nhật'}</Badge> · Gửi lúc {formatCourseDateTime(request.requestedAt)}</p>
         <p>Lý do xin rút: {request.requestReason}</p>
         {request.decisionReason && <p>Lý do quyết định: {request.decisionReason}</p>}
         {request.decidedAt && <p>Thời điểm quyết định: {formatCourseDateTime(request.decidedAt)}</p>}

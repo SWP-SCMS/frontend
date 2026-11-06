@@ -1,7 +1,8 @@
+import Badge from '../../../components/common/SystemBadge';
 import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
+import {Alert,  Button, Card, Form, Modal, Spinner, Table} from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { searchReceptionMember } from '../../../services/receptionistService';

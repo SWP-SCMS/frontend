@@ -1,3 +1,4 @@
+import CourseRunStatusBadge from '../../../components/common/CourseRunStatusBadge';
 import { z } from "zod";
 import usePollingEffect from "../../../hooks/usePollingEffect";
 import CourseRunRescheduleModal from "./CourseRunRescheduleModal";
@@ -11,7 +12,6 @@ import {
 } from "../../../schemas/courseSchemas";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Badge,
   Button,
   Col,
   Form,
@@ -41,7 +41,6 @@ import {
   formatCourseDateTime,
   formatCourseMoney,
   getCourseErrorMessage,
-  COURSE_RUN_STATUS_LABELS,
   COURSE_SESSION_STATUS_LABELS,
   getCourseStatusLabel,
 } from "../../../utils/courseUi";
@@ -325,9 +324,7 @@ export default function ManagerCourseRunDetailPage() {
         <div>
           <div className="d-flex align-items-center gap-2">
             <h1 className="h3 mb-0">{run.courseName}</h1>
-            <Badge bg="secondary">
-              {getCourseStatusLabel(COURSE_RUN_STATUS_LABELS, run.status)}
-            </Badge>
+            <CourseRunStatusBadge status={run.status} />
           </div>
           <p className="text-muted mb-0">{run.runCode}</p>
         </div>

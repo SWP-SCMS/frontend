@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Revenue / Membership report (US22).
 //
@@ -375,11 +376,11 @@ export default function RevenueReportPage() {
                     {paymentRows.map((row) => (
                       <tr key={row.key}>
                         <td>
-                          <span
+                          <Badge
                             className={`badge text-bg-${row.variant}`}
                           >
                             {row.label}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="text-end">{row.count}</td>
                         <td className="text-end">

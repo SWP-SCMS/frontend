@@ -1,5 +1,6 @@
+import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
+import {Alert,  Button, Card, Form, Modal, Spinner, Table} from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -34,6 +35,8 @@ function messageFor(error, fallback) {
 
 export default function CoachLeaveReviewPage() {
   const [rows, setRows] = useState([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [status, setStatus] = useState('PENDING');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -47,24 +50,28 @@ export default function CoachLeaveReviewPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const result = await listManagerCoachLeaveRequests(status);
-      setRows(result);
+      const result = await listManagerCoachLeaveRequests(status, page);
+      setRows(result.content ?? result);
+      setTotalPages(result.totalPages ?? 1);
+      if (result.totalPages > 0 && page >= result.totalPages) setPage(result.totalPages - 1);
     } catch (error) {
       setLoadError(error);
     } finally {
       setLoading(false);
     }
-  }, [status]);
+  }, [status, page]);
 
   useEffect(() => { load(); }, [load]);
 
   const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
     try {
-      commitValue(setRows, await listManagerCoachLeaveRequests(status));
+      const result = await listManagerCoachLeaveRequests(status, page);
+      commitValue(setRows, result.content ?? result);
+      commitValue(setTotalPages, result.totalPages ?? 1);
     } catch {
       // Keep the current queue visible if a background refresh fails.
     }
-  }, [status]);
+  }, [status, page]);
   useAutoRefresh(refreshInBackground, 7_000, !decision && !busy);
 
   function openDecision(row, action) {
@@ -100,7 +107,7 @@ export default function CoachLeaveReviewPage() {
           <p className="text-muted mb-0">Duyệt đơn nghỉ và kiểm tra các buổi tập cần phân công hoặc dời lịch.</p>
         </div>
         <div className="d-flex gap-2">
-          <Form.Select aria-label="Lọc trạng thái" value={status} onChange={(event) => setStatus(event.target.value)}>
+          <Form.Select aria-label="Lọc trạng thái" value={status} onChange={(event) => { setStatus(event.target.value); setPage(0); }}>
             <option value="">Tất cả trạng thái</option>
             <option value="PENDING">Chờ duyệt</option>
             <option value="APPROVED">Đã duyệt</option>
@@ -147,6 +154,11 @@ export default function CoachLeaveReviewPage() {
               </Table>
             </div>
           )}
+          <div className="d-flex justify-content-end align-items-center gap-2 mt-3">
+            <Button variant="outline-secondary" disabled={loading || page === 0} onClick={() => setPage(page - 1)}>Trước</Button>
+            <span>Trang {page + 1} / {Math.max(1, totalPages)}</span>
+            <Button variant="outline-secondary" disabled={loading || page + 1 >= totalPages} onClick={() => setPage(page + 1)}>Sau</Button>
+          </div>
         </Card.Body>
       </Card>
 

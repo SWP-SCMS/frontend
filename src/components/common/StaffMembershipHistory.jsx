@@ -1,6 +1,7 @@
+import Badge from './SystemBadge';
 import usePollingEffect from '../../hooks/usePollingEffect';
 import { useCallback, useState } from 'react';
-import { Badge, Button, Card, Spinner, Table } from 'react-bootstrap';
+import {Button, Card, Spinner, Table} from 'react-bootstrap';
 
 import ErrorAlert from './ErrorAlert';
 import MembershipBenefitList from './MembershipBenefitList';

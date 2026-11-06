@@ -1,3 +1,4 @@
+import Badge from './SystemBadge';
 import { groupMembershipBenefits } from '../../utils/membershipBenefits';
 
 export default function MembershipBenefitList({
@@ -47,9 +48,9 @@ export default function MembershipBenefitList({
                 <span>{item.displayName}</span>
               )}
               {inactive ? (
-                <span className="badge text-bg-secondary ms-2">
+                <Badge className="badge text-bg-secondary ms-2">
                   Ngừng áp dụng
-                </span>
+                </Badge>
               ) : null}
             </span>
           </li>

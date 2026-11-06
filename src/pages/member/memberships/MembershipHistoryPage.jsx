@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 // Lịch sử gói tập của chính Hội viên (US21 · Membership History).
 //
 // Dữ liệu: GET /members/me/memberships — danh sách Membership đã mua, mới nhất
@@ -189,11 +190,11 @@ export default function MembershipHistoryPage() {
                         />
                       </td>
                       <td data-label="Trạng thái">
-                        <span
+                        <Badge
                           className={`scms-mh-status ${statusClass}`}
                         >
                           {STATUS_LABELS[row.status] || row.status || '—'}
-                        </span>
+                        </Badge>
                       </td>
                     </tr>
                   );

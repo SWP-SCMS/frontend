@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -108,9 +109,9 @@ export default function MemberCourseWaitlistPage() {
                           <small>{run?.courseCode || 'Khóa học'} · {run?.runCode || 'Đợt học'}</small>
                           <h3>{run?.courseName || 'Thông tin khóa học'}</h3>
                         </div>
-                        <span className={`member-course-status is-${item.status?.toLowerCase()}`}>
+                        <Badge className={`member-course-status is-${item.status?.toLowerCase()}`}>
                           {getCourseStatusLabel(COURSE_WAITLIST_STATUS_LABELS, item.status)}
-                        </span>
+                        </Badge>
                       </div>
                       {item.status === 'WAITING' && <p>Vị trí hiện tại: <strong>#{item.position || '—'}</strong></p>}
                       {item.status === 'INVITED' && (

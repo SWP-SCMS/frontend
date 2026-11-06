@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 // Offer detail page.
 //
 // Handoff §7:
@@ -98,7 +99,7 @@ export default function OfferDetailPage() {
               <Card.Body className="p-4 p-md-5">
                 <Row className="g-4">
                   <Col md={7}>
-                    <span className="badge bg-dark mb-2">{offer.planCode}</span>
+                    <Badge className="badge bg-dark mb-2">{offer.planCode}</Badge>
                     <h1 className="fw-bold mb-2">{offer.name}</h1>
                     <p className="text-muted">{offer.description || '—'}</p>
                     <h2 className="h6 text-uppercase text-muted mt-4">

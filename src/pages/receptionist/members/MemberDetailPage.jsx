@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 // Receptionist – Member profile at the front desk (US11).
 //
@@ -402,9 +403,9 @@ export default function MemberDetailPage() {
           <h1 className="h3 fw-bold mb-1">{profile.fullName || 'Hội viên'}</h1>
           <div className="text-muted small">
             Mã hội viên: <span className="fw-semibold">{profile.memberId}</span>
-            <span className={`badge ms-2 ${STATUS_BADGE[profile.status] || 'bg-light text-dark'}`}>
+            <Badge className={`badge ms-2 ${STATUS_BADGE[profile.status] || 'bg-light text-dark'}`}>
               {statusLabel(profile.status)}
-            </span>
+            </Badge>
           </div>
         </div>
         <div className="d-flex flex-wrap gap-2">

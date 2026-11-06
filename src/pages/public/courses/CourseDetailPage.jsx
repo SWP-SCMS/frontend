@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -27,9 +28,9 @@ function RunCard({ run, memberView }) {
           <small>{run.runCode}</small>
           <h3>{run.courseName}</h3>
         </div>
-        <span className={`course-status is-${run.registrationStatus?.toLowerCase()}`}>
+        <Badge className={`course-status is-${run.registrationStatus?.toLowerCase()}`}>
           {registrationLabel}
-        </span>
+        </Badge>
       </div>
       <dl className="course-facts compact">
         <div><dt>Khai giảng</dt><dd>{formatCourseDateTime(run.plannedStartAt)}</dd></div>

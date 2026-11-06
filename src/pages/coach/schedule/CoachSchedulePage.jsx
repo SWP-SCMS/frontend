@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Lịch phụ trách của Huấn luyện viên: lịch tuần (Thứ Hai → Chủ Nhật) các buổi
 // MÌNH đứng lớp. Giao diện dùng lại CSS của "Lịch của tôi" bên Hội viên (mcs-*).
@@ -9,7 +10,7 @@ import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 
 import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Badge, Button, Card, Form, Spinner } from 'react-bootstrap';
+import {Button, Card, Form, Spinner} from 'react-bootstrap';
 
 import { DateInput } from '../../../components/common/DateInput';
 import ErrorAlert from '../../../components/common/ErrorAlert';
@@ -322,9 +323,9 @@ function SessionCard({ session, onClick }) {
       </div>
       <div className="mcs-cal-session-foot">
         {s.classType ? (
-          <span className="badge mcs-pill-sm bg-danger-subtle text-danger-emphasis">
+          <Badge className="badge mcs-pill-sm bg-danger-subtle text-danger-emphasis">
             {CLASS_TYPE_LABEL[s.classType] || s.classType}
-          </span>
+          </Badge>
         ) : null}
         <Badge bg={info?.variant ?? 'secondary'} className="mcs-pill-sm">
           {info?.text ?? s.status}

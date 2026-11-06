@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Membership Offer list & search (US08).
@@ -171,26 +172,26 @@ export default function MembershipOfferListPage() {
                 ) : null}
               </td>
               <td>
-                <span
+                <Badge
                   className={`badge ${
                     'bg-light text-dark'
                   }`}
                 >
                   {row.planDisplayName || row.planCode || '—'}
-                </span>
+                </Badge>
               </td>
               <td>{formatPrice(row.priceAmount, row.currencyCode)}</td>
               <td>
                 {row.durationDays ? `${row.durationDays} ngày` : '—'}
               </td>
               <td>
-                <span
+                <Badge
                   className={`badge ${
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
                   {statusLabel(row.status)}
-                </span>
+                </Badge>
               </td>
               <td className="text-end">
                 <Button

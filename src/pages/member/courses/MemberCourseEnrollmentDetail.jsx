@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { Link } from 'react-router-dom';
 import {
   COURSE_ATTENDANCE_STATUS_LABELS,
@@ -19,7 +20,7 @@ export default function MemberCourseEnrollmentDetail({ enrollment }) {
                         <small>{enrollment.courseCode} · {enrollment.runCode}</small>
                         <h3>{enrollment.courseName}</h3>
                       </div>
-                      <span className="member-course-status">{getCourseStatusLabel(COURSE_ENROLLMENT_STATUS_LABELS, enrollment.lifecycleStatus)}</span>
+                      <Badge className="member-course-status">{getCourseStatusLabel(COURSE_ENROLLMENT_STATUS_LABELS, enrollment.lifecycleStatus)}</Badge>
                     </div>
                     <p>Đợt học: {getCourseStatusLabel(COURSE_RUN_STATUS_LABELS, enrollment.courseRunStatus)}</p>
                     {enrollment.payment && <p>Thanh toán: {getCourseStatusLabel(COURSE_ORDER_STATUS_LABELS, enrollment.payment.status)} · {formatCourseMoney(enrollment.payment.amountVnd)}</p>}

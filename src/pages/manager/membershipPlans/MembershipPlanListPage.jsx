@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 import { useMemo, useState } from 'react';
@@ -77,7 +78,7 @@ export default function MembershipPlanListPage() {
                   <td><code>{plan.code}</code></td>
                   <td className="fw-semibold">{plan.displayName}</td>
                   <td>{plan.benefitCodes?.length || 0} quyền lợi</td>
-                  <td><span className={`badge ${PLAN_STATUS_BADGE[plan.status] || 'bg-light text-dark'}`}>{statusLabel(plan.status)}</span></td>
+                  <td><Badge className={`badge ${PLAN_STATUS_BADGE[plan.status] || 'bg-light text-dark'}`}>{statusLabel(plan.status)}</Badge></td>
                   <td>{formatDate(plan.updatedAt)}</td>
                   <td className="text-end"><Button as={Link} to={`/manager/membership-plans/${plan.code}`} size="sm" variant="outline-danger">Chi tiết</Button></td>
                 </tr>
