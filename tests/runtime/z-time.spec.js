@@ -79,12 +79,14 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   await api(request, 'coach', 'PATCH', mark, { status: 'ABSENT' }, 409);
   const zeroEnrollment = await enrollment(request, env.fixtures.cash.runId);
   await page.clock.setFixedTime(new Date(Date.parse(sessions[3].startAt) + 2000));
-  await login(page, 'member', '/member/courses');
+  await login(page, 'member', '/member/courses/withdrawals');
   await page.getByLabel('Đợt học cần rút').selectOption(zeroEnrollment.enrollmentId);
   await page.getByLabel('Lý do xin rút').fill('QA below seventy percent');
-  page.once('dialog', async d => { expect(d.message()).toContain('tạm ngừng học'); await d.accept(); });
   await page.getByRole('button', { name: 'Gửi yêu cầu rút', exact: true }).click();
-  await expect(page.locator('#withdrawals article').filter({ hasText: 'QA below seventy percent' })).toContainText('Chờ Manager duyệt');
+  const confirmation = page.getByRole('dialog');
+  await expect(confirmation).toContainText('tạm ngừng học');
+  await confirmation.getByRole('button', { name: 'Xác nhận', exact: true }).click();
+  await expect(page.locator('#withdrawals article').filter({ hasText: 'QA below seventy percent' })).toContainText('Chờ Quản lý duyệt');
   let zeroRequest = (await api(request, 'member', 'GET', '/members/me/course-withdrawal-requests')).find(w => w.enrollmentId === zeroEnrollment.enrollmentId && w.status === 'PENDING');
   expect(zeroRequest.remainingUnits).toBe(6); expect(zeroRequest.refundAmountVnd).toBe(0);
   const zeroCard = page.locator('#withdrawals article').filter({ hasText: 'QA below seventy percent' });
