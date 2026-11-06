@@ -1,3 +1,4 @@
+import CourseImageField from '../../../components/common/CourseImageField';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +19,7 @@ export default function ManagerCourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showEdit, setShowEdit] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const courseForm = useForm({ resolver: zodResolver(courseEditSchema), defaultValues: {} });
   const { register, handleSubmit, reset: setForm, formState: { errors } } = courseForm;
   const [busy, setBusy] = useState(false);
@@ -73,9 +75,9 @@ export default function ManagerCourseDetailPage() {
       <div><div className="d-flex align-items-center gap-2"><h1 className="h3 mb-0">{course.name}</h1><Badge bg="secondary">{getCourseStatusLabel(COURSE_STATUS_LABELS, course.status)}</Badge></div><p className="text-muted mb-0">{course.code} · {course.disciplineName}</p></div>
       <div className="d-flex flex-wrap gap-2">
         <Button variant="outline-secondary" onClick={openEdit}>Chỉnh sửa</Button>
-        {['DRAFT', 'INACTIVE'].includes(course.status) && <Button variant="success" disabled={busy} onClick={() => changeStatus(publishManagerCourse, 'Công khai khóa học này?')}>Công khai</Button>}
-        {course.status === 'PUBLISHED' && <Button variant="warning" disabled={busy} onClick={() => changeStatus(deactivateManagerCourse, 'Ngừng nhận đăng ký mới cho khóa học này?')}>Ngừng hoạt động</Button>}
-        {['DRAFT', 'INACTIVE'].includes(course.status) && <Button variant="outline-danger" disabled={busy} onClick={() => changeStatus(archiveManagerCourse, 'Lưu trữ khóa học này?')}>Lưu trữ</Button>}
+        {['DRAFT', 'INACTIVE'].includes(course.status) && <Button variant="success" disabled={busy || uploadingImage} onClick={() => changeStatus(publishManagerCourse, 'Công khai khóa học này?')}>Công khai</Button>}
+        {course.status === 'PUBLISHED' && <Button variant="warning" disabled={busy || uploadingImage} onClick={() => changeStatus(deactivateManagerCourse, 'Ngừng hoạt động khóa học và hủy toàn bộ đợt chưa khai giảng cùng lịch buổi học của các đợt đó? Các đợt đã bắt đầu được giữ nguyên. Đơn chờ sẽ hết hạn; khoản đã thanh toán được tạo yêu cầu hoàn tiền để xử lý riêng. Công khai lại khóa học không khôi phục các đợt đã hủy.')}>Ngừng hoạt động</Button>}
+        {['DRAFT', 'INACTIVE'].includes(course.status) && <Button variant="outline-danger" disabled={busy || uploadingImage} onClick={() => changeStatus(archiveManagerCourse, 'Lưu trữ khóa học và hủy các đợt chưa khai giảng còn lại cùng lịch buổi học? Các đợt đã bắt đầu được giữ nguyên. Đơn chờ sẽ hết hạn; khoản đã thanh toán được tạo yêu cầu hoàn tiền để xử lý riêng.')}>Lưu trữ</Button>}
       </div>
     </div>
     {error && <ErrorAlert error={error} title="Không thể xử lý khóa học" onClose={() => setError('')} />}
@@ -87,15 +89,15 @@ export default function ManagerCourseDetailPage() {
     <Modal show={!!statusAction} onHide={() => { if (!busy) setStatusAction(null); }} centered backdrop={busy ? 'static' : true} keyboard={!busy}>
       <Modal.Header closeButton={!busy}><Modal.Title>Xác nhận thay đổi khóa học</Modal.Title></Modal.Header>
       <Modal.Body><p>{statusAction?.prompt}</p><p><strong>{course.name}</strong> · {course.code}</p>{error && <ErrorAlert error={error} />}</Modal.Body>
-      <Modal.Footer><Button variant="outline-secondary" disabled={busy} onClick={() => setStatusAction(null)}>Quay lại</Button><Button variant="danger" disabled={busy} onClick={confirmStatusChange}>{busy ? 'Đang xử lý…' : 'Xác nhận'}</Button></Modal.Footer>
+      <Modal.Footer><Button variant="outline-secondary" disabled={busy || uploadingImage} onClick={() => setStatusAction(null)}>Quay lại</Button><Button variant="danger" disabled={busy || uploadingImage} onClick={confirmStatusChange}>{busy ? 'Đang xử lý…' : 'Xác nhận'}</Button></Modal.Footer>
     </Modal>
-    <Modal show={showEdit} onHide={() => { if (!busy) setShowEdit(false); }} centered size="lg" backdrop={busy ? 'static' : true} keyboard={!busy}><Form noValidate onSubmit={handleSubmit(handleEdit)}>
+    <Modal show={showEdit} onHide={() => { if (!busy && !uploadingImage) setShowEdit(false); }} centered size="lg" backdrop={busy ? 'static' : true} keyboard={!busy}><Form noValidate onSubmit={(event) => { if (uploadingImage) { event.preventDefault(); return; } handleSubmit(handleEdit)(event); }}>
       <Modal.Header closeButton><Modal.Title>Chỉnh sửa khóa học</Modal.Title></Modal.Header><Modal.Body>{error && <ErrorAlert error={error} title="Không thể lưu thay đổi" />}<Row className="g-3">
         <Col md={8}><Form.Label htmlFor="course-edit-name">Tên khóa học *</Form.Label><Form.Control id="course-edit-name" required maxLength={200} {...register('name')} isInvalid={!!errors.name} /><Form.Control.Feedback type="invalid">{errors.name?.message}</Form.Control.Feedback></Col>
         <Col md={4}><Form.Label htmlFor="course-edit-defaultMinimumEnrollment">Số đăng ký tối thiểu *</Form.Label><Form.Control id="course-edit-defaultMinimumEnrollment" required type="number" min={1} {...register('defaultMinimumEnrollment')} isInvalid={!!errors.defaultMinimumEnrollment} /><Form.Control.Feedback type="invalid">{errors.defaultMinimumEnrollment?.message}</Form.Control.Feedback></Col>
-        <Col xs={12}><Form.Label htmlFor="course-edit-imageUrl">Ảnh khóa học (URL)</Form.Label><Form.Control id="course-edit-imageUrl" maxLength={500} {...register('imageUrl')} isInvalid={!!errors.imageUrl} /><Form.Control.Feedback type="invalid">{errors.imageUrl?.message}</Form.Control.Feedback></Col>
+        <Col xs={12}><CourseImageField id="course-edit-imageUrl" form={courseForm} disabled={busy || uploadingImage} onUploading={setUploadingImage} /></Col>
         <Col xs={12}><Form.Label htmlFor="course-edit-description">Mô tả</Form.Label><Form.Control id="course-edit-description" as="textarea" rows={5} maxLength={2000} {...register('description')} isInvalid={!!errors.description} /><Form.Control.Feedback type="invalid">{errors.description?.message}</Form.Control.Feedback></Col>
-      </Row></Modal.Body><Modal.Footer><Button variant="outline-secondary" onClick={() => setShowEdit(false)}>Hủy</Button><Button variant="danger" type="submit" disabled={busy}>Lưu thay đổi</Button></Modal.Footer>
+      </Row></Modal.Body><Modal.Footer><Button variant="outline-secondary" disabled={busy || uploadingImage} onClick={() => setShowEdit(false)}>Hủy</Button><Button variant="danger" type="submit" disabled={busy || uploadingImage}>Lưu thay đổi</Button></Modal.Footer>
     </Form></Modal>
   </div>;
 }

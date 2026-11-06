@@ -489,9 +489,6 @@ export default function PaymentReconciliationPage() {
                           }
                           required
                         />
-                        <Form.Text className="text-muted">
-                          Phải khớp đúng số tiền của đơn.
-                        </Form.Text>
                       </Form.Group>
                     </Col>
                     <Col md={8}>
@@ -507,10 +504,6 @@ export default function PaymentReconciliationPage() {
                           placeholder="Ví dụ: FT25092ABC123"
                           required
                         />
-                        <Form.Text className="text-muted">
-                          Nhập mã tham chiếu/FT… trên sao kê hoặc tin nhắn biến động số dư của ngân hàng. Mỗi mã chỉ được
-                          dùng cho một giao dịch thanh toán.
-                        </Form.Text>
                       </Form.Group>
                     </Col>
                     <Col md={12}>
@@ -525,10 +518,6 @@ export default function PaymentReconciliationPage() {
                           }
                           required
                         />
-                        <Form.Text className="text-muted">
-                          Phải khớp <strong>chính xác</strong> nội dung hệ
-                          thống yêu cầu — hệ thống so sánh tuyệt đối.
-                        </Form.Text>
                       </Form.Group>
                     </Col>
                   </>
@@ -556,10 +545,6 @@ export default function PaymentReconciliationPage() {
                       placeholder="Ví dụ: Ảnh chụp báo cáo tài khoản ngày 04/10, số dư khớp."
                       required
                     />
-                    <Form.Text className="text-muted">
-                      Mô tả nguồn đối chiếu: ảnh sao kê, báo cáo ngân hàng,
-                      mã giao dịch, thời điểm kiểm tra.
-                    </Form.Text>
                   <Form.Control.Feedback type="invalid">Vui lòng nhập ít nhất 5 ký tự.</Form.Control.Feedback>
 </Form.Group>
                 </Col>

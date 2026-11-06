@@ -1,23 +1,16 @@
+import WeeklyCourseRunModal from './WeeklyCourseRunModal';
+import { listRooms } from '../../../services/roomService';
 import useCachedPollingEffect from "../../../hooks/useCachedPollingEffect";
-import CourseDateTimeInput from "../../../components/common/CourseDateTimeInput";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { courseRunSchema } from "../../../schemas/courseSchemas";
 import { useCallback, useState } from "react";
 import {
   Badge,
   Button,
-  Col,
-  Form,
-  Modal,
-  Row,
   Spinner,
   Table,
 } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ErrorAlert from "../../../components/common/ErrorAlert";
 import {
-  createManagerCourseRun,
   listManagerCourseRuns,
   listManagerCourses,
 } from "../../../services/courseAdminService";
@@ -30,24 +23,9 @@ import {
   getCourseStatusLabel,
 } from "../../../utils/courseUi";
 
-const emptyForm = {
-  runCode: "",
-  courseId: "",
-  primaryCoachId: "",
-  tuitionVnd: "",
-  capacity: "",
-  minimumEnrollment: "",
-  registrationOpensAt: "",
-  registrationClosesAt: "",
-  plannedStartAt: "",
-  plannedEndAt: "",
-  totalUnits: "",
-  namedCoachCommitment: true,
-};
-const toIso = (value) =>
-  value ? new Date(`${value}:00+07:00`).toISOString() : null;
-
 export default function ManagerCourseRunsPage() {
+  const navigate = useNavigate();
+  const [rooms, setRooms] = useState([]);
   const [page, setPage] = useState(0);
   const [result, setResult] = useState({ content: [] });
   const [courses, setCourses] = useState([]);
@@ -55,19 +33,6 @@ export default function ManagerCourseRunsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const courseForm = useForm({
-    resolver: zodResolver(courseRunSchema),
-    defaultValues: emptyForm,
-  });
-  const {
-    register,
-    handleSubmit,
-    reset: setForm,
-    setValue,
-    formState: { errors },
-  } = courseForm;
-  const [saving, setSaving] = useState(false);
-
   const load = useCallback(
     async ({
       background = false,
@@ -78,7 +43,8 @@ export default function ManagerCourseRunsPage() {
       if (!background) commitValue(setLoading, true);
       commitError(setError, "");
       try {
-        const [runPage, coursePage, coachPage] = await Promise.all([
+        const [roomList, runPage, coursePage, coachPage] = await Promise.all([
+          listRooms(),
           listManagerCourseRuns({ page, size: 20 }),
           listManagerCourses({ page: 0, size: 100 }),
           searchStaffAccounts({
@@ -88,6 +54,7 @@ export default function ManagerCourseRunsPage() {
             size: 100,
           }),
         ]);
+        commitValue(setRooms, roomList);
         commitValue(setResult, runPage);
         commitValue(setCourses, coursePage.content || []);
         commitValue(setCoaches, coachPage?.content || []);
@@ -113,36 +80,11 @@ export default function ManagerCourseRunsPage() {
     [load],
     {
       key: ["manager-runs", page],
-      setters: [setResult, setCourses, setCoaches],
+      setters: [setResult, setCourses, setCoaches, setRooms],
       setLoading,
     },
-    !saving,
+    !showCreate,
   );
-
-  async function handleCreate(form) {
-    setSaving(true);
-    setError("");
-    try {
-      await createManagerCourseRun({
-        ...form,
-        tuitionVnd: Number(form.tuitionVnd),
-        capacity: Number(form.capacity),
-        minimumEnrollment: Number(form.minimumEnrollment),
-        totalUnits: Number(form.totalUnits),
-        registrationOpensAt: toIso(form.registrationOpensAt),
-        registrationClosesAt: toIso(form.registrationClosesAt),
-        plannedStartAt: toIso(form.plannedStartAt),
-        plannedEndAt: toIso(form.plannedEndAt),
-      });
-      setShowCreate(false);
-      setForm(emptyForm);
-      await load();
-    } catch (err) {
-      setError(getCourseErrorMessage(err, "Không tạo được đợt mở khóa học."));
-    } finally {
-      setSaving(false);
-    }
-  }
 
   return (
     <div className="container-fluid py-4">
@@ -153,7 +95,7 @@ export default function ManagerCourseRunsPage() {
             Thiết lập thời gian, học phí, sĩ số và huấn luyện viên cho từng đợt.
           </p>
         </div>
-        <Button variant="danger" onClick={() => setShowCreate(true)}>
+        <Button variant="danger" disabled={loading} onClick={() => setShowCreate(true)}>
           + Tạo đợt mở
         </Button>
       </div>
@@ -240,231 +182,9 @@ export default function ManagerCourseRunsPage() {
         </div>
       </div>
 
-      <Modal
-        show={showCreate}
-        onHide={() => setShowCreate(false)}
-        centered
-        size="xl"
-      >
-        <Form noValidate onSubmit={handleSubmit(handleCreate)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Tạo đợt mở khóa học</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {error && (
-              <ErrorAlert error={error} title="Không thể lưu thay đổi" />
-            )}
-            <Row className="g-3">
-              <Col md={4}>
-                <Form.Label htmlFor="course-run-runCode">Mã đợt *</Form.Label>
-                <Form.Control
-                  id="course-run-runCode"
-                  required
-                  {...register("runCode")}
-                  isInvalid={!!errors.runCode}
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.runCode?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={4}>
-                <Form.Label htmlFor="course-run-courseId">
-                  Khóa học *
-                </Form.Label>
-                <Form.Select
-                  id="course-run-courseId"
-                  required
-                  {...register("courseId", {
-                    onChange: (e) => {
-                      const c = courses.find(
-                        (item) => item.id === e.target.value,
-                      );
-                      if (c?.defaultMinimumEnrollment)
-                        setValue(
-                          "minimumEnrollment",
-                          c.defaultMinimumEnrollment,
-                          { shouldValidate: true },
-                        );
-                    },
-                  })}
-                  isInvalid={!!errors.courseId}
-                >
-                  <option value="">-- Chọn khóa học --</option>
-                  {courses
-                    .filter((c) => c.status === "PUBLISHED")
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.code} — {c.name}
-                      </option>
-                    ))}
-                </Form.Select>
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.courseId?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={4}>
-                <Form.Label htmlFor="course-run-primaryCoachId">
-                  Huấn luyện viên chính *
-                </Form.Label>
-                <Form.Select
-                  id="course-run-primaryCoachId"
-                  required
-                  {...register("primaryCoachId")}
-                  isInvalid={!!errors.primaryCoachId}
-                >
-                  <option value="">-- Chọn huấn luyện viên --</option>
-                  {coaches.map((c) => (
-                    <option key={c.accountId} value={c.accountId}>
-                      {c.fullName || c.name || c.email}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.primaryCoachId?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={3}>
-                <Form.Label htmlFor="course-run-tuitionVnd">
-                  Học phí (VND) *
-                </Form.Label>
-                <Form.Control
-                  id="course-run-tuitionVnd"
-                  required
-                  type="number"
-                  min={1}
-                  {...register("tuitionVnd")}
-                  isInvalid={!!errors.tuitionVnd}
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.tuitionVnd?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={3}>
-                <Form.Label htmlFor="course-run-capacity">
-                  Sức chứa *
-                </Form.Label>
-                <Form.Control
-                  id="course-run-capacity"
-                  required
-                  type="number"
-                  min={1}
-                  {...register("capacity")}
-                  isInvalid={!!errors.capacity}
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.capacity?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={3}>
-                <Form.Label htmlFor="course-run-minimumEnrollment">
-                  Đăng ký tối thiểu *
-                </Form.Label>
-                <Form.Control
-                  id="course-run-minimumEnrollment"
-                  required
-                  type="number"
-                  min={1}
-                  {...register("minimumEnrollment")}
-                  isInvalid={!!errors.minimumEnrollment}
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.minimumEnrollment?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={3}>
-                <Form.Label htmlFor="course-run-totalUnits">
-                  Số buổi *
-                </Form.Label>
-                <Form.Control
-                  id="course-run-totalUnits"
-                  required
-                  type="number"
-                  min={1}
-                  {...register("totalUnits")}
-                  isInvalid={!!errors.totalUnits}
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.totalUnits?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={3}>
-                <Form.Label htmlFor="registrationOpensAt">
-                  Mở đăng ký *
-                </Form.Label>
-                <CourseDateTimeInput
-                  control={courseForm.control}
-                  name="registrationOpensAt"
-                  label="Mở đăng ký"
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.registrationOpensAt?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={3}>
-                <Form.Label htmlFor="registrationClosesAt">
-                  Đóng đăng ký *
-                </Form.Label>
-                <CourseDateTimeInput
-                  control={courseForm.control}
-                  name="registrationClosesAt"
-                  label="Đóng đăng ký"
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.registrationClosesAt?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={3}>
-                <Form.Label htmlFor="plannedStartAt">
-                  Dự kiến khai giảng *
-                </Form.Label>
-                <CourseDateTimeInput
-                  control={courseForm.control}
-                  name="plannedStartAt"
-                  label="Dự kiến khai giảng"
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.plannedStartAt?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={3}>
-                <Form.Label htmlFor="plannedEndAt">
-                  Dự kiến kết thúc *
-                </Form.Label>
-                <CourseDateTimeInput
-                  control={courseForm.control}
-                  name="plannedEndAt"
-                  label="Dự kiến kết thúc"
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.plannedEndAt?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col xs={12}>
-                <Form.Check
-                  type="switch"
-                  label="Cam kết đúng huấn luyện viên đã công bố"
-                  {...register("namedCoachCommitment")}
-                  isInvalid={!!errors.namedCoachCommitment}
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {errors.namedCoachCommitment?.message}
-                </Form.Control.Feedback>
-              </Col>
-            </Row>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button
-              variant="outline-secondary"
-              onClick={() => setShowCreate(false)}
-            >
-              Hủy
-            </Button>
-            <Button type="submit" variant="danger" disabled={saving}>
-              {saving ? "Đang lưu..." : "Tạo đợt mở"}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
+      {showCreate && <WeeklyCourseRunModal courses={courses} coaches={coaches} rooms={rooms}
+        onClose={() => setShowCreate(false)} onCreated={run => navigate(`/manager/course-runs/${run.id}`)} />}
+
     </div>
   );
 }

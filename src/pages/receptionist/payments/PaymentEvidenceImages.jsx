@@ -62,7 +62,6 @@ export default function PaymentEvidenceImages({ paymentId, disabled, readOnly = 
     {!readOnly && <Form.Group controlId="rec-evidence-image">
       <Form.Label>Ảnh chứng từ đối soát</Form.Label>
       <Form.Control type="file" accept="image/png,image/jpeg" onChange={upload} disabled={disabled || busy || images.length >= 10} />
-      <Form.Text>PNG/JPEG tối đa 4 MB mỗi ảnh, tối đa 10 ảnh. Ảnh được lưu với giao dịch; chỉ Quản lý và Lễ tân được xem.</Form.Text>
     </Form.Group>}
     {busy && <div role="status"><Spinner size="sm" /> Đang tải ảnh…</div>}
     {error && <Alert variant="danger" className="mt-2">{error}</Alert>}

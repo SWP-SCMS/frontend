@@ -438,7 +438,8 @@ export default function ManagerCourseRunDetailPage() {
       <div className="bg-white rounded shadow-sm p-3">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h2 className="h5 mb-0">Lịch buổi học</h2>
-          <Button variant="danger" size="sm" onClick={openNewSession}>
+          <Button variant="danger" size="sm" onClick={openNewSession}
+            disabled={busy || ["CANCELLED", "COMPLETED", "SETTLEMENT_PENDING"].includes(run.status)}>
             + Thêm buổi học
           </Button>
         </div>
@@ -480,6 +481,7 @@ export default function ManagerCourseRunDetailPage() {
                     variant="outline-danger"
                     disabled={
                       busy ||
+                      ["CANCELLED", "COMPLETED", "SETTLEMENT_PENDING"].includes(run.status) ||
                       !["SCHEDULED", "MAKEUP_SCHEDULED"].includes(item.status)
                     }
                     onClick={() => openEditSession(item)}

@@ -26,7 +26,7 @@ test('T14 reconciliation has distinct columns and inline validation', async ({ p
   await page.getByRole('button', { name: 'Xác nhận đã nhận tiền', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.locator('.alert-warning')).toHaveCount(0);
-  await expect(dialog).toContainText('mã tham chiếu/FT');
+  await expect(dialog.locator('.form-text')).toHaveCount(0);
   await page.locator('#rec-reason').fill('a');
   await page.locator('#rec-evidence').click();
   await expect(page.locator('#rec-reason')).toHaveClass(/is-invalid/);

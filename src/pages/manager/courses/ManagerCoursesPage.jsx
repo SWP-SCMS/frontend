@@ -1,3 +1,4 @@
+import CourseImageField from '../../../components/common/CourseImageField';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +20,7 @@ export default function ManagerCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const courseForm = useForm({ resolver: zodResolver(courseCreateSchema), defaultValues: emptyForm });
   const { register, handleSubmit, reset: setForm, formState: { errors } } = courseForm;
   const [saving, setSaving] = useState(false);
@@ -90,17 +92,17 @@ export default function ManagerCoursesPage() {
         </div>
       </div>
 
-      <Modal show={showCreate} onHide={() => setShowCreate(false)} centered size="lg">
-        <Form noValidate onSubmit={handleSubmit(handleCreate)}><Modal.Header closeButton><Modal.Title>Tạo khóa học</Modal.Title></Modal.Header>
+      <Modal show={showCreate} onHide={() => { if (!saving && !uploadingImage) setShowCreate(false); }} backdrop={saving || uploadingImage ? "static" : true} keyboard={!saving && !uploadingImage} centered size="lg">
+        <Form noValidate onSubmit={(event) => { if (uploadingImage) { event.preventDefault(); return; } handleSubmit(handleCreate)(event); }}><Modal.Header closeButton><Modal.Title>Tạo khóa học</Modal.Title></Modal.Header>
           <Modal.Body>{error && <ErrorAlert error={error} title="Không thể lưu thay đổi" />}<Row className="g-3">
             <Col md={4}><Form.Label htmlFor="course-create-code">Mã khóa học *</Form.Label><Form.Control id="course-create-code" required maxLength={50} {...register('code')} isInvalid={!!errors.code} /><Form.Control.Feedback type="invalid">{errors.code?.message}</Form.Control.Feedback></Col>
             <Col md={8}><Form.Label htmlFor="course-create-name">Tên khóa học *</Form.Label><Form.Control id="course-create-name" required maxLength={200} {...register('name')} isInvalid={!!errors.name} /><Form.Control.Feedback type="invalid">{errors.name?.message}</Form.Control.Feedback></Col>
             <Col md={8}><Form.Label htmlFor="course-create-disciplineId">Bộ môn *</Form.Label><Form.Select id="course-create-disciplineId" required {...register('disciplineId')} isInvalid={!!errors.disciplineId}><option value="">-- Chọn bộ môn --</option>{disciplines.map((d) => <option key={d.id} value={d.id} disabled={d.status !== 'ACTIVE'}>{d.name}{d.status !== 'ACTIVE' ? ' (ngừng hoạt động)' : ''}</option>)}</Form.Select><Form.Control.Feedback type="invalid">{errors.disciplineId?.message}</Form.Control.Feedback></Col>
             <Col md={4}><Form.Label htmlFor="course-create-defaultMinimumEnrollment">Số đăng ký tối thiểu *</Form.Label><Form.Control id="course-create-defaultMinimumEnrollment" required type="number" min={1} {...register('defaultMinimumEnrollment')} isInvalid={!!errors.defaultMinimumEnrollment} /><Form.Control.Feedback type="invalid">{errors.defaultMinimumEnrollment?.message}</Form.Control.Feedback></Col>
-            <Col xs={12}><Form.Label htmlFor="course-create-imageUrl">Ảnh khóa học (URL)</Form.Label><Form.Control id="course-create-imageUrl" maxLength={500} {...register('imageUrl')} isInvalid={!!errors.imageUrl} /><Form.Control.Feedback type="invalid">{errors.imageUrl?.message}</Form.Control.Feedback></Col>
+            <Col xs={12}><CourseImageField id="course-create-imageUrl" form={courseForm} disabled={saving || uploadingImage} onUploading={setUploadingImage} /></Col>
             <Col xs={12}><Form.Label htmlFor="course-create-description">Mô tả</Form.Label><Form.Control id="course-create-description" as="textarea" rows={4} maxLength={2000} {...register('description')} isInvalid={!!errors.description} /><Form.Control.Feedback type="invalid">{errors.description?.message}</Form.Control.Feedback></Col>
           </Row></Modal.Body>
-          <Modal.Footer><Button variant="outline-secondary" onClick={() => setShowCreate(false)}>Hủy</Button><Button type="submit" variant="danger" disabled={saving}>{saving ? 'Đang lưu...' : 'Tạo khóa học'}</Button></Modal.Footer>
+          <Modal.Footer><Button variant="outline-secondary" disabled={saving || uploadingImage} onClick={() => setShowCreate(false)}>Hủy</Button><Button type="submit" variant="danger" disabled={saving || uploadingImage}>{saving ? 'Đang lưu...' : 'Tạo khóa học'}</Button></Modal.Footer>
         </Form>
       </Modal>
     </div>

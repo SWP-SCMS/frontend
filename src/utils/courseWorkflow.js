@@ -6,7 +6,7 @@ export const COURSE_REFUND_STATUS_LABELS = {
 
 export const COURSE_REFUND_SOURCE_LABELS = {
   MEMBER_WITHDRAWAL: 'Rút khóa học', COURSE_RUN_CANCELLED: 'Hủy đợt học', MATERIAL_CHANGE: 'Thay đổi đáng kể',
-  UNRESOLVED_SESSIONS: 'Buổi học chưa xử lý', TRANSFER_CREDIT_EXCESS: 'Chênh lệch chuyển đợt', PAYMENT_EXCEPTION: 'Điều chỉnh thanh toán',
+  UNRESOLVED_SESSIONS: 'Buổi học chưa xử lý', REDUCED_SESSION_COUNT: 'Hoàn tiền buổi bị giảm', TRANSFER_CREDIT_EXCESS: 'Chênh lệch chuyển đợt', PAYMENT_EXCEPTION: 'Điều chỉnh thanh toán',
 };
 
 export const COURSE_TRANSFER_STATUS_LABELS = {
