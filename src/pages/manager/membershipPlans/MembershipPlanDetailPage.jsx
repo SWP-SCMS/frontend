@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -40,7 +41,7 @@ export default function MembershipPlanDetailPage() {
       </header>
       <Card className="border-0 shadow-sm mb-3"><Card.Body>
         <dl className="row mb-0">
-          <dt className="col-sm-3 text-muted fw-normal">Trạng thái</dt><dd className="col-sm-9"><span className={`badge ${PLAN_STATUS_BADGE[plan.status]}`}>{plan.status}</span></dd>
+          <dt className="col-sm-3 text-muted fw-normal">Trạng thái</dt><dd className="col-sm-9"><span className={`badge ${PLAN_STATUS_BADGE[plan.status]}`}>{statusLabel(plan.status)}</span></dd>
           <dt className="col-sm-3 text-muted fw-normal">Ngày tạo</dt><dd className="col-sm-9">{formatDate(plan.createdAt)}</dd>
           <dt className="col-sm-3 text-muted fw-normal">Cập nhật</dt><dd className="col-sm-9">{formatDate(plan.updatedAt)}</dd>
           <dt className="col-sm-3 text-muted fw-normal">Phiên bản</dt><dd className="col-sm-9 mb-0">{plan.version ?? '—'}</dd>

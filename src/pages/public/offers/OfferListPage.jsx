@@ -21,6 +21,8 @@ import {
 } from '../../../content/offersContent';
 import {
   buildFeatures,
+  offerDescription,
+  isPremiumOffer,
   computeOfferPricing,
   findBestSavingsOfferId,
   formatDuration,
@@ -46,7 +48,7 @@ export default function OfferListPage() {
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
     try {
-      // Bỏ các gói chưa có mô tả hợp lệ (xem isDisplayableOffer).
+      // Giữ các gói đang mở bán; mô tả thiếu dùng quyền lợi làm dự phòng.
       commitValue(setOffers, (await listActiveOffers()).filter(isDisplayableOffer));
     } catch (err) { failed(err);
       commitError(setError, err);
@@ -223,7 +225,7 @@ function OfferCard({ offer, info, best }) {
   const showPerMonth = perMonth && Number(offer.durationDays) !== 30;
 
   return (
-    <article className="sof-card">
+    <article className={`sof-card${isPremiumOffer(offer) ? ' is-premium' : ''}`}>
       {best ? <span className="sof-ribbon">Tiết kiệm nhất</span> : null}
 
       <div className="sof-card-top">
@@ -234,8 +236,8 @@ function OfferCard({ offer, info, best }) {
       </div>
 
       <h3 className="sof-name">{offer.name}</h3>
-      {offer.description ? (
-        <p className="scms-home-muted small sof-desc">{offer.description}</p>
+      {offerDescription(offer) ? (
+        <p className="scms-home-muted small sof-desc">{offerDescription(offer)}</p>
       ) : null}
 
       <div className="sof-price">

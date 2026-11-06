@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 // Receptionist – Create a bank-transfer Membership Order for a Member (US16).
 //
 // BE: POST /api/v1/reception/members/{memberId}/membership-orders
@@ -258,7 +259,7 @@ export default function MembershipOrderCreatePage() {
 
       {isSuspended ? (
         <Alert variant="danger">
-          Tài khoản đang ở trạng thái <strong>{member.status}</strong> nên không thể
+          Tài khoản đang ở trạng thái <strong>{statusLabel(member.status)}</strong> nên không thể
           tạo đơn gói tập mới.
         </Alert>
       ) : null}
@@ -348,7 +349,7 @@ export default function MembershipOrderCreatePage() {
                   <dt className="col-5 text-muted fw-normal">Phương thức</dt>
                   <dd className="col-7">{created.paymentMethod}</dd>
                   <dt className="col-5 text-muted fw-normal">Trạng thái</dt>
-                  <dd className="col-7">{created.status}</dd>
+                  <dd className="col-7">{statusLabel(created.status)}</dd>
                   <dt className="col-5 text-muted fw-normal">Đã tạo lúc</dt>
                   <dd className="col-7">{formatDateTime(created.createdAt)}</dd>
                 </dl>

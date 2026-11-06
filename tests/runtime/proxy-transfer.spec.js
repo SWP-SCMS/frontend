@@ -20,8 +20,10 @@ test('SYSTEM_CLOCK Reception waitlist join/leave/accept, owner guard and cash fu
   await login(page, 'reception', '/reception/courses');
   await page.getByLabel('Mã hội viên hoặc số điện thoại').fill(env.accounts.member2.memberCode);
   await page.getByRole('button', { name: 'Tra cứu', exact: true }).click();
-  page.once('dialog', async d => { expect(d.message()).toContain('Nhận chỗ'); await d.accept(); });
   await page.getByRole('button', { name: 'Nhận chỗ / mở đơn', exact: true }).click();
+  const confirmation = page.getByRole('dialog');
+  await expect(confirmation).toContainText('Nhận chỗ');
+  await confirmation.getByRole('button', { name: 'Xác nhận', exact: true }).click();
   await page.getByRole('link', { name: 'Mở đơn để thanh toán tiền mặt/chuyển khoản' }).click();
   await page.getByRole('button', { name: 'Xác nhận đã nhận đủ tiền mặt', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Xác nhận thu tiền', exact: true }).click();
@@ -49,8 +51,13 @@ for (const [name, day, tuition] of [['cheaper', 4, 300000], ['expensive', 7, 700
     const offer = await api(request, 'manager', 'POST', `/manager/course-transfer-requests/${transfer.id}/approve`, { targetRunId: target.id, reason: 'QA synthetic transfer' });
     expect(offer.differenceVnd).toBe(tuition - 500000);
     await login(page, 'reception', `/reception/courses?orderId=${order.orderId}&memberCode=${env.accounts.member.memberCode}`);
-    page.once('dialog', async d => { expect(d.message()).toContain('Chấp nhận chuyển'); expect(d.message()).toContain('Chênh lệch học phí'); expect(d.message()).not.toContain('Yêu cầu rút'); await d.accept(); });
-    await page.getByRole('button', { name: 'Chấp nhận chuyển hộ', exact: true }).click();
+    const offerCard = page.getByRole('article').filter({ hasText: target.runCode });
+    await offerCard.getByRole('button', { name: 'Chấp nhận chuyển hộ', exact: true }).click();
+    const confirmation = page.getByRole('dialog');
+    await expect(confirmation).toContainText('Chấp nhận chuyển');
+    await expect(confirmation).toContainText('Chênh lệch học phí');
+    await expect(confirmation).not.toContainText('Yêu cầu rút');
+    await confirmation.getByRole('button', { name: 'Xác nhận', exact: true }).click();
     if (tuition > 500000) {
       await page.getByRole('link', { name: 'Mở đơn để thanh toán tiền mặt/chuyển khoản' }).click();
       await expect(page.getByText('200.000 ₫', { exact: false }).first()).toBeVisible();

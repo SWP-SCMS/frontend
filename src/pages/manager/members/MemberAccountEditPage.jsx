@@ -59,6 +59,7 @@ function accountToForm(data) {
 }
 
 export default function MemberAccountEditPage() {
+  const [maxBirthDate] = useState(() => new Date().toISOString().slice(0, 10));
   const { accountId } = useParams();
   const navigate = useNavigate();
 
@@ -273,7 +274,7 @@ export default function MemberAccountEditPage() {
               <RhfDateInput
                 control={control}
                 name="birthDate"
-                max={new Date().toISOString().slice(0, 10)}
+                max={maxBirthDate}
                 isInvalid={Boolean(errors.birthDate)}
               />
               <Form.Control.Feedback type="invalid">

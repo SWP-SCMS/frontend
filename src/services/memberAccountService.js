@@ -19,12 +19,14 @@ import api from './api';
 export async function searchMemberAccounts({
   query,
   status,
+  planCode,
   page = 0,
   size = 20,
 } = {}) {
   const params = {};
   if (query && query.trim()) params.query = query.trim();
   if (status) params.status = status;
+  if (planCode) params.planCode = planCode;
   params.page = page;
   params.size = size;
 

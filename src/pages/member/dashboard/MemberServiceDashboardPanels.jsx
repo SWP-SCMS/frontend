@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Ba thẻ dành cho hội viên đang có gói tập ACTIVE trên trang tổng quan:
 //   1. Thời gian còn lại của gói  : từ Membership ACTIVE (startsAt / endsAt)
 //   2. Lịch tập sắp tới           : GET /members/me/bookings?status=BOOKED
@@ -47,33 +47,38 @@ function planTime(membership) {
 export default function MemberServiceDashboardPanels({ membership }) {
   const [bookings, setBookings] = useState([]);
   const [feedback, setFeedback] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [scheduleLoading, setScheduleLoading] = useState(true);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+  const [scheduleError, setScheduleError] = useState(null);
+  const [feedbackError, setFeedbackError] = useState(null);
   const [now] = useState(() => Date.now()); // mốc "bây giờ" lúc mở trang
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
-    let cancelled = false;
-    // Hai API độc lập: một cái lỗi thì cái kia vẫn hiện.
-    track(Promise.allSettled([
+  // Lịch và nhận xét tải độc lập, không chờ API của khối còn lại.
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(Promise.all([
       listAllMyBookedBookings(),
-      listMyFeedback({ page: 0, size: MAX_FEEDBACK }),
       listMyCourseEnrollments(),
-    ]).then(
-      ([b, f, c]) => {
-        if (cancelled) return;
-        const rejected = [b, f, c].find(result => result.status === 'rejected');
-        if (background && rejected) { failed(rejected.reason); return; }
-        commitValue(setBookings, [...(b.status === 'fulfilled' ? b.value : []), ...(c.status === 'fulfilled' ? courseScheduleEntries(c.value) : [])]);
-        if (f.status === 'fulfilled') commitValue(setFeedback, f.value.content);
-        const failure = [b, f, c].find((r) => r.status === 'rejected');
-        if (failure) commitError(setError, failure.reason);
-        if (!background) commitValue(setLoading, false);
-      },
-    ));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    ]).then(([booked, courses]) => {
+      const value = [...booked, ...courseScheduleEntries(courses)];
+      commitValue(setBookings, value);
+    }).catch(err => {
+      failed(err);
+      commitError(setScheduleError, err);
+    }).finally(() => {
+      if (!background) commitValue(setScheduleLoading, false);
+    }));
+  }, [], { key: ['member-schedule'], setters: [setBookings], setLoading: setScheduleLoading });
+
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    track(listMyFeedback({ page: 0, size: MAX_FEEDBACK }).then(value => {
+      commitValue(setFeedback, value.content);
+    }).catch(err => {
+      failed(err);
+      commitError(setFeedbackError, err);
+    }).finally(() => {
+      if (!background) commitValue(setFeedbackLoading, false);
+    }));
+  }, [], { key: ['member-dashboard-feedback'], setters: [setFeedback], setLoading: setFeedbackLoading });
 
   // Buổi chưa kết thúc, sớm nhất trước.
   const upcoming = useMemo(() => {
@@ -147,12 +152,6 @@ export default function MemberServiceDashboardPanels({ membership }) {
         </div>
       </div>
 
-      <ErrorAlert
-        error={error}
-        title="Không tải được một phần dữ liệu"
-        onClose={() => setError(null)}
-      />
-
       <div className="scms-md-card">
         <div className="scms-md-card-head">
           <div>
@@ -163,10 +162,12 @@ export default function MemberServiceDashboardPanels({ membership }) {
             Xem tất cả lịch
           </Link>
         </div>
-        {loading ? (
+        {scheduleLoading ? (
           <div className="scms-md-center">
             <Spinner animation="border" variant="danger" />
           </div>
+        ) : scheduleError ? (
+          <ErrorAlert error={scheduleError} title="Không tải được lịch tập" />
         ) : upcoming.length === 0 ? (
           <div className="scms-pd-muted">
             Bạn chưa có buổi tập nào sắp tới.{' '}
@@ -199,10 +200,12 @@ export default function MemberServiceDashboardPanels({ membership }) {
             <span className="sub">Nhận xét mới nhất dành cho bạn</span>
           </div>
         </div>
-        {loading ? (
+        {feedbackLoading ? (
           <div className="scms-md-center">
             <Spinner animation="border" variant="danger" />
           </div>
+        ) : feedbackError ? (
+          <ErrorAlert error={feedbackError} title="Không tải được nhận xét" />
         ) : latestFeedback.length === 0 ? (
           <div className="scms-pd-muted">Coach chưa gửi đánh giá nào.</div>
         ) : (

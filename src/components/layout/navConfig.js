@@ -30,11 +30,16 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/reception/membership-offers', label: 'Gói tập' },
         { to: '/reception/membership-requests', label: 'Yêu cầu gói tập' },
         { to: '/reception/orders/new', label: 'Tạo đơn gói tập' },
+        { to: '/reception/payments/reconcile', label: 'Đối soát gói tập' },
+        { to: '/reception/refunds', label: 'Hoàn tiền gói tập' },
+      ],
+    },
+    {
+      label: 'Khóa học',
+      items: [
         { to: '/reception/courses', label: 'Đăng ký khóa học' },
-        { to: '/reception/course-refunds', label: 'Hoàn tiền khóa học' },
-        { to: '/reception/payments/reconcile', label: 'Đối soát' },
         { to: '/reception/course-payments/reconcile', label: 'Đối soát khóa học' },
-        { to: '/reception/refunds', label: 'Hoàn tiền' },
+        { to: '/reception/course-refunds', label: 'Hoàn tiền khóa học' },
       ],
     },
     {
@@ -182,7 +187,19 @@ export const MEMBER_SIDEBAR_ITEMS = [
     label: 'Khóa học',
     items: [
       { to: '/member/course-catalog', label: 'Khám phá khóa học', icon: 'clipboard' },
-      { to: '/member/courses', label: 'Khóa học của tôi', icon: 'calendar' },
+      { to: '/member/courses', label: 'Khóa học của tôi', icon: 'calendar', end: true },
+      { to: '/member/courses/history', label: 'Lịch sử khóa học', icon: 'clipboard' },
+      { to: '/member/courses/waitlist', label: 'Danh sách chờ', icon: 'clipboard' },
+    ],
+  },
+  {
+    label: 'Yêu cầu khóa học',
+    collapsible: true,
+    items: [
+      { to: '/member/courses/schedule-changes', label: 'Thay đổi lịch học', icon: 'calendar' },
+      { to: '/member/courses/transfers', label: 'Chuyển đợt học', icon: 'calendar' },
+      { to: '/member/courses/withdrawals', label: 'Rút khóa học', icon: 'clipboard' },
+      { to: '/member/courses/refunds', label: 'Hoàn tiền khóa học', icon: 'receipt' },
     ],
   },
   {

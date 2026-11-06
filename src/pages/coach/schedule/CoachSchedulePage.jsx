@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Lịch phụ trách của Huấn luyện viên: lịch tuần (Thứ Hai → Chủ Nhật) các buổi
 // MÌNH đứng lớp. Giao diện dùng lại CSS của "Lịch của tôi" bên Hội viên (mcs-*).
 //
@@ -87,9 +87,9 @@ export default function CoachSchedulePage() {
     }
   }, [weekRange]);
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     track(load({ background, commitValue, commitError, failed }));
-  }, [load]);
+  }, [load], { key: ['coach-week', calYmd], setters: [setSessions], setLoading });
 
   const setWeek = useCallback(
     (ymd) => {
@@ -318,7 +318,7 @@ function SessionCard({ session, onClick }) {
       <div className="mcs-cal-session-meta">
         <span>{s.roomName || '—'}</span>
         <span> · </span>
-        <span>Tối đa {s.capacity}</span>
+        <span>{s.bookedCount ?? '—'} / {s.capacity ?? '—'} học viên</span>
       </div>
       <div className="mcs-cal-session-foot">
         {s.classType ? (

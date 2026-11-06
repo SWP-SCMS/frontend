@@ -622,6 +622,7 @@ export default function ManagerSessionListPage() {
             phòng tập và trạng thái.
           </p>
         </div>
+        <Button as={Link} to="/manager/classes" variant="danger">+ Tạo buổi · Chọn lớp</Button>
         <ButtonGroup size="sm" aria-label="Chế độ hiển thị">
           {VIEW_OPTIONS.map((opt) => (
             <Button
@@ -1017,7 +1018,7 @@ function ListView({
             <th>Lớp học</th>
             <th>Huấn luyện viên</th>
             <th>Phòng tập</th>
-            <th>Sức chứa</th>
+            <th>Đã đặt / Sức chứa</th>
             <th>Trạng thái</th>
           </tr>
         </thead>
@@ -1068,7 +1069,7 @@ function ListView({
                 </td>
                 <td>{coachName}</td>
                 <td>{roomName}</td>
-                <td>{typeof s.capacity === 'number' ? s.capacity : '—'}</td>
+                <td>{s.bookedCount ?? '—'} / {s.capacity ?? '—'}</td>
                 <td>
                   <span
                     className={`badge ${statusBadge[status] || 'bg-light text-dark'}`}
@@ -1237,7 +1238,7 @@ function CalendarView({
 
   // YYYY-MM-DD for "today" in the gym zone — used to subtly highlight
   // today's column when it belongs to the displayed week.
-  const todayYmd = useMemo(() => {
+  const [todayYmd] = useState(() => {
     const now = new Date();
     if (Number.isNaN(now.getTime())) return '';
     return now.toLocaleDateString('en-CA', {
@@ -1246,7 +1247,7 @@ function CalendarView({
       month: '2-digit',
       day: '2-digit',
     });
-  }, []);
+  });
 
   return (
     <div className="msl-cal">
@@ -1376,6 +1377,7 @@ function CalendarView({
                             <div className="msl-cal-session-meta">
                               {coachName} · {roomName}
                             </div>
+                            <div className="small">{s.bookedCount ?? '—'} / {s.capacity ?? '—'} đã đặt</div>
                             <div className="msl-cal-session-status">
                               <span
                                 className={`badge ${statusBadge[status] || 'bg-light text-dark'}`}

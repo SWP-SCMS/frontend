@@ -16,6 +16,8 @@ import { listActiveOffers } from '../../../services/membershipService';
 import { formatPrice } from '../../../utils';
 import {
   buildFeatures,
+  offerDescription,
+  isPremiumOffer,
   computeOfferPricing,
   findBestSavingsOfferId,
   formatDuration,
@@ -242,7 +244,7 @@ export default function MemberOfferSection({ blockedReason = null }) {
                   const showPerMonth =
                     info?.perMonth && Number(offer.durationDays) !== 30;
                   return (
-                    <article key={offer.offerId} className="scms-mo-card">
+                    <article key={offer.offerId} className={`scms-mo-card${isPremiumOffer(offer) ? ' is-premium' : ''}`}>
                       {offer.offerId === bestId ? (
                         <span className="scms-mo-ribbon">Tiết kiệm nhất</span>
                       ) : null}
@@ -255,8 +257,8 @@ export default function MemberOfferSection({ blockedReason = null }) {
                         </span>
                       </div>
                       <h4 className="scms-mo-name">{offer.name}</h4>
-                      {offer.description ? (
-                        <p className="scms-mo-desc">{offer.description}</p>
+                      {offerDescription(offer) ? (
+                        <p className="scms-mo-desc">{offerDescription(offer)}</p>
                       ) : null}
                       <div className="scms-mo-price">
                         {formatPrice(offer.priceAmount, offer.currencyCode)}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Alert, Button, Card, Col, Row, Spinner, Stack } from 'react-bootstrap';
+import { Alert, Button, Card, Spinner, Stack } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getReceipt } from '../../../services/receptionistService';
@@ -130,13 +130,10 @@ export default function ReceiptPage({ memberMode = false }) {
     <div className="receipt-print-area">
       <Stack
         direction="horizontal"
-        className="no-print mb-3 flex-wrap gap-2"
+        className="receipt-toolbar no-print mb-3 flex-wrap gap-2"
       >
-        <div>
+        <div className="receipt-heading">
           <h1 className="h4 fw-bold mb-1">Biên lai {receipt.receiptNumber}</h1>
-          <p className="text-muted small mb-0">
-            In để khách giữ lại — đây là bằng chứng đã thanh toán.
-          </p>
         </div>
         <div className="ms-auto d-flex gap-2">
           <Button variant="danger" size="sm" onClick={() => window.print()} disabled={exporting}>
@@ -153,8 +150,7 @@ export default function ReceiptPage({ memberMode = false }) {
         </div>
       </Stack>
 
-      <Row>
-        <Col lg={8}>
+
           <Card className="receipt-sheet border-0 shadow-sm">
             <Card.Body className="p-4">
               <div className="text-center mb-3">
@@ -182,21 +178,9 @@ export default function ReceiptPage({ memberMode = false }) {
                 Cảm ơn quý khách. Vui lòng giữ lại biên lai này.
               </div>
 
-              <div className="receipt-signature">
-                <div>
-                  Người mua
-                  <div className="receipt-signature-line">&nbsp;</div>
-                </div>
-                <div>
-                  Người nhận
-                  <div className="receipt-signature-line">&nbsp;</div>
-                </div>
-              </div>
-
             </Card.Body>
           </Card>
-        </Col>
-      </Row>
+
 
       <div className="no-print mt-3 d-flex gap-2">
         <Button as={Link} to={memberMode ? '/member/receipts' : '/reception/orders/new'} variant="outline-secondary" size="sm">

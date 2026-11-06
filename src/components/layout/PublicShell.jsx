@@ -1,3 +1,4 @@
+import { useState } from 'react';
 // PublicShell — chrome for the pre-login marketing/auth pages. Slightly
 // different look/feel from AppShell so guests don't feel like they're
 // already inside the product.
@@ -16,6 +17,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 
 export default function PublicShell({ children }) {
+  const [copyrightYear] = useState(() => new Date().getFullYear());
   const { isAuthenticated, isReady, user, logout } = useAuth();
 
   // While we're still figuring out whether the user has a valid session,
@@ -100,7 +102,7 @@ export default function PublicShell({ children }) {
       <footer className="bg-dark text-white-50 py-4 mt-5">
         <Container className="d-flex flex-wrap justify-content-between gap-2">
           <small>
-            © {new Date().getFullYear()} SWP GYM — Sports Center Management System
+            © {copyrightYear} SWP GYM — Sports Center Management System
           </small>
           <small>Liên hệ: support@scms.local</small>
         </Container>

@@ -1,4 +1,5 @@
 import api from './api';
+import { API_BASE_URL } from '../constants';
 import { normalizeCoursePage, courseIdempotencyConfig } from './courseServiceUtils';
 
 export async function listManagerCourses({ page = 0, size = 20 } = {}) {
@@ -78,9 +79,14 @@ export async function openManagerCourseRunRegistration(
   return data;
 }
 
-export async function cancelManagerCourseRun(runId, expectedVersion) {
+export async function getCourseCancellationImpact(runId) {
+  return (await api.get(`/manager/course-runs/${runId}/cancellation-impact`)).data;
+}
+
+export async function cancelManagerCourseRun(runId, expectedVersion, reason) {
   const { data } = await api.post(`/manager/course-runs/${runId}/cancel`, {
     expectedVersion,
+    reason,
   });
   return data;
 }
@@ -127,3 +133,20 @@ export async function updateCourseRunSchedule(id, payload) { return (await api.p
 export async function cancelCourseSessionWithMakeup(runId, sessionId, payload) { return (await api.post(`/manager/course-runs/${runId}/sessions/${sessionId}/cancel-with-makeup`, payload)).data; }
 
 export async function rescheduleCourseRun(id, payload, key) { return (await api.post(`/manager/course-runs/${id}/reschedule`, payload, courseIdempotencyConfig(key))).data; }
+
+export async function uploadCourseImage(file) {
+  const body = new FormData();
+  body.append('file', file);
+  const { data } = await api.post('/manager/courses/images', body);
+  return `${API_BASE_URL.replace(/\/$/, '')}${data.imageUrl}`;
+}
+
+export async function previewCourseWeeklySchedule(schedule, signal) {
+  const { data } = await api.post('/manager/course-runs/preview-schedule', schedule, { signal });
+  return data;
+}
+
+export async function createWeeklyCourseRun(payload) {
+  const { data } = await api.post('/manager/course-runs/with-schedule', payload);
+  return data;
+}

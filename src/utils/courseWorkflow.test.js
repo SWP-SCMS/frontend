@@ -69,7 +69,7 @@ test('financial verification requires explicit evidence and preserves exact inte
 test('notifications route by role and target type without treating offer IDs as request IDs', () => {
   const refund = { notificationType: 'COURSE_REFUND_VERIFICATION_READY', targetType: 'COURSE_REFUND_OBLIGATION', targetId: 'refund-id' };
   assert.equal(courseNotificationDestination(refund, 'manager'), '/manager/course-refunds?id=refund-id');
-  assert.equal(courseNotificationDestination(refund, 'member'), '/member/courses#refunds');
+  assert.equal(courseNotificationDestination(refund, 'member'), '/member/courses/refunds');
   assert.equal(courseNotificationDestination(refund, 'reception'), '/reception/course-refunds');
   assert.equal(courseNotificationDestination({ notificationType: 'COURSE_TRANSFER_COMPLETED', targetType: 'COURSE_TRANSFER_OFFER', targetId: 'offer-id' }, 'manager'), '/manager/course-transfers');
   assert.equal(courseNotificationDestination({ notificationType: 'COURSE_TRANSFER_REQUESTED', targetType: 'COURSE_TRANSFER_REQUEST', targetId: 'a&b' }, 'manager'), '/manager/course-transfers?id=a%26b');

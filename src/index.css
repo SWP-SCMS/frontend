@@ -52,6 +52,10 @@ body {
 /* Bootstrap primary → SCMS red. Any future `btn-primary` automatically
    matches the brand without us having to remember `variant="danger"`. */
 .btn-primary {
+  --bs-btn-disabled-bg: var(--scms-red);
+  --bs-btn-disabled-border-color: var(--scms-red);
+  --bs-btn-disabled-color: var(--scms-on-primary);
+  --bs-btn-focus-shadow-rgb: 183, 0, 17;
   --bs-btn-bg: var(--scms-red);
   --bs-btn-border-color: var(--scms-red);
   --bs-btn-hover-bg: var(--scms-red-dark);
@@ -64,13 +68,22 @@ body {
 }
 
 .btn-danger {
+  --bs-btn-active-bg: var(--scms-red-dark);
+  --bs-btn-active-border-color: var(--scms-red-dark);
+  --bs-btn-disabled-bg: var(--scms-red);
+  --bs-btn-disabled-border-color: var(--scms-red);
+  --bs-btn-focus-shadow-rgb: 183, 0, 17;
   --bs-btn-bg: var(--scms-red);
   --bs-btn-border-color: var(--scms-red);
   --bs-btn-hover-bg: var(--scms-red-dark);
   --bs-btn-hover-border-color: var(--scms-red-dark);
 }
 
-.btn-outline-primary {
+.btn-outline-primary,
+.btn-outline-danger {
+  --bs-btn-disabled-color: var(--scms-red);
+  --bs-btn-disabled-border-color: var(--scms-red);
+  --bs-btn-focus-shadow-rgb: 183, 0, 17;
   --bs-btn-color: var(--scms-red);
   --bs-btn-border-color: var(--scms-red);
   --bs-btn-hover-bg: var(--scms-red);
@@ -110,9 +123,27 @@ footer small {
 }
 
 /* Make form controls visually consistent with our minimal style */
-.form-control:focus {
+.form-control:not(.is-invalid):focus,
+.form-select:not(.is-invalid):focus,
+.form-check-input:focus {
   border-color: var(--scms-red);
   box-shadow: 0 0 0 0.2rem rgba(183, 0, 17, 0.18);
+}
+
+.form-check-input:checked { background-color: var(--scms-red); border-color: var(--scms-red); }
+.form-control[readonly], .scms-login-input[readonly] { background-color: var(--scms-surface-low); color: #526071; }
+.btn { --bs-btn-border-radius: .5rem; font-weight: 600; }
+.btn:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--scms-red); outline-offset: 3px; }
+
+/* Ba màn mẫu dùng cùng nhịp khoảng cách, tiêu đề và bố cục nhỏ. */
+.scms-course-workspace { padding: 1rem 0; min-width: 0; }
+.scms-course-workspace h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: .5rem; }
+.scms-course-workspace h2 { font-size: 1.25rem; font-weight: 650; }
+.scms-course-workspace .d-flex { flex-wrap: wrap; }
+.scms-course-workspace .card { margin-bottom: 1rem; }
+@media (max-width: 575.98px) {
+  .scms-course-workspace h1 { font-size: 1.5rem; }
+  .scms-course-workspace .form-control, .scms-course-workspace .form-select { min-width: 0; }
 }
 
 /* Slightly softer card surface so it still feels elevated on the

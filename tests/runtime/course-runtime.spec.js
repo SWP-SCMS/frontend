@@ -111,7 +111,7 @@ test('SYSTEM_CLOCK Member sees legacy missing snapshot as unknown with restored 
   const legacy = await api(request, 'member', 'GET', `/members/me/course-withdrawal-requests/${env.legacyRequestId}`);
   expect(legacy.status).toBe('CANCELLED'); expect(legacy.snapshotSource).toBe('UNAVAILABLE');
   expect(legacy.refundAmountVnd).toBeNull(); expect(legacy.canCancel).toBe(false);
-  await login(page, 'member', '/member/courses');
+  await login(page, 'member', '/member/courses/withdrawals');
   const card = page.locator('#withdrawals article').filter({ hasText: 'QA legacy historical request' });
   await expect(card).toContainText('Khoản hoàn chưa có snapshot: Chưa xác định');
   await expect(card).toContainText('Yêu cầu cũ không có dữ liệu chốt khoản hoàn');

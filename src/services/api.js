@@ -12,6 +12,7 @@
 //   - If refresh fails, we surface an `auth:logout` event and reject.
 
 import axios from 'axios';
+import { clearQueryCache } from '../utils/queryCache';
 import { API_BASE_URL } from '../constants';
 
 const api = axios.create({
@@ -29,6 +30,10 @@ let accessTokenPayload = null; // Decoded JWT payload — small role data for bo
 let onUnauthorized = null; // () => void, registered by AuthContext
 
 export function setAccessToken(token) {
+  const nextIdentity = decodeJwtPayload(token)?.sub;
+  if (!token || nextIdentity !== accessTokenPayload?.sub) {
+    clearQueryCache();
+  }
   accessToken = token || null;
   accessTokenPayload = decodeJwtPayload(accessToken);
 }
@@ -92,7 +97,13 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor: handle 401 by attempting a refresh + retry once.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Mọi thao tác ghi thành công làm hết hạn cache; GET vẫn luôn đi tới BE.
+    if (!['get', 'head', 'options'].includes((response.config?.method || 'get').toLowerCase())) {
+      clearQueryCache();
+    }
+    return response;
+  },
   async (error) => {
     const { response, config } = error || {};
     const status = response?.status;

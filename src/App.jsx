@@ -7,16 +7,10 @@
 // root component minimal so individual page modules own their own
 // concerns (forms, layouts, etc.).
 
-import { BrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import AppRoutes from './routes/AppRoutes';
 
-export default function App() {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
-  );
-}
+const router = createBrowserRouter([{ path: '*', element: <AuthProvider><AppRoutes /></AuthProvider> }]);
+
+export default function App() { return <RouterProvider router={router} />; }

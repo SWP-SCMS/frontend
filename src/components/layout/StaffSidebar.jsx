@@ -22,6 +22,10 @@ import StaffIcon from './StaffIcon';
 // APP_SHELL_NAV_ITEMS có trường `icon` (nó không có — đó là thiết kế cố ý).
 function iconForRoute(to) {
   if (!to) return 'dashboard';
+  if (to.includes('refund')) return 'cash';
+  if (to.includes('withdrawal') || to.includes('transfer') || to.includes('reconcile')) return 'reconcile';
+  if (to.includes('leave-request')) return 'calendar';
+  if (to.startsWith('/reception/courses')) return 'class';
   // Dashboard entries
   if (to === '/manager/dashboard' || to === '/reception/dashboard') return 'dashboard';
   if (to.endsWith('/profile')) return 'user';

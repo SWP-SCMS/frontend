@@ -31,6 +31,7 @@ function notificationDestination(item, pathname) {
     ].includes(type)) {
       return '/member/dashboard#my-coach';
     }
+    if (type === 'PAYMENT_FAILED') return '/member/plan';
     if (type === 'PAYMENT_PAID' || type?.startsWith('MEMBERSHIP_REFUND_')) {
       return '/member/receipts';
     }
@@ -53,6 +54,7 @@ function notificationDestination(item, pathname) {
   }
 
   if (role === 'coach') {
+    if (type?.startsWith('COACH_LEAVE_')) return '/coach/leave-requests';
     if (sessionId && ['SESSION_CANCELLED', 'SESSION_ROOM_CHANGED', 'SESSION_RESCHEDULED'].includes(type)) {
       return `/coach/schedule/${encodeURIComponent(sessionId)}`;
     }

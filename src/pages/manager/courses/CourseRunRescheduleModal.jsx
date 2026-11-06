@@ -56,6 +56,7 @@ export default function CourseRunRescheduleModal({ run, sessions, onClose, onSav
         <CourseDateTimeInput control={control} name="plannedEndAt" label="Kết thúc" />
         <p className="text-danger">{errors.plannedEndAt?.message}</p>
         <Form.Label htmlFor="reschedule-units">Số buổi giữ lại</Form.Label><Form.Control id="reschedule-units" type="number" min="1" max={run.totalUnits} {...register('totalUnits')} />
+        <p className="text-muted">Buổi bị giảm được hoàn theo phần tiền đã chốt lúc học viên thanh toán; không chia lại học phí theo số buổi mới.</p>
         <p className="text-danger">{errors.totalUnits?.message}</p>
         {editable.map((s, i) => <section key={s.id} className="border rounded p-3 mt-3">
           <h3 className="h6">Buổi {s.unitNumber}{s.isMakeup ? ' · Học bù' : ''} · {s.roomName} · {s.coachName}</h3>

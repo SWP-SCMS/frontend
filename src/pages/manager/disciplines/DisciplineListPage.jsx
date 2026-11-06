@@ -1,4 +1,5 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import { statusLabel } from '../../../utils/statusLabels';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Discipline list & search (US23).
 //
 // BE: GET /api/v1/manager/disciplines
@@ -56,7 +57,7 @@ export default function DisciplineListPage() {
   }, [query]);
 
   // Single fetch on mount. Filter / search is purely client-side.
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
@@ -77,7 +78,7 @@ export default function DisciplineListPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [], { key: ['manager-disciplines'], setters: [setDisciplines], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);
@@ -167,7 +168,7 @@ export default function DisciplineListPage() {
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
-                  {row.status || '—'}
+                  {statusLabel(row.status)}
                 </span>
               </td>
               <td className="text-end">

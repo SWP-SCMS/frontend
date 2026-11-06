@@ -36,6 +36,7 @@ import {
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import EmptyState from '../../../components/common/EmptyState';
+import PaymentEvidenceImages from './PaymentEvidenceImages';
 import {
   QUEUE_FILTER,
   RECONCILE_STATUS,
@@ -105,7 +106,9 @@ export default function PaymentReconciliationPage() {
     evidence: '',
     reason: '',
   });
+  const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
   // Canonical post-reconcile state (Membership / Receipt ids), fetched only
@@ -165,6 +168,7 @@ export default function PaymentReconciliationPage() {
   function openDecision(item, target) {
     setActive(item);
     setOutcome(target);
+    setTouched({});
     setSubmitError(null);
     setResult(null);
     setResultError(null);
@@ -182,7 +186,7 @@ export default function PaymentReconciliationPage() {
   }
 
   function closeDecision() {
-    if (submitting) return;
+    if (submitting || uploading) return;
     setActive(null);
     setSubmitError(null);
   }
@@ -212,14 +216,14 @@ export default function PaymentReconciliationPage() {
         return 'Cần nhập nội dung chuyển khoản để đối chiếu.';
       }
       if (!form.providerTransactionId.trim()) {
-        return 'Cần nhập mã giao dịch / reference từ ngân hàng hoặc provider.';
+        return 'Cần nhập mã tham chiếu giao dịch từ ngân hàng.';
       }
     }
     return null;
   }, [active, form, isPaid]);
 
   async function handleConfirm() {
-    if (!active || validationMessage) return;
+    if (!active || validationMessage || submitting || uploading) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -279,7 +283,7 @@ export default function PaymentReconciliationPage() {
       <Table hover responsive className="align-middle mb-0">
         <thead className="table-light">
           <tr>
-            <th>Mã thanh toán</th>
+
             <th>Đơn / Hội viên</th>
             <th>Số tiền</th>
             <th>Nội dung CK</th>
@@ -292,9 +296,6 @@ export default function PaymentReconciliationPage() {
             const expired = isWindowExpired(row);
             return (
               <tr key={row.paymentId}>
-                <td>
-                  <code className="small">{row.paymentReference || 'Chưa có mã'}</code>
-                </td>
                 <td>
                   <div className="fw-semibold">
                     {row.memberName || '—'}
@@ -444,10 +445,6 @@ export default function PaymentReconciliationPage() {
           {active ? (
             <>
               <dl className="row small mb-3">
-                <dt className="col-sm-3 text-muted fw-normal">Mã thanh toán</dt>
-                <dd className="col-sm-9 mb-1">
-                  <code>{active.paymentReference || 'Chưa có mã'}</code>
-                </dd>
                 <dt className="col-sm-3 text-muted fw-normal">Hội viên</dt>
                 <dd className="col-sm-9 mb-1">
                   {active.memberName || '—'}{active.memberCode ? ` (${active.memberCode})` : ''}
@@ -492,9 +489,6 @@ export default function PaymentReconciliationPage() {
                           }
                           required
                         />
-                        <Form.Text className="text-muted">
-                          Phải khớp đúng số tiền của đơn.
-                        </Form.Text>
                       </Form.Group>
                     </Col>
                     <Col md={8}>
@@ -510,10 +504,6 @@ export default function PaymentReconciliationPage() {
                           placeholder="Ví dụ: FT25092ABC123"
                           required
                         />
-                        <Form.Text className="text-muted">
-                          Lấy từ sao kê ngân hàng hoặc SePay. Mỗi mã chỉ được
-                          dùng cho một giao dịch thanh toán.
-                        </Form.Text>
                       </Form.Group>
                     </Col>
                     <Col md={12}>
@@ -528,57 +518,56 @@ export default function PaymentReconciliationPage() {
                           }
                           required
                         />
-                        <Form.Text className="text-muted">
-                          Phải khớp <strong>chính xác</strong> nội dung hệ
-                          thống yêu cầu — hệ thống so sánh tuyệt đối.
-                        </Form.Text>
                       </Form.Group>
                     </Col>
                   </>
                 ) : null}
 
                 <Col md={12}>
+                  <PaymentEvidenceImages
+                    key={active.paymentId}
+                    paymentId={active.paymentId}
+                    disabled={submitting}
+                    onBusy={setUploading}
+                    onUploaded={() => setForm(previous => ({ ...previous, evidence: previous.evidence.trim() || 'Đối chiếu ảnh chứng từ đã đính kèm giao dịch.' }))}
+                  />
                   <Form.Group controlId="rec-evidence">
                     <Form.Label className="small mb-1">
-                      Bằng chứng đối soát
+                      Nguồn chứng từ đối chiếu
                     </Form.Label>
                     <Form.Control
                       as="textarea"
                       rows={2}
                       value={form.evidence}
+                      onBlur={() => setTouched(t => ({ ...t, evidence: true }))}
+                      isInvalid={touched.evidence && form.evidence.trim().length < EVIDENCE_MIN}
                       onChange={(e) => updateField('evidence', e.target.value)}
                       placeholder="Ví dụ: Ảnh chụp báo cáo tài khoản ngày 04/10, số dư khớp."
                       required
                     />
-                    <Form.Text className="text-muted">
-                      Mô tả nguồn đối chiếu: ảnh sao kê, báo cáo ngân hàng,
-                      mã giao dịch, thời điểm kiểm tra.
-                    </Form.Text>
-                  </Form.Group>
+                  <Form.Control.Feedback type="invalid">Vui lòng nhập ít nhất 5 ký tự.</Form.Control.Feedback>
+</Form.Group>
                 </Col>
 
                 <Col md={12}>
                   <Form.Group controlId="rec-reason">
                     <Form.Label className="small mb-1">
-                      Lý do quyết định
+                      Kết luận đối soát
                     </Form.Label>
                     <Form.Control
                       as="textarea"
                       rows={2}
                       value={form.reason}
+                      onBlur={() => setTouched(t => ({ ...t, reason: true }))}
+                      isInvalid={touched.reason && form.reason.trim().length < REASON_MIN}
                       onChange={(e) => updateField('reason', e.target.value)}
                       placeholder="Ví dụ: Đã đối chiếu sao kê ngân hàng, tiền đã vào tài khoản."
                       required
                     />
-                  </Form.Group>
+                  <Form.Control.Feedback type="invalid">Vui lòng nhập ít nhất 5 ký tự.</Form.Control.Feedback>
+</Form.Group>
                 </Col>
               </Row>
-
-              {validationMessage ? (
-                <Alert variant="warning" className="small mb-0 mt-3">
-                  {validationMessage}
-                </Alert>
-              ) : null}
             </>
           ) : null}
         </Modal.Body>
@@ -586,14 +575,14 @@ export default function PaymentReconciliationPage() {
           <Button
             variant="outline-secondary"
             onClick={closeDecision}
-            disabled={submitting}
+            disabled={submitting || uploading}
           >
             Hủy
           </Button>
           <Button
             variant={isPaid ? 'success' : 'danger'}
             onClick={handleConfirm}
-            disabled={Boolean(validationMessage) || submitting}
+            disabled={Boolean(validationMessage) || submitting || uploading}
           >
             {submitting
               ? 'Đang xử lý…'
@@ -634,6 +623,7 @@ export default function PaymentReconciliationPage() {
               </>
             ) : null}
           </Alert>
+          <PaymentEvidenceImages key={result.paymentId} paymentId={result.paymentId} readOnly />
         </div>
       ) : null}
     </div>

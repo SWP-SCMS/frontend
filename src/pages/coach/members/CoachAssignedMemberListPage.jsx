@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button, Card, Form, InputGroup, Spinner } from 'react-bootstrap';
 
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import EmptyState from '../../../components/common/EmptyState';
 import ErrorAlert from '../../../components/common/ErrorAlert';
-import useAutoRefresh from '../../../hooks/useAutoRefresh';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 import { listCoachAssignedMembers } from '../../../services/trainingService';
 import { formatGymDate } from '../../../utils/gymTime';
 
@@ -18,30 +18,17 @@ export default function CoachAssignedMemberListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setResult(await listCoachAssignedMembers({ q: query, page, size: 20 }));
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
+  const [revision, setRevision] = useState(0);
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
+    if (!background) {
+      commitValue(setLoading, true);
+      commitError(setError, null);
     }
-  }, [page, query]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const refreshInBackground = useCallback(async ({ commitValue = (setter, value) => setter(value) } = {}) => {
-    try {
-      commitValue(setResult, await listCoachAssignedMembers({ q: query, page, size: 20 }));
-    } catch {
-      // Keep the current assigned-member list if a background refresh fails.
-    }
-  }, [query, page]);
-  useAutoRefresh(refreshInBackground);
+    track(listCoachAssignedMembers({ q: query, page, size: 20 })
+      .then(value => commitValue(setResult, value))
+      .catch(err => { failed(err); commitError(setError, err); })
+      .finally(() => { if (!background) commitValue(setLoading, false); }));
+  }, [query, page, revision], { key: ['coach-members', query, page], setters: [setResult], setLoading });
 
   useEffect(() => {
     setSearchText(query);
@@ -87,9 +74,11 @@ export default function CoachAssignedMemberListPage() {
           ) : null}
         </InputGroup>
       </Form>
-      <ErrorAlert error={error} title="Không tải được danh sách hội viên" onClose={() => setError(null)} />
+      <ErrorAlert error={error} title="Không tải được danh sách hội viên" />
       {loading ? (
         <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>
+      ) : error ? (
+        <Button variant="outline-primary" onClick={() => setRevision(value => value + 1)}>Thử lại</Button>
       ) : !result?.content.length ? (
         <EmptyState
           title={query ? 'Không tìm thấy hội viên' : 'Chưa có hội viên được phân công'}
@@ -125,7 +114,7 @@ export default function CoachAssignedMemberListPage() {
           ))}
         </div>
       )}
-      {(result?.totalPages || 0) > 1 ? <div className="d-flex justify-content-between mt-3">
+      {!error && (result?.totalPages || 0) > 1 ? <div className="d-flex justify-content-between mt-3">
         <Button variant="outline-danger" size="sm" disabled={loading || page <= 0} onClick={() => setPage((value) => value - 1)}>‹ Trang trước</Button>
         <span className="small text-muted">Trang {(result?.page || 0) + 1}/{Math.max(1, result?.totalPages || 0)}</span>
         <Button variant="outline-danger" size="sm" disabled={loading || !result || page + 1 >= result.totalPages} onClick={() => setPage((value) => value + 1)}>Trang sau ›</Button>

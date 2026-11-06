@@ -10,13 +10,8 @@
 // Chỉ gửi những trường người dùng thực sự đổi (so với dữ liệu BE vừa trả về).
 // Đổi mật khẩu nằm ở trang riêng /member/profile/password (US04).
 //
-// Các trường BE chưa hỗ trợ (giới tính, địa chỉ, mối quan hệ, khung giờ liên
-// hệ, ghi chú chấn thương, ngày gia nhập) được giữ lại trên
-// giao diện ở dạng làm mờ, ghi "Sắp ra mắt". Thẻ chỉ số InBody đã bỏ.
-//
 // Migration note (RHF + Zod):
-//   - profileImageUrl http(s) regex is intentionally PAGE-LOCAL. It is NOT
-//     promoted to a shared fragment and is NOT applied to F05 / F06.
+//   - profileImageUrl comes from the upload API (including relative paths).
 //   - phone is required and uses normalizePhone. F04's contract differs
 //     from the optional blank-phone edit semantics of F08 / F09; the
 //     phoneEditOptionalSchema is NOT used here.
@@ -49,8 +44,9 @@ import {
   uploadMyProfileImage,
 } from '../../../services/memberService';
 import { useAuth } from '../../../context/useAuth';
-import { extractErrorMessage, formatDate, normalizePhone } from '../../../utils';
+import { formatDate, normalizePhone } from '../../../utils';
 import { applyServerErrors } from '../../../utils/serverErrors';
+import { localizeMemberProfileError } from '../../../utils/memberProfileErrors';
 import {
   emailSchema,
   birthDateSchema,
@@ -66,17 +62,13 @@ import './MemberProfilePage.css';
 //   - phone: required, normalized 10-digit (F04's contract is REQUIRED;
 //     this differs from F08/F09's optional-blank semantics and is
 //     therefore NOT shared with phoneEditOptionalSchema)
-//   - profileImageUrl: optional, when present must be http(s)://...
-//     (BR-ACC-11 — page-local by intent, NOT shared with F05 / F06)
+//   - profileImageUrl: hidden value returned by the upload API
 //   - fitnessGoal: optional, free text
 //   - emergencyContactName / emergencyContactPhone: optional, must
 //     be both present or both empty (BR-ACC-09 pairing rule).
-const optionalHttpUrl = z
-  .string()
-  .refine(
-    (s) => s === '' || /^https?:\/\/\S+$/i.test(s),
-    'Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://.',
-  );
+const ADDITIONAL_FIELDS = ['gender', 'address', 'physicalConditionNotes',
+  'emergencyContactRelationship', 'emergencyContactTimeNotes'];
+const optionalText = (limit) => z.string().trim().max(limit, `Tối đa ${limit} ký tự.`);
 
 const memberProfileSchema = z
   .object({
@@ -91,8 +83,13 @@ const memberProfileSchema = z
       .transform((s) => normalizePhone(s)),
     email: emailSchema,
     birthDate: birthDateSchema,
-    profileImageUrl: optionalHttpUrl,
+    profileImageUrl: z.string(),
     fitnessGoal: z.string(),
+    gender: z.enum(['', 'MALE', 'FEMALE'], { error: 'Vui lòng chọn Nam hoặc Nữ, hoặc để trống giới tính.' }),
+    address: optionalText(500),
+    physicalConditionNotes: optionalText(2000),
+    emergencyContactRelationship: optionalText(100),
+    emergencyContactTimeNotes: optionalText(500),
     emergencyContactName: optionalPersonNameSchema,
     emergencyContactPhone: z.string(),
   })
@@ -214,20 +211,10 @@ function Icon({ name, size = 18 }) {
   );
 }
 
-// BE trả lỗi dạng ProblemDetail: câu giải thích nằm ở `detail`. Với lỗi 400
-// (VALIDATION_ERROR), chi tiết từng trường nằm trong `errors`.
-function problemMessage(err, fallback) {
-  const data = err?.response?.data;
-  if (data?.errors && typeof data.errors === 'object') {
-    const messages = Object.values(data.errors).flat().filter(Boolean);
-    if (messages.length > 0) return messages.join(' ');
-  }
-  return data?.detail || extractErrorMessage(err, fallback);
-}
-
 // Chuyển dữ liệu BE trả về thành giá trị cho form (null -> chuỗi rỗng).
 function toForm(data) {
   return {
+    ...Object.fromEntries(ADDITIONAL_FIELDS.map((field) => [field, data?.[field] ?? ''])),
     fullName: data?.fullName || '',
     phone: data?.phone || '',
     email: data?.email || '',
@@ -243,20 +230,20 @@ function toForm(data) {
 // RHF `register()` call in this file is spread directly onto the child
 // <input> / <textarea>, so the `ref` reaches the real DOM control
 // without any wrapper forwarding. The wrapper just renders the label,
-// the required-star, the "Sắp ra mắt" badge, and the children.
-function Field({ id, label, required, soon, wide, children }) {
+// the required-star, validation message, and the children.
+function Field({ id, label, required, wide, children, error }) {
   return (
     <div
-      className={`scms-mp-field${wide ? ' wide' : ''}${soon ? ' soon' : ''}`}
+      className={`scms-mp-field${wide ? ' wide' : ''}`}
     >
       <label htmlFor={id}>
         <span>
           {label}
           {required ? <span className="req"> *</span> : null}
         </span>
-        {soon ? <span className="scms-mp-soontag">Sắp ra mắt</span> : null}
       </label>
       {children}
+      {error ? <div id={`${id}-error`} className="scms-mp-hint" role="alert" style={{ marginTop: 6, color: '#dc2626' }}>{error.message}</div> : null}
     </div>
   );
 }
@@ -287,6 +274,7 @@ export default function MemberProfilePage() {
     useMemberArea();
 
   const [original, setOriginal] = useState(null);
+  const [createdAt, setCreatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -301,23 +289,10 @@ export default function MemberProfilePage() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(memberProfileSchema),
-    defaultValues: {
-      fullName: '',
-      phone: '',
-      email: '',
-      birthDate: '',
-      profileImageUrl: '',
-      fitnessGoal: '',
-      emergencyContactName: '',
-      emergencyContactPhone: '',
-    },
+    defaultValues: toForm(null),
   });
 
-  // `profileImageUrl` is rendered both as the avatar image src and as
-  // the value of a hidden text input inside the avatar card. The
-  // pre-migration source wrote it into `form.profileImageUrl` from
-  // there. We keep the same UX: when the toggle is opened, the user
-  // types into a regular text input registered with RHF.
+  // Upload responses supply the hidden image value and avatar source.
   // useWatch (not watch) is used to avoid the
   // `react(incompatible-library)` lint warning that RHF's plain
   // watch() produces. useWatch MUST be called unconditionally and
@@ -334,6 +309,7 @@ export default function MemberProfilePage() {
     getMyProfile()
       .then((data) => {
         if (cancelled) return;
+        setCreatedAt(data.createdAt ?? null);
         const next = toForm(data);
         setOriginal(next);
         reset(next);
@@ -349,8 +325,7 @@ export default function MemberProfilePage() {
     };
   }, [reset]);
 
-  // buildPatch — diff against `original`. Preserved byte-for-byte from
-  // the pre-migration source. RHF owns the form values; this function
+  // buildPatch — diff against `original`. RHF owns the form values; this function
   // builds the wire payload from the parsed `data` argument and the
   // `original` snapshot kept in state.
   function buildPatch(data) {
@@ -386,6 +361,10 @@ export default function MemberProfilePage() {
     if (ecPhoneNorm !== (original?.emergencyContactPhone || '')) {
       patch.emergencyContactPhone = ecPhoneNorm || null;
     }
+    for (const field of ADDITIONAL_FIELDS) {
+      const value = data[field].trim();
+      if (value !== (original?.[field] || '')) patch[field] = value || null;
+    }
     return patch;
   }
 
@@ -417,13 +396,14 @@ export default function MemberProfilePage() {
       // PHONE_ALREADY_EXISTS codes map inline when their fields are
       // allowed. Unknown / non-field failures surface in the global
       // ErrorAlert via the !handled branch below.
-      const handled = applyServerErrors(err, setError, {
+      const localized = localizeMemberProfileError(err);
+      const handled = applyServerErrors(localized, setError, {
         fields: [
+          ...ADDITIONAL_FIELDS,
           'fullName',
           'phone',
           'email',
           'birthDate',
-          'profileImageUrl',
           'fitnessGoal',
           'emergencyContactName',
           'emergencyContactPhone',
@@ -432,7 +412,7 @@ export default function MemberProfilePage() {
       if (!handled) {
         // Page-local global error rendering (preserves the original
         // ErrorAlert behavior, which displays BE-provided detail).
-        setServerError({ message: problemMessage(err, 'Không lưu được hồ sơ.') });
+        setServerError({ message: localized.message });
       }
     }
   }
@@ -482,7 +462,7 @@ export default function MemberProfilePage() {
               </span>
             </div>
           </div>
-          <Link to="/member/dashboard" className="scms-mp-btn-red">
+          <Link to="/member/plan" className="scms-mp-btn-red">
             Xem các gói tập <Icon name="arrow" size={16} />
           </Link>
         </div>
@@ -544,10 +524,10 @@ export default function MemberProfilePage() {
             </div>
 
             <div className="scms-mp-rows">
-              {user?.createdAt ? (
+              {createdAt ? (
                 <div className="scms-mp-row">
                   <span className="k">Ngày gia nhập</span>
-                  <span className="v">{formatDate(user.createdAt)}</span>
+                  <span className="v">{formatDate(createdAt)}</span>
                 </div>
               ) : null}
               <div className="scms-mp-row">
@@ -563,7 +543,7 @@ export default function MemberProfilePage() {
                 <span className="v">
                   {tierText}
                   {!membershipLoading && !hasActiveMembership ? (
-                    <Link to="/member/dashboard">Khám phá gói tập ngay →</Link>
+                    <Link to="/member/plan">Khám phá gói tập ngay →</Link>
                   ) : null}
                 </span>
               </div>
@@ -674,22 +654,21 @@ export default function MemberProfilePage() {
                   </div>
                 ) : null}
               </Field>
-              <Field id="mp-gender" label="Giới tính" soon>
-                <div className="scms-mp-radios">
-                  <label className="scms-mp-radio">
-                    <input type="radio" name="gender" disabled /> Nam
-                  </label>
-                  <label className="scms-mp-radio">
-                    <input type="radio" name="gender" disabled /> Nữ
-                  </label>
-                </div>
+              <Field id="mp-gender" label="Giới tính" error={errors.gender}>
+                <select id="mp-gender" className="scms-mp-input" {...register('gender')}
+                  aria-invalid={Boolean(errors.gender)} aria-describedby={errors.gender ? 'mp-gender-error' : undefined}>
+                  <option value="">Chưa cung cấp</option>
+                  <option value="MALE">Nam</option>
+                  <option value="FEMALE">Nữ</option>
+                </select>
               </Field>
-              <Field id="mp-address" label="Địa chỉ cư trú hiện tại" soon wide>
+              <Field id="mp-address" label="Địa chỉ cư trú hiện tại" error={errors.address} wide>
                 <input
                   id="mp-address"
                   className="scms-mp-input"
                   placeholder="Địa chỉ đường, phường/xã, quận/huyện..."
-                  disabled
+                  {...register('address')} maxLength={500}
+                  aria-invalid={Boolean(errors.address)} aria-describedby={errors.address ? 'mp-address-error' : undefined}
                 />
               </Field>
             </div>
@@ -747,13 +726,14 @@ export default function MemberProfilePage() {
                 </div>
               ) : null}
             </div>
-            <Field id="mp-injury" label="Ghi chú thể chất & Tiền sử chấn thương" soon>
+            <Field id="mp-injury" label="Ghi chú thể chất & Tiền sử chấn thương" error={errors.physicalConditionNotes}>
               <textarea
                 id="mp-injury"
                 className="scms-mp-input"
                 rows={2}
                 placeholder="Ví dụ: Đã từng mổ dây chằng chéo trước, đau lưng dưới nhẹ..."
-                disabled
+                {...register('physicalConditionNotes')} maxLength={2000}
+                  aria-invalid={Boolean(errors.physicalConditionNotes)} aria-describedby={errors.physicalConditionNotes ? 'mp-injury-error' : undefined}
               />
             </Field>
           </div>
@@ -776,10 +756,9 @@ export default function MemberProfilePage() {
                   </div>
                 ) : null}
               </Field>
-              <Field id="mp-ecRelation" label="Mối quan hệ" soon>
-                <select id="mp-ecRelation" className="scms-mp-input" disabled>
-                  <option>Chọn mối quan hệ</option>
-                </select>
+              <Field id="mp-ecRelation" label="Mối quan hệ" error={errors.emergencyContactRelationship}>
+                <input id="mp-ecRelation" className="scms-mp-input" placeholder="Ví dụ: Cha/mẹ, vợ/chồng, anh/chị..." {...register('emergencyContactRelationship')} maxLength={100}
+                  aria-invalid={Boolean(errors.emergencyContactRelationship)} aria-describedby={errors.emergencyContactRelationship ? 'mp-ecRelation-error' : undefined} />
               </Field>
               <Field id="mp-ecPhone" label="Số điện thoại khẩn cấp">
                 <input
@@ -797,12 +776,13 @@ export default function MemberProfilePage() {
                   </div>
                 ) : null}
               </Field>
-              <Field id="mp-ecTime" label="Ghi chú khung giờ liên hệ" soon>
+              <Field id="mp-ecTime" label="Ghi chú khung giờ liên hệ" error={errors.emergencyContactTimeNotes}>
                 <input
                   id="mp-ecTime"
                   className="scms-mp-input"
                   placeholder="Khung giờ gọi..."
-                  disabled
+                  {...register('emergencyContactTimeNotes')} maxLength={500}
+                  aria-invalid={Boolean(errors.emergencyContactTimeNotes)} aria-describedby={errors.emergencyContactTimeNotes ? 'mp-ecTime-error' : undefined}
                 />
               </Field>
             </div>

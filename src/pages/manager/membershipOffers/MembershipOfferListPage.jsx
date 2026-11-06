@@ -1,4 +1,5 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import { statusLabel } from '../../../utils/statusLabels';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Membership Offer list & search (US08).
 //
 // BE: GET /api/v1/manager/membership-offers
@@ -61,7 +62,7 @@ export default function MembershipOfferListPage() {
     setSearchInput(query);
   }, [query]);
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
@@ -82,7 +83,7 @@ export default function MembershipOfferListPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [], { key: ['manager-offers'], setters: [setOffers], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);
@@ -188,7 +189,7 @@ export default function MembershipOfferListPage() {
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
-                  {row.status || '—'}
+                  {statusLabel(row.status)}
                 </span>
               </td>
               <td className="text-end">

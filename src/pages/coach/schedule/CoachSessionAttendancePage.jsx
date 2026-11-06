@@ -8,8 +8,9 @@
 // PRESENT cần Center Visit (BR-VAL-ATT-02, BE kiểm tra và trả lỗi).
 
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Alert, Button, Form, Spinner, Table } from 'react-bootstrap';
+import { Link, useBlocker, useParams } from 'react-router-dom';
+import { Alert, Button, Form, Modal, Spinner, Table } from 'react-bootstrap';
+import WorkflowBreadcrumb from '../../../components/common/WorkflowBreadcrumb';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import Icon from '../../../components/layout/MemberIcon';
@@ -71,6 +72,7 @@ export default function CoachSessionAttendancePage() {
   }
 
   const changedCount = Object.keys(draft).length;
+  const blocker = useBlocker(changedCount > 0 || saving);
 
   useEffect(() => {
     function warnUnsaved(event) {
@@ -132,6 +134,12 @@ export default function CoachSessionAttendancePage() {
 
   return (
     <div className="scms-coach-page">
+      <WorkflowBreadcrumb items={[{ to: '/coach/schedule', label: 'Lịch phụ trách' }, { to: `/coach/schedule/${sessionId}`, label: session?.className || 'Chi tiết buổi tập' }]} current="Điểm danh" />
+      <Modal show={blocker.state === 'blocked'} onHide={() => blocker.reset?.()} centered>
+        <Modal.Header closeButton><Modal.Title>Điểm danh chưa lưu</Modal.Title></Modal.Header>
+        <Modal.Body>{saving ? 'Đang lưu điểm danh. Vui lòng chờ xử lý xong.' : `Bạn có ${changedCount} thay đổi chưa lưu. Rời trang sẽ bỏ các thay đổi này.`}</Modal.Body>
+        <Modal.Footer><Button variant="outline-secondary" onClick={() => blocker.reset?.()}>Ở lại</Button><Button variant="danger" disabled={saving} onClick={() => blocker.proceed?.()}>Bỏ thay đổi và rời trang</Button></Modal.Footer>
+      </Modal>
       <h1 className="h3 fw-bold mb-3">Điểm danh</h1>
 
       <ErrorAlert

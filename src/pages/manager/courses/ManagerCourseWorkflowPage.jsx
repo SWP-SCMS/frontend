@@ -87,7 +87,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
       .catch((err) => { failed(err);  if (active) commitError(setError, getCourseErrorMessage(err, 'Không tải được danh sách yêu cầu.')); })
       .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
-  }, [kind, page, status, revision], !busy);
+  }, [kind, page, status, revision, busy], !busy);
 
   const loadDetail = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {
     const sequence = ++detailSequence.current;

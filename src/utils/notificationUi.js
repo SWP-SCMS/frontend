@@ -39,6 +39,7 @@ const TYPE_LABELS = {
   COACH_ASSIGNMENT_ENDED: 'Phân công huấn luyện viên đã kết thúc',
   TRAINING_COACH_ASSIGNED: 'Đã phân công huấn luyện viên',
   TRAINING_COACH_ENDED: 'Phân công huấn luyện viên đã kết thúc',
+  PAYMENT_FAILED: 'Giao dịch không hợp lệ; đơn thanh toán đã đóng. Liên hệ lễ tân nếu bạn đã chuyển tiền.',
   PAYMENT_PAID: 'Thanh toán thành công',
   ACCOUNT_CREATED: 'Tài khoản đã được tạo',
   ACCOUNT_ACTIVATED: 'Tài khoản đã được kích hoạt',

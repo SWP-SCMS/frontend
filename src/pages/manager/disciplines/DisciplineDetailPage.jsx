@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Discipline detail (US23).
 //
@@ -113,7 +114,7 @@ export default function DisciplineDetailPage() {
                     STATUS_BADGE[discipline.status] || 'bg-light text-dark'
                   }`}
                 >
-                  {discipline.status || '—'}
+                  {statusLabel(discipline.status)}
                 </span>
               </p>
             </Card.Body>

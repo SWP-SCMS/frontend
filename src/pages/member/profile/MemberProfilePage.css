@@ -445,23 +445,6 @@ textarea.scms-mp-input {
   resize: vertical;
 }
 
-/* Trường chưa có API: làm mờ, kèm nhãn "Sắp ra mắt". */
-.scms-mp-field.soon {
-  opacity: 0.55;
-}
-
-.scms-mp-soontag {
-  margin-left: auto;
-  padding: 0.05rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #475569;
-  background: #e2e8f0;
-}
-
 .scms-mp-radios {
   display: grid;
   grid-template-columns: 1fr 1fr;

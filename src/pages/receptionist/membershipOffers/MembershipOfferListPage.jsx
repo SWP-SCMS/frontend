@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Receptionist – Membership Offer list (US12).
 //
 // BE: GET /api/v1/membership-offers?planCode={dynamicPlanCode}
@@ -64,7 +64,7 @@ export default function MembershipOfferListPage() {
     setSearchInput(query);
   }, [query]);
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
@@ -85,7 +85,7 @@ export default function MembershipOfferListPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [], { key: ['reception-offers'], setters: [setOffers], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);
@@ -239,7 +239,7 @@ export default function MembershipOfferListPage() {
         ))}
       </div>
     );
-  }, [groupedFiltered, loading, offers.length, pricing]);
+  }, [filtered.length, groupedFiltered, loading, offers.length, pricing]);
 
   return (
     <div>

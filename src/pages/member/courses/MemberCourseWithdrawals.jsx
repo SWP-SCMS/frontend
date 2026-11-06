@@ -1,6 +1,7 @@
+import useConfirmation from '../../../hooks/useConfirmation';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import CancelCourseWithdrawal from './CancelCourseWithdrawal';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, Form } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,9 +9,10 @@ import { courseWithdrawalSchema } from '../../../schemas/courseSchemas';
 import { createMyCourseWithdrawal, listMyCourseWithdrawals } from '../../../services/courseWithdrawalService';
 import { formatCourseDateTime, formatCourseMoney, getCourseErrorMessage } from '../../../utils/courseUi';
 
-const STATUS_LABELS = { PENDING: 'Chờ Manager duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối', CANCELLED: 'Đã hủy' };
+const STATUS_LABELS = { PENDING: 'Chờ Quản lý duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối', CANCELLED: 'Đã hủy' };
 
-export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
+export default function MemberCourseWithdrawals({ enrollments, onRequested, selectedEnrollmentId = '' }) {
+  const { confirm, dialog } = useConfirmation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
@@ -18,7 +20,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(courseWithdrawalSchema),
     defaultValues: { enrollmentId: '', reason: '' },
   });
@@ -34,13 +36,15 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
   }, []);
   usePollingEffect(({ background, track, commitValue, commitError, failed }) => { track(load({ background, commitValue, commitError, failed })); }, [load], !busy);
 
+  useEffect(() => { setValue('enrollmentId', selectedEnrollmentId); }, [selectedEnrollmentId, setValue]);
+
   const pendingIds = new Set(requests.filter((r) => r.status === 'PENDING').map((r) => r.enrollmentId));
   const available = enrollments.filter((e) => e.lifecycleStatus === 'ACTIVE' && !pendingIds.has(e.enrollmentId));
   const enrollmentById = new Map(enrollments.map((e) => [e.enrollmentId, e]));
 
   async function submit({ enrollmentId, reason }) {
     if (submitting.current || !ready || !available.some((e) => e.enrollmentId === enrollmentId)) return;
-    if (!window.confirm('Gửi yêu cầu sẽ tạm ngừng học và điểm danh, vẫn giữ chỗ. Nếu hủy hoặc bị từ chối, các buổi đã lỡ không được học bù. Tiếp tục?')) return;
+    if (!(await confirm('Gửi yêu cầu sẽ tạm ngừng học và điểm danh, vẫn giữ chỗ. Nếu hủy hoặc bị từ chối, các buổi đã lỡ không được học bù. Tiếp tục?'))) return;
     submitting.current = true; setBusy(true); setError(''); setNotice('');
     try {
       const created = await createMyCourseWithdrawal(enrollmentId, reason);
@@ -55,15 +59,15 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
     } finally { submitting.current = false; setBusy(false); }
   }
 
-  return <section className="member-course-section" id="withdrawals">
+  return <section className="member-course-section" id="withdrawals">{dialog}
     <div className="member-course-section-title">
       <h2>Yêu cầu rút khóa học</h2>
       <Button variant="outline-secondary" disabled={busy || loading} onClick={load}>Tải lại yêu cầu</Button>
     </div>
     {error && <Alert variant="danger" role="alert">{error}</Alert>}
     {notice && <Alert variant="success" role="status">{notice}</Alert>}
-    <p>Yêu cầu cần Manager duyệt. Số tiền hoàn được chốt khi gửi thành công; duyệt rút không có nghĩa đã chi tiền hoàn.</p>
-    <p>Bạn có thể xin rút trước khi buổi cuối bắt đầu. Nếu còn ít nhất 70% số buổi, mức hoàn là 80% giá trị chưa sử dụng theo hệ thống; dưới ngưỡng này mức hoàn là 0 đồng.</p>
+    <p>Yêu cầu cần Quản lý duyệt. Số tiền hoàn được chốt khi gửi thành công; duyệt rút không có nghĩa đã chi tiền hoàn.</p>
+    <p>Điều kiện và số tiền hoàn được hệ thống xác định tại thời điểm gửi yêu cầu.</p>
     {ready && available.length > 0 && <Form noValidate onSubmit={(event) => handleSubmit(submit)(event)} className="member-course-card">
       <Form.Group controlId="course-withdrawal-enrollment" className="mb-3">
         <Form.Label>Đợt học cần rút</Form.Label>
@@ -80,8 +84,8 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
       </Form.Group>
       <Button type="submit" variant="outline-danger" disabled={busy || loading}>{busy ? 'Đang gửi…' : 'Gửi yêu cầu rút'}</Button>
     </Form>}
-    {loading ? <p>Đang tải yêu cầu…</p> : ready && !requests.length && <p>Bạn chưa có yêu cầu rút khóa học.</p>}
-    {!loading && requests.map((request) => {
+    {loading ? <p>Đang tải yêu cầu…</p> : ready && !requests.some(r => !selectedEnrollmentId || r.enrollmentId === selectedEnrollmentId) && <p>Bạn chưa có yêu cầu rút khóa học.</p>}
+    {!loading && requests.filter(r => !selectedEnrollmentId || r.enrollmentId === selectedEnrollmentId).map((request) => {
       const enrollment = enrollmentById.get(request.enrollmentId);
       return <article className="member-course-card mt-3" key={request.id}>
         <h3>{enrollment ? `${enrollment.courseName} · ${enrollment.runCode}` : 'Yêu cầu rút khóa học của bạn'}</h3>
@@ -92,7 +96,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested }) {
         <p>{request.snapshotSource === 'REQUEST_TIME' ? 'Khoản hoàn chốt lúc gửi' : request.snapshotSource === 'LEGACY_APPROVAL' ? 'Khoản hoàn lịch sử lúc duyệt' : 'Khoản hoàn chưa có snapshot'}: {request.snapshotSource === 'UNAVAILABLE' || request.refundAmountVnd == null ? 'Chưa xác định' : formatCourseMoney(request.refundAmountVnd)}</p>
         {request.remainingUnits != null && request.totalUnits != null && <p>Số buổi tại thời điểm chốt: {request.remainingUnits}/{request.totalUnits}</p>}
         {request.learningSuspended && <p>Tạm ngừng học và điểm danh trong khi chờ xử lý.</p>}
-        {request.cancelledAt && <p>Đã hủy lúc {formatCourseDateTime(request.cancelledAt)} · {request.cancellationReason === 'LEGACY_SNAPSHOT_MISSING' ? 'Yêu cầu cũ không có dữ liệu chốt khoản hoàn' : request.cancellationReason === 'COURSE_RUN_CANCELLED' ? 'Đợt học đã hủy' : request.cancellationReason}</p>}
+        {request.cancelledAt && <p>Đã hủy lúc {formatCourseDateTime(request.cancelledAt)} · {request.cancellationReason === 'LEGACY_SNAPSHOT_MISSING' ? 'Yêu cầu cũ không có dữ liệu chốt khoản hoàn' : request.cancellationReason === 'COURSE_RUN_CANCELLED' ? 'Đợt học đã hủy' : request.cancellationReason === 'REDUCED_SESSION_COUNT' ? 'Số buổi đã giảm và có khoản hoàn riêng. Vui lòng gửi lại yêu cầu rút theo lịch mới.' : request.cancellationReason}</p>}
         <CancelCourseWithdrawal request={request} onCancelled={async () => { await load(); await onRequested(); }} />
         {request.status === 'APPROVED' && <p>Trạng thái này xác nhận việc rút khóa; chưa xác nhận đã nhận tiền hoàn.</p>}
       </article>;

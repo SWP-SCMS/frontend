@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Trang tổng quan của Huấn luyện viên.
 //
 // API: GET /coach/class-sessions. Danh sách đã có đủ ngữ cảnh hiển thị.
@@ -40,7 +40,9 @@ function SessionTable({ sessions, showDate }) {
         <tr>
           {showDate ? <th>Ngày</th> : null}
           <th>Giờ</th>
-          <th>Sĩ số tối đa</th>
+          <th>Lớp</th>
+          <th>Phòng</th>
+          <th>Đã đăng ký / Sức chứa</th>
           <th>Trạng thái</th>
         </tr>
       </thead>
@@ -51,7 +53,9 @@ function SessionTable({ sessions, showDate }) {
             <td>
               {formatGymTime(s.startTime)} – {formatGymTime(s.endTime)}
             </td>
-            <td>{s.capacity}</td>
+            <td><Link to={`/coach/schedule/${s.id}`}>{s.className || 'Chi tiết buổi tập'}</Link></td>
+            <td>{s.roomName || 'Chưa xếp phòng'}</td>
+            <td>{s.bookedCount ?? '—'} / {s.capacity ?? '—'}</td>
             <td>
               <StatusBadge status={s.status} />
             </td>
@@ -88,7 +92,7 @@ export default function CoachDashboardPage() {
   // Hộp đang mở: 'today' | 'classes' | 'members' | null.
   const [panel, setPanel] = useState(null);
 
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     async function load() {
       try {
@@ -130,7 +134,7 @@ export default function CoachDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [], { key: ['coach-dashboard', getGymZoneTodayIsoDate()], setters: [setToday, setUpcoming, setOpenSessions], setLoading });
 
   // Lớp đang mở: gom các buổi còn hiệu lực theo classId.
   const openClasses = useMemo(() => {

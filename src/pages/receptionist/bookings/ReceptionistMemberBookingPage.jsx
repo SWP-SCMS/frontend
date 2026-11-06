@@ -1,3 +1,4 @@
+import { statusLabel } from '../../../utils/statusLabels';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import {
@@ -652,7 +653,7 @@ export default function ReceptionistMemberBookingPage() {
               </div>
             </div>
             <span className={`badge ${STATUS_BADGE[profile.status] || 'bg-light text-dark'}`}>
-              {profile.status || '—'}
+              {statusLabel(profile.status)}
             </span>
           </div>
           <Row className="g-3 mt-1">
@@ -672,7 +673,7 @@ export default function ReceptionistMemberBookingPage() {
 
       {!mutationsAllowed ? (
         <Alert variant="warning">
-          Hội viên đang ở trạng thái <strong>{profile.status}</strong>. Lịch sử vẫn có
+          Hội viên đang ở trạng thái <strong>{statusLabel(profile.status)}</strong>. Lịch sử vẫn có
           thể xem, nhưng thao tác đặt và hủy lịch đã bị khóa.
         </Alert>
       ) : null}

@@ -113,6 +113,7 @@ export default function VerifyEmailPage() {
   }
 
   async function resend() {
+    setNotice('');
     const email = verifyForm.getValues('email');
     if (!email || resendSeconds > 0) return;
     setResending(true);
@@ -129,6 +130,7 @@ export default function VerifyEmailPage() {
   }
 
   async function submitChange(values) {
+    setNotice('');
     if (!meta.csrfToken) {
       setError(new Error('Phiên đổi email không còn trên trình duyệt này. Bạn vẫn có thể xác thực hoặc gửi lại OTP.'));
       return;
@@ -157,9 +159,6 @@ export default function VerifyEmailPage() {
       <BrandLogo className="scms-login-brand" />
       <div className="scms-login-card" style={{ maxWidth: 520 }}>
         <h1 className="h5 fw-bold mb-1">Xác thực email</h1>
-        <p className="scms-login-subtitle">
-          Nhập mã OTP 6 chữ số đã gửi tới {meta.maskedEmail || 'email đăng ký'}.
-        </p>
 
         {notice ? <div className="alert alert-success py-2">{notice}</div> : null}
         <ErrorAlert error={error} title="Không thể xác thực email" onClose={() => setError(null)} />
@@ -167,7 +166,7 @@ export default function VerifyEmailPage() {
         <form onSubmit={verifyForm.handleSubmit(submitVerify)} noValidate>
           <label className="scms-login-label" htmlFor="verify-email">Email</label>
           <div className="scms-login-field mb-1">
-            <input id="verify-email" type="email" className="scms-login-input" {...verifyForm.register('email')} />
+            <input id="verify-email" type="email" readOnly={!!meta.email && !!meta.csrfToken} className="scms-login-input" {...verifyForm.register('email')} />
           </div>
           {verifyForm.formState.errors.email ? <div className="scms-login-fielderror mb-2">{verifyForm.formState.errors.email.message}</div> : null}
 
@@ -177,12 +176,12 @@ export default function VerifyEmailPage() {
           </div>
           {verifyForm.formState.errors.otp ? <div className="scms-login-fielderror">{verifyForm.formState.errors.otp.message}</div> : null}
 
-          <button type="submit" className="scms-login-submit mt-4" disabled={verifyForm.formState.isSubmitting}>
+          <button type="submit" className="scms-login-submit mt-4" disabled={verifyForm.formState.isSubmitting || changing || resending}>
             {verifyForm.formState.isSubmitting ? 'Đang xác thực…' : 'Xác thực tài khoản'}
           </button>
         </form>
 
-        <button type="button" className="btn btn-link w-100 mt-2" onClick={resend} disabled={resending || resendSeconds > 0}>
+        <button type="button" className="btn btn-link w-100 mt-2" onClick={resend} disabled={resending || changing || verifyForm.formState.isSubmitting || resendSeconds > 0}>
           {resendSeconds > 0 ? `Gửi lại sau ${formatCountdown(resendSeconds)}` : resending ? 'Đang gửi…' : 'Gửi lại mã OTP'}
         </button>
 
@@ -191,7 +190,7 @@ export default function VerifyEmailPage() {
           <form className="mt-2" onSubmit={changeForm.handleSubmit(submitChange)} noValidate>
             <input type="email" className="form-control" {...changeForm.register('newEmail')} />
             {changeForm.formState.errors.newEmail ? <div className="text-danger small mt-1">{changeForm.formState.errors.newEmail.message}</div> : null}
-            <button type="submit" className="btn btn-outline-danger btn-sm mt-2" disabled={changing || !meta.csrfToken}>
+            <button type="submit" className="btn btn-outline-danger btn-sm mt-2" disabled={changing || resending || verifyForm.formState.isSubmitting || !meta.csrfToken}>
               {changing ? 'Đang đổi…' : 'Đổi email và gửi OTP mới'}
             </button>
           </form>

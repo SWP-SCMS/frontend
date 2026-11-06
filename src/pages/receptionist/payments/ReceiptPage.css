@@ -11,8 +11,26 @@
  */
 
 .receipt-print-area {
-  max-width: 720px;
+  width: 100%;
+  max-width: 680px;
+  margin-inline: auto;
 }
+
+.receipt-heading {
+  min-width: 0;
+  flex: 0 0 100%;
+  container-type: inline-size;
+}
+
+.receipt-heading h1 {
+  font-size: clamp(0.75rem, 3.2cqi, 1.5rem);
+  white-space: nowrap;
+}
+
+.receipt-toolbar {
+  align-items: center;
+}
+
 
 .receipt-sheet {
   background: #fff;
@@ -22,7 +40,7 @@
  * values wrap under the value column instead of colliding with the label. */
 .receipt-row {
   display: grid;
-  grid-template-columns: 11rem 1fr;
+  grid-template-columns: minmax(110px, 30%) minmax(0, 1fr);
   gap: 0.75rem;
   padding: 0.4rem 0;
   border-bottom: 1px dashed var(--bs-border-color);
@@ -39,7 +57,8 @@
 
 .receipt-value {
   font-size: 0.9375rem;
-  word-break: break-word;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .receipt-amount {
@@ -71,26 +90,16 @@
   border-top: 1px dashed var(--bs-border-color);
 }
 
-/* The signature line is the part staff actually use: the customer signs to
- * confirm they received the goods and the amount. */
-.receipt-signature {
-  margin-top: 2.5rem;
-  display: flex;
-  justify-content: space-between;
-  gap: 2rem;
-}
+@media screen and (max-width: 575px) {
+  .receipt-sheet .card-body {
+    padding: 1rem !important;
+  }
 
-.receipt-signature > div {
-  flex: 1;
-  text-align: center;
-  font-size: 0.8125rem;
-  color: var(--bs-secondary-color);
-}
-
-.receipt-signature-line {
-  margin-top: 0.4rem;
-  border-top: 1px solid var(--bs-border-color);
-  padding-top: 0.3rem;
+  .receipt-row {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+    padding-block: 0.6rem;
+  }
 }
 
 @media print {
@@ -164,12 +173,6 @@
     border: 0 !important;
     box-shadow: none !important;
     padding: 0 !important;
-  }
-
-  /* Keep the receipt intact across page breaks. */
-  .receipt-signature {
-    break-inside: avoid;
-    page-break-inside: avoid;
   }
 
   a[href]::after {

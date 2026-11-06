@@ -1,4 +1,5 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+import { statusLabel } from '../../../utils/statusLabels';
+import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Staff/Manager account list & search (US05).
 //
 // BE: GET /api/v1/manager/staff-accounts?query&role&status&page&size
@@ -75,7 +76,7 @@ export default function StaffAccountListPage() {
   }, [query]);
 
   // Fetch whenever URL params change.
-  usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
+  useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let cancelled = false;
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
@@ -102,7 +103,7 @@ export default function StaffAccountListPage() {
     return () => {
       cancelled = true;
     };
-  }, [query, role, status, page]);
+  }, [query, role, status, page], { key: ['manager-staff', query, role, status, page], setters: [setData], setLoading });
 
   function setParam(name, value) {
     const next = new URLSearchParams(params);
@@ -123,7 +124,7 @@ export default function StaffAccountListPage() {
     setParam('query', '');
   }
 
-  const rows = data.content ?? [];
+  const rows = useMemo(() => data.content ?? [], [data.content]);
   const totalPages = Math.max(1, data.totalPages || 1);
   const canPrev = page > 0;
   const canNext = data.totalPages > 0 && page < data.totalPages - 1;
@@ -171,7 +172,7 @@ export default function StaffAccountListPage() {
               <td>{ROLE_LABELS[row.role] || row.role || '—'}</td>
               <td>
                 <span className={`badge ${STATUS_BADGE[row.status] || 'bg-light text-dark'}`}>
-                  {row.status || '—'}
+                  {statusLabel(row.status)}
                 </span>
               </td>
               <td>{row.phone || '—'}</td>
@@ -200,7 +201,7 @@ export default function StaffAccountListPage() {
         <div>
           <h1 className="h3 fw-bold mb-1">Nhân viên & Quản lý</h1>
           <p className="text-muted mb-0">
-            Danh sách tài khoản COACH, RECEPTIONIST và MANAGER mà bạn quản lý.
+          Danh sách tài khoản huấn luyện viên, lễ tân và quản lý.
           </p>
         </div>
         <Button as={Link} to="/manager/staff-accounts/new" variant="danger">

@@ -41,16 +41,16 @@ export default function HomePage() {
       <PublicHeader active="home" />
 
       {isReady && isAuthenticated && user?.role === 'MANAGER' && (
-        <aside className="scms-home-manager-bar" aria-label="Manager Dashboard">
+        <aside className="scms-home-manager-bar" aria-label="Tổng quan quản lý">
           <div className="scms-home-manager-bar-icon" aria-hidden="true">
             <Icon name="dumbbell" size={26} />
           </div>
           <div className="scms-home-manager-bar-body">
             <span className="scms-home-manager-bar-eyebrow">Khu vực quản lý</span>
-            <h2 className="scms-home-manager-bar-title">Manager Dashboard</h2>
+            <h2 className="scms-home-manager-bar-title">Tổng quan quản lý</h2>
             <p className="scms-home-manager-bar-sub">
               Xin chào{user?.fullName ? `, ${user.fullName}` : ''}. Đây là khu vực dành riêng
-              cho tài khoản quản lý. Truy cập dashboard để xem nhân viên, hội viên và các
+              cho tài khoản quản lý. Truy cập trang tổng quan để xem nhân viên, hội viên và các
               báo cáo vận hành.
             </p>
           </div>
@@ -59,7 +59,7 @@ export default function HomePage() {
               to="/manager/dashboard"
               className="scms-home-btn scms-home-btn-primary"
             >
-              Mở Dashboard <Icon name="arrowRight" size={16} />
+              Mở trang tổng quan <Icon name="arrowRight" size={16} />
             </Link>
             <button
               type="button"

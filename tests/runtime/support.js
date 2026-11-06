@@ -17,7 +17,9 @@ export function installEvidenceHooks(test) {
         journal.push({ via: 'UI', method: response.request().method(), path: url.pathname, actual: response.status() });
     });
   });
-  test.afterEach(async ({}, info) => {
+  test.afterEach(async ({ page }, info) => {
+    // Include the final URL alongside API evidence for failed UI runs.
+    await info.attach('page-url', { body: page.url(), contentType: 'text/plain' });
     await info.attach('http-evidence', { body: JSON.stringify({ title: info.title, status: info.status, backendSha: env.backendSha, requests: journal }, null, 2), contentType: 'application/json' });
   });
 }

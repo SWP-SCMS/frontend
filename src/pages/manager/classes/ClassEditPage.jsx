@@ -370,10 +370,7 @@ export default function ClassEditPage() {
       </Link>
 
       <h1 className="h3 fw-bold mt-2 mb-1">Chỉnh sửa lớp học</h1>
-      <p className="text-muted mb-4">
-        Cập nhật tên, loại, mô tả hoặc trạng thái. Mã lớp{' '}
-        <code className="small">{classId}</code>.
-      </p>
+
 
       <ErrorAlert
         error={serverError}

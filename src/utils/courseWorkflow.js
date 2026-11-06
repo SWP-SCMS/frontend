@@ -6,7 +6,7 @@ export const COURSE_REFUND_STATUS_LABELS = {
 
 export const COURSE_REFUND_SOURCE_LABELS = {
   MEMBER_WITHDRAWAL: 'Rút khóa học', COURSE_RUN_CANCELLED: 'Hủy đợt học', MATERIAL_CHANGE: 'Thay đổi đáng kể',
-  UNRESOLVED_SESSIONS: 'Buổi học chưa xử lý', TRANSFER_CREDIT_EXCESS: 'Chênh lệch chuyển đợt', PAYMENT_EXCEPTION: 'Điều chỉnh thanh toán',
+  UNRESOLVED_SESSIONS: 'Buổi học chưa xử lý', REDUCED_SESSION_COUNT: 'Hoàn tiền buổi bị giảm', TRANSFER_CREDIT_EXCESS: 'Chênh lệch chuyển đợt', PAYMENT_EXCEPTION: 'Điều chỉnh thanh toán',
 };
 
 export const COURSE_TRANSFER_STATUS_LABELS = {
@@ -67,9 +67,11 @@ export function courseNotificationDestination(item, role) {
   const type = item?.notificationType || '';
   if (!type.startsWith('COURSE_')) return null;
   if (role === 'member') {
-    if (type.startsWith('COURSE_REFUND_')) return '/member/courses#refunds';
-    if (type.startsWith('COURSE_TRANSFER_')) return '/member/courses#transfers';
-    if (type === 'COURSE_SCHEDULE_CHANGED') return '/member/courses#schedule-changes';
+    if (type.startsWith('COURSE_REFUND_')) return '/member/courses/refunds';
+    if (type.startsWith('COURSE_TRANSFER_')) return '/member/courses/transfers';
+    if (type === 'COURSE_SCHEDULE_CHANGED') return '/member/courses/schedule-changes';
+    if (type.startsWith('COURSE_WITHDRAWAL_')) return '/member/courses/withdrawals';
+    if (type.startsWith('COURSE_WAITLIST_')) return '/member/courses/waitlist';
     return '/member/courses';
   }
   if (role === 'reception' && type.startsWith('COURSE_REFUND_')) return '/reception/course-refunds';
