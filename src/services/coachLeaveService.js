@@ -17,8 +17,8 @@ export async function withdrawCoachLeaveRequest(requestId) {
   return data;
 }
 
-export async function listManagerCoachLeaveRequests(status) {
-  const params = status ? { status } : undefined;
+export async function listManagerCoachLeaveRequests(status, page = 0) {
+  const params = { page, size: 20, ...(status ? { status } : {}) };
   const { data } = await api.get('/manager/coach-leave-requests', { params });
   return data;
 }

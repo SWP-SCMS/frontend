@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { useEffect, useRef, useState } from 'react';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import {
@@ -368,11 +369,11 @@ export default function ReceptionCenterCheckInPage() {
                       </span>
                     </div>
                   </div>
-                  <span
+                  <Badge
                     className={`badge ${STATUS_BADGE[selectedMember.status] || 'bg-light text-dark'}`}
                   >
                     {STATUS_LABELS[selectedMember.status] || selectedMember.status || '—'}
-                  </span>
+                  </Badge>
                 </div>
 
                 <dl className="row mb-3">

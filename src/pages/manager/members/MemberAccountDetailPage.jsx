@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Member account detail (US06).
 //
@@ -200,9 +201,9 @@ export default function MemberAccountDetailPage() {
 
                 <dt className="col-sm-4 text-muted fw-normal">Trạng thái</dt>
                 <dd className="col-sm-8 mb-2">
-                  <span className={`badge ${STATUS_BADGE[status] || 'bg-light text-dark'}`}>
+                  <Badge className={`badge ${STATUS_BADGE[status] || 'bg-light text-dark'}`}>
                     {STATUS_LABELS[status] || status || '—'}
-                  </span>
+                  </Badge>
                 </dd>
 
                 <dt className="col-sm-4 text-muted fw-normal">Ngày sinh</dt>

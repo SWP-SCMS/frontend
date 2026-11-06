@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Session detail (US29) + Cancel (US31).
 //
@@ -345,11 +346,11 @@ export default function SessionDetailPage() {
           </h1>
           <p className="text-muted mb-1">Buổi tập</p>
           <div className="d-flex align-items-center gap-2 flex-wrap">
-            <span
+            <Badge
               className={`badge ${STATUS_BADGE[status] || 'bg-light text-dark'}`}
             >
               {STATUS_LABEL[status] || status || '—'}
-            </span>
+            </Badge>
             <span className="text-muted small">
               {formatGymDate(session.startTime)} ·{' '}
               {formatGymTime(session.startTime)} –{' '}

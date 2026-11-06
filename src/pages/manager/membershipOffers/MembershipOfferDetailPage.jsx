@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Membership Offer detail (US08).
@@ -90,13 +91,13 @@ export default function MembershipOfferDetailPage() {
         <div>
           <h1 className="h3 fw-bold mb-1">{offer.name || '—'}</h1>
           <p className="text-muted mb-0">
-            <span
+            <Badge
               className={`badge me-2 ${
                 'bg-light text-dark'
               }`}
             >
               {offer.planCode || '—'}
-            </span>
+            </Badge>
             {offer.planDisplayName || ''}
             {offer.status ? ` · ${statusLabel(offer.status)}` : ''}
           </p>
@@ -127,13 +128,13 @@ export default function MembershipOfferDetailPage() {
 
                 <dt className="col-sm-4 text-muted fw-normal">Trạng thái</dt>
                 <dd className="col-sm-8 mb-2">
-                  <span
+                  <Badge
                     className={`badge ${
                       STATUS_BADGE[offer.status] || 'bg-light text-dark'
                     }`}
                   >
                     {statusLabel(offer.status)}
-                  </span>
+                  </Badge>
                 </dd>
 
                 <dt className="col-sm-4 text-muted fw-normal">

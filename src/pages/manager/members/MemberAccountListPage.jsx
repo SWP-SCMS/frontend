@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Member account list & search (US06).
@@ -164,9 +165,9 @@ export default function MemberAccountListPage() {
               </td>
               <td>{row.activePlanCode ? (plans.find(p => p.code === row.activePlanCode)?.displayName || row.activePlanCode) : 'Chưa có gói'}</td>
               <td>
-                <span className={`badge ${STATUS_BADGE[row.status] || 'bg-light text-dark'}`}>
+                <Badge className={`badge ${STATUS_BADGE[row.status] || 'bg-light text-dark'}`}>
                   {statusLabel(row.status)}
-                </span>
+                </Badge>
               </td>
               <td>{row.phone || '—'}</td>
               <td>{row.email || '—'}</td>

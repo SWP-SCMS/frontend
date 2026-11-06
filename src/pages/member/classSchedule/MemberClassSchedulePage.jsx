@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Member – Lịch của tôi: lịch tuần các buổi tập MÀ HỘI VIÊN ĐÃ ĐẶT.
 //
@@ -410,7 +411,7 @@ function SessionCard({ session, onClick }) {
       <div className="mcs-cal-session-foot">
         <ClassTypePill classType={s.classType} small />
         {/* Xám: chưa điểm danh. Xanh: đã điểm danh. Đỏ: vắng (quá hạn mà chưa PRESENT). */}
-        <span
+        <Badge
           className={`badge mcs-pill-sm ${
             att.key === 'present'
               ? 'bg-success-subtle text-success-emphasis'
@@ -420,7 +421,7 @@ function SessionCard({ session, onClick }) {
           }`}
         >
           {att.text}
-        </span>
+        </Badge>
       </div>
     </button>
   );

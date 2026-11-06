@@ -1,3 +1,4 @@
+import Badge from './SystemBadge';
 import { Alert, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
@@ -30,9 +31,9 @@ export default function ReceptionActiveMembershipSummary({ membership, memberCod
             {formatDate(membership.effectiveStartDate)} – {formatDate(membership.effectiveEndDate)}
           </div>
         </div>
-        <span className={`badge align-self-start ${membership.frozen ? 'text-bg-warning' : 'text-bg-success'}`}>
+        <Badge className={`badge align-self-start ${membership.frozen ? 'text-bg-warning' : 'text-bg-success'}`}>
           {membership.frozen ? 'Đang đóng băng' : 'Đang hoạt động'}
-        </span>
+        </Badge>
       </div>
     </Alert>
   );

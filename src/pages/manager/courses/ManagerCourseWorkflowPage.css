@@ -1,0 +1,30 @@
+.course-refund-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1280px;
+}
+.course-refund-table > :not(caption) > * > * {
+  padding: 1rem 1.25rem;
+}
+.course-refund-table td:nth-child(2),
+.course-refund-table td:nth-child(3) {
+  overflow-wrap: anywhere;
+}
+.course-refund-table th:nth-child(6),
+.course-refund-table td:nth-child(6) {
+  padding-left: 3.5rem;
+}
+
+.course-request-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1200px;
+}
+.course-request-table > :not(caption) > * > * {
+  padding: 1rem 1.25rem;
+}
+.course-request-table td:nth-child(2),
+.course-request-table td:nth-child(3),
+.course-request-table td:nth-child(4) {
+  overflow-wrap: anywhere;
+}

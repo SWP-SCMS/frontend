@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Room detail (US25).
@@ -154,13 +155,13 @@ export default function RoomDetailPage() {
             <Card.Body>
               <h2 className="h6 text-uppercase text-muted">Trạng thái</h2>
               <p className="mb-1">
-                <span
+                <Badge
                   className={`badge ${
                     STATUS_BADGE[room.status] || 'bg-light text-dark'
                   }`}
                 >
                   {statusLabel(room.status)}
-                </span>
+                </Badge>
               </p>
               {room.status === 'INACTIVE' ? (
                 <p className="text-muted small mb-0">

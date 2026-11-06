@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,7 +7,7 @@ import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils
 import { courseAmountText } from '../../../utils/courseWorkflow';
 import { disburseCourseRefund } from '../../../services/courseWorkflowService';
 import { useRef, useState } from 'react';
-import { Alert, Badge, Button, Card, Form, Modal, Table } from 'react-bootstrap';
+import {Alert,  Button, Card, Form, Modal, Table} from 'react-bootstrap';
 import { listReceptionCourseRefunds, getReceptionCourseRefund } from '../../../services/courseWorkflowService';
 import { COURSE_ELIGIBILITY_LABELS, COURSE_REFUND_SOURCE_LABELS } from '../../../utils/courseWorkflow';
 import { COURSE_RUN_STATUS_LABELS, formatCourseDateTime, formatCourseMoney, getCourseErrorMessage } from '../../../utils/courseUi';
@@ -15,7 +16,7 @@ function RefundSummary({ item }) {
   return <>
     <h2 className="h5">{item.memberName || 'Hội viên'} · {item.memberCode || 'Chưa có mã hội viên'}</h2>
     <p>{item.courseName || 'Khóa học'} · {item.courseCode || '—'} · {item.runCode || 'Đợt học'}</p>
-    <p>Trạng thái đợt học: {COURSE_RUN_STATUS_LABELS[item.courseRunStatus] || 'Chưa có thông tin'}</p>
+    <p>Trạng thái đợt học: <Badge>{COURSE_RUN_STATUS_LABELS[item.courseRunStatus] || 'Chưa có thông tin'}</Badge></p>
     <p>{COURSE_REFUND_SOURCE_LABELS[item.source] || 'Hoàn tiền khóa học'}</p>
     <p>Số tiền đã duyệt: <strong>{formatCourseMoney(item.amount)}</strong></p>
     <p>Ngày duyệt: {formatCourseDateTime(item.approvedAt)}</p>

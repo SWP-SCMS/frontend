@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Trang tổng quan của Huấn luyện viên.
 //
@@ -12,7 +13,7 @@ import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Badge, Button, Modal, Spinner, Table } from 'react-bootstrap';
+import {Button, Modal, Spinner, Table} from 'react-bootstrap';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { useAuth } from '../../../context/useAuth';
 import { listCoachSessions } from '../../../services/coachScheduleService';

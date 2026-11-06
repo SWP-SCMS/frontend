@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Class list (US24).
@@ -175,13 +176,13 @@ export default function ClassListPage() {
               </td>
               <td>{TYPE_LABEL[row.classType] || row.classType || '—'}</td>
               <td>
-                <span
+                <Badge
                   className={`badge ${
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
                   {statusLabel(row.status)}
-                </span>
+                </Badge>
               </td>
               <td className="text-end">
                 <Button

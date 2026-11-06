@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -55,9 +56,9 @@ export default function CourseRunDetailPage({ memberView = false }) {
                 <div>
                   <span className="scms-home-eyebrow">{run.courseCode} · {run.runCode}</span>
                   <h1>{run.courseName}</h1>
-                  <span className={`course-status is-${run.registrationStatus?.toLowerCase()}`}>
+                  <Badge className={`course-status is-${run.registrationStatus?.toLowerCase()}`}>
                     {getCourseStatusLabel(COURSE_REGISTRATION_STATUS_LABELS, run.registrationStatus)}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="course-price-box"><small>Học phí</small><strong>{formatCourseMoney(run.tuitionVnd)}</strong></div>
               </div>
@@ -88,7 +89,7 @@ export default function CourseRunDetailPage({ memberView = false }) {
                     <article className="course-session" key={session.id}>
                       <span className="course-session-unit">Buổi {session.unitNumber}</span>
                       <div><strong>{formatCourseDateTime(session.startAt)}</strong><p>{session.roomName || 'Phòng đang cập nhật'} · {session.coachName || run.primaryCoachName || 'HLV đang cập nhật'}</p></div>
-                      <span className="course-session-status">{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.status)}</span>
+                      <Badge className="course-session-status">{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.status)}</Badge>
                     </article>
                   ))}
                 </div>

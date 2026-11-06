@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Modal } from 'react-bootstrap';
@@ -71,7 +72,7 @@ export default function MemberCourseTransfers({ enrollments, onTransferred, sele
       {offers.filter(o => !selectedEnrollmentId || o.sourceEnrollmentId === selectedEnrollmentId).map((offer) => <article key={offer.id} className="member-course-card mt-3">
         <h3>{(offer.sourceCourseName ? offer.sourceCourseName + ' · ' + offer.sourceRunCode : sourceNames.get(offer.sourceEnrollmentId)) || 'Đăng ký khóa học của bạn'}</h3>
         <p>Đợt học thay thế: {offer.targetCourseName ? offer.targetCourseName + ' · ' + offer.targetRunCode : runNames.get(offer.targetRunId) || 'Chưa có thông tin'}</p>
-        <p>{COURSE_TRANSFER_STATUS_LABELS[offer.status] || 'Đang cập nhật'} · Hạn chấp nhận/thanh toán: {formatCourseDateTime(offer.expiresAt)}</p>
+        <p><Badge>{COURSE_TRANSFER_STATUS_LABELS[offer.status] || 'Đang cập nhật'}</Badge> · Hạn chấp nhận/thanh toán: {formatCourseDateTime(offer.expiresAt)}</p>
         <dl><dt>Giá trị được chuyển</dt><dd>{formatCourseMoney(offer.creditVnd)}</dd><dt>Học phí đợt mới</dt><dd>{formatCourseMoney(offer.targetTuitionVnd)}</dd><dt>Chênh lệch theo đề nghị</dt><dd>{formatCourseMoney(offer.differenceVnd)}</dd></dl>
         {canAcceptCourseTransfer(offer, now) && <Button disabled={busy} onClick={() => setSelected(offer)}>Xem đợt thay thế và chấp nhận</Button>}
         {offer.status === 'OFFERED' && Date.parse(offer.expiresAt) <= now && <p>Đề nghị đã hết thời hạn chấp nhận.</p>}
@@ -85,7 +86,7 @@ export default function MemberCourseTransfers({ enrollments, onTransferred, sele
           <h3 className="h5">{target.courseName} · {target.runCode}</h3>
           <p>{formatCourseDateTime(target.plannedStartAt)} – {formatCourseDateTime(target.plannedEndAt)}</p>
           <p>Huấn luyện viên: {target.primaryCoachName || 'Đang cập nhật'}</p>
-          <ul>{target.sessions?.map((session) => <li key={session.id}>Buổi {session.unitNumber}: {formatCourseDateTime(session.startAt)} – {formatCourseDateTime(session.endAt)} · {COURSE_SESSION_STATUS_LABELS[session.status] || 'Chưa có trạng thái'}</li>)}</ul>
+          <ul>{target.sessions?.map((session) => <li key={session.id}>Buổi {session.unitNumber}: {formatCourseDateTime(session.startAt)} – {formatCourseDateTime(session.endAt)} · <Badge>{COURSE_SESSION_STATUS_LABELS[session.status] || 'Chưa có trạng thái'}</Badge></li>)}</ul>
           <p>Chênh lệch theo đề nghị: <strong>{formatCourseMoney(selected.differenceVnd)}</strong>. Khoản dương cần thanh toán; khoản âm được xử lý qua quy trình hoàn tiền.</p>
           <p>Hạn chấp nhận/thanh toán: {formatCourseDateTime(selected.expiresAt)}.</p>
         </>}

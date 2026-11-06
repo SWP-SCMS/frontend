@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Room list (US25).
 //
@@ -155,13 +156,13 @@ export default function RoomListPage() {
               </td>
               <td>{row.usageMode === 'SHARED' ? 'Dùng chung' : 'Dùng riêng'}</td>
               <td>
-                <span
+                <Badge
                   className={`badge ${
                     STATUS_BADGE[row.status] || 'bg-light text-dark'
                   }`}
                 >
                   {STATUS_FILTERS.find((status) => status.value === row.status)?.label || '—'}
-                </span>
+                </Badge>
               </td>
               <td className="text-end">
                 <Button

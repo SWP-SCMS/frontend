@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 // Receptionist – Find a Member at the front desk (US11).
 //
 // BE: GET /api/v1/reception/members/search?memberId=MB-123
@@ -230,9 +231,9 @@ export default function MemberListPage() {
                   Mã hội viên: <span className="fw-semibold">{member.memberId}</span>
                 </div>
               </div>
-              <span className={`badge ${STATUS_BADGE[member.status] || 'bg-light text-dark'}`}>
+              <Badge className={`badge ${STATUS_BADGE[member.status] || 'bg-light text-dark'}`}>
                 {STATUS_LABELS[member.status] || 'Không xác định'}
-              </span>
+              </Badge>
             </div>
 
             <Row className="g-3 mt-2">

@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Manager – Staff/Manager account list & search (US05).
@@ -171,9 +172,9 @@ export default function StaffAccountListPage() {
               </td>
               <td>{ROLE_LABELS[row.role] || row.role || '—'}</td>
               <td>
-                <span className={`badge ${STATUS_BADGE[row.status] || 'bg-light text-dark'}`}>
+                <Badge className={`badge ${STATUS_BADGE[row.status] || 'bg-light text-dark'}`}>
                   {statusLabel(row.status)}
-                </span>
+                </Badge>
               </td>
               <td>{row.phone || '—'}</td>
               <td>{row.email || '—'}</td>

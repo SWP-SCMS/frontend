@@ -1,0 +1,30 @@
+:root {
+  --status-green-bg: #dcfce7; --status-green-text: #166534;
+  --status-red-bg: #fee2e2; --status-red-text: #991b1b;
+  --status-amber-bg: #fef3c7; --status-amber-text: #92400e;
+  --status-blue-bg: #dbeafe; --status-blue-text: #1e40af;
+  --status-purple-bg: #f3e8ff; --status-purple-text: #6b21a8;
+  --status-orange-bg: #ffedd5; --status-orange-text: #9a3412;
+  --status-neutral-bg: #edf0f3; --status-neutral-text: #475569;
+}
+.badge.system-badge {
+  font-family: inherit; font-size: .8125rem; font-weight: 600;
+  line-height: 1.4; padding: .4em .7em; border-radius: .5rem;
+  display: inline-block; white-space: normal; text-align: left;
+}
+.badge.system-badge--green { background: var(--status-green-bg) !important; color: var(--status-green-text) !important; }
+.badge.system-badge--red { background: var(--status-red-bg) !important; color: var(--status-red-text) !important; }
+.badge.system-badge--amber { background: var(--status-amber-bg) !important; color: var(--status-amber-text) !important; }
+.badge.system-badge--blue { background: var(--status-blue-bg) !important; color: var(--status-blue-text) !important; }
+.badge.system-badge--purple { background: var(--status-purple-bg) !important; color: var(--status-purple-text) !important; }
+.badge.system-badge--orange { background: var(--status-orange-bg) !important; color: var(--status-orange-text) !important; }
+.badge.system-badge--neutral { background: var(--status-neutral-bg) !important; color: var(--status-neutral-text) !important; }
+.scms-md-badge.on,
+.scms-mp-badge.on,
+.scms-my-plan-status.on,
+.scms-ml-card-status.on { background: var(--status-green-bg) !important; color: var(--status-green-text) !important; font-size: .8125rem; font-weight: 600; }
+.scms-md-badge:not(.on),
+.scms-mp-badge:not(.on),
+.scms-my-plan-status:not(.on):not(.reserved),
+.scms-ml-card-status:not(.on) { background: var(--status-neutral-bg) !important; color: var(--status-neutral-text) !important; font-size: .8125rem; font-weight: 600; }
+.scms-my-plan-status.reserved { background: var(--status-blue-bg) !important; color: var(--status-blue-text) !important; font-size: .8125rem; font-weight: 600; }

@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -177,7 +178,7 @@ export default function MemberCourseRegistrationPage() {
               <div className="member-course-session-row" key={session.id}>
                 <strong>Buổi {session.unitNumber}{session.status === 'MAKEUP_SCHEDULED' ? ' · Học bù' : ''}</strong>
                 <span>{formatCourseDateTime(session.startAt)}</span>
-                <span>{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.status)}</span>
+                <Badge>{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.status)}</Badge>
               </div>
             ))}
           </div>
@@ -202,7 +203,7 @@ export default function MemberCourseRegistrationPage() {
             </>
           ) : (
             <>
-              <div className="member-course-card-head"><h2>Thanh toán học phí</h2><span className="member-course-status">{getCourseStatusLabel(COURSE_ORDER_STATUS_LABELS, order?.orderStatus)}</span></div>
+              <div className="member-course-card-head"><h2>Thanh toán học phí</h2><Badge className="member-course-status">{getCourseStatusLabel(COURSE_ORDER_STATUS_LABELS, order?.orderStatus)}</Badge></div>
               <p>Đơn {order?.orderReference || 'đăng ký khóa học'} giữ chỗ đến {formatCourseDateTime(order?.expiresAt)}.</p>
               <p>Số tiền của đơn: <strong>{formatCourseMoney(order?.tuitionVnd, order?.currencyCode || 'VND')}</strong>.</p>
               {!displayedPayment ? (

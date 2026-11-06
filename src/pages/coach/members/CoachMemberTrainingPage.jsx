@@ -1,16 +1,15 @@
+import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import {
-  Alert,
-  Badge,
+import {Alert,
+
   Button,
   Card,
   Form,
   Modal,
-  Spinner,
-} from 'react-bootstrap';
+  Spinner} from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';

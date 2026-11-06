@@ -1,10 +1,11 @@
+import Badge from '../../../components/common/SystemBadge';
 import CourseImageField from '../../../components/common/CourseImageField';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseEditSchema } from '../../../schemas/courseSchemas';
 import { useCallback, useState } from 'react';
-import { Badge, Button, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
+import {Button, Col, Form, Modal, Row, Spinner} from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import {

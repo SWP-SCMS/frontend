@@ -1,5 +1,6 @@
+import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Badge, Button, Card, Form, Modal, Spinner, Table } from 'react-bootstrap';
+import {Alert,  Button, Card, Form, Modal, Spinner, Table} from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import useAutoRefresh from '../../../hooks/useAutoRefresh';

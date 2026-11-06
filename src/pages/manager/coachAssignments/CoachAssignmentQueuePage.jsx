@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 // Manager – PERSONAL_COACHING assignment discovery workflow.
 //
 // The candidate endpoint is the eligibility source of truth: every returned
@@ -7,9 +8,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import {
-  Alert,
-  Badge,
+import {Alert,
+
   Button,
   ButtonGroup,
   Card,
@@ -19,8 +19,7 @@ import {
   Modal,
   Row,
   Spinner,
-  Table,
-} from 'react-bootstrap';
+  Table} from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';

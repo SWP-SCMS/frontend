@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 import useConfirmation from "../../../hooks/useConfirmation";
 import usePollingEffect from "../../../hooks/usePollingEffect";
 import { useRef, useState } from "react";
@@ -257,7 +258,7 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
                 · {o.targetRunCode}
               </p>
               <p>
-                {COURSE_TRANSFER_STATUS_LABELS[o.status] || "Đang cập nhật"} ·
+                <Badge>{COURSE_TRANSFER_STATUS_LABELS[o.status] || "Đang cập nhật"}</Badge> ·
                 Chênh lệch {money(o.differenceVnd)} · Hạn {date(o.expiresAt)}
               </p>
               <Link to={`/course-runs/${o.targetRunId}`}>Xem đợt học</Link>
@@ -292,7 +293,7 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
             <Card as="article" body className="mb-3 shadow-sm" key={w.id}>
               <p>
                 {w.courseName} · {w.runCode} ·{" "}
-                {COURSE_WITHDRAWAL_STATUS_LABELS[w.status] || "Đang cập nhật"}
+                <Badge>{COURSE_WITHDRAWAL_STATUS_LABELS[w.status] || "Đang cập nhật"}</Badge>
               </p>
               <p>
                 Khoản hoàn đã ghi nhận:{" "}
@@ -316,7 +317,7 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
           )}
           {data.refunds.items?.map((r) => (
             <p key={r.id}>
-              {COURSE_REFUND_STATUS_LABELS[r.status] || "Đang cập nhật"} · Nghĩa
+              <Badge>{COURSE_REFUND_STATUS_LABELS[r.status] || "Đang cập nhật"}</Badge> · Nghĩa
               vụ {money(r.grossObligationVnd)} · Đã duyệt{" "}
               {money(r.approvedAmountVnd)} · Đã chi{" "}
               {money(r.disbursedAmountVnd)}

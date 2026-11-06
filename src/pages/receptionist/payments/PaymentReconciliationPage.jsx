@@ -1,3 +1,4 @@
+import Badge from '../../../components/common/SystemBadge';
 // Receptionist / Manager – Manual Payment Reconciliation (US19).
 //
 // The screen is a worklist of PENDING payments plus a two-outcome decision
@@ -312,7 +313,7 @@ export default function PaymentReconciliationPage() {
                   {row.expiresAt ? (
                     <>
                       <div>{formatDateTime(row.expiresAt)}</div>
-                      <span
+                      <Badge
                         className={`badge ${
                           expired
                             ? 'bg-secondary-subtle text-secondary-emphasis'
@@ -320,7 +321,7 @@ export default function PaymentReconciliationPage() {
                         }`}
                       >
                         {expired ? 'Đã quá hạn' : 'Còn trong hạn'}
-                      </span>
+                      </Badge>
                     </>
                   ) : (
                     <span className="text-muted small">Không có hạn</span>

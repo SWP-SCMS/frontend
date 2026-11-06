@@ -126,3 +126,59 @@ test('verify email: failed change clears old success and preserves current email
   await expect(page.locator('.alert-success')).toHaveCount(0);
   await expect(page.locator('#verify-email')).toHaveValue('new@example.com');
 });
+
+test('membership requests separate tabs, preserve filters and hide direct cancellation on freeze', async ({ page }) => {
+  const common = { memberAccountId: 'member', memberId: 'MB-1', memberFullName: 'Test Member', createdAt: '2026-11-01T00:00:00Z', version: 0 };
+  const errors = await mock(page, 'MANAGER', (path, url) => {
+    if (path === '/manager/membership-termination-requests') {
+      return { ...pageOf(url.searchParams.get('page') === '1'
+        ? [{ ...common, id: 't2', status: 'REJECTED', reason: 'Older rejected request', mode: 'IMMEDIATE' }]
+        : [{ ...common, id: 't1', status: 'PENDING', reason: 'Cancel request', mode: 'END_OF_CYCLE' }]), totalPages: 2 };
+    }
+    if (path === '/manager/membership-freeze-requests') return pageOf([
+      { ...common, id: 'f1', status: 'ACTIVE', reason: 'Freeze request', startDate: '2026-11-01', endDate: '2026-12-01', feeAmount: 100000 },
+    ]);
+  });
+  await page.goto('/manager/membership-requests');
+  await expect(page.getByRole('heading', { name: 'Yêu cầu hủy gói', exact: true })).toBeVisible();
+  await expect(page.getByText('Hủy trực tiếp theo quyết định quản lý')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Tạo yêu cầu hủy', exact: true }).click();
+  await expect(page.getByText('Hủy trực tiếp theo quyết định quản lý')).toBeVisible();
+  await page.getByRole('combobox', { name: 'Lọc trạng thái hủy gói' }).selectOption('REJECTED');
+  await expect(page.getByText('Older rejected request')).toBeVisible();
+  await expect(page.getByText('Cancel request', { exact: true })).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Đóng băng', exact: true }).click();
+  await expect(page).toHaveURL(/tab=freeze/);
+  await expect(page.getByText('Hủy trực tiếp theo quyết định quản lý')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Tạo yêu cầu hủy', exact: true })).toHaveCount(0);
+  await expect(page.getByText('Freeze request', { exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Lọc trạng thái đóng băng' }).selectOption('PENDING');
+  await expect(page.getByText('Không có yêu cầu phù hợp.')).toBeVisible();
+  await page.getByRole('tab', { name: 'Hủy gói', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Lọc trạng thái hủy gói' })).toHaveValue('REJECTED');
+  await page.getByRole('tab', { name: 'Đóng băng', exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole('tab', { name: 'Đóng băng', exact: true })).toHaveAttribute('aria-selected', 'true');
+  expect(errors).toEqual([]);
+});
+
+test('catalog and refund badges use the shared semantic palette', async ({ page }) => {
+  await mock(page, 'MANAGER', path => {
+    if (path === '/manager/courses') return pageOf([
+      { id: 'c1', code: 'C1', name: 'Published course', status: 'PUBLISHED', defaultMinimumEnrollment: 1 },
+      { id: 'c2', code: 'C2', name: 'Draft course', status: 'DRAFT', defaultMinimumEnrollment: 1 },
+    ]);
+    if (path === '/manager/course-refund-obligations') return { totalPages: 1, items: [
+      { id: 'r1', memberName: 'Member', memberCode: 'MB1', status: 'COMPLETED', grossObligationVnd: 100, source: 'MEMBER_WITHDRAWAL' },
+      { id: 'r2', memberName: 'Member', memberCode: 'MB1', status: 'APPROVED', grossObligationVnd: 100, source: 'MEMBER_WITHDRAWAL' },
+    ] };
+  });
+  await page.goto('/manager/courses');
+  const published = page.locator('.system-badge').filter({ hasText: 'Đã công bố' });
+  await expect(published).toHaveCSS('background-color', 'rgb(220, 252, 231)');
+  await expect(published).toHaveCSS('color', 'rgb(22, 101, 52)');
+  await expect(published).toHaveCSS('font-weight', '600');
+  await page.goto('/manager/course-refunds');
+  await expect(page.locator('.system-badge').filter({ hasText: 'Đã xác minh hoàn tất' })).toHaveCSS('background-color', 'rgb(220, 252, 231)');
+  await expect(page.locator('.system-badge').filter({ hasText: 'Đã duyệt, chưa ghi nhận chi' })).toHaveCSS('background-color', 'rgb(219, 234, 254)');
+});
