@@ -68,9 +68,9 @@ export default function ManagerCourseDetailPage() {
   }
 
   if (loading) return <div className="text-center py-5"><Spinner /></div>;
-  if (!course) return <div className="container-fluid py-4"><ErrorAlert error={error} title="Không thể tải khóa học" /></div>;
+  if (!course) return <div className="scms-course-workspace"><ErrorAlert error={error} title="Không thể tải khóa học" /></div>;
 
-  return <div className="container-fluid py-4">
+  return <div className="scms-course-workspace">
     <Link to="/manager/courses" className="text-decoration-none">← Quay lại danh mục</Link>
     <div className="d-flex justify-content-between align-items-start mt-2 mb-4">
       <div><div className="d-flex align-items-center gap-2"><h1 className="h3 mb-0">{course.name}</h1><Badge bg="secondary">{getCourseStatusLabel(COURSE_STATUS_LABELS, course.status)}</Badge></div><p className="text-muted mb-0">{course.code} · {course.disciplineName}</p></div>
@@ -83,8 +83,8 @@ export default function ManagerCourseDetailPage() {
     </div>
     {error && <ErrorAlert error={error} title="Không thể xử lý khóa học" onClose={() => setError('')} />}
     <Row className="g-3">
-      <Col lg={8}><div className="bg-white rounded shadow-sm p-4 h-100"><h2 className="h5">Thông tin khóa học</h2><p className="text-muted" style={{ whiteSpace: 'pre-wrap' }}>{course.description || 'Chưa có mô tả.'}</p>{course.imageUrl && <a href={course.imageUrl} target="_blank" rel="noreferrer">Xem ảnh khóa học</a>}</div></Col>
-      <Col lg={4}><div className="bg-white rounded shadow-sm p-4"><dl className="row mb-0"><dt className="col-7">Đăng ký tối thiểu</dt><dd className="col-5 text-end">{course.defaultMinimumEnrollment}</dd><dt className="col-7">Phiên bản</dt><dd className="col-5 text-end">{course.version}</dd></dl></div></Col>
+      <Col lg={8}><div className="card border-0 shadow-sm p-4 h-100"><h2 className="h5">Thông tin khóa học</h2><p className="text-muted" style={{ whiteSpace: 'pre-wrap' }}>{course.description || 'Chưa có mô tả.'}</p>{course.imageUrl && <a href={course.imageUrl} target="_blank" rel="noreferrer">Xem ảnh khóa học</a>}</div></Col>
+      <Col lg={4}><div className="card border-0 shadow-sm p-4"><dl className="row mb-0"><dt className="col-7">Đăng ký tối thiểu</dt><dd className="col-5 text-end">{course.defaultMinimumEnrollment}</dd><dt className="col-7">Phiên bản</dt><dd className="col-5 text-end">{course.version}</dd></dl></div></Col>
     </Row>
 
     <Modal show={!!statusAction} onHide={() => { if (!busy) setStatusAction(null); }} centered backdrop={busy ? 'static' : true} keyboard={!busy}>

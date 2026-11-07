@@ -10,6 +10,7 @@ const MESSAGES = {
   PLUS_MEMBERSHIP_REQUIRED: 'Gói tập của hội viên không có quyền lợi ghi kết quả hoặc nhận xét tại thời điểm buổi tập.',
   COACH_ASSIGNMENT_NOT_FOUND: 'Không tìm thấy phân công huấn luyện phù hợp.',
   SESSION_NOT_FOUND: 'Không tìm thấy buổi tập trong phạm vi phụ trách của bạn.',
+  SESSION_TRAINING_NOT_AVAILABLE: 'Chỉ có thể ghi kết quả và nhận xét sau khi buổi tập kết thúc và chưa bị hủy.',
   SESSION_MEMBER_NOT_FOUND: 'Hội viên không có đăng ký hợp lệ trong buổi tập này.',
   TRAINING_RESULT_NOT_FOUND: 'Không tìm thấy kết quả tập luyện. Vui lòng tải lại dữ liệu.',
   TRAINING_FEEDBACK_NOT_FOUND: 'Không tìm thấy nhận xét. Vui lòng tải lại dữ liệu.',

@@ -37,7 +37,6 @@ import ErrorAlert from '../../../components/common/ErrorAlert';
 import AuthenticatedProfileImage from '../../../components/common/AuthenticatedProfileImage';
 import ProfileImageUploadControl from '../../../components/common/ProfileImageUploadControl';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
-import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import {
   getMyProfile,
   updateMyProfile,
@@ -236,34 +235,20 @@ function Field({ id, label, required, wide, children, error }) {
     <div
       className={`scms-mp-field${wide ? ' wide' : ''}`}
     >
-      <label htmlFor={id}>
+      <label className="form-label" htmlFor={id}>
         <span>
           {label}
-          {required ? <span className="req"> *</span> : null}
+          {required ? <span className="text-danger"> *</span> : null}
         </span>
       </label>
       {children}
-      {error ? <div id={`${id}-error`} className="scms-mp-hint" role="alert" style={{ marginTop: 6, color: '#dc2626' }}>{error.message}</div> : null}
+      {error ? <div id={`${id}-error`} className="small text-muted" role="alert" style={{ marginTop: 6, color: 'var(--scms-red)' }}>{error.message}</div> : null}
     </div>
   );
 }
 
-function SectionHead({ icon, title, chip, chipRequired }) {
-  return (
-    <div className="scms-mp-card-head">
-      <div className="scms-mp-headrow">
-        <span className="scms-mp-headicon">
-          <Icon name={icon} />
-        </span>
-        <h2>{title}</h2>
-      </div>
-      {chip ? (
-        <span className={`scms-mp-chip${chipRequired ? ' req' : ''}`}>
-          {chip}
-        </span>
-      ) : null}
-    </div>
-  );
+function SectionHead({ title }) {
+  return <h2 className="h5 mb-3">{title}</h2>;
 }
 
 // ----- Trang chính -----
@@ -419,7 +404,7 @@ export default function MemberProfilePage() {
 
   if (loading) {
     return (
-      <div className="scms-mp-center">
+      <div className="text-center py-5">
         <Spinner animation="border" variant="danger" />
       </div>
     );
@@ -437,15 +422,12 @@ export default function MemberProfilePage() {
 
   return (
     <form className="scms-mp" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <div className="scms-mp-top">
-        <div>
-          <MemberBreadcrumb current="Hồ sơ cá nhân" />
-          <h1 className="scms-mp-title">Hồ sơ cá nhân</h1>
+      <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <h1 className="h3 fw-bold mb-1">Hồ sơ cá nhân</h1>
+        <div className="d-flex flex-wrap gap-2">
+          <Link to="/member/profile/email" className="btn btn-outline-danger">Đổi email</Link>
+          <Link to="/member/profile/password" className="btn btn-outline-danger">Đổi mật khẩu</Link>
         </div>
-        <span className={`scms-mp-badge${hasActiveMembership ? ' on' : ''}`}>
-          <span className="scms-mp-badge-dot" aria-hidden="true"></span>
-          {hasActiveMembership ? `${tierText} đang hoạt động` : 'Chưa đăng ký gói tập'}
-        </span>
       </div>
 
       {!membershipLoading && !hasActiveMembership ? (
@@ -462,7 +444,7 @@ export default function MemberProfilePage() {
               </span>
             </div>
           </div>
-          <Link to="/member/plan" className="scms-mp-btn-red">
+          <Link to="/member/plan" className="btn btn-danger">
             Xem các gói tập <Icon name="arrow" size={16} />
           </Link>
         </div>
@@ -471,7 +453,8 @@ export default function MemberProfilePage() {
       <div className="scms-mp-grid">
         {/* ===== Cột trái: ảnh, định danh ===== */}
         <div className="scms-mp-col">
-          <div className="scms-mp-card">
+          <div className="card border-0 shadow-sm p-4">
+            <h2 className="h5 mb-3">Ảnh đại diện</h2>
             <div className="scms-mp-avatar-wrap">
               <div className="scms-mp-avatar">
                 <AuthenticatedProfileImage
@@ -481,8 +464,8 @@ export default function MemberProfilePage() {
                 />
               </div>
               <div>
-                <div className="scms-mp-avatar-name">{fullNameValue || '—'}</div>
-                <div className={`scms-mp-avatar-sub${hasActiveMembership ? ' on' : ''}`}>
+                <div className="fw-semibold">{fullNameValue || '—'}</div>
+                <div className="small text-muted">
                   {hasActiveMembership
                     ? `Hội viên • ${tierText}`
                     : 'Hội viên mới • Chưa đăng ký gói'}
@@ -500,22 +483,22 @@ export default function MemberProfilePage() {
                 }}
               />
               <input type="hidden" {...register('profileImageUrl')} />
-              <span className="scms-mp-hint">
+              <span className="small text-muted">
                 Ảnh hồ sơ là bắt buộc khi check-in lần đầu tại trung tâm.
               </span>
             </div>
           </div>
 
-          <div className="scms-mp-card">
-            <div className="scms-mp-card-head">
-              <span className="scms-mp-label-small">Thẻ hội viên SCMS</span>
-              <span style={{ color: '#dc2626', display: 'flex' }}>
+          <div className="card border-0 shadow-sm p-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h2 className="h5 mb-0">Thông tin hội viên</h2>
+              <span style={{ color: 'var(--scms-red)', display: 'flex' }}>
                 <Icon name="badge" />
               </span>
             </div>
 
             {/* BR-ACC-27 / BR-VAL-ACC-11: Member ID do hệ thống sinh, không sửa được. */}
-            <div className="scms-mp-memberid">
+            <div className="bg-light rounded p-3 mb-3 scms-mp-memberid">
               <small>
                 Mã hội viên
                 <Icon name="lock" size={16} />
@@ -543,13 +526,13 @@ export default function MemberProfilePage() {
                 <span className="v">
                   {tierText}
                   {!membershipLoading && !hasActiveMembership ? (
-                    <Link to="/member/plan">Khám phá gói tập ngay →</Link>
+                    <Link to="/member/plan-registration">Khám phá gói tập ngay →</Link>
                   ) : null}
                 </span>
               </div>
             </div>
 
-            <div className="scms-mp-tip">
+            <div className="alert alert-light d-flex gap-2 mt-3 mb-0 small">
               <Icon name="tip" />
               <span>
                 Hội viên xuất trình mã hội viên hoặc đọc số điện thoại cá nhân
@@ -578,7 +561,7 @@ export default function MemberProfilePage() {
           ) : null}
 
           {/* Mục A: thông tin tài khoản */}
-          <div className="scms-mp-card wide">
+          <div className="card border-0 shadow-sm p-4">
             <SectionHead
               icon="user"
               title="Thông tin tài khoản"
@@ -586,17 +569,17 @@ export default function MemberProfilePage() {
               chipRequired
             />
             <div className="scms-mp-fields">
-              <Field id="mp-fullName" label="Họ và tên đầy đủ" required wide>
+              <Field id="mp-fullName" label="Họ và tên" required>
                 <input
                   id="mp-fullName"
-                  className="scms-mp-input"
+                  className="form-control"
                   {...register('fullName')}
                   placeholder="Nhập họ và tên..."
                   autoComplete="name"
                   aria-invalid={Boolean(errors.fullName)}
                 />
                 {errors.fullName ? (
-                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                  <div className="small text-muted" style={{ marginTop: 6, color: 'var(--scms-red)' }}>
                     {errors.fullName.message}
                   </div>
                 ) : null}
@@ -604,7 +587,7 @@ export default function MemberProfilePage() {
               <Field id="mp-phone" label="Số điện thoại" required>
                 <input
                   id="mp-phone"
-                  className="scms-mp-input"
+                  className="form-control"
                   type="tel"
                   {...register('phone')}
                   placeholder="09xxxxxxxx"
@@ -613,7 +596,7 @@ export default function MemberProfilePage() {
                   aria-invalid={Boolean(errors.phone)}
                 />
                 {errors.phone ? (
-                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                  <div className="small text-muted" style={{ marginTop: 6, color: 'var(--scms-red)' }}>
                     {errors.phone.message}
                   </div>
                 ) : null}
@@ -621,19 +604,15 @@ export default function MemberProfilePage() {
               <Field id="mp-email" label="Địa chỉ Email" required>
                 <input
                   id="mp-email"
-                  className="scms-mp-input"
+                  className="form-control"
                   type="email"
                   {...register('email')}
                   readOnly
                   autoComplete="email"
                   aria-invalid={Boolean(errors.email)}
                 />
-                <div className="scms-mp-hint" style={{ marginTop: 6 }}>
-                  Muốn dùng email khác?{' '}
-                  <Link to="/member/profile/email">Xác thực và đổi email</Link>
-                </div>
                 {errors.email ? (
-                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                  <div className="small text-muted" style={{ marginTop: 6, color: 'var(--scms-red)' }}>
                     {errors.email.message}
                   </div>
                 ) : null}
@@ -641,21 +620,20 @@ export default function MemberProfilePage() {
               <Field id="mp-birthDate" label="Ngày sinh" required>
                 <RhfDateInput
                   id="mp-birthDate"
-                  className="scms-mp-input"
-                  unstyled
+                  className="form-control"
                   control={control}
                   name="birthDate"
                   autoComplete="bday"
                   aria-invalid={Boolean(errors.birthDate)}
                 />
                 {errors.birthDate ? (
-                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                  <div className="small text-muted" style={{ marginTop: 6, color: 'var(--scms-red)' }}>
                     {errors.birthDate.message}
                   </div>
                 ) : null}
               </Field>
               <Field id="mp-gender" label="Giới tính" error={errors.gender}>
-                <select id="mp-gender" className="scms-mp-input" {...register('gender')}
+                <select id="mp-gender" className="form-select" {...register('gender')}
                   aria-invalid={Boolean(errors.gender)} aria-describedby={errors.gender ? 'mp-gender-error' : undefined}>
                   <option value="">Chưa cung cấp</option>
                   <option value="MALE">Nam</option>
@@ -665,7 +643,7 @@ export default function MemberProfilePage() {
               <Field id="mp-address" label="Địa chỉ cư trú hiện tại" error={errors.address} wide>
                 <input
                   id="mp-address"
-                  className="scms-mp-input"
+                  className="form-control"
                   placeholder="Địa chỉ đường, phường/xã, quận/huyện..."
                   {...register('address')} maxLength={500}
                   aria-invalid={Boolean(errors.address)} aria-describedby={errors.address ? 'mp-address-error' : undefined}
@@ -674,37 +652,29 @@ export default function MemberProfilePage() {
             </div>
           </div>
 
-          {/* Mục đổi mật khẩu: dẫn tới trang riêng (US04) */}
-          <div className="scms-mp-card wide">
-            <SectionHead icon="key" title="Đổi mật khẩu" />
-            <div className="scms-mp-pw">
-              <p>
-                Đổi mật khẩu đăng nhập. Sau khi đổi thành công, bạn sẽ được đăng
-                xuất và cần đăng nhập lại.
-              </p>
-              <Link to="/member/profile/password" className="scms-mp-btn-dark">
-                <Icon name="key" />
-                Đổi mật khẩu
-              </Link>
-            </div>
-          </div>
-
           {/* Mục B: mục tiêu thể chất (BR-ACC-09: tùy chọn) */}
-          <div className="scms-mp-card wide">
+          <div className="card border-0 shadow-sm p-4">
             <SectionHead icon="exercise" title="Mục tiêu thể chất & Rèn luyện" chip="Tùy chọn" />
             <div className="scms-mp-field">
-              <label htmlFor="mp-goal">
+              <label className="form-label" htmlFor="mp-goal">
                 <span>Mục tiêu rèn luyện trọng tâm</span>
               </label>
               <div className="scms-mp-chips" style={{ marginBottom: 12 }}>
                 {GOAL_PRESETS.map((goal) => {
-                  const active = (fitnessGoalValue || '').trim() === goal;
+                  const lines = fitnessGoalValue.split(/\r?\n/);
+                  const active = lines.some(line => line.trim() === goal);
                   return (
                     <button
                       key={goal}
                       type="button"
-                      className={`scms-mp-goal${active ? ' active' : ''}`}
-                      onClick={() => setValue('fitnessGoal', goal, { shouldValidate: true })}
+                      className={`btn btn-sm ${active ? 'btn-danger' : 'btn-outline-danger'} d-inline-flex align-items-center gap-1`}
+                      aria-pressed={active}
+                      onClick={() => {
+                        const next = active
+                          ? lines.filter(line => line.trim() !== goal).join('\n')
+                          : `${fitnessGoalValue}${fitnessGoalValue && !fitnessGoalValue.endsWith('\n') ? '\n' : ''}${goal}`;
+                        setValue('fitnessGoal', next, { shouldValidate: true, shouldDirty: true });
+                      }}
                     >
                       {active ? <Icon name="check" size={14} /> : null}
                       {goal}
@@ -714,14 +684,14 @@ export default function MemberProfilePage() {
               </div>
               <textarea
                 id="mp-goal"
-                className="scms-mp-input"
+                className="form-control"
                 rows={3}
                 {...register('fitnessGoal')}
-                placeholder="Chọn nhanh ở trên hoặc tự viết mục tiêu của bạn..."
+                placeholder="Chọn một hoặc nhiều mục tiêu ở trên, hoặc tự viết mục tiêu của bạn..."
                 aria-invalid={Boolean(errors.fitnessGoal)}
               />
               {errors.fitnessGoal ? (
-                <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                <div className="small text-muted" style={{ marginTop: 6, color: 'var(--scms-red)' }}>
                   {errors.fitnessGoal.message}
                 </div>
               ) : null}
@@ -729,7 +699,7 @@ export default function MemberProfilePage() {
             <Field id="mp-injury" label="Ghi chú thể chất & Tiền sử chấn thương" error={errors.physicalConditionNotes}>
               <textarea
                 id="mp-injury"
-                className="scms-mp-input"
+                className="form-control"
                 rows={2}
                 placeholder="Ví dụ: Đã từng mổ dây chằng chéo trước, đau lưng dưới nhẹ..."
                 {...register('physicalConditionNotes')} maxLength={2000}
@@ -739,31 +709,31 @@ export default function MemberProfilePage() {
           </div>
 
           {/* Mục C: liên hệ khẩn cấp (BR-ACC-09: tùy chọn, tên + SĐT đi cùng nhau) */}
-          <div className="scms-mp-card wide">
+          <div className="card border-0 shadow-sm p-4">
             <SectionHead icon="emergency" title="Thông tin liên hệ khẩn cấp" chip="Tùy chọn" />
             <div className="scms-mp-fields">
               <Field id="mp-ecName" label="Họ tên người liên hệ">
                 <input
                   id="mp-ecName"
-                  className="scms-mp-input"
+                  className="form-control"
                   {...register('emergencyContactName')}
                   placeholder="Họ và tên người thân..."
                   aria-invalid={Boolean(errors.emergencyContactName)}
                 />
                 {errors.emergencyContactName ? (
-                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                  <div className="small text-muted" style={{ marginTop: 6, color: 'var(--scms-red)' }}>
                     {errors.emergencyContactName.message}
                   </div>
                 ) : null}
               </Field>
               <Field id="mp-ecRelation" label="Mối quan hệ" error={errors.emergencyContactRelationship}>
-                <input id="mp-ecRelation" className="scms-mp-input" placeholder="Ví dụ: Cha/mẹ, vợ/chồng, anh/chị..." {...register('emergencyContactRelationship')} maxLength={100}
+                <input id="mp-ecRelation" className="form-control" placeholder="Ví dụ: Cha/mẹ, vợ/chồng, anh/chị..." {...register('emergencyContactRelationship')} maxLength={100}
                   aria-invalid={Boolean(errors.emergencyContactRelationship)} aria-describedby={errors.emergencyContactRelationship ? 'mp-ecRelation-error' : undefined} />
               </Field>
               <Field id="mp-ecPhone" label="Số điện thoại khẩn cấp">
                 <input
                   id="mp-ecPhone"
-                  className="scms-mp-input"
+                  className="form-control"
                   type="tel"
                   {...register('emergencyContactPhone')}
                   placeholder="09xxxxxxxx"
@@ -771,7 +741,7 @@ export default function MemberProfilePage() {
                   aria-invalid={Boolean(errors.emergencyContactPhone)}
                 />
                 {errors.emergencyContactPhone ? (
-                  <div className="scms-mp-hint" style={{ marginTop: 6, color: '#dc2626' }}>
+                  <div className="small text-muted" style={{ marginTop: 6, color: 'var(--scms-red)' }}>
                     {errors.emergencyContactPhone.message}
                   </div>
                 ) : null}
@@ -779,7 +749,7 @@ export default function MemberProfilePage() {
               <Field id="mp-ecTime" label="Ghi chú khung giờ liên hệ" error={errors.emergencyContactTimeNotes}>
                 <input
                   id="mp-ecTime"
-                  className="scms-mp-input"
+                  className="form-control"
                   placeholder="Khung giờ gọi..."
                   {...register('emergencyContactTimeNotes')} maxLength={500}
                   aria-invalid={Boolean(errors.emergencyContactTimeNotes)} aria-describedby={errors.emergencyContactTimeNotes ? 'mp-ecTime-error' : undefined}
@@ -788,18 +758,12 @@ export default function MemberProfilePage() {
             </div>
           </div>
 
-          <div className="scms-mp-actions">
-            <button
-              type="button"
-              className="scms-mp-btn-cancel"
-              onClick={resetForm}
-              disabled={isSubmitting}
-            >
-              Hủy bỏ
+          <div className="d-flex flex-wrap gap-2">
+            <button type="submit" className="btn btn-danger" disabled={isSubmitting}>
+              {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
-            <button type="submit" className="scms-mp-btn-save" disabled={isSubmitting}>
-              <Icon name="save" />
-              {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi hồ sơ'}
+            <button type="button" className="btn btn-outline-secondary" onClick={resetForm} disabled={isSubmitting}>
+              Hủy thay đổi
             </button>
           </div>
         </div>

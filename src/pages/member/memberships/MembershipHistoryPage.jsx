@@ -112,21 +112,21 @@ export default function MembershipHistoryPage() {
               Khi bạn đăng ký gói tập đầu tiên, lịch sử sẽ hiển thị tại đây.
             </p>
             <Link
-              to="/member/plan#member-offers"
-              className="scms-mh-empty-cta"
+              to="/member/plan-registration"
+              className="btn btn-danger scms-mh-empty-cta"
             >
               Xem các gói tập
             </Link>
           </div>
         )
       ) : (
-        <div className="scms-mh-card">
+        <div className="card border-0 shadow-sm scms-mh-card">
           <div className="scms-mh-tablewrap">
-            <table className="scms-mh-table">
+            <table className="table table-hover align-middle mb-0 scms-mh-table">
               <caption className="visually-hidden">
                 Lịch sử thanh toán các gói tập đã đăng ký
               </caption>
-              <thead>
+              <thead className="table-light">
                 <tr>
                   <th scope="col">Gói tập</th>
                   <th scope="col">Thời hạn</th>

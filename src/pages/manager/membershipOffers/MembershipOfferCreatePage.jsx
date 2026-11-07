@@ -151,10 +151,6 @@ export default function MembershipOfferCreatePage() {
       </Link>
 
       <h1 className="h3 fw-bold mt-2 mb-1">Tạo gói tập mới</h1>
-      <p className="text-muted mb-4">
-        Chọn một loại gói đang hoạt động. Giá được tính bằng VND, không có
-        phần thập phân.
-      </p>
 
       <ErrorAlert
         error={serverError}

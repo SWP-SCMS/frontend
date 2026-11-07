@@ -18,7 +18,6 @@ import StaffSidebar from './StaffSidebar';
 import StaffHeader from './StaffHeader';
 import ResponsiveSidebar from './ResponsiveSidebar';
 import useNotificationUnreadCount from './useNotificationUnreadCount';
-import './StaffLayout.css';
 
 export default function StaffLayout({
   children,
@@ -56,14 +55,14 @@ export default function StaffLayout({
   }
 
   return (
-    <div className="scms-sd">
+    <div className="scms-app">
       <ResponsiveSidebar><StaffSidebar
         sidebarLabel={sidebarLabel}
         items={sidebarItems}
         onRequestLogout={requestLogout}
       /></ResponsiveSidebar>
 
-      <div className="scms-sd-body">
+      <div className="scms-app-body">
         <StaffHeader
           user={user}
           roleLabel={roleLabel}
@@ -76,7 +75,7 @@ export default function StaffLayout({
           onRequestLogout={requestLogout}
         />
 
-        <main className="scms-sd-main">{children}</main>
+        <main className="scms-app-main">{children}</main>
       </div>
 
       <Modal

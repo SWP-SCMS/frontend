@@ -450,10 +450,6 @@ export default function ClassEditPage() {
               <Form.Control.Feedback type="invalid">
                 {errors.classType?.message}
               </Form.Control.Feedback>
-              <Form.Text className="text-muted">
-                Các lựa chọn có thể ghi được tải từ hệ thống. Loại lớp cũ
-                có thể được giữ nguyên khi chỉ sửa trường khác.
-              </Form.Text>
             </Form.Group>
           </Col>
           <Col md={6}>

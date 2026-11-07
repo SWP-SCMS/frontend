@@ -1,5 +1,5 @@
 // Khung giao diện cho khu vực Huấn luyện viên (Coach).
-// Giao diện giống MemberLayout (dùng lại CSS .scms-ml-*) nhưng:
+// Giao diện giống MemberLayout (dùng lại CSS .scms-app-*) nhưng:
 //   - Thông báo được mở từ sidebar dùng chung contract authenticated.
 //   - Logo KHÔNG bấm được (không bay ra trang chủ).
 //   - Không tải gói tập, không có thẻ thành viên.
@@ -14,7 +14,6 @@ import useNotificationUnreadCount from './useNotificationUnreadCount';
 import NotificationBellContent from './NotificationBellContent';
 import NotificationDropdown from './NotificationDropdown';
 import ResponsiveSidebar from './ResponsiveSidebar';
-import './MemberLayout.css';
 import '../common/BrandLogo.css';
 
 const COACH_SIDEBAR_ITEMS = [
@@ -83,24 +82,24 @@ export default function CoachLayout() {
   }
 
   return (
-    <div className="scms-ml">
-      <ResponsiveSidebar><aside className="scms-ml-sidebar">
+    <div className="scms-app">
+      <ResponsiveSidebar><aside className="scms-app-sidebar">
         <div>
-          <div className="scms-ml-sidebar-logo">
+          <div className="scms-app-sidebar-logo">
             <StaticLogo />
           </div>
-          <div className="scms-ml-sidebar-label">Khu vực Huấn luyện viên</div>
-          <nav className="scms-ml-nav">
+          <div className="scms-app-sidebar-label">Khu vực Huấn luyện viên</div>
+          <nav className="scms-app-nav">
             {COACH_SIDEBAR_ITEMS.map((section) => (
-              <div className="scms-ml-navgroup" key={section.label}>
-                <div className="scms-ml-navgroup-label">{section.label}</div>
-                <div className="scms-ml-navgroup-items">
+              <div className="scms-app-navgroup" key={section.label}>
+                <div className="scms-app-navgroup-label">{section.label}</div>
+                <div className="scms-app-navgroup-items">
                   {section.items.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}
                       className={({ isActive }) =>
-                        `scms-ml-navitem${isActive ? ' active' : ''}`
+                        `scms-app-navitem${isActive ? ' active' : ''}`
                       }
                     >
                       <Icon name={item.icon} />
@@ -112,7 +111,7 @@ export default function CoachLayout() {
             ))}
             <button
               type="button"
-              className="scms-ml-navitem scms-ml-navbtn"
+              className="scms-app-navitem scms-app-navbtn"
               onClick={() => setConfirmOpen(true)}
             >
               <Icon name="logout" />
@@ -122,20 +121,20 @@ export default function CoachLayout() {
         </div>
       </aside></ResponsiveSidebar>
 
-      <div className="scms-ml-body">
-        <header className="scms-ml-header">
+      <div className="scms-app-body">
+        <header className="scms-app-header">
           <NotificationDropdown align="start">
             <Dropdown.Toggle
               as="button"
               type="button"
-              className="scms-ml-bell"
+              className="scms-app-bell"
               aria-label={hasUnread ? `Thông báo (${unreadCount} mới)` : 'Thông báo'}
               id="coach-notification-bell"
             >
               <Icon name="bell" size={20} />
-              {hasUnread ? <span className="scms-ml-bell-dot" aria-hidden="true"></span> : null}
+              {hasUnread ? <span className="scms-app-bell-dot" aria-hidden="true"></span> : null}
             </Dropdown.Toggle>
-            <Dropdown.Menu className="scms-ml-bell-menu">
+            <Dropdown.Menu className="scms-app-bell-menu">
               <NotificationBellContent
                 notifications={notifications}
                 unreadCount={unreadCount}
@@ -143,27 +142,27 @@ export default function CoachLayout() {
                 loadingMore={loadingMore}
                 loadMoreError={loadMoreError}
                 onLoadMore={loadMoreNotifications}
-                classPrefix="scms-ml"
+                classPrefix="scms-app"
               />
             </Dropdown.Menu>
           </NotificationDropdown>
 
-          <div className="scms-ml-user">
-            <span className="scms-ml-role">
-              <span className="scms-ml-role-dot" aria-hidden="true"></span>
+          <div className="scms-app-user">
+            <span className="scms-app-role">
+              <span className="scms-app-role-dot" aria-hidden="true"></span>
               Huấn luyện viên
             </span>
-            <div className="scms-ml-user-text">
-              <span className="scms-ml-user-name">
+            <div className="scms-app-user-text">
+              <span className="scms-app-user-name">
                 {user?.fullName || 'Huấn luyện viên'}
               </span>
             </div>
-            <span className="scms-ml-avatar" aria-hidden="true">
+            <span className="scms-app-avatar" aria-hidden="true">
               <Icon name="user" size={18} />
             </span>
             <button
               type="button"
-              className="scms-ml-logout"
+              className="scms-app-logout"
               onClick={() => setConfirmOpen(true)}
             >
               Đăng xuất
@@ -171,7 +170,7 @@ export default function CoachLayout() {
           </div>
         </header>
 
-        <main className="scms-ml-main">
+        <main className="scms-app-main">
           <Outlet />
         </main>
       </div>

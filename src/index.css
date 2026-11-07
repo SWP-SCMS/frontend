@@ -33,7 +33,7 @@
   --scms-surface-alt: #f8f9ff;
   --scms-surface-low: #eff4ff;
 
-  --scms-muted: #5c403c;
+  --scms-muted: #6c757d;
   --scms-outline: #916f6b;
 }
 
@@ -47,6 +47,24 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: var(--scms-on-surface);
   background-color: var(--scms-surface-alt);
+}
+
+.scms-request-tabs {
+  --bs-nav-link-color: #475569;
+  --bs-nav-link-hover-color: var(--scms-red);
+  --bs-nav-tabs-link-active-color: var(--scms-red);
+  --bs-nav-tabs-link-active-bg: #fff1f2;
+  --bs-nav-tabs-link-active-border-color: #fecdd3 #fecdd3 #fff1f2;
+}
+
+.scms-request-tabs .nav-link.active {
+  font-weight: 600;
+}
+
+.scms-request-tabs .nav-link:focus-visible {
+  outline: 2px solid var(--scms-red);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 /* Bootstrap primary → SCMS red. Any future `btn-primary` automatically
@@ -136,13 +154,25 @@ footer small {
 .btn:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--scms-red); outline-offset: 3px; }
 
 /* Ba màn mẫu dùng cùng nhịp khoảng cách, tiêu đề và bố cục nhỏ. */
-.scms-course-workspace { padding: 1rem 0; min-width: 0; }
-.scms-course-workspace h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: .5rem; }
+.scms-course-workspace { min-width: 0; }
+.scms-course-workspace h1 { font-size: calc(1.3rem + .6vw); font-weight: 700; margin-bottom: .5rem; }
 .scms-course-workspace h2 { font-size: 1.25rem; font-weight: 650; }
-.scms-course-workspace .d-flex { flex-wrap: wrap; }
-.scms-course-workspace .card { margin-bottom: 1rem; }
+.scms-course-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem; }
+.scms-course-member-search { display: grid; grid-template-columns: 220px minmax(0, 1fr) auto; gap: .75rem; align-items: start; }
+.scms-course-member-search > label { grid-column: 1 / -1; margin: 0; }
+.scms-course-member-search > .form-control { margin: 0 !important; }
+.scms-course-member-search > .invalid-feedback { grid-column: 2; grid-row: 3; }
+.scms-course-member-search > button { grid-column: 3; grid-row: 2; }
+.scms-course-refund-table { min-width: 780px; }
+.scms-coach-course-table { min-width: 760px; }
+@media (max-width: 767.98px) {
+  .scms-course-member-search { grid-template-columns: minmax(0, 1fr); }
+  .scms-course-member-search > .invalid-feedback, .scms-course-member-search > button { grid-column: 1; grid-row: auto; }
+}
+@media (min-width: 1200px) {
+  .scms-course-workspace h1 { font-size: 1.75rem; }
+}
 @media (max-width: 575.98px) {
-  .scms-course-workspace h1 { font-size: 1.5rem; }
   .scms-course-workspace .form-control, .scms-course-workspace .form-select { min-width: 0; }
 }
 

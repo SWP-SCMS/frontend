@@ -1,11 +1,6 @@
 /* Trang tổng quan Hội viên. Tiền tố .scms-md- để không đụng class khác.
  * Nền trang (sáng) do MemberLayout cung cấp. */
 
-.scms-md {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
 /* ----- Tiêu đề ----- */
 
 .scms-md-top {
@@ -14,15 +9,12 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 1.5rem;
-  padding: 1.5rem 0;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #e2e8f0;
 }
 
 .scms-md-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -37,7 +29,7 @@
   font-weight: 600;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  color: #b91c1c;
+  color: var(--scms-red-dark);
 }
 
 .scms-md-badge.on {
@@ -92,7 +84,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.75rem;
-  background: #dc2626;
+  background: var(--scms-red);
   color: #fff;
 }
 
@@ -103,7 +95,7 @@
 .scms-md-banner h3 {
   font-size: 1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   margin: 0 0 0.15rem;
 }
 
@@ -120,7 +112,7 @@
   border-radius: 999px;
   font-size: 0.65rem;
   font-weight: 600;
-  color: #dc2626;
+  color: var(--scms-red);
   background: #fee2e2;
   vertical-align: middle;
 }
@@ -129,18 +121,6 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.25rem;
-  border-radius: 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-decoration: none;
-  color: #fff;
-  background: #0f172a;
-}
-
-.scms-md-btn-dark:hover {
-  background: #1e293b;
-  color: #fff;
 }
 
 /* ----- Bố cục 2 cột ----- */
@@ -169,11 +149,6 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 2rem;
-  border-radius: 1rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
 .scms-md-card-head {
@@ -189,14 +164,14 @@
 .scms-md-card-head h2 {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   margin: 0;
 }
 
 .scms-md-card-head span.sub {
   display: block;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--scms-muted);
   margin-top: 0.15rem;
 }
 
@@ -216,12 +191,12 @@
   border-radius: 0.75rem;
   background: #fef2f2;
   border: 1px solid #fee2e2;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-md-all-icon {
   display: flex;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-md-pill {
@@ -229,7 +204,7 @@
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #dc2626;
+  color: var(--scms-red);
   background: #fef2f2;
 }
 
@@ -240,11 +215,11 @@
   font-size: 0.75rem;
   font-weight: 700;
   text-decoration: none;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-md-link:hover {
-  color: #b91c1c;
+  color: var(--scms-red-dark);
 }
 
 /* ----- Lộ trình 4 bước ----- */
@@ -304,7 +279,7 @@
 }
 
 .scms-md-step.current .scms-md-step-num {
-  background: #dc2626;
+  background: var(--scms-red);
   color: #fff;
 }
 
@@ -313,7 +288,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-md-step.done .scms-md-step-label {
@@ -321,7 +296,7 @@
 }
 
 .scms-md-step.current .scms-md-step-label {
-  color: #b91c1c;
+  color: var(--scms-red-dark);
 }
 
 .scms-md-step-title {
@@ -334,12 +309,12 @@
 
 .scms-md-step.done .scms-md-step-title,
 .scms-md-step.current .scms-md-step-title {
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-md-step p {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--scms-muted);
   margin: 0.35rem 0 0;
 }
 
@@ -350,7 +325,7 @@
   font-size: 0.6rem;
   font-weight: 700;
   color: #fff;
-  background: #dc2626;
+  background: var(--scms-red);
   text-transform: none;
   letter-spacing: 0;
 }
@@ -400,7 +375,7 @@
   text-transform: uppercase;
   white-space: nowrap;
   color: #fff;
-  background: #dc2626;
+  background: var(--scms-red);
 }
 
 .scms-md-plan-top {
@@ -415,11 +390,11 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-md-plan.hot .scms-md-plan-top small {
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-md-plan-chip {
@@ -433,19 +408,19 @@
 
 .scms-md-plan.hot .scms-md-plan-chip {
   background: #fef2f2;
-  color: #dc2626;
+  color: var(--scms-red);
   border: 1px solid #fee2e2;
 }
 
 .scms-md-plan-name {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-md-plan-offer {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 /* Bộ chọn mức giá / thời hạn khi một plan có nhiều offer ACTIVE. */
@@ -476,9 +451,9 @@
 }
 
 .scms-md-plan-variant.on {
-  border-color: #dc2626;
+  border-color: var(--scms-red);
   background: #fef2f2;
-  box-shadow: inset 0 0 0 1px #dc2626;
+  box-shadow: inset 0 0 0 1px var(--scms-red);
 }
 
 .scms-md-plan-variant:disabled {
@@ -504,7 +479,7 @@
 .scms-md-plan-variant-price {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-md-plan-price {
@@ -517,16 +492,16 @@
 .scms-md-plan-price strong {
   font-size: 1.75rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-md-plan.hot .scms-md-plan-price strong {
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-md-plan-price span {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-md-plan-desc {
@@ -558,7 +533,7 @@
 }
 
 .scms-md-plan.hot .scms-md-feat .yes {
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-md-feat .no {
@@ -576,41 +551,18 @@
 .scms-md-plan-btn {
   width: 100%;
   margin-top: 1.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  background: #fff;
-  border: 1px solid #cbd5e1;
-  color: #1e293b;
-}
-
-.scms-md-plan-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-}
-
-.scms-md-plan.hot .scms-md-plan-btn {
-  background: #dc2626;
-  border-color: #dc2626;
-  color: #fff;
-  box-shadow: 0 6px 14px rgba(220, 38, 38, 0.3);
-}
-
-.scms-md-plan.hot .scms-md-plan-btn:hover:not(:disabled) {
-  background: #b91c1c;
 }
 
 .scms-md-plan-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .scms-md-plan-note {
   margin-top: 0.5rem;
   font-size: 0.7rem;
   text-align: center;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-md-all {
@@ -623,12 +575,12 @@
   text-decoration: none;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  color: #1e293b;
+  color: var(--scms-on-surface);
 }
 
 .scms-md-all:hover {
   background: #f1f5f9;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-md-all strong {
@@ -638,7 +590,7 @@
 
 .scms-md-all span {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 /* ----- Cột phải ----- */
@@ -648,7 +600,7 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-md-help {
@@ -670,18 +622,18 @@
   justify-content: center;
   border-radius: 0.5rem;
   background: #fee2e2;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-md-help small {
   display: block;
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-md-help strong {
   font-size: 0.85rem;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-md-center {

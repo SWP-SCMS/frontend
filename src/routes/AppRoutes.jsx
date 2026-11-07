@@ -71,6 +71,7 @@ const MembershipHistoryPage = lazy(
   () => import('../pages/member/memberships/MembershipHistoryPage'),
 );
 const MyPlanPage = lazy(() => import('../pages/member/memberships/MyPlanPage'));
+const MemberPlanRegistrationPage = lazy(() => import('../pages/member/memberships/MemberPlanRegistrationPage'));
 const MembershipRequestsPage = lazy(
   () => import('../pages/member/memberships/MembershipRequestsPage'),
 );
@@ -552,6 +553,18 @@ export default function AppRoutes() {
             <RoleRoute allow={ROLES.MEMBER}>
               <MemberLayout>
                 <MyPlanPage />
+              </MemberLayout>
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/member/plan-registration"
+        element={
+          <ProtectedRoute>
+            <RoleRoute allow={ROLES.MEMBER}>
+              <MemberLayout>
+                {withSuspense(<MemberPlanRegistrationPage />)}
               </MemberLayout>
             </RoleRoute>
           </ProtectedRoute>

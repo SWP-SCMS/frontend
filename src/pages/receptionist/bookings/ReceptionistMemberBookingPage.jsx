@@ -1,3 +1,4 @@
+import { formatSessionSlot } from '../../../utils/sessionSlots';
 import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -152,7 +153,7 @@ function defaultDateRange() {
 }
 
 function dateTimeText(startTime, endTime) {
-  return `${formatGymDate(startTime)} · ${formatGymTime(startTime)}–${formatGymTime(endTime)}`;
+  return `${formatGymDate(startTime)} · ${formatSessionSlot(startTime, endTime)}`;
 }
 
 function instantText(instant) {
@@ -693,11 +694,6 @@ export default function ReceptionistMemberBookingPage() {
       <Card className="border-0 shadow-sm mb-4">
         <Card.Header className="bg-white border-0 pt-3">
           <h2 className="h5 fw-bold mb-1">Buổi tập sắp tới</h2>
-          <p className="small text-muted mb-0">
-            Tất cả thời gian hiển thị theo múi giờ Asia/Ho_Chi_Minh. Điều kiện đặt lịch
-            (quyền lợi gói tập, xung đột lịch và số chỗ còn lại) sẽ được hệ thống
-            kiểm tra khi xác nhận.
-          </p>
         </Card.Header>
         <Card.Body>
           <Form onSubmit={handleFilterSubmit(applyFilters)} className="mb-3">
@@ -766,7 +762,7 @@ export default function ReceptionistMemberBookingPage() {
           ) : (
             <>
               <Table responsive hover className="align-middle mb-0">
-                <thead>
+                <thead className="table-light">
                   <tr>
                     <th>Lớp / bộ môn</th>
                     <th>Thời gian</th>
@@ -926,7 +922,7 @@ export default function ReceptionistMemberBookingPage() {
           ) : (
             <>
               <Table responsive hover className="align-middle mb-0">
-                <thead>
+                <thead className="table-light">
                   <tr>
                     <th>Lớp / bộ môn</th>
                     <th>Buổi tập</th>
@@ -1132,7 +1128,7 @@ export default function ReceptionistMemberBookingPage() {
             <p className="text-muted mb-0">Chưa có hội viên nào trong hàng chờ.</p>
           ) : (
             <Table responsive size="sm" className="align-middle">
-              <thead>
+              <thead className="table-light">
                 <tr>
                   <th>Vị trí</th>
                   <th>Hội viên</th>

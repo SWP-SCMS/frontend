@@ -1,24 +1,15 @@
-import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { useController } from 'react-hook-form';
 
 import {
   formatDateInput,
-  normalizeDateInputDraft,
+  parseDateInput,
   resolveDateInputValue,
 } from '../../utils/dateInput';
+import './DateInput.css';
 
 const NO_EMISSION = Symbol('no-emission');
-
-function caretAfterDigits(value, digitCount) {
-  if (digitCount <= 0) return 0;
-  let digits = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    if (/\d/.test(value[index])) digits += 1;
-    if (digits === digitCount) return index + 1;
-  }
-  return value.length;
-}
 
 export const DateInput = forwardRef(function DateInput(
   {
@@ -37,27 +28,17 @@ export const DateInput = forwardRef(function DateInput(
   ref,
 ) {
   const [displayValue, setDisplayValue] = useState(() =>
-    formatDateInput(value) || normalizeDateInputDraft(value),
+    formatDateInput(value) || String(value ?? ''),
   );
   const lastEmission = useRef(NO_EMISSION);
-  const pendingCaret = useRef(null);
   const isComposing = useRef(false);
-
-  useLayoutEffect(() => {
-    const pending = pendingCaret.current;
-    if (!pending) return;
-    pendingCaret.current = null;
-    if (document.activeElement === pending.input) {
-      pending.input.setSelectionRange(pending.position, pending.position);
-    }
-  }, [displayValue]);
 
   useEffect(() => {
     if (lastEmission.current === value) {
       lastEmission.current = NO_EMISSION;
       return;
     }
-    setDisplayValue(formatDateInput(value) || normalizeDateInputDraft(value));
+    setDisplayValue(formatDateInput(value) || String(value ?? ''));
   }, [value]);
 
   const commit = (nextDisplayValue) => {
@@ -72,17 +53,9 @@ export const DateInput = forwardRef(function DateInput(
     return nextValue;
   };
 
-  const updateDraft = (input, rawValue, caret) => {
-    const digitsBeforeCaret = rawValue.slice(0, caret).replace(/\D/g, '').length;
-    const nextValue = normalizeDateInputDraft(rawValue);
-    const nextCaret = caretAfterDigits(nextValue, digitsBeforeCaret);
-    if (nextValue === displayValue) {
-      input.setSelectionRange(nextCaret, nextCaret);
-    } else {
-      pendingCaret.current = { input, position: nextCaret };
-    }
-    setDisplayValue(nextValue);
-    commit(nextValue);
+  const updateDraft = (rawValue) => {
+    setDisplayValue(rawValue);
+    commit(rawValue);
   };
 
   const sharedProps = {
@@ -100,7 +73,7 @@ export const DateInput = forwardRef(function DateInput(
     onCompositionEnd: (event) => {
       isComposing.current = false;
       const input = event.target;
-      updateDraft(input, input.value, input.selectionStart ?? input.value.length);
+      updateDraft(input.value);
     },
     onChange: (event) => {
       const input = event.target;
@@ -109,23 +82,19 @@ export const DateInput = forwardRef(function DateInput(
         return;
       }
       const rawValue = input.value;
-      const caret = input.selectionStart ?? rawValue.length;
-      updateDraft(input, rawValue, caret);
+      updateDraft(rawValue);
     },
     onBlur: (event) => {
       const nextValue = commit(event.target.value);
-      if (!emitInvalid && nextValue === '') setDisplayValue('');
+      const formatted = formatDateInput(nextValue);
+      if (formatted) setDisplayValue(formatted);
       onBlur?.(event);
     },
   };
 
-  if (unstyled) {
-    const classes = [isInvalid && 'is-invalid', className]
-      .filter(Boolean)
-      .join(' ');
-    return <input {...sharedProps} className={classes || undefined} />;
-  }
-  return (
+  const input = unstyled ? (
+    <input {...sharedProps} className={[isInvalid && 'is-invalid', className].filter(Boolean).join(' ')} />
+  ) : (
     <Form.Control
       {...sharedProps}
       className={className || undefined}
@@ -133,6 +102,30 @@ export const DateInput = forwardRef(function DateInput(
       isInvalid={isInvalid}
     />
   );
+  return <div className={`scms-date-input${isInvalid ? ' is-invalid' : ''}`}>
+    {input}
+    <span className="scms-date-picker">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M16 3v4M8 3v4M3 11h18" />
+      </svg>
+      <input
+        type="date"
+        aria-label={`Chọn ngày trên lịch${props['aria-label'] ? `: ${props['aria-label']}` : ''}`}
+        value={parseDateInput(displayValue) || ''}
+        min={min}
+        max={max}
+        disabled={props.disabled || props.readOnly}
+        onClick={event => event.currentTarget.showPicker?.()}
+        onChange={event => {
+          const formatted = formatDateInput(event.target.value);
+          setDisplayValue(formatted);
+          commit(formatted);
+        }}
+        onBlur={onBlur}
+      />
+    </span>
+  </div>;
 });
 
 export function RhfDateInput({ control, name, rules, ...props }) {

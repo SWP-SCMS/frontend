@@ -1,11 +1,6 @@
 /* Trang thanh toán gói tập của Hội viên. Tiền tố .mco- để không đụng class
  * khác. Nền trang (sáng) do MemberLayout cung cấp. */
 
-.mco {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
 .mco-center {
   display: flex;
   justify-content: center;
@@ -18,18 +13,18 @@
   font-size: 0.8rem;
   font-weight: 600;
   text-decoration: none;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .mco-back:hover {
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .mco-title {
   margin: 0 0 1.5rem;
   font-size: 1.75rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .mco-grid {
@@ -45,23 +40,15 @@
   }
 }
 
-.mco-card {
-  padding: 1.75rem;
-  border-radius: 1rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-}
-
 .mco-h2 {
   margin: 0 0 1rem;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .mco-muted {
-  color: #64748b;
+  color: var(--scms-muted);
   font-size: 0.875rem;
   line-height: 1.6;
 }
@@ -89,13 +76,13 @@
 
 .mco-plan-tag.plus {
   background: #fee2e2;
-  color: #b91c1c;
+  color: var(--scms-red-dark);
 }
 
 .mco-offer-name {
   font-size: 1.35rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .mco-offer-desc {
@@ -154,7 +141,7 @@
 
 .mco-total strong {
   font-size: 1.6rem;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .mco-note {
@@ -204,38 +191,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.8rem 1.5rem;
-  border: 0;
-  border-radius: 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-decoration: none;
 }
 
 .mco-btn.block {
   width: 100%;
   margin-top: 0.5rem;
-}
-
-.mco-btn.primary {
-  color: #fff;
-  background: #dc2626;
-  box-shadow: 0 8px 16px -6px rgba(220, 38, 38, 0.45);
-}
-
-.mco-btn.primary:hover:not(:disabled) {
-  background: #b91c1c;
-  color: #fff;
-}
-
-.mco-btn.ghost {
-  color: #334155;
-  background: #eef2f7;
-}
-
-.mco-btn.ghost:hover:not(:disabled) {
-  background: #e2e8f0;
-  color: #0f172a;
 }
 
 .mco-btn:disabled {
@@ -250,7 +210,7 @@
   background: #fef2f2;
   border: 1px solid #fecaca;
   font-size: 0.85rem;
-  color: #b91c1c;
+  color: var(--scms-red-dark);
   text-align: left;
 }
 
@@ -273,7 +233,7 @@
 .mco-status.warn {
   background: #fef2f2;
   border-color: #fecaca;
-  color: #b91c1c;
+  color: var(--scms-red-dark);
 }
 
 .mco-dot {
@@ -325,7 +285,7 @@
   text-align: center;
   font-size: 0.8rem;
   line-height: 1.5;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .mco-info {
@@ -348,7 +308,7 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .mco-info-row dd {
@@ -359,7 +319,7 @@
   margin: 0.15rem 0 0;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   word-break: break-all;
 }
 

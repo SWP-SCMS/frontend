@@ -19,6 +19,5 @@
   .scms-mobile-menu-toggle:focus-visible { outline: 3px solid #ffb4ab; outline-offset: -3px; }
   .scms-sidebar-region { display: none; }
   .scms-sidebar-region.is-open { display: block; max-height: 70vh; overflow-y: auto; }
-  .scms-sidebar-region .scms-sd-sidebar,
-  .scms-sidebar-region .scms-ml-sidebar { position: static; width: 100%; }
+  .scms-sidebar-region .scms-app-sidebar { position: static; width: 100%; }
 }

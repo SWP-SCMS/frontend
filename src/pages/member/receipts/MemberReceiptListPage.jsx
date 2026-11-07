@@ -32,7 +32,7 @@ export default function MemberReceiptListPage() {
         <Alert variant="light" className="border">Bạn chưa có biên lai thanh toán nào.</Alert>
       ) : (
         <div className="table-responsive"><Table hover className="align-middle bg-white shadow-sm">
-          <thead><tr><th>Số biên lai</th><th>Gói tập</th><th>Ngày xuất</th><th className="text-end">Số tiền</th><th /></tr></thead>
+          <thead className="table-light"><tr><th>Số biên lai</th><th>Gói tập</th><th>Ngày xuất</th><th className="text-end">Số tiền</th><th /></tr></thead>
           <tbody>{receipts.map((receipt) => <tr key={receipt.receiptId}>
             <td className="fw-semibold">{receipt.receiptNumber}</td><td>{receipt.offerName || '—'}</td>
             <td>{formatGymDate(receipt.issuedAt)} · {formatGymTime(receipt.issuedAt)}</td>

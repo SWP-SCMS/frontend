@@ -185,7 +185,7 @@ export default function MembershipRequestReviewPage() {
       <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1">Yêu cầu gói tập</h1>
-          <p className="text-muted mb-0">Duyệt yêu cầu hủy và đóng băng gói tập của hội viên.</p>
+          <p className="text-muted mb-0">Xử lý yêu cầu hủy, đóng băng và hoàn tiền gói tập của hội viên.</p>
         </div>
         <Button variant="outline-secondary" onClick={load} disabled={loading}>Tải lại</Button>
       </div>
@@ -194,13 +194,14 @@ export default function MembershipRequestReviewPage() {
       {loadError ? <ErrorAlert error={loadError} title="Không tải được danh sách yêu cầu" /> : null}
 
       <Nav variant="tabs" role="tablist" activeKey={activeTab} onSelect={(key) => {
-        if (!key || busy) return;
+        if (!key || key === 'refunds' || busy) return;
         setParams((current) => { const next = new URLSearchParams(current); next.set('tab', key); return next; });
         setActionError(null);
         setNotice(null);
-      }} className="mb-4" id="membership-request-tabs">
+      }} className="scms-request-tabs mb-4" id="membership-request-tabs">
         <Nav.Item><Nav.Link as="button" type="button" role="tab" eventKey="termination" id="membership-request-tabs-tab-termination" aria-controls="membership-request-tabs-tabpane-termination" aria-selected={activeTab === 'termination'} disabled={busy}>Hủy gói</Nav.Link></Nav.Item>
         <Nav.Item><Nav.Link as="button" type="button" role="tab" eventKey="freeze" id="membership-request-tabs-tab-freeze" aria-controls="membership-request-tabs-tabpane-freeze" aria-selected={activeTab === 'freeze'} disabled={busy}>Đóng băng</Nav.Link></Nav.Item>
+        <Nav.Item><Nav.Link as={Link} to="/manager/refunds" eventKey="refunds" role="tab" aria-selected={false} disabled={busy}>Hoàn tiền</Nav.Link></Nav.Item>
       </Nav>
       <div role="tabpanel" id={`membership-request-tabs-tabpane-${activeTab}`} aria-labelledby={`membership-request-tabs-tab-${activeTab}`}>
       <div className="d-flex flex-wrap justify-content-between gap-3 mb-3">
@@ -277,7 +278,7 @@ export default function MembershipRequestReviewPage() {
             {decision?.row.memberId || 'Chưa có mã hội viên'}
           </div>
           {decision?.kind === 'freeze' && decision?.action === 'approve' ? (
-            <Alert variant="info" className="small mt-3 mb-0">Sau khi duyệt, hệ thống tính phí; lễ tân phải thu phí để lịch đóng băng có hiệu lực.</Alert>
+            <Alert variant="info" className="small mt-3 mb-0">Lịch đóng băng có hiệu lực sau khi hội viên thanh toán phí tại quầy.</Alert>
           ) : null}
         </Modal.Body>
         <Modal.Footer>

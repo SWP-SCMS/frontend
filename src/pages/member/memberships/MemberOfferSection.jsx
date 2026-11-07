@@ -1,6 +1,5 @@
 import usePollingEffect from '../../../hooks/usePollingEffect';
-// Danh sách gói tập đang mở bán, hiện ngay trên trang "Gói tập" của Hội viên
-// (/member/plan) để không phải sang trang công khai /offers.
+// Danh sách gói tập đang mở bán trên trang đăng ký riêng của Hội viên.
 //
 // API: GET /membership-offers (công khai, chỉ trả Offer ACTIVE).
 // Nút "Đăng ký" đi tới /member/checkout/:offerId (tạo đơn + thanh toán).
@@ -138,7 +137,7 @@ export default function MemberOfferSection({ blockedReason = null }) {
 
   return (
     <section id="member-offers" className="scms-mo">
-      <h2 className="scms-mo-title">Đăng ký gói tập</h2>
+      <h1 className="scms-mo-title">Đăng ký gói tập</h1>
       <p className="scms-mo-sub">
         Chọn gói phù hợp, bấm &quot;Đăng ký&quot; để tạo đơn và thanh toán.
       </p>
@@ -174,7 +173,7 @@ export default function MemberOfferSection({ blockedReason = null }) {
         </div>
         <label className="scms-mo-filter">
           <span>Giá từ</span>
-          <input
+          <input className="form-control"
             type="number"
             min="0"
             step="1000"
@@ -186,7 +185,7 @@ export default function MemberOfferSection({ blockedReason = null }) {
         </label>
         <label className="scms-mo-filter">
           <span>Giá đến</span>
-          <input
+          <input className="form-control"
             type="number"
             min="0"
             step="1000"
@@ -292,13 +291,13 @@ export default function MemberOfferSection({ blockedReason = null }) {
                         ))}
                       </ul>
                       {blockedReason ? (
-                        <button type="button" className="scms-mo-btn" disabled>
+                        <button type="button" className="btn btn-outline-secondary scms-mo-btn" disabled>
                           Đăng ký
                         </button>
                       ) : (
                         <Link
                           to={`/member/checkout/${offer.offerId}`}
-                          className="scms-mo-btn primary"
+                          className="btn btn-danger scms-mo-btn primary"
                         >
                           Đăng ký
                         </Link>

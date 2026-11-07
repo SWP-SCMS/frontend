@@ -1,3 +1,4 @@
+import StaffPagination from '../../../components/common/StaffPagination';
 import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useState } from 'react';
@@ -24,7 +25,6 @@ export default function MemberCourseRefunds({ enrollments, selectedEnrollmentId 
   const names = new Map(enrollments.map((e) => [e.enrollmentId, `${e.courseName} · ${e.runCode}`]));
   return <section className="member-course-section" id="refunds">
     <h2>Hoàn tiền khóa học</h2>
-    <p>Khoản đã duyệt, đã ghi nhận chi và đã xác minh là các bước khác nhau.</p>
     <Button variant="outline-secondary" disabled={loading} onClick={() => setRevision((v) => v + 1)}>Tải lại khoản hoàn</Button>
     {error && <Alert variant="danger">{error}</Alert>}
     {loading ? <p>Đang tải…</p> : data && <>
@@ -39,7 +39,6 @@ export default function MemberCourseRefunds({ enrollments, selectedEnrollmentId 
         <small>Cập nhật: {formatCourseDateTime(item.updatedAt)}</small>
       </article>)}
     </>}
-    <div className="d-flex gap-2 mt-3"><Button disabled={loading || page === 0} onClick={() => setPage(page - 1)}>Trang trước</Button>
-      <span>Trang {page + 1}</span><Button disabled={loading || !data || page + 1 >= data.totalPages} onClick={() => setPage(page + 1)}>Trang sau</Button></div>
+    <StaffPagination page={page} totalPages={data?.totalPages} loading={loading || !data} onPageChange={setPage} />
   </section>;
 }

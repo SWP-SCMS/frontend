@@ -1,4 +1,5 @@
 import Badge from '../../../components/common/SystemBadge';
+import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import {Alert,  Button, Card, Form, Modal, Spinner, Table} from 'react-bootstrap';
 
@@ -168,12 +169,17 @@ export default function RefundReviewPage() {
     <div>
       <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
-          <h1 className="h3 fw-bold mb-1">Duyệt hoàn tiền</h1>
-          <p className="text-muted mb-0">Duyệt số tiền, theo dõi việc giao tiền mặt và xác nhận hoàn tất.</p>
+          <h1 className="h3 fw-bold mb-1">Yêu cầu gói tập</h1>
+          <p className="text-muted mb-0">Xử lý yêu cầu hủy, đóng băng và hoàn tiền gói tập của hội viên.</p>
         </div>
         <Button variant="outline-secondary" onClick={load} disabled={loading}>Tải lại</Button>
       </div>
 
+      <nav className="nav nav-tabs scms-request-tabs mb-4" aria-label="Loại yêu cầu gói tập">
+        <Link className={`nav-link${submitting ? ' disabled' : ''}`} aria-disabled={submitting || undefined} tabIndex={submitting ? -1 : undefined} to="/manager/membership-requests?tab=termination" onClick={event => { if (submitting) event.preventDefault(); }}>Hủy gói</Link>
+        <Link className={`nav-link${submitting ? ' disabled' : ''}`} aria-disabled={submitting || undefined} tabIndex={submitting ? -1 : undefined} to="/manager/membership-requests?tab=freeze" onClick={event => { if (submitting) event.preventDefault(); }}>Đóng băng</Link>
+        <Link className="nav-link active" aria-current="page" to="/manager/refunds">Hoàn tiền</Link>
+      </nav>
       {notice ? <Alert variant="success" dismissible onClose={() => setNotice(null)}>{notice}</Alert> : null}
       {error ? <ErrorAlert error={error} title="Không thể xử lý hoàn tiền" onClose={() => setError(null)} /> : null}
 

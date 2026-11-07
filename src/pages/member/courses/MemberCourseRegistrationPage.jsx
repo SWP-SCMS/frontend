@@ -1,3 +1,4 @@
+import { formatSessionSlot } from '../../../utils/sessionSlots';
 import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import usePollingEffect from '../../../hooks/usePollingEffect';
@@ -177,7 +178,7 @@ export default function MemberCourseRegistrationPage() {
             {sortedSessions.map((session) => (
               <div className="member-course-session-row" key={session.id}>
                 <strong>Buổi {session.unitNumber}{session.status === 'MAKEUP_SCHEDULED' ? ' · Học bù' : ''}</strong>
-                <span>{formatCourseDateTime(session.startAt)}</span>
+                <span>{formatCourseDateTime(session.startAt)} · {formatSessionSlot(session.startAt, session.endAt)}</span>
                 <Badge>{getCourseStatusLabel(COURSE_SESSION_STATUS_LABELS, session.status)}</Badge>
               </div>
             ))}

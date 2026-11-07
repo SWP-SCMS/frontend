@@ -1,18 +1,18 @@
 /* Danh sách gói tập trên trang Gói tập của Hội viên (.scms-mo-*). */
 
 .scms-mo {
-  margin-top: 2rem;
+  margin-top: 0;
 }
 
 .scms-mo-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   margin: 0 0 0.25rem;
 }
 
 .scms-mo-sub {
-  color: #64748b;
+  color: var(--scms-muted);
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
@@ -33,10 +33,6 @@
   gap: 0.75rem;
   align-items: end;
   margin-bottom: 0.5rem;
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  background: #fff;
 }
 
 .scms-mo-filter {
@@ -75,13 +71,13 @@
 }
 
 .scms-mo-category-options button:hover {
-  border-color: #dc2626;
-  color: #b91c1c;
+  border-color: var(--scms-red);
+  color: var(--scms-red-dark);
 }
 
 .scms-mo-category-options button.active {
-  border-color: #dc2626;
-  background: #dc2626;
+  border-color: var(--scms-red);
+  background: var(--scms-red);
   color: #fff;
 }
 
@@ -94,17 +90,6 @@
 .scms-mo-filter input {
   width: 100%;
   min-height: 42px;
-  padding: 0.55rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.6rem;
-  color: #0f172a;
-  background: #fff;
-  outline: none;
-}
-
-.scms-mo-filter input:focus {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
 .scms-mo-clear {
@@ -124,7 +109,7 @@
 
 .scms-mo-result-count {
   margin: 0 0 1rem;
-  color: #64748b;
+  color: var(--scms-muted);
   font-size: 0.82rem;
 }
 
@@ -132,7 +117,7 @@
 .scms-mo-empty {
   padding: 1.5rem;
   text-align: center;
-  color: #64748b;
+  color: var(--scms-muted);
   border: 1px dashed #cbd5e1;
   border-radius: 1rem;
   background: #fff;
@@ -144,7 +129,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #dc2626;
+  color: var(--scms-red);
   font-weight: 700;
 }
 
@@ -170,7 +155,7 @@
 
 .scms-mo-category-head h3 {
   margin: 0;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   font-size: 1.1rem;
   font-weight: 800;
 }
@@ -179,7 +164,7 @@
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
   background: #fee2e2;
-  color: #b91c1c;
+  color: var(--scms-red-dark);
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -195,15 +180,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
 .scms-mo-card.plus {
-  border-color: #dc2626;
+  border-color: var(--scms-red);
 }
 
 .scms-mo-ribbon {
@@ -212,7 +192,7 @@
   right: 1rem;
   padding: 0.15rem 0.6rem;
   border-radius: 999px;
-  background: #dc2626;
+  background: var(--scms-red);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -229,7 +209,7 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-mo-duration {
@@ -245,29 +225,29 @@
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-mo-desc {
   margin: 0;
-  color: #64748b;
+  color: var(--scms-muted);
   font-size: 0.85rem;
 }
 
 .scms-mo-price {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-mo-card.plus .scms-mo-price {
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-mo-price small {
   font-size: 0.8rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-mo-permonth {
@@ -299,20 +279,7 @@
 .scms-mo-btn {
   display: block;
   width: 100%;
-  padding: 0.6rem 1rem;
-  border-radius: 0.6rem;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #0f172a;
-  font-weight: 700;
   text-align: center;
-  text-decoration: none;
-}
-
-.scms-mo-btn.primary {
-  background: #dc2626;
-  border-color: #dc2626;
-  color: #fff;
 }
 
 .scms-mo-btn:disabled {

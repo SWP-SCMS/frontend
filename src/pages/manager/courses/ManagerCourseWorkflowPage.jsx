@@ -1,3 +1,4 @@
+import StaffPagination from '../../../components/common/StaffPagination';
 import './ManagerCourseWorkflowPage.css';
 import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
@@ -40,17 +41,14 @@ function DecisionForm({ kind, item, action, targets, onSubmit, busy }) {
       </Form.Select>
       <Form.Control.Feedback type="invalid">{errors.targetRunId?.message}</Form.Control.Feedback>
       {!targets.length && <p className="text-muted mt-2">Chưa có đợt học thay thế khả dụng.</p>}
-      <p className="text-muted mt-2">Hệ thống kiểm tra lại chỗ trống và trùng lịch khi duyệt. Hội viên cần chấp nhận đề nghị trước khi chuyển.</p>
     </Form.Group>}
     {action === 'verify' && <>
-      <Alert variant="info">Đối chiếu khoản chi và chứng từ, sau đó nhập lại số tiền và các mã tham chiếu để xác minh.</Alert>
       {[['amountVnd', 'Số tiền đã đối chiếu (VND)', 19], ['disbursementReference', 'Mã tham chiếu khoản chi', 200], ['evidenceReference', 'Tham chiếu chứng từ', 500]].map(([name, label, maxLength]) => <Form.Group key={name} controlId={'course-verify-' + name} className="mb-3">
         <Form.Label>{label}</Form.Label><Form.Control {...register(name)} maxLength={maxLength} inputMode={name === 'amountVnd' ? 'numeric' : undefined} disabled={busy} isInvalid={!!errors[name]} />
         <Form.Control.Feedback type="invalid">{errors[name]?.message}</Form.Control.Feedback>
       </Form.Group>)}
     </>}
-    {kind === 'refunds' && action === 'approve' && <p>Số tiền đề nghị: <strong>{money(item.grossObligationVnd)}</strong>. Duyệt khoản hoàn chưa phải xác nhận đã chi.</p>}
-    {kind === 'withdrawals' && action === 'approve' && <p>Số buổi còn lại và khoản hoàn được chốt khi gửi yêu cầu thành công theo hồ sơ. Duyệt không tính lại theo lịch hiện tại; khoản hoàn được xử lý riêng.</p>}
+    {kind === 'refunds' && action === 'approve' && <p>Số tiền đề nghị: <strong>{money(item.grossObligationVnd)}</strong></p>}
     <Form.Group controlId="course-decision-reason" className="mb-3">
       <Form.Label>Lý do / kết quả đối chiếu</Form.Label>
       <Form.Control as="textarea" rows={3} {...register('reason')} maxLength={1000} disabled={busy} isInvalid={!!errors.reason} />
@@ -153,17 +151,22 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
   const rows = kind === 'refunds' ? filtered : filtered.slice(page * 20, (page + 1) * 20);
   const available = !detail ? [] : kind === 'refunds' ? courseRefundActions(detail.status) : detail.status === 'PENDING' ? ['approve', 'reject'] : [];
 
-  return <div className="container-fluid py-4">
-    <h1 className="h3">{titles[kind]}</h1>
-    <nav className="d-flex flex-wrap gap-3 my-3" aria-label="Xử lý khóa học">{Object.entries(titles).map(([key, title]) => <Link key={key} to={'/manager/course-' + key} aria-current={key === kind ? 'page' : undefined}>{title}</Link>)}</nav>
-    <p>Mở hồ sơ để xem hội viên và đợt học trước khi xử lý.</p>
+  return <div className="scms-course-workspace">
+    <h1 className="h3">Yêu cầu khóa học</h1>
+    <nav className="nav nav-tabs scms-request-tabs my-3" aria-label="Loại yêu cầu khóa học">
+      {[
+        ['withdrawals', 'Rút khóa học'],
+        ['transfers', 'Chuyển đợt học'],
+        ['refunds', 'Hoàn tiền'],
+      ].map(([key, title]) => <Link className={`nav-link${key === kind ? ' active' : ''}`} key={key} to={'/manager/course-' + key} aria-current={key === kind ? 'page' : undefined}>{title}</Link>)}
+    </nav>
     <div className="d-flex flex-wrap gap-3 mb-3">
       <Form.Select aria-label="Lọc trạng thái" style={{ maxWidth: 340 }} value={status} disabled={loading || busy} onChange={(event) => { setStatus(event.target.value); setPage(0); }}><option value="">Tất cả trạng thái</option>{Object.entries(labels[kind]).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Form.Select>
       <Button variant="outline-secondary" disabled={loading || busy} onClick={() => setRevision((value) => value + 1)}>Tải lại</Button>
     </div>
     {notice && <Alert variant="success" dismissible onClose={() => setNotice('')}>{notice}</Alert>}
     {error && <Alert variant="danger">{error}</Alert>}
-    {loading ? <p>Đang tải…</p> : !error && <Card>
+    {loading ? <p>Đang tải…</p> : !error && <Card className="border-0 shadow-sm">
       <Table responsive hover className={`mb-0 align-middle ${kind === 'refunds' ? 'course-refund-table' : 'course-request-table'}`}>
         {kind === 'refunds' && <colgroup>
           <col style={{ width: '11%' }} />
@@ -182,7 +185,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
           <col style={{ width: '15%' }} />
           <col style={{ width: '9%' }} />
         </colgroup>}
-        <thead><tr>
+        <thead className="table-light"><tr>
           <th>Ngày tạo</th>
           <th>Hội viên</th>
           {kind !== 'transfers' && <th>Khóa học / Đợt học</th>}
@@ -224,7 +227,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
         </tbody>
       </Table>
     </Card>}
-    <div className="d-flex gap-3 align-items-center mt-3"><Button disabled={loading || page === 0} onClick={() => setPage(page - 1)}>Trang trước</Button><span>Trang {page + 1}</span><Button disabled={loading || page + 1 >= totalPages} onClick={() => setPage(page + 1)}>Trang sau</Button></div>
+    <StaffPagination page={page} totalPages={totalPages} loading={loading} onPageChange={setPage} />
 
     <Modal show={!!selectedId} onHide={() => { if (!busy) setParams({}); }} size="lg" centered backdrop={busy ? 'static' : true} keyboard={!busy}>
       <Modal.Header closeButton={!busy}><Modal.Title>{titles[kind]}</Modal.Title></Modal.Header>
@@ -244,7 +247,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
           </> : <>
             <p>Lý do: {detail.requestReason || detail.reason || 'Yêu cầu chuyển đợt học do thay đổi lịch'}</p>
             {detail.decisionReason && <p>Kết quả: {detail.decisionReason}</p>}
-            {kind === 'withdrawals' && <p>Khoản hoàn đã chốt theo BE: <strong>{detail.snapshotSource === 'UNAVAILABLE' ? 'Chưa có snapshot' : money(detail.refundAmountVnd)}</strong>{detail.remainingUnits != null && <> · {detail.remainingUnits}/{detail.totalUnits} buổi còn lại</>}</p>}
+            {kind === 'withdrawals' && <p>Số tiền hoàn: <strong>{detail.snapshotSource === 'UNAVAILABLE' ? 'Chưa xác định' : money(detail.refundAmountVnd)}</strong>{detail.remainingUnits != null && <> · {detail.remainingUnits}/{detail.totalUnits} buổi còn lại</>}</p>}
           </>}
           {kind === 'refunds' && courseAmountText(detail.grossObligationVnd) == null && <Alert variant="warning">Số tiền chưa thể hiển thị chính xác. Chưa thể duyệt khoản hoàn này; vui lòng kiểm tra lại hồ sơ.</Alert>}
           <div className="d-flex flex-wrap gap-2">{available.map((value) => <Button key={value} variant={action === value ? 'primary' : 'outline-primary'} disabled={busy || (value === 'verify' && courseAmountText(detail.disbursedAmountVnd) == null) || (kind === 'refunds' && value === 'approve' && courseAmountText(detail.grossObligationVnd) == null)} onClick={() => chooseAction(value)}>{actions[value]}</Button>)}</div>

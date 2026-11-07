@@ -104,14 +104,14 @@ export default function ReceptionCourseBookingPage() {
         setMember(selected);
       });
   const payable = order?.orderStatus === 'PENDING_PAYMENT' && payment?.status !== 'PAID' && Date.parse(order.expiresAt) > now;
-  if (resuming) return <div className="container-fluid py-4"><h1>Đăng ký khóa học</h1><p>Đang mở lại đơn khóa học…</p></div>;
-  if (requestedOrderId && !order) return <div className="container-fluid py-4"><h1>Đăng ký khóa học</h1><Alert variant="danger">{error || 'Không tìm thấy đơn khóa học.'}</Alert><Button onClick={() => setResumeRevision((value) => value + 1)}>Thử lại</Button><Button className="ms-2" variant="outline-secondary" onClick={() => setSearchParams({})}>Về danh sách đợt học</Button></div>;
+  if (resuming) return <div className="scms-course-workspace"><h1>Đăng ký khóa học</h1><p>Đang mở lại đơn khóa học…</p></div>;
+  if (requestedOrderId && !order) return <div className="scms-course-workspace"><h1>Đăng ký khóa học</h1><Alert variant="danger">{error || 'Không tìm thấy đơn khóa học.'}</Alert><Button onClick={() => setResumeRevision((value) => value + 1)}>Thử lại</Button><Button className="ms-2" variant="outline-secondary" onClick={() => setSearchParams({})}>Về danh sách đợt học</Button></div>;
   return <div className="scms-course-workspace">
     <h1>Đăng ký khóa học</h1>
-    <p>Đăng ký theo đợt học. Học phí khóa học độc lập với gói tập gym.</p>
+    <p className="text-muted mb-4">Đăng ký theo đợt học. Học phí khóa học độc lập với gói tập gym.</p>
     {error && <Alert variant="danger" role="alert">{error}</Alert>}
-    <Card className="mb-3"><Card.Body>
-      <Form noValidate onSubmit={(event) => handleSubmit(searchMember)(event)}>
+    <Card className="border-0 shadow-sm mb-4"><Card.Body>
+      <Form className="scms-course-member-search" noValidate onSubmit={(event) => handleSubmit(searchMember)(event)}>
         <Form.Label htmlFor="course-member-kind">Tra cứu hội viên</Form.Label>
         <Form.Select id="course-member-kind" {...register('kind')} disabled={busy || !!order}>
           <option value="memberId">Mã hội viên</option><option value="phone">Số điện thoại</option>
@@ -125,7 +125,7 @@ export default function ReceptionCourseBookingPage() {
       {member && <ReceptionCourseActions key={"actions-" + member.accountId} member={member} run={run} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
       {member && member.status !== 'ACTIVE' && <Alert variant="warning">Hội viên chưa ở trạng thái hoạt động.</Alert>}
     </Card.Body></Card>
-    {!order && <Card className="mb-3"><Card.Body>
+    {!order && <Card className="border-0 shadow-sm mb-4"><Card.Body>
       <h2>Chọn đợt học</h2>
       <Button size="sm" variant="outline-secondary" disabled={loading || busy} onClick={() => setCatalogRevision((value) => value + 1)}>Tải lại danh sách đợt học</Button>
       {loading ? <p>Đang tải đợt học…</p> : <>
@@ -138,7 +138,7 @@ export default function ReceptionCourseBookingPage() {
           </Button>
         </div>)}
       </>}
-      <div className="d-flex gap-2 my-3"><Button disabled={busy || loading || page === 0} onClick={() => setPage(page - 1)}>Trang trước</Button><Button disabled={busy || loading || last} onClick={() => setPage(page + 1)}>Trang sau</Button></div>
+      <div className="d-flex gap-2 my-3"><Button size="sm" variant="outline-secondary" disabled={busy || loading || page === 0} onClick={() => setPage(page - 1)}>Trang trước</Button><span className="text-muted small align-self-center">Trang {page + 1}</span><Button size="sm" variant="outline-secondary" disabled={busy || loading || last} onClick={() => setPage(page + 1)}>Trang sau</Button></div>
       <Button disabled={busy || !run || member?.status !== 'ACTIVE'} onClick={() => perform(async () => {
         const created = await createReceptionCourseOrder(member.accountId, run.id, key('course-reception-order'));
         setOrder(created); setPayment(created.payment);

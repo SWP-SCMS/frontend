@@ -46,7 +46,7 @@ export default function CoachSessionStudentsPage() {
           {session.members?.length ? (
             <div className="scms-coach-card mb-3">
               <Table responsive className="align-middle mb-0">
-                <thead>
+                <thead className="table-light">
                   <tr>
                     <th>Mã HV</th>
                     <th>Họ tên</th>

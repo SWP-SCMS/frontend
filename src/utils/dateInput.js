@@ -1,5 +1,5 @@
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
-const DISPLAY_DATE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+const DISPLAY_DATE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
 
 function isCalendarDate(year, month, day) {
   const date = new Date(Date.UTC(year, month - 1, day));
@@ -21,11 +21,13 @@ export function formatDateInput(value) {
 
 export function parseDateInput(value) {
   if (!value) return '';
-  const match = DISPLAY_DATE.exec(value.trim());
+  const raw = value.trim();
+  const display = /^\d{8}$/.test(raw) ? normalizeDateInputDraft(raw) : raw;
+  const match = DISPLAY_DATE.exec(display);
   if (!match) return null;
   const [, day, month, year] = match;
   if (!isCalendarDate(Number(year), Number(month), Number(day))) return null;
-  return `${year}-${month}-${day}`;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
 export function normalizeDateInputDraft(value) {

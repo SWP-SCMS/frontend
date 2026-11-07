@@ -164,7 +164,7 @@ export default function CoachLeaveRequestsPage() {
           ) : (
             <div className="table-responsive">
               <Table hover className="align-middle mb-0">
-                <thead><tr><th>Ngày gửi</th><th>Thời gian nghỉ</th><th>Lý do</th><th>Phản hồi</th><th>Buổi bị ảnh hưởng</th><th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
+                <thead className="table-light"><tr><th>Ngày gửi</th><th>Thời gian nghỉ</th><th>Lý do</th><th>Phản hồi</th><th>Buổi bị ảnh hưởng</th><th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
                 <tbody>{rows.map((row) => (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.createdAt)}</td>

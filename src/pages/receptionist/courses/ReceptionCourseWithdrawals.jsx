@@ -96,7 +96,7 @@ export default function ReceptionCourseWithdrawals({
       {data && (
         <>
           <Table responsive>
-            <thead>
+            <thead className="table-light">
               <tr>
                 <th>Khóa học</th>
                 <th>Điều kiện rút</th>
@@ -160,9 +160,7 @@ export default function ReceptionCourseWithdrawals({
             </p>
             <p>
               Hoàn dự kiến: {formatCourseMoney(selected?.estimatedRefundAmount)}
-              . Khoản hoàn được chốt khi gửi thành công. Tạm ngừng học/điểm
-              danh, giữ chỗ khi chờ; không bù buổi đã lỡ nếu hủy hoặc bị từ
-              chối.
+              . Hội viên tạm ngừng học, giữ chỗ khi chờ duyệt và không được bù các buổi đã lỡ.
             </p>
             <Form.Group controlId="reception-withdrawal-reason">
               <Form.Label>Lý do</Form.Label>

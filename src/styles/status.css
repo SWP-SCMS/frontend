@@ -21,10 +21,8 @@
 .badge.system-badge--neutral { background: var(--status-neutral-bg) !important; color: var(--status-neutral-text) !important; }
 .scms-md-badge.on,
 .scms-mp-badge.on,
-.scms-my-plan-status.on,
-.scms-ml-card-status.on { background: var(--status-green-bg) !important; color: var(--status-green-text) !important; font-size: .8125rem; font-weight: 600; }
+.scms-my-plan-status.on { background: var(--status-green-bg) !important; color: var(--status-green-text) !important; font-size: .8125rem; font-weight: 600; }
 .scms-md-badge:not(.on),
 .scms-mp-badge:not(.on),
-.scms-my-plan-status:not(.on):not(.reserved),
-.scms-ml-card-status:not(.on) { background: var(--status-neutral-bg) !important; color: var(--status-neutral-text) !important; font-size: .8125rem; font-weight: 600; }
+.scms-my-plan-status:not(.on):not(.reserved) { background: var(--status-neutral-bg) !important; color: var(--status-neutral-text) !important; font-size: .8125rem; font-weight: 600; }
 .scms-my-plan-status.reserved { background: var(--status-blue-bg) !important; color: var(--status-blue-text) !important; font-size: .8125rem; font-weight: 600; }

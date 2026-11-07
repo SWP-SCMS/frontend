@@ -147,10 +147,6 @@ export default function BulkCancelSessionsModal({
           <Modal.Title className="h5">Hủy nhiều buổi tập</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p className="text-muted small">
-            Hệ thống chỉ hủy các buổi trong tương lai đang ở trạng thái
-            SCHEDULED. Kết quả áp dụng từ backend là nguồn xác nhận cuối cùng.
-          </p>
           <ErrorAlert
             error={serverError}
             title="Không xử lý được yêu cầu hủy"

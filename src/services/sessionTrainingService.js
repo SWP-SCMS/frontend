@@ -14,3 +14,8 @@ export async function saveSessionTrainingFeedback(sessionId, memberId, id, paylo
   const { data } = await api[id ? 'put' : 'post'](path(sessionId, memberId, 'feedback', id), payload);
   return data;
 }
+
+export async function saveSessionTrainingSummary(sessionId, memberId, payload) {
+  const { data } = await api.put(path(sessionId, memberId, 'training-summary'), payload);
+  return data;
+}

@@ -1,6 +1,6 @@
 import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {Alert,  Button, Card, Form, Modal, Spinner, Table} from 'react-bootstrap';
+import {Alert,  Button, Card, Form, Modal, Spinner, Table, Tabs, Tab} from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 import { DateInput } from '../../../components/common/DateInput';
@@ -71,6 +71,7 @@ export default function MembershipRequestsPage() {
     loading: membershipLoading,
     error: membershipError,
   } = useMemberArea();
+  const [activeTab, setActiveTab] = useState('termination');
   const [terminationRows, setTerminationRows] = useState([]);
   const [freezeRows, setFreezeRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -243,13 +244,17 @@ export default function MembershipRequestsPage() {
                 <p className="text-muted mb-4">
                   Bạn cần có gói tập đang hoạt động để gửi yêu cầu hủy hoặc đóng băng.
                 </p>
-                <Button as={Link} to="/member/plan" variant="danger">
+                <Button as={Link} to="/member/plan-registration" variant="danger">
                   Xem các gói tập
                 </Button>
               </Card.Body>
             </Card>
           ) : null}
 
+          <Tabs id="member-membership-request-tabs" activeKey={activeTab}
+            onSelect={(key) => { setActiveTab(key); setActionError(null); setNotice(null); }}
+            className="scms-request-tabs" transition={false}>
+          <Tab eventKey="termination" title="Hủy gói" disabled={Boolean(busyKey)}>
           <Card className="border-0 shadow-sm">
             <Card.Body className="p-4">
               <h2 className="h5 fw-bold">
@@ -296,6 +301,8 @@ export default function MembershipRequestsPage() {
             </Card.Body>
           </Card>
 
+          </Tab>
+          <Tab eventKey="freeze" title="Đóng băng" disabled={Boolean(busyKey)}>
           <Card className="border-0 shadow-sm">
             <Card.Body className="p-4">
               <h2 className="h5 fw-bold">
@@ -348,6 +355,8 @@ export default function MembershipRequestsPage() {
               <RequestTable type="freeze" rows={freezeRows} busyKey={busyKey} onFreezeAction={setFreezeAction} />
             </Card.Body>
           </Card>
+          </Tab>
+          </Tabs>
         </div>
       )}
 
@@ -427,7 +436,7 @@ function RequestTable({ type, rows, busyKey, onWithdraw, onFreezeAction }) {
   return (
     <div className="table-responsive mt-4">
       <Table hover className="align-middle mb-0">
-        <thead>
+        <thead className="table-light">
           <tr>
             <th>Ngày gửi</th>
             <th>{termination ? 'Hình thức' : 'Thời gian'}</th>

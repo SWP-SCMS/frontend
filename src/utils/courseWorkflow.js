@@ -57,6 +57,8 @@ export function courseScheduleEntries(enrollments) {
       bookingId: 'course-' + session.enrollmentSessionId,
       sessionId: session.courseSessionId,
       classType: 'COURSE',
+      courseName: item.courseName,
+      runCode: item.runCode,
       className: item.courseName + ' · ' + item.runCode + ' · Buổi ' + session.unitNumber,
       startTime: session.startAt,
       endTime: session.endAt,

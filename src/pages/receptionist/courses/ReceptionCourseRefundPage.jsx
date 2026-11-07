@@ -1,3 +1,4 @@
+import StaffPagination from '../../../components/common/StaffPagination';
 import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useForm } from 'react-hook-form';
@@ -89,21 +90,19 @@ export default function ReceptionCourseRefundPage() {
       .finally(() => { if (active) if (!background) commitValue(setDetailLoading, false); }));
     return () => { active = false; };
   }, [selectedId, detailRevision], !busy);
-  return <div className="container-fluid py-4">
-    <h1 className="h3">Hàng chờ hoàn tiền khóa học</h1>
-    <p>Các khoản đã được quản lý duyệt. Điều kiện chi được cập nhật theo trạng thái đợt học.</p>
-    <Alert variant="info">Chỉ ghi nhận sau khi đã thực hiện chi và có chứng từ. Khoản chi còn cần Quản lý xác minh.</Alert>
+  return <div className="scms-course-workspace">
+    <h1 className="h3">Hoàn tiền khóa học</h1>
     {notice && <Alert variant="success">{notice}</Alert>}
     <div className="d-flex flex-wrap gap-3 mb-3">
       <Form.Select aria-label="Điều kiện chi" style={{ maxWidth: 320 }} value={eligible} disabled={loading} onChange={(event) => { setEligible(event.target.value); setPage(0); }}><option value="">Tất cả khoản đã duyệt</option><option value="true">Đủ điều kiện chi</option><option value="false">Chưa đủ điều kiện chi</option></Form.Select>
       <Button variant="outline-secondary" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Tải lại</Button>
     </div>
     {error && <Alert variant="danger">{error}</Alert>}
-    {loading ? <p>Đang tải hàng chờ…</p> : data && <Card><Table responsive hover className="mb-0 align-middle"><thead><tr><th>Hội viên</th><th>Khóa học / đợt</th><th>Số tiền đã duyệt</th><th>Điều kiện chi</th><th /></tr></thead><tbody>
-      {data.items.map((item) => <tr key={item.refundId}><td>{item.memberName || 'Hội viên'}<br /><small>{item.memberCode || 'Chưa có mã hội viên'}</small></td><td>{item.courseName || 'Khóa học'}<br /><small>{item.runCode || 'Đợt học'}</small></td><td>{formatCourseMoney(item.amount)}</td><td>{COURSE_ELIGIBILITY_LABELS[item.disbursementEligibilityReason] || 'Chưa xác định'}</td><td><Button size="sm" variant="outline-primary" onClick={() => setSelectedId(item.refundId)}>Chi tiết</Button></td></tr>)}
+    {loading ? <p>Đang tải hàng chờ…</p> : data && <Card className="border-0 shadow-sm"><Table responsive hover className="scms-course-refund-table mb-0 align-middle"><thead className="table-light"><tr><th>Hội viên</th><th>Khóa học / đợt</th><th className="text-end">Số tiền đã duyệt</th><th>Điều kiện chi</th><th className="text-end">Thao tác</th></tr></thead><tbody>
+      {data.items.map((item) => <tr key={item.refundId}><td>{item.memberName || 'Hội viên'}<br /><small>{item.memberCode || 'Chưa có mã hội viên'}</small></td><td>{item.courseName || 'Khóa học'}<br /><small>{item.runCode || 'Đợt học'}</small></td><td className="text-end text-nowrap fw-semibold">{formatCourseMoney(item.amount)}</td><td><Badge tone={item.disbursementEligibilityReason === 'ELIGIBLE' ? 'green' : item.disbursementEligibilityReason === 'AWAITING_COURSE_COMPLETION' ? 'amber' : 'neutral'}>{COURSE_ELIGIBILITY_LABELS[item.disbursementEligibilityReason] || 'Chưa xác định'}</Badge></td><td className="text-end text-nowrap"><Button size="sm" variant="outline-primary" onClick={() => setSelectedId(item.refundId)}>Chi tiết</Button></td></tr>)}
       {!data.items.length && <tr><td colSpan={5} className="text-center py-4">Không có khoản hoàn phù hợp.</td></tr>}
-    </tbody></Table></Card>}
-    <div className="d-flex gap-3 align-items-center mt-3"><Button disabled={loading || page === 0} onClick={() => setPage(page - 1)}>Trang trước</Button><span>Trang {page + 1}</span><Button disabled={loading || !data || page + 1 >= data.totalPages} onClick={() => setPage(page + 1)}>Trang sau</Button></div>
+    </tbody></Table>
+    <StaffPagination page={page} totalPages={data?.totalPages} totalElements={data?.totalElements} loading={loading || !data} onPageChange={setPage} /></Card>}
     <Modal show={!!selectedId} onHide={() => { if (!busy) setSelectedId(''); }} centered backdrop={busy ? 'static' : true} keyboard={!busy}><Modal.Header closeButton={!busy}><Modal.Title>Khoản hoàn đã duyệt</Modal.Title></Modal.Header><Modal.Body>
       {detailError && <Alert variant="danger">{detailError}</Alert>}
       {detailLoading ? <p>Đang tải…</p> : detail && <><RefundSummary item={detail} /><DisbursementForm key={detail.refundId + ":" + detailRevision} item={detail} onBusy={setBusy} onDone={() => { setSelectedId(''); setRevision((value) => value + 1); setNotice('Đã ghi nhận chi, chờ Quản lý xác minh.'); }} /></>}

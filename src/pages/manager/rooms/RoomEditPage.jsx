@@ -283,7 +283,6 @@ export default function RoomEditPage() {
             <option value="EXCLUSIVE">Dùng riêng — mỗi khung giờ chỉ có một buổi tập</option>
             <option value="SHARED">Dùng chung — nhiều buổi tập được dùng nếu còn đủ sức chứa</option>
           </Form.Select>
-          <Form.Text className="text-muted">Khi dùng chung, hệ thống cộng sức chứa của tất cả buổi tập trùng giờ.</Form.Text>
           <Form.Control.Feedback type="invalid">{errors.usageMode?.message}</Form.Control.Feedback>
         </Form.Group>
 

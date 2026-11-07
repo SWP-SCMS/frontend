@@ -612,7 +612,7 @@ export default function ManagerSessionListPage() {
             phòng tập và trạng thái.
           </p>
         </div>
-        <Button as={Link} to="/manager/classes" variant="danger">+ Tạo buổi · Chọn lớp</Button>
+        <div className="d-flex flex-wrap align-items-center gap-2 ms-auto">
         <ButtonGroup size="sm" aria-label="Chế độ hiển thị">
           {VIEW_OPTIONS.map((opt) => (
             <Button
@@ -625,6 +625,8 @@ export default function ManagerSessionListPage() {
             </Button>
           ))}
         </ButtonGroup>
+          <Button as={Link} to="/manager/classes" variant="danger">+ Tạo buổi · Chọn lớp</Button>
+        </div>
       </header>
 
       {/* ----- Filter row (common across both views) ----- */}

@@ -1,25 +1,19 @@
-/* Khung giao diện khu vực staff dashboard (Manager / Receptionist).
- * Visual format mirrors Member area (dark sidebar + dark header + light main)
- * nhưng scoped với tiền tố .scms-sd- để không đụng .scms-ml-* của Member.
- * Giá trị byte-for-byte giống MemberLayout.css (sidebar 288px, header 80px,
- * palette tối #1a1c20 / rgba(12,14,18,0.85), active red #dc2626, nền #f8fafc). */
-
-.scms-sd {
-  --sd-sidebar-w: 288px;
-  --sd-header-h: 80px;
+/* Shared authenticated shell: manager, receptionist, coach and member.
+   Role-specific navigation and membership details remain in their components. */
+.scms-app {
+  --app-sidebar-w: 288px;
+  --app-header-h: 80px;
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--scms-app-bg);
   color: #1e293b;
 }
 
-/* ----- Sidebar ----- */
-
-.scms-sd-sidebar {
+.scms-app-sidebar {
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
-  width: var(--sd-sidebar-w);
+  width: var(--app-sidebar-w);
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -30,38 +24,38 @@
   overflow-y: auto;
 }
 
-.scms-sd-sidebar {
+.scms-app-sidebar {
   scrollbar-color: #62666e #1a1c20;
   scrollbar-width: thin;
 }
 
-.scms-sd-sidebar::-webkit-scrollbar {
+.scms-app-sidebar::-webkit-scrollbar {
   width: 8px;
 }
 
-.scms-sd-sidebar::-webkit-scrollbar-track {
+.scms-app-sidebar::-webkit-scrollbar-track {
   background: #1a1c20;
 }
 
-.scms-sd-sidebar::-webkit-scrollbar-thumb {
+.scms-app-sidebar::-webkit-scrollbar-thumb {
   border: 2px solid #1a1c20;
   border-radius: 8px;
   background: #62666e;
 }
 
-.scms-sd-sidebar::-webkit-scrollbar-thumb:hover {
+.scms-app-sidebar::-webkit-scrollbar-thumb:hover {
   background: #858a93;
 }
 
-.scms-sd-sidebar-logo {
-  height: var(--sd-header-h);
+.scms-app-sidebar-logo {
+  height: var(--app-header-h);
   padding: 0 1.5rem;
   display: flex;
   align-items: center;
   background: rgba(12, 14, 18, 0.8);
 }
 
-.scms-sd-sidebar-label {
+.scms-app-sidebar-label {
   padding: 1rem 1.5rem;
   font-size: 0.7rem;
   font-weight: 600;
@@ -70,20 +64,20 @@
   color: #e6bdb8;
 }
 
-.scms-sd-nav {
+.scms-app-nav {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   padding: 0 1rem;
 }
 
-.scms-sd-navgroup {
+.scms-app-navgroup {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 }
 
-.scms-sd-navgroup-toggle {
+.scms-app-navgroup-toggle {
   width: 100%;
   display: flex;
   align-items: center;
@@ -100,32 +94,32 @@
   cursor: pointer;
 }
 
-.scms-sd-navgroup-toggle:hover {
+.scms-app-navgroup-toggle:hover {
   color: #f1d3cf;
 }
 
-.scms-sd-navgroup-chevron {
+.scms-app-navgroup-chevron {
   font-size: 1.1rem;
   line-height: 1;
   transform: rotate(0deg);
   transition: transform 0.15s ease;
 }
 
-.scms-sd-navgroup-chevron.open {
+.scms-app-navgroup-chevron.open {
   transform: rotate(90deg);
 }
 
-.scms-sd-navgroup-items {
+.scms-app-navgroup-items {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 }
 
-.scms-sd-navgroup-items[hidden] {
+.scms-app-navgroup-items[hidden] {
   display: none;
 }
 
-.scms-sd-navitem {
+.scms-app-navitem {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -137,20 +131,18 @@
   transition: background 0.15s, color 0.15s;
 }
 
-a.scms-sd-navitem:hover {
+a.scms-app-navitem:hover {
   background: #282a2e;
   color: #e2e2e8;
 }
 
-.scms-sd-navitem.active {
-  background: #dc2626;
+.scms-app-navitem.active {
+  background: var(--scms-red);
   color: #fff6f5;
   font-weight: 600;
   box-shadow: 0 8px 16px -6px rgba(220, 38, 38, 0.4);
 }
-
-/* Nút "Đăng xuất" trong sidebar: dáng giống mục menu nhưng là <button>. */
-.scms-sd-navbtn {
+.scms-app-navbtn {
   width: 100%;
   margin-top: 0.25rem;
   border: 0;
@@ -159,23 +151,21 @@ a.scms-sd-navitem:hover {
   cursor: pointer;
 }
 
-.scms-sd-navbtn:hover {
+.scms-app-navbtn:hover {
   background: #282a2e;
   color: #f87171;
 }
 
-/* ----- Header ----- */
-
-.scms-sd-body {
-  padding-left: var(--sd-sidebar-w);
+.scms-app-body {
+  padding-left: var(--app-sidebar-w);
 }
 
-.scms-sd-header {
+.scms-app-header {
   position: fixed;
   top: 0;
-  left: var(--sd-sidebar-w);
+  left: var(--app-sidebar-w);
   right: 0;
-  height: var(--sd-header-h);
+  height: var(--app-header-h);
   z-index: 40;
   padding: 0 1.5rem;
   display: flex;
@@ -185,16 +175,13 @@ a.scms-sd-navitem:hover {
   backdrop-filter: blur(16px);
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
 }
-
-/* Vùng top-nav header — để trống cho staff dashboard (không có mục top-nav
- * cho Manager / Receptionist ở phase này). Vẫn render DOM để giữ layout. */
-.scms-sd-topnav {
+.scms-app-topnav {
   display: flex;
   align-items: center;
   gap: 2rem;
 }
 
-.scms-sd-bell {
+.scms-app-bell {
   position: relative;
   width: 40px;
   height: 40px;
@@ -208,17 +195,17 @@ a.scms-sd-navitem:hover {
   transition: background 0.15s, color 0.15s;
 }
 
-.scms-sd-bell:hover,
-.scms-sd-bell.show {
-  background: #dc2626;
+.scms-app-bell:hover,
+.scms-app-bell.show {
+  background: var(--scms-red);
   color: #fff;
 }
 
-.scms-sd-bell::after {
+.scms-app-bell::after {
   display: none;
 }
 
-.scms-sd-bell-dot {
+.scms-app-bell-dot {
   position: absolute;
   top: 6px;
   right: 7px;
@@ -227,21 +214,21 @@ a.scms-sd-navitem:hover {
   border-radius: 50%;
   background: #ef4444;
   border: 2px solid #282a2e;
-  animation: scms-sd-pulse 1.8s ease-in-out infinite;
+  animation: scms-app-pulse 1.8s ease-in-out infinite;
 }
 
-.scms-sd-bell:hover .scms-sd-bell-dot,
-.scms-sd-bell.show .scms-sd-bell-dot {
+.scms-app-bell:hover .scms-app-bell-dot,
+.scms-app-bell.show .scms-app-bell-dot {
   background: #fff;
-  border-color: #dc2626;
+  border-color: var(--scms-red);
 }
 
-@keyframes scms-sd-pulse {
+@keyframes scms-app-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
   50% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
 }
 
-.scms-sd-bell-menu {
+.scms-app-bell-menu {
   width: min(380px, calc(100vw - 1.5rem));
   max-width: calc(100vw - 1.5rem);
   padding: 0;
@@ -251,13 +238,13 @@ a.scms-sd-navitem:hover {
   overflow: hidden;
 }
 
-.scms-sd-bell-content {
+.scms-app-bell-content {
   display: flex;
   flex-direction: column;
   max-height: min(560px, calc(100vh - 120px));
 }
 
-.scms-sd-bell-head {
+.scms-app-bell-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -269,8 +256,8 @@ a.scms-sd-navitem:hover {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.scms-sd-bell-mark-all,
-.scms-sd-bell-mark-read {
+.scms-app-bell-mark-all,
+.scms-app-bell-mark-read {
   flex: 0 0 auto;
   border: 0;
   padding: 0.25rem 0.4rem;
@@ -279,25 +266,25 @@ a.scms-sd-navitem:hover {
   font-size: 0.72rem;
 }
 
-.scms-sd-bell-mark-all:hover,
-.scms-sd-bell-mark-read:hover {
+.scms-app-bell-mark-all:hover,
+.scms-app-bell-mark-read:hover {
   color: #fff;
   text-decoration: underline;
 }
 
-.scms-sd-bell-mark-all:disabled,
-.scms-sd-bell-mark-read:disabled {
+.scms-app-bell-mark-all:disabled,
+.scms-app-bell-mark-read:disabled {
   opacity: 0.55;
 }
 
-.scms-sd-bell-error {
+.scms-app-bell-error {
   padding: 0.55rem 1rem;
   color: #fecaca;
   font-size: 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.scms-sd-bell-load-more {
+.scms-app-bell-load-more {
   flex: 0 0 auto;
   margin: 0.65rem 0.75rem;
   border: 0;
@@ -309,22 +296,22 @@ a.scms-sd-navitem:hover {
   font-weight: 600;
 }
 
-.scms-sd-bell-load-more:hover:not(:disabled) {
+.scms-app-bell-load-more:hover:not(:disabled) {
   background: #454851;
 }
 
-.scms-sd-bell-load-more:disabled {
+.scms-app-bell-load-more:disabled {
   opacity: 0.65;
 }
 
-.scms-sd-bell-empty {
+.scms-app-bell-empty {
   padding: 1.5rem 1rem;
   text-align: center;
   font-size: 0.8rem;
   color: #e6bdb8;
 }
 
-.scms-sd-bell-list {
+.scms-app-bell-list {
   min-height: 0;
   overflow-y: auto;
   color: #e2e2e8;
@@ -332,25 +319,25 @@ a.scms-sd-navitem:hover {
   scrollbar-width: thin;
 }
 
-.scms-sd-bell-list::-webkit-scrollbar {
+.scms-app-bell-list::-webkit-scrollbar {
   width: 8px;
 }
 
-.scms-sd-bell-list::-webkit-scrollbar-track {
+.scms-app-bell-list::-webkit-scrollbar-track {
   background: #1e2024;
 }
 
-.scms-sd-bell-list::-webkit-scrollbar-thumb {
+.scms-app-bell-list::-webkit-scrollbar-thumb {
   border: 2px solid #1e2024;
   border-radius: 8px;
   background: #62666e;
 }
 
-.scms-sd-bell-list::-webkit-scrollbar-thumb:hover {
+.scms-app-bell-list::-webkit-scrollbar-thumb:hover {
   background: #858a93;
 }
 
-.scms-sd-bell-preview {
+.scms-app-bell-preview {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
@@ -360,11 +347,11 @@ a.scms-sd-navitem:hover {
   line-height: 1.35;
 }
 
-.scms-sd-bell-preview.is-unread {
+.scms-app-bell-preview.is-unread {
   background: rgba(220, 38, 38, 0.1);
 }
 
-.scms-sd-bell-open {
+.scms-app-bell-open {
   flex: 1 1 auto;
   min-width: 0;
   border: 0;
@@ -375,21 +362,21 @@ a.scms-sd-navitem:hover {
   cursor: pointer;
 }
 
-.scms-sd-bell-open:hover .scms-sd-bell-summary {
+.scms-app-bell-open:hover .scms-app-bell-summary {
   color: #fff;
 }
 
-.scms-sd-bell-open:disabled {
+.scms-app-bell-open:disabled {
   opacity: 0.6;
   cursor: wait;
 }
 
-.scms-sd-bell-copy {
+.scms-app-bell-copy {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.scms-sd-bell-summary {
+.scms-app-bell-summary {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -398,27 +385,27 @@ a.scms-sd-navitem:hover {
   font-weight: 600;
 }
 
-.scms-sd-bell-new {
+.scms-app-bell-new {
   flex: 0 0 auto;
   color: #fca5a5;
   font-size: 0.65rem;
 }
 
-.scms-sd-bell-meta,
-.scms-sd-bell-detail {
+.scms-app-bell-meta,
+.scms-app-bell-detail {
   margin-top: 0.2rem;
   color: #a1a1aa;
   font-size: 0.7rem;
 }
 
-.scms-sd-user {
+.scms-app-user {
   display: flex;
   align-items: center;
   gap: 1rem;
   margin-left: auto;
 }
 
-.scms-sd-role {
+.scms-app-role {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -430,33 +417,33 @@ a.scms-sd-navitem:hover {
   background: #282a2e;
 }
 
-.scms-sd-role-dot {
+.scms-app-role-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #dc2626;
+  background: var(--scms-red);
 }
 
-.scms-sd-user-text {
+.scms-app-user-text {
   display: flex;
   flex-direction: column;
   text-align: right;
   line-height: 1.2;
 }
 
-.scms-sd-user-name {
+.scms-app-user-name {
   font-size: 0.95rem;
   font-weight: 600;
   color: #e2e2e8;
 }
 
-.scms-sd-user-code {
+.scms-app-user-code {
   font-size: 0.7rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #e6bdb8;
 }
 
-.scms-sd-avatar {
+.scms-app-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -467,7 +454,7 @@ a.scms-sd-navitem:hover {
   color: #690005;
 }
 
-.scms-sd-logout {
+.scms-app-logout {
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
@@ -476,30 +463,25 @@ a.scms-sd-navitem:hover {
   color: #e2e2e8;
 }
 
-.scms-sd-logout:hover {
+.scms-app-logout:hover {
   background: #282a2e;
 }
 
-/* ----- Nội dung ----- */
-
-.scms-sd-main {
-  padding: calc(var(--sd-header-h) + 1.5rem) 1.5rem 4rem;
+.scms-app-main {
+  padding: calc(var(--app-header-h) + 1.5rem) 1.5rem 4rem;
   min-height: 100vh;
 }
-
-/* Màn hình hẹp: sidebar nằm trên cùng thay vì cố định bên trái.
- * Mirror đúng media query của MemberLayout.css. */
 @media (max-width: 991.98px) {
-  .scms-sd-sidebar {
+  .scms-app-sidebar {
     position: static;
     width: 100%;
   }
 
-  .scms-sd-body {
+  .scms-app-body {
     padding-left: 0;
   }
 
-  .scms-sd-header {
+  .scms-app-header {
     position: static;
     left: 0;
     flex-wrap: wrap;
@@ -508,12 +490,92 @@ a.scms-sd-navitem:hover {
     gap: 0.5rem;
   }
 
-  .scms-sd-topnav {
+  .scms-app-topnav {
     display: flex;
   }
 
-  .scms-sd-main {
+  .scms-app-main {
     padding: 1rem 1rem 3rem;
     min-height: 0;
   }
+}
+.scms-app-navgroup-label {
+  padding: 0.35rem 0.55rem;
+  color: #a8a8b3;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+.scms-app-navitem.locked {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0.55;
+}
+.scms-app-navitem.locked:hover {
+  background: #282a2e;
+  opacity: 0.8;
+}
+.scms-app-benefit {
+  margin-left: auto;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: var(--scms-red);
+}
+.scms-app-navitem.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.scms-app-soon {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #333539;
+  color: #e2e2e8;
+}
+.scms-app-card {
+  margin: 0 1rem 1.5rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #1e2024;
+}
+.scms-app-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e6bdb8;
+}
+.scms-app-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+.scms-app-dot.on {
+  background: #10b981;
+}
+.scms-app-card-code {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e2e8;
+}
+.scms-app-card-status {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }

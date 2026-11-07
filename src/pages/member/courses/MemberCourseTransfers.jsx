@@ -1,3 +1,4 @@
+import { formatSessionSlot } from '../../../utils/sessionSlots';
 import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useEffect, useRef, useState } from 'react';
@@ -64,7 +65,7 @@ export default function MemberCourseTransfers({ enrollments, onTransferred, sele
   const sourceNames = new Map(enrollments.map((item) => [item.enrollmentId, item.courseName + ' · ' + item.runCode]));
   const runNames = new Map(enrollments.map((item) => [item.courseRunId, item.courseName + ' · ' + item.runCode]));
   return <section className="member-course-section" id="transfers">
-    <h2>Chuyển đợt học</h2><p>Các đề nghị được quản lý duyệt sau khi bạn yêu cầu chuyển do thay đổi lịch.</p>
+    <h2>Chuyển đợt học</h2>
     <Button variant="outline-secondary" disabled={loading || busy} onClick={() => setRevision((value) => value + 1)}>Tải lại đề nghị</Button>
     {error && <Alert variant="danger" className="mt-3">{error}</Alert>}{notice && <Alert variant="success" className="mt-3">{notice}</Alert>}
     {loading ? <p>Đang tải…</p> : !error && <>
@@ -86,7 +87,7 @@ export default function MemberCourseTransfers({ enrollments, onTransferred, sele
           <h3 className="h5">{target.courseName} · {target.runCode}</h3>
           <p>{formatCourseDateTime(target.plannedStartAt)} – {formatCourseDateTime(target.plannedEndAt)}</p>
           <p>Huấn luyện viên: {target.primaryCoachName || 'Đang cập nhật'}</p>
-          <ul>{target.sessions?.map((session) => <li key={session.id}>Buổi {session.unitNumber}: {formatCourseDateTime(session.startAt)} – {formatCourseDateTime(session.endAt)} · <Badge>{COURSE_SESSION_STATUS_LABELS[session.status] || 'Chưa có trạng thái'}</Badge></li>)}</ul>
+          <ul>{target.sessions?.map((session) => <li key={session.id}>Buổi {session.unitNumber}: {formatCourseDateTime(session.startAt)} – {formatCourseDateTime(session.endAt)} · {formatSessionSlot(session.startAt, session.endAt)} · <Badge>{COURSE_SESSION_STATUS_LABELS[session.status] || 'Chưa có trạng thái'}</Badge></li>)}</ul>
           <p>Chênh lệch theo đề nghị: <strong>{formatCourseMoney(selected.differenceVnd)}</strong>. Khoản dương cần thanh toán; khoản âm được xử lý qua quy trình hoàn tiền.</p>
           <p>Hạn chấp nhận/thanh toán: {formatCourseDateTime(selected.expiresAt)}.</p>
         </>}

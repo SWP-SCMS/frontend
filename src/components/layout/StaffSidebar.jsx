@@ -1,6 +1,6 @@
 // Sidebar cho khu vực staff (Manager / Receptionist).
 // Mirror MemberSidebar.jsx về mặt visual nhưng:
-//   - Dùng class .scms-sd-* (không đụng .scms-ml-* của Member).
+//   - Dùng class .scms-app-* (không đụng .scms-app-* của Member).
 //   - Icon chọn theo URL qua helper iconForRoute (không phụ thuộc item.icon).
 //   - Không render thẻ thành viên (chỉ Member mới có).
 //
@@ -85,6 +85,8 @@ function findActiveIndex(pathname, items) {
   // Rule A.
   const exact = items.findIndex((it) => it.to === pathname);
   if (exact !== -1) return exact;
+  const alias = items.findIndex((it) => it.activePaths?.includes(pathname));
+  if (alias !== -1) return alias;
   // Rule B.
   let best = -1;
   let bestLen = -1;
@@ -136,27 +138,27 @@ export default function StaffSidebar({
   }
 
   return (
-    <aside className="scms-sd-sidebar">
+    <aside className="scms-app-sidebar">
       <div>
-        <div className="scms-sd-sidebar-logo">
+        <div className="scms-app-sidebar-logo">
           <BrandLogo />
         </div>
-        <div className="scms-sd-sidebar-label">{sidebarLabel}</div>
-        <nav className="scms-sd-nav">
+        <div className="scms-app-sidebar-label">{sidebarLabel}</div>
+        <nav className="scms-app-nav">
           {items.map((section, sectionIndex) => {
             const isOpen = openSections.has(sectionIndex);
             return (
-              <div className="scms-sd-navgroup" key={section.label}>
+              <div className="scms-app-navgroup" key={section.label}>
                 <button
                   type="button"
-                  className="scms-sd-navgroup-toggle"
+                  className="scms-app-navgroup-toggle"
                   onClick={() => toggleSection(sectionIndex)}
                   aria-expanded={isOpen}
                   aria-controls={`staff-nav-section-${sectionIndex}`}
                 >
                   <span>{section.label}</span>
                   <span
-                    className={`scms-sd-navgroup-chevron${isOpen ? ' open' : ''}`}
+                    className={`scms-app-navgroup-chevron${isOpen ? ' open' : ''}`}
                     aria-hidden="true"
                   >
                     ›
@@ -164,7 +166,7 @@ export default function StaffSidebar({
                 </button>
                 <div
                   id={`staff-nav-section-${sectionIndex}`}
-                  className="scms-sd-navgroup-items"
+                  className="scms-app-navgroup-items"
                   hidden={!isOpen}
                 >
                   {section.items.map((item) => {
@@ -174,7 +176,7 @@ export default function StaffSidebar({
                       <Link
                         key={item.to}
                         to={item.to}
-                        className={`scms-sd-navitem${isActive ? ' active' : ''}`}
+                        className={`scms-app-navitem${isActive ? ' active' : ''}`}
                         aria-current={isActive ? 'page' : undefined}
                       >
                         <StaffIcon name={iconForRoute(item.to)} />
@@ -188,7 +190,7 @@ export default function StaffSidebar({
           })}
           <button
             type="button"
-            className="scms-sd-navitem scms-sd-navbtn"
+            className="scms-app-navitem scms-app-navbtn"
             onClick={onRequestLogout}
           >
             <StaffIcon name="logout" />
