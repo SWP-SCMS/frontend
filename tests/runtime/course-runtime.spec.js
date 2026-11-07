@@ -45,7 +45,7 @@ test('SYSTEM_CLOCK Manager reconciles through UI; owner, role, amount and replay
   const f = env.fixtures.reconcile;
   await login(page, 'manager', '/manager/course-payments/reconcile');
   await page.getByLabel('Tìm đơn hoặc hội viên').fill(f.reference);
-  await page.getByRole('button', { name: 'Tìm kiếm', exact: true }).click();
+  await page.getByRole('button', { name: 'Tìm', exact: true }).click();
   await page.getByRole('button', { name: 'Đối soát', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText(env.accounts.member.memberCode);
@@ -82,7 +82,7 @@ test('SYSTEM_CLOCK Reception withdrawal and cancellation refresh all member pane
   const row = page.getByRole('row').filter({ hasText: e.runCode });
   await row.getByRole('button', { name: 'Yêu cầu rút hộ', exact: true }).click();
   let dialog = page.getByRole('dialog');
-  await expect(dialog).toContainText('Tạm ngừng học/điểm danh');
+  await expect(dialog).toContainText('Hội viên tạm ngừng học, giữ chỗ khi chờ duyệt');
   await dialog.getByLabel('Lý do', { exact: true }).fill('QA temporary withdrawal');
   await dialog.getByRole('button', { name: 'Xác nhận gửi yêu cầu' }).click();
   await expect(dialog).toHaveCount(0);
@@ -113,8 +113,8 @@ test('SYSTEM_CLOCK Member sees legacy missing snapshot as unknown with restored 
   expect(legacy.refundAmountVnd).toBeNull(); expect(legacy.canCancel).toBe(false);
   await login(page, 'member', '/member/courses/withdrawals');
   const card = page.locator('#withdrawals article').filter({ hasText: 'QA legacy historical request' });
-  await expect(card).toContainText('Khoản hoàn chưa có snapshot: Chưa xác định');
-  await expect(card).toContainText('Yêu cầu cũ không có dữ liệu chốt khoản hoàn');
+  await expect(card).toContainText('Số tiền hoàn: Chưa xác định');
+  await expect(card).toContainText('Thiếu thông tin khoản hoàn');
   await expect(card.getByRole('button', { name: 'Hủy yêu cầu rút' })).toHaveCount(0);
   expect((await enrollment(request, env.fixtures.legacy.runId)).lifecycleStatus).toBe('ACTIVE');
   await evidence(info, { clock: 'SYSTEM_CLOCK', legacy: 'initial synthetic historical fixture', snapshot: 'UNAVAILABLE', refund: null, enrollment: 'ACTIVE' });

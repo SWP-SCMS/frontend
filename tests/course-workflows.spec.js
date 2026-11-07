@@ -411,7 +411,8 @@ test('split course pages load only their workflow and preserve details, filters 
   for (const [hash, heading] of [['refunds','Hoàn tiền khóa học'], ['withdrawals','Rút khóa học'], ['transfers','Chuyển đợt học'], ['schedule-changes','Thay đổi lịch học']]) {
     await page.goto('/member/courses#' + hash);
     await expect(page).toHaveURL(new RegExp('/member/courses/' + hash + '$'));
-    await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Yêu cầu khóa học', level: 1 })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Loại yêu cầu khóa học' }).getByRole('link', { name: heading, exact: true })).toHaveAttribute('aria-current', 'page');
   }
   await page.goto('/member/courses/enrollments/not-owned');
   await expect(page.locator('main')).toContainText('Không tìm thấy khóa học');

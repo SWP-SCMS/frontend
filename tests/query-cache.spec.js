@@ -110,10 +110,10 @@ test('pagination uses separate snapshots and account change clears them', async 
   });
   await page.goto('/manager/courses');
   await expect(page.getByText('Trang 0 QA', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Trang sau', exact: true }).click();
+  await page.getByRole('button', { name: 'Trang sau →', exact: true }).click();
   await expect(page.getByText('Trang 1 QA', { exact: true })).toBeVisible();
   hold = true;
-  await page.getByRole('button', { name: 'Trang trước', exact: true }).click();
+  await page.getByRole('button', { name: '← Trang trước', exact: true }).click();
   await expect.poll(() => !!release).toBe(true);
   await expect(page.getByText('Trang 0 QA', { exact: true })).toBeVisible();
   await expect(page.getByText('Trang 1 QA', { exact: true })).toHaveCount(0);

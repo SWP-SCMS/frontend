@@ -25,7 +25,7 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   await page.clock.setFixedTime(new Date(Date.parse(expiredPayment.expiresAt) + 1000));
   await login(page, 'reception', '/reception/course-payments/reconcile');
   await page.getByLabel('Tìm đơn hoặc hội viên').fill(expiredFixture.reference);
-  await page.getByRole('button', { name: 'Tìm kiếm', exact: true }).click();
+  await page.getByRole('button', { name: 'Tìm', exact: true }).click();
   await page.getByRole('button', { name: 'Đối soát', exact: true }).click();
   let dialog = page.getByRole('dialog');
   await dialog.getByLabel('Kết quả đối soát').selectOption('FAILED');
@@ -90,7 +90,7 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   let zeroRequest = (await api(request, 'member', 'GET', '/members/me/course-withdrawal-requests')).find(w => w.enrollmentId === zeroEnrollment.enrollmentId && w.status === 'PENDING');
   expect(zeroRequest.remainingUnits).toBe(6); expect(zeroRequest.refundAmountVnd).toBe(0);
   const zeroCard = page.locator('#withdrawals article').filter({ hasText: 'QA below seventy percent' });
-  await expect(zeroCard).toContainText('Khoản hoàn chốt lúc gửi');
+  await expect(zeroCard).toContainText(/Số tiền hoàn: 0\s*₫/);
   await zeroCard.getByRole('button', { name: 'Hủy yêu cầu rút', exact: true }).click();
   await page.getByRole('dialog').getByLabel('Lý do hủy').fill('QA return to study');
   await page.getByRole('dialog').getByRole('button', { name: 'Xác nhận hủy yêu cầu' }).click();
