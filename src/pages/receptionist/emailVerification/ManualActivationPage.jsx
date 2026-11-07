@@ -346,7 +346,7 @@ export default function ManualActivationPage() {
             </div>
           ) : (
             <Table responsive hover className="mb-0">
-              <thead>
+              <thead className="table-light">
                 <tr>
                   <th>Hội viên</th>
                   <th>Lý do</th>

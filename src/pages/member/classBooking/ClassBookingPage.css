@@ -1,48 +1,32 @@
 /* Trang "Đăng ký lớp" của Hội viên. Tiền tố .cbs- để không đụng .mcs- của
  * MemberClassSchedulePage. Nền trang (sáng) do MemberLayout cung cấp. */
 
-.cbs {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
 /* ----- Tiêu đề trang (cùng kiểu các trang Member khác) ----- */
-
-.cbs-top {
-  padding: 1.5rem 0;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #e2e8f0;
-}
 
 .cbs-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   margin: 0;
 }
 
 .cbs-sub {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .cbs-heading {
   margin: 0 0 0.75rem;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 /* ----- Bảng lọc ----- */
 
 .cbs-filter {
-  padding: 1rem 1.25rem;
   margin-bottom: 1.25rem;
-  border-radius: 1rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
 .cbs-chips {
@@ -58,28 +42,7 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #64748b;
-}
-
-.cbs-chip {
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
-  border: 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  background: #eef2f7;
-  color: #334155;
-}
-
-.cbs-chip:hover {
-  background: #e2e8f0;
-}
-
-.cbs-chip.active {
-  background: #dc2626;
-  color: #fff;
-  font-weight: 700;
-  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+  color: var(--scms-muted);
 }
 
 .cbs-selects {
@@ -99,25 +62,12 @@
   top: 50%;
   transform: translateY(-50%);
   display: flex;
-  color: #dc2626;
+  color: var(--scms-red);
   pointer-events: none;
 }
 
 .cbs-select select {
   width: 100%;
-  padding: 0.6rem 2rem 0.6rem 2.4rem;
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-  background-color: #fff;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.cbs-select select:focus {
-  outline: none;
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
 /* Ô chọn ngày và nút "Bỏ bộ lọc" */
@@ -131,30 +81,7 @@
 .cbs-dates label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #64748b;
-}
-
-.cbs-date {
-  padding: 0.55rem 0.75rem;
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  font-size: 0.85rem;
-  color: #1e293b;
-}
-
-.cbs-clear {
-  padding: 0.55rem 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #475569;
-}
-
-.cbs-clear:hover:not(:disabled) {
-  background: #f1f5f9;
+  color: var(--scms-muted);
 }
 
 .cbs-clear:disabled {
@@ -165,7 +92,7 @@
 .cbs-range-error {
   margin-top: 0.5rem;
   font-size: 0.75rem;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .cbs-footer {
@@ -176,7 +103,7 @@
   gap: 0.75rem;
   margin-top: 0.5rem;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 /* ----- Danh sách buổi tập ----- */
@@ -200,11 +127,11 @@
 }
 
 .cbs-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1.1rem;
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) minmax(120px, 180px);
+  align-items: start;
+  gap: 1.5rem;
+  padding: 1.25rem;
   border-radius: 0.75rem;
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -216,27 +143,35 @@
 }
 
 .cbs-time {
-  width: 110px;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.8rem;
+  background: #f8fafc;
+  border-radius: 0.65rem;
   flex-shrink: 0;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .cbs-info {
-  flex: 1;
-  min-width: 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
 .cbs-class {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .cbs-meta {
   font-size: 0.78rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .cbs-tags {
@@ -252,7 +187,7 @@
   font-size: 0.7rem;
   font-weight: 600;
   background: #fef2f2;
-  color: #b91c1c;
+  color: var(--scms-red-dark);
 }
 
 .cbs-tag.gray {
@@ -273,38 +208,14 @@
   min-width: 150px;
 }
 
-.cbs-btn {
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.6rem;
-  border: 0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #fff;
-  background: #dc2626;
-}
-
-.cbs-btn:hover:not(:disabled) {
-  background: #b91c1c;
-}
-
 .cbs-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.cbs-btn.cancel {
-  background: #fff;
-  color: #b91c1c;
-  border: 1px solid #fca5a5;
-}
-
-.cbs-btn.cancel:hover:not(:disabled) {
-  background: #fef2f2;
-}
-
 .cbs-note {
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--scms-muted);
   text-align: right;
 }
 
@@ -314,13 +225,13 @@
   border-radius: 1rem;
   background: #fff;
   border: 1px dashed #cbd5e1;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .cbs-empty strong {
   display: block;
   margin-bottom: 0.25rem;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .cbs-center {
@@ -337,11 +248,9 @@
 
 .cbs-dialog .modal-content {
   border: 0;
-  border-radius: 1.25rem;
 }
 
 .cbs-modal {
-  padding: 1.75rem;
 }
 
 .cbs-mhead {
@@ -354,16 +263,14 @@
 
 .cbs-mtitle {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   line-height: 1.25;
 }
 
 .cbs-msub {
   margin: 0.35rem 0 0;
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .cbs-mclose {
@@ -410,17 +317,17 @@
   align-items: center;
   gap: 0.6rem;
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .cbs-mrow-label svg {
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .cbs-mrow-value {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   text-align: right;
 }
 
@@ -440,7 +347,7 @@
 }
 
 .cbs-qty.full {
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .cbs-mnote {
@@ -460,7 +367,7 @@
 .cbs-mnote svg {
   flex-shrink: 0;
   margin-top: 0.1rem;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .cbs-merror {
@@ -470,7 +377,7 @@
   background: #fef2f2;
   border: 1px solid #fecaca;
   font-size: 0.85rem;
-  color: #b91c1c;
+  color: var(--scms-red-dark);
 }
 
 .cbs-mactions {
@@ -484,35 +391,51 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.85rem 1.25rem;
-  border: 0;
-  border-radius: 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.cbs-mbtn.ghost {
-  background: #eef2f7;
-  color: #334155;
-}
-
-.cbs-mbtn.ghost:hover:not(:disabled) {
-  background: #e2e8f0;
 }
 
 .cbs-mbtn.primary {
   flex: 1;
   min-width: 240px;
-  color: #fff;
-  background: #dc2626;
-  box-shadow: 0 8px 16px -6px rgba(220, 38, 38, 0.45);
-}
-
-.cbs-mbtn.primary:hover:not(:disabled) {
-  background: #b91c1c;
 }
 
 .cbs-mbtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.cbs-slot-label { font-size: 0.8rem; color: var(--scms-muted); }
+.cbs-slot-hours { white-space: nowrap; font-size: 0.95rem; }
+.cbs-item .cbs-action { min-width: 0; gap: 0.6rem; align-self: center; }
+.cbs-item .cbs-action .cbs-note { line-height: 1.5; }
+@media (max-width: 767px) {
+  .cbs-item { grid-template-columns: 120px minmax(0, 1fr); gap: 1rem; padding: 1rem; }
+  .cbs-item .cbs-action { grid-column: 1 / -1; align-items: stretch; }
+  .cbs-item .cbs-action .cbs-note { text-align: left; }
+}
+@media (max-width: 420px) {
+  .cbs-item { grid-template-columns: minmax(0, 1fr); }
+  .cbs-time { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+
+.cbs-benefits-row { align-items: flex-start; }
+.cbs-benefits-list {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem 1.25rem;
+  margin: .25rem 0 0;
+  padding-left: 1.1rem;
+  color: #475569;
+  font-size: .875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+}
+.cbs-benefits-list li { padding-left: .15rem; overflow-wrap: anywhere; }
+.cbs-benefits-list li::marker { color: #94a3b8; }
+@media (max-width: 575.98px) {
+  .cbs-benefits-list { grid-template-columns: minmax(0, 1fr); }
+}
+
+.cbs-select .form-select { padding-left: 2.4rem; }
+.cbs-dates .cbs-date { width: auto; max-width: 100%; }

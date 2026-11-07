@@ -351,7 +351,6 @@ export default function RefundRequestDeskPage() {
                     </option>
                   ))}
                 </Form.Select>
-                <Form.Text className="text-muted">Nguồn và mức đề xuất được backend tính tại thời điểm tra cứu; hệ thống sẽ kiểm tra lại khi gửi.</Form.Text>
               </Form.Group>
             ) : null}
             <Form.Group className="col-lg-3">
@@ -381,7 +380,7 @@ export default function RefundRequestDeskPage() {
           ) : (
             <div className="table-responsive">
               <Table hover className="align-middle mb-0">
-                <thead><tr><th>Ngày gửi</th><th>Hội viên</th><th>Nguồn hoàn</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
+                <thead className="table-light"><tr><th>Ngày gửi</th><th>Hội viên</th><th>Nguồn hoàn</th><th>Loại</th><th>Số tiền</th><th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
                 <tbody>{rows.map((row) => (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.requestedAt)}</td>

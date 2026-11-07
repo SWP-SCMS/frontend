@@ -1,3 +1,4 @@
+import SessionSlotSelect from '../../../components/common/SessionSlotSelect';
 // Manager – Recurring Schedule Creation (US26).
 //
 // Reached from a specific Class Detail page:
@@ -20,12 +21,11 @@
 //   - Generates 1..100 ClassSession rows starting on/after
 //     startDate, on the selected weekdays, in Asia/Ho_Chi_Minh.
 //   - All-or-nothing: the entire batch is created or none is.
-//     The FE computes the same occurrence windows only for coach
+//     The FE computes the same occurrence windows for room and coach
 //     availability discovery. The BE remains authoritative and creates
 //     the sessions transactionally from the recurring request.
 //
-// Room options come from US25. Coach options come from the availability
-// discovery endpoint and must be free for every generated occurrence.
+// Room and coach options must be available for every generated occurrence.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -37,7 +37,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import { getClass } from '../../../services/sportClassService';
-import { listRooms } from '../../../services/roomService';
+import { discoverRoomAvailability } from '../../../services/roomService';
 import { discoverAvailableCoaches } from '../../../services/classSessionService';
 import { createRecurringSchedule } from '../../../services/recurringScheduleService';
 import {
@@ -266,43 +266,15 @@ export default function RecurringScheduleCreatePage() {
     };
   }, [classId]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setRoomsLoading(true);
-    setRoomsError(null);
-    listRooms()
-      .then((result) => {
-        if (cancelled) return;
-        setRooms(Array.isArray(result) ? result : []);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setRoomsError(err);
-      })
-      .finally(() => {
-        if (!cancelled) setRoomsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // ---- Derived lists for selectors ----
-
-  const activeRooms = useMemo(
-    () => rooms.filter((r) => r && r.status === 'ACTIVE'),
-    [rooms],
-  );
-
   const roomOptions = useMemo(() => {
-    return activeRooms
+    return rooms
       .map((r) => ({
-        value: r.id,
+        value: r.roomId || r.id,
         label: r.name || '—',
         capacity: r.capacity,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [activeRooms]);
+  }, [rooms]);
 
   const availabilityStartDate = useWatch({ control, name: 'startDate' });
   const availabilityWeekdays = useWatch({ control, name: 'weekdays' });
@@ -311,6 +283,8 @@ export default function RecurringScheduleCreatePage() {
     : '';
   const availabilityStartTime = useWatch({ control, name: 'startTime' });
   const availabilityEndTime = useWatch({ control, name: 'endTime' });
+  const availabilityCapacity = useWatch({ control, name: 'capacity' });
+  const requestedCapacity = Number(availabilityCapacity);
   const availabilitySessionCount = useWatch({ control, name: 'sessionCount' });
   const occurrenceWindows = useMemo(
     () => buildRecurringWindows({
@@ -330,6 +304,49 @@ export default function RecurringScheduleCreatePage() {
       availabilitySessionCount,
     ],
   );
+
+  const roomSearchReady = occurrenceWindows.length > 0
+    && Number.isSafeInteger(requestedCapacity) && requestedCapacity > 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    setRooms([]);
+    setRoomsError(null);
+    setValue('roomId', '');
+    setRoomsLoading(roomSearchReady);
+    if (!roomSearchReady) return undefined;
+
+    const timer = window.setTimeout(async () => {
+      try {
+        let candidates = null;
+        // Limit concurrent requests for schedules containing up to 100 sessions.
+        for (let offset = 0; offset < occurrenceWindows.length; offset += 5) {
+          if (cancelled) return;
+          const results = await Promise.all(
+            occurrenceWindows.slice(offset, offset + 5).map(window =>
+              discoverRoomAvailability({ ...window, requestedCapacity })),
+          );
+          if (cancelled) return;
+          for (const result of results) {
+            const available = result.filter(room => room.available === true);
+            const ids = new Set(available.map(room => room.roomId || room.id));
+            candidates = candidates === null ? available
+              : candidates.filter(room => ids.has(room.roomId || room.id));
+          }
+          if (!candidates.length) break;
+        }
+        setRooms(candidates || []);
+      } catch (error) {
+        if (!cancelled) setRoomsError(error);
+      } finally {
+        if (!cancelled) setRoomsLoading(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [occurrenceWindows, requestedCapacity, roomSearchReady, setValue]);
 
   useEffect(() => {
     if (occurrenceWindows.length === 0) {
@@ -395,15 +412,8 @@ export default function RecurringScheduleCreatePage() {
     classCanSubmit &&
     !supportingDataLoading &&
     !supportingDataError &&
-    activeRooms.length > 0 &&
+    roomOptions.length > 0 &&
     coachOptions.length > 0;
-
-  // Selected room helper text.
-  const selectedRoomId = useWatch({ control, name: 'roomId' });
-  const selectedRoomCapacity = useMemo(() => {
-    const found = activeRooms.find((r) => r.id === selectedRoomId);
-    return found ? found.capacity : null;
-  }, [activeRooms, selectedRoomId]);
 
   // ---- Submit / reset ----
 
@@ -648,10 +658,7 @@ export default function RecurringScheduleCreatePage() {
         ← Quay lại chi tiết lớp
       </Link>
 
-      <h1 className="h3 fw-bold mt-2 mb-1">Tạo lịch cố định</h1>
-      <p className="text-muted mb-4">
-        Chọn số buổi cần tạo theo các ngày trong tuần và khung giờ đã chọn.
-      </p>
+      <h1 className="h3 fw-bold mt-2 mb-4">Tạo lịch cố định</h1>
 
       {/* Class context (readonly) */}
       <div className="border rounded p-3 mb-4 bg-light">
@@ -692,67 +699,7 @@ export default function RecurringScheduleCreatePage() {
       />
 
       <Form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Form.Group controlId="rsc-coachId">
-          <Form.Label>Huấn luyện viên *</Form.Label>
-          <Form.Select
-            {...register('coachId')}
-            isInvalid={Boolean(errors.coachId)}
-            disabled={coachesLoading || !classIsActive}
-          >
-            <option value="">
-              {coachesLoading
-                ? 'Đang tải…'
-                : coachOptions.length === 0
-                  ? occurrenceWindows.length > 0
-                    ? 'Không có huấn luyện viên phù hợp cho toàn bộ lịch'
-                    : 'Hoàn tất lịch để tìm huấn luyện viên'
-                  : '— Chọn huấn luyện viên —'}
-            </option>
-            {coachOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </Form.Select>
-          <Form.Text className="text-muted">
-            Chỉ hiển thị huấn luyện viên còn trống ở tất cả các buổi dự kiến.
-          </Form.Text>
-          <Form.Control.Feedback type="invalid">
-            {errors.coachId?.message}
-          </Form.Control.Feedback>
-        </Form.Group>
-
-        <Form.Group className="mt-3" controlId="rsc-roomId">
-          <Form.Label>Phòng tập *</Form.Label>
-          <Form.Select
-            {...register('roomId')}
-            isInvalid={Boolean(errors.roomId)}
-            disabled={roomsLoading || !classIsActive}
-          >
-            <option value="">
-              {roomsLoading
-                ? 'Đang tải…'
-                : roomOptions.length === 0
-                  ? 'Không có phòng tập đang hoạt động'
-                  : '— Chọn phòng tập —'}
-            </option>
-            {roomOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-                {o.capacity != null ? ` (Sức chứa: ${o.capacity})` : ''}
-              </option>
-            ))}
-          </Form.Select>
-          {selectedRoomCapacity != null ? (
-            <Form.Text className="text-muted">
-              Sức chứa phòng: {selectedRoomCapacity}. Vui lòng đặt sức
-              chứa mỗi buổi tập không vượt quá con số này.
-            </Form.Text>
-          ) : null}
-          <Form.Control.Feedback type="invalid">
-            {errors.roomId?.message}
-          </Form.Control.Feedback>
-        </Form.Group>
+        <SessionSlotSelect control={control} id="rsc-slot" disabled={!classIsActive} />
 
         <Form.Group className="mt-3" controlId="rsc-startDate">
           <Form.Label>Ngày bắt đầu *</Form.Label>
@@ -819,40 +766,10 @@ export default function RecurringScheduleCreatePage() {
             isInvalid={Boolean(errors.sessionCount)}
             disabled={!classIsActive}
           />
-          <Form.Text className="text-muted">
-            Có thể tạo từ 1 đến 100 buổi. Giá trị mặc định là 30.
-          </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.sessionCount?.message}
           </Form.Control.Feedback>
         </Form.Group>
-
-        <div className="row mt-3 g-3">
-          <Form.Group className="col-sm-6" controlId="rsc-startTime">
-            <Form.Label>Giờ bắt đầu *</Form.Label>
-            <Form.Control
-              type="time"
-              {...register('startTime')}
-              isInvalid={Boolean(errors.startTime)}
-              disabled={!classIsActive}
-            />
-            <Form.Control.Feedback type="invalid">
-              {errors.startTime?.message}
-            </Form.Control.Feedback>
-          </Form.Group>
-          <Form.Group className="col-sm-6" controlId="rsc-endTime">
-            <Form.Label>Giờ kết thúc *</Form.Label>
-            <Form.Control
-              type="time"
-              {...register('endTime')}
-              isInvalid={Boolean(errors.endTime)}
-              disabled={!classIsActive}
-            />
-            <Form.Control.Feedback type="invalid">
-              {errors.endTime?.message}
-            </Form.Control.Feedback>
-          </Form.Group>
-        </div>
 
         <Form.Group className="mt-3" controlId="rsc-capacity">
           <Form.Label>Sức chứa mỗi buổi tập *</Form.Label>
@@ -865,12 +782,63 @@ export default function RecurringScheduleCreatePage() {
             placeholder="VD: 20"
             disabled={!classIsActive}
           />
-          <Form.Text className="text-muted">
-            Sức chứa phải lớn hơn 0 và không vượt quá sức chứa của
-            phòng đã chọn. Hệ thống sẽ kiểm tra lại khi tạo lịch.
-          </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.capacity?.message}
+          </Form.Control.Feedback>
+        </Form.Group>
+
+        <Form.Group className="mt-3" controlId="rsc-roomId">
+          <Form.Label>Phòng tập *</Form.Label>
+          <Form.Select
+            {...register('roomId')}
+            isInvalid={Boolean(errors.roomId)}
+            disabled={roomsLoading || !roomSearchReady || !classIsActive}
+          >
+            <option value="">
+              {roomsLoading
+                ? 'Đang tải…'
+                : roomOptions.length === 0
+                  ? roomSearchReady
+                    ? 'Không có phòng phù hợp cho toàn bộ lịch'
+                    : 'Hoàn tất lịch và sức chứa để tìm phòng'
+                  : '— Chọn phòng tập —'}
+            </option>
+            {roomOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+                {o.capacity != null ? ` (Sức chứa: ${o.capacity})` : ''}
+              </option>
+            ))}
+          </Form.Select>
+          <Form.Control.Feedback type="invalid">
+            {errors.roomId?.message}
+          </Form.Control.Feedback>
+        </Form.Group>
+
+        <Form.Group className="mt-3" controlId="rsc-coachId">
+          <Form.Label>Huấn luyện viên *</Form.Label>
+          <Form.Select
+            {...register('coachId')}
+            isInvalid={Boolean(errors.coachId)}
+            disabled={coachesLoading || !classIsActive}
+          >
+            <option value="">
+              {coachesLoading
+                ? 'Đang tải…'
+                : coachOptions.length === 0
+                  ? occurrenceWindows.length > 0
+                    ? 'Không có huấn luyện viên phù hợp cho toàn bộ lịch'
+                    : 'Hoàn tất lịch để tìm huấn luyện viên'
+                  : '— Chọn huấn luyện viên —'}
+            </option>
+            {coachOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Form.Select>
+          <Form.Control.Feedback type="invalid">
+            {errors.coachId?.message}
           </Form.Control.Feedback>
         </Form.Group>
 

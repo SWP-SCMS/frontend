@@ -9,6 +9,7 @@ import MemberCourseTransfers from './MemberCourseTransfers';
 import './MemberCoursesPage.css';
 
 const titles = { detail: 'Chi tiết khóa đã đăng ký', refunds: 'Hoàn tiền khóa học', withdrawals: 'Rút khóa học', transfers: 'Chuyển đợt học', 'schedule-changes': 'Thay đổi lịch học' };
+const requestSections = ['schedule-changes', 'transfers', 'withdrawals', 'refunds'];
 export default function MemberCourseWorkspacePage({ section }) {
   const { enrollmentId } = useParams();
   const [params, setParams] = useSearchParams();
@@ -19,7 +20,15 @@ export default function MemberCourseWorkspacePage({ section }) {
   const returnToHistory = section === 'detail' && selected && isHistoricalCourse(selected);
   return <div className="member-course-page">
     <Link className="member-course-back" to={returnToHistory ? '/member/courses/history' : '/member/courses'}>← {returnToHistory ? 'Lịch sử khóa học' : 'Khóa học của tôi'}</Link>
-    <header className="member-course-heading"><div><h1>{titles[section]}</h1>{selected && <p>{selected.courseName} · {selected.runCode}</p>}</div></header>
+    <header className="member-course-heading"><div><h1>{section === 'detail' ? titles.detail : 'Yêu cầu khóa học'}</h1>{selected && <p>{selected.courseName} · {selected.runCode}</p>}</div></header>
+    {section !== 'detail' && <nav className="nav nav-tabs scms-request-tabs mb-4" aria-label="Loại yêu cầu khóa học">
+      {requestSections.map(key => <Link
+        key={key}
+        className={`nav-link${section === key ? ' active' : ''}`}
+        aria-current={section === key ? 'page' : undefined}
+        to={`/member/courses/${key}${selectedId ? `?enrollmentId=${encodeURIComponent(selectedId)}` : ''}`}
+      >{titles[key]}</Link>)}
+    </nav>}
     {loading ? <p>Đang tải khóa học…</p> : error ? <div role="alert" className="member-course-alert">{error}<button className="btn btn-outline-secondary ms-2" onClick={() => reload()}>Thử lại</button></div> : selectedId && !selected ? <div className="member-course-state">Không tìm thấy khóa học trong tài khoản của bạn.</div> : <>
       {section !== 'detail' && <div className="mb-3"><label htmlFor="course-workspace-filter">Khóa học</label>
         <select id="course-workspace-filter" className="form-select mt-1" value={selectedId} onChange={e => setParams(e.target.value ? { enrollmentId: e.target.value } : {})}>

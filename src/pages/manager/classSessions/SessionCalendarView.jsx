@@ -1,3 +1,4 @@
+import { SESSION_SLOTS } from '../../../utils/sessionSlots';
 import Badge from '../../../components/common/SystemBadge';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -34,7 +35,6 @@ export default function CalendarView({
   totalPages,
   totalElements,
   weekRange,
-  formatGymTime,
   statusLabel,
   statusBadge,
   classNameById,
@@ -85,6 +85,23 @@ export default function CalendarView({
     () => groupByLocalDay(visibleSessions),
     [visibleSessions],
   );
+
+  const startTimeKey = (value) => new Date(value).toLocaleTimeString('en-GB', {
+    timeZone: GYM_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  });
+  const sessionKey = session => `${startTimeKey(session.startTime)}-${startTimeKey(session.endTime)}`;
+  const slotRows = SESSION_SLOTS.map(slot => ({ ...slot, key: `${slot.start}-${slot.end}` }));
+  const known = new Set(slotRows.map(slot => slot.key));
+  const legacy = new Map();
+  for (const day of days) {
+    for (const session of grouped.get(day.ymd) || []) {
+      const key = sessionKey(session);
+      if (!known.has(key)) legacy.set(key, { key, start: startTimeKey(session.startTime), end: startTimeKey(session.endTime), label: 'Ngoài slot' });
+    }
+  }
+  const timeRows = [...slotRows, ...legacy.values()].sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
+
+  const [expandedCells, setExpandedCells] = useState(new Set());
 
   const fullyLoaded =
     !loading &&
@@ -179,6 +196,7 @@ export default function CalendarView({
         >
           <div className="msl-cal-table">
             <div className="msl-cal-head" role="row">
+              <div className="msl-cal-head-cell msl-cal-time-heading" role="columnheader">Khung giờ</div>
               {days.map((day) => {
                 const isToday = day.ymd === todayYmd;
                 const isSelected = selectedYmd === day.ymd;
@@ -201,11 +219,17 @@ export default function CalendarView({
                 );
               })}
             </div>
-            <div className="msl-cal-body" role="row">
+            {timeRows.map(time => (
+            <div className="msl-cal-body" role="row" key={time.key} data-start-time={time.start}>
+              <div className="msl-cal-time-label" role="rowheader"><div>{time.label}</div><small>{time.start}–{time.end}</small></div>
               {days.map((day) => {
-                const daySessions = grouped.get(day.ymd) || [];
+                const daySessions = (grouped.get(day.ymd) || [])
+                  .filter(session => sessionKey(session) === time.key)
+                  .toSorted((a, b) => Date.parse(a.endTime) - Date.parse(b.endTime) || String(a.id).localeCompare(String(b.id)));
                 const isToday = day.ymd === todayYmd;
                 const isSelected = selectedYmd === day.ymd;
+                const cellKey = `${day.ymd}-${time.key}`;
+                const expanded = expandedCells.has(cellKey);
                 const cellClasses = [
                   'msl-cal-cell',
                   isToday ? 'msl-cal-today' : '',
@@ -217,14 +241,14 @@ export default function CalendarView({
                   <div
                     key={`c-${day.ymd}`}
                     className={cellClasses}
-                    role="cell"
+                    role="gridcell"
                   >
                     {daySessions.length === 0 ? (
                       <div className="msl-cal-empty">
-                        Không có buổi tập
+                        <span aria-label="Không có buổi tập">—</span>
                       </div>
                     ) : (
-                      daySessions.map((s) => {
+                      daySessions.slice(0, expanded ? undefined : 1).map((s) => {
                         const status = s?.status || '—';
                         const className =
                           s?.classId
@@ -249,10 +273,6 @@ export default function CalendarView({
                             }
                             className="msl-cal-session text-reset text-decoration-none"
                           >
-                            <div className="msl-cal-session-time">
-                              {formatGymTime(s.startTime)} –{' '}
-                              {formatGymTime(s.endTime)}
-                            </div>
                             <div className="msl-cal-session-class">
                               {className}
                             </div>
@@ -271,10 +291,14 @@ export default function CalendarView({
                         );
                       })
                     )}
+                    {daySessions.length > 1 && <Button size="sm" variant="outline-secondary" className="msl-cal-expand" aria-expanded={expanded} aria-label={`${expanded ? 'Thu gọn' : 'Xem tất cả'} ${daySessions.length} lớp, ${day.weekday} ${day.dayMonth}, ${time.label} ${time.start}`} onClick={() => setExpandedCells(current => {
+                      const next = new Set(current); if (expanded) next.delete(cellKey); else next.add(cellKey); return next;
+                    })}>{expanded ? 'Thu gọn ▴' : `Xem tất cả ${daySessions.length} lớp ▾`}</Button>}
                   </div>
                 );
               })}
             </div>
+            ))}
           </div>
         </div>
       )}

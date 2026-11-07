@@ -215,7 +215,7 @@ export default function MemberCheckoutPage() {
               ? 'Gói tập này không tồn tại hoặc không còn được bán.'
               : 'Không tải được thông tin gói tập. Vui lòng thử lại.'}
           </p>
-          <Link to="/member/plan#member-offers" className="mco-btn primary">
+          <Link to="/member/plan-registration" className="btn btn-danger mco-btn primary">
             Xem bảng gói tập
           </Link>
         </div>
@@ -233,7 +233,7 @@ export default function MemberCheckoutPage() {
 
   return (
     <div className="mco">
-      <Link to="/member/plan#member-offers" className="mco-back">
+      <Link to="/member/plan-registration" className="mco-back">
         ← Quay lại bảng gói tập
       </Link>
       <h1 className="mco-title">Thanh toán gói tập</h1>
@@ -288,10 +288,10 @@ export default function MemberCheckoutPage() {
                 {result?.paidAt ? ` lúc ${formatDateTime(result.paidAt)}` : ''}.
               </p>
               <div className="mco-actions">
-                <Link to="/member/plan" className="mco-btn primary">
+                <Link to="/member/plan" className="btn btn-danger mco-btn primary">
                   Xem gói tập của tôi
                 </Link>
-                <Link to="/member/memberships" className="mco-btn ghost">
+                <Link to="/member/memberships" className="btn btn-outline-secondary mco-btn ghost">
                   Lịch sử thanh toán
                 </Link>
               </div>
@@ -308,7 +308,7 @@ export default function MemberCheckoutPage() {
                 thời điểm.
               </p>
               <div className="mco-actions">
-                <Link to="/member/plan" className="mco-btn primary">
+                <Link to="/member/plan" className="btn btn-danger mco-btn primary">
                   Xem gói tập của tôi
                 </Link>
               </div>
@@ -326,7 +326,7 @@ export default function MemberCheckoutPage() {
               <div className="mco-actions">
                 <button
                   type="button"
-                  className="mco-btn primary"
+                  className="btn btn-danger mco-btn primary"
                   onClick={() => navigate(`/member/checkout/${pending.offerId}`)}
                 >
                   Tiếp tục thanh toán đơn này
@@ -357,7 +357,7 @@ export default function MemberCheckoutPage() {
               ) : null}
               <button
                 type="button"
-                className="mco-btn primary block"
+                className="btn btn-danger mco-btn primary block"
                 onClick={handlePay}
                 disabled={busy}
               >
@@ -457,7 +457,7 @@ function PaymentPanel({
         nhật khi ngân hàng báo đã nhận tiền.
       </div>
 
-      <button type="button" className="mco-btn ghost block" onClick={onCheck}>
+      <button type="button" className="btn btn-outline-secondary mco-btn ghost block" onClick={onCheck}>
         Tôi đã chuyển khoản, kiểm tra ngay
       </button>
     </div>

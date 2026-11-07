@@ -1,3 +1,4 @@
+import SystemBadge from '../common/SystemBadge';
 // Sidebar của Member area. Tách ra từ MemberLayout.jsx (Phase 3) để
 // MemberLayout tập trung vào việc tải dữ liệu và quản lý logout modal.
 //
@@ -15,12 +16,14 @@ function SidebarItem({
   getRequiredPlanLabel,
   onLockedClick,
 }) {
+  const { pathname } = useLocation();
+  const matchesAlias = item.activePaths?.includes(pathname);
   if (isBenefitLocked(item.requiredBenefit)) {
     const requiredPlanLabel = getRequiredPlanLabel(item.requiredBenefit);
     return (
       <button
         type="button"
-        className="scms-ml-navitem locked"
+        className="scms-app-navitem locked"
         onClick={() => onLockedClick(item)}
         title={
           requiredPlanLabel
@@ -30,7 +33,7 @@ function SidebarItem({
       >
         <Icon name={item.icon} />
         {item.label}
-        <span className="scms-ml-benefit">
+        <span className="scms-app-benefit">
           {requiredPlanLabel || 'Theo gói'}
         </span>
       </button>
@@ -39,13 +42,13 @@ function SidebarItem({
   if (!item.to) {
     return (
       <span
-        className="scms-ml-navitem disabled"
+        className="scms-app-navitem disabled"
         aria-disabled="true"
         title="Sắp ra mắt"
       >
         <Icon name={item.icon} />
         {item.label}
-        <span className="scms-ml-soon">Sắp ra mắt</span>
+        <span className="scms-app-soon">Sắp ra mắt</span>
       </span>
     );
   }
@@ -53,8 +56,9 @@ function SidebarItem({
     <NavLink
       to={item.to}
       end={item.end ?? false}
+      aria-current={matchesAlias ? 'page' : undefined}
       className={({ isActive }) =>
-        `scms-ml-navitem${isActive ? ' active' : ''}`
+        `scms-app-navitem${isActive || matchesAlias ? ' active' : ''}`
       }
     >
       <Icon name={item.icon} />
@@ -75,24 +79,24 @@ export default function MemberSidebar({
 }) {
   const { pathname } = useLocation();
   return (
-    <aside className="scms-ml-sidebar">
+    <aside className="scms-app-sidebar">
       <div>
-        <div className="scms-ml-sidebar-logo">
+        <div className="scms-app-sidebar-logo">
           <BrandLogo />
         </div>
-        <div className="scms-ml-sidebar-label">Khu vực Hội viên</div>
-        <nav className="scms-ml-nav">
+        <div className="scms-app-sidebar-label">Khu vực Hội viên</div>
+        <nav className="scms-app-nav">
           {items.map((section) => {
             const collapsible = section.collapsible !== false;
             const Group = collapsible ? 'details' : 'div';
             const isCurrentSection = section.items.some(item => item.to && (
-              pathname === item.to || (!item.end && pathname.startsWith(`${item.to}/`))
+              pathname === item.to || item.activePaths?.includes(pathname) || (!item.end && pathname.startsWith(`${item.to}/`))
             )) || (section.label === 'Khóa học' && pathname.startsWith('/member/courses/enrollments/'));
             return (
-            <div className="scms-ml-navgroup" key={section.label}>
+            <div className="scms-app-navgroup" key={section.label}>
               <Group key={pathname} {...(collapsible ? { open: isCurrentSection || undefined } : {})}>
-              {collapsible ? <summary className="scms-ml-navgroup-label" style={{ cursor: 'pointer' }}>{section.label}</summary> : <div className="scms-ml-navgroup-label">{section.label}</div>}
-              <div className="scms-ml-navgroup-items">
+              {collapsible ? <summary className="scms-app-navgroup-label" style={{ cursor: 'pointer' }}>{section.label}</summary> : <div className="scms-app-navgroup-label">{section.label}</div>}
+              <div className="scms-app-navgroup-items">
                 {section.items.map((item) => (
                   <SidebarItem
                     key={item.label}
@@ -108,7 +112,7 @@ export default function MemberSidebar({
           ); })}
           <button
             type="button"
-            className="scms-ml-navitem scms-ml-navbtn"
+            className="scms-app-navitem scms-app-navbtn"
             onClick={onRequestLogout}
           >
             <Icon name="logout" />
@@ -117,20 +121,18 @@ export default function MemberSidebar({
         </nav>
       </div>
 
-      <div className="scms-ml-card">
-        <div className="scms-ml-card-head">
+      <div className="scms-app-card">
+        <div className="scms-app-card-head">
           <span>Thẻ thành viên</span>
           <span
-            className={`scms-ml-dot${activeMembership ? ' on' : ''}`}
+            className={`scms-app-dot${activeMembership ? ' on' : ''}`}
             aria-hidden="true"
           ></span>
         </div>
-        <div className="scms-ml-card-code">{user?.memberId || '—'}</div>
-        <div
-          className={`scms-ml-card-status${activeMembership ? ' on' : ''}`}
-        >
+        <div className="scms-app-card-code">{user?.memberId || '—'}</div>
+        <SystemBadge className="scms-app-card-status mt-2" tone={activeMembership ? 'green' : 'neutral'}>
           {statusText}
-        </div>
+        </SystemBadge>
       </div>
     </aside>
   );

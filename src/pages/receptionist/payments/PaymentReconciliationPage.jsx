@@ -276,7 +276,7 @@ export default function PaymentReconciliationPage() {
       return (
         <EmptyState
           title="Không có giao dịch cần đối soát"
-          message="Mọi giao dịch chuyển khoản đã được xử lý hoặc chưa phát sinh."
+          message="Không có giao dịch chuyển khoản phù hợp với bộ lọc hiện tại."
         />
       );
     }
@@ -286,8 +286,8 @@ export default function PaymentReconciliationPage() {
           <tr>
 
             <th>Đơn / Hội viên</th>
-            <th>Số tiền</th>
-            <th>Nội dung CK</th>
+            <th className="text-end">Số tiền</th>
+            <th>Nội dung chuyển khoản</th>
             <th>Hạn thanh toán</th>
             <th className="text-end">Thao tác</th>
           </tr>
@@ -305,9 +305,9 @@ export default function PaymentReconciliationPage() {
                     {[row.memberCode, row.orderNumber].filter(Boolean).join(' · ') || '—'}
                   </div>
                 </td>
-                <td>{formatPrice(row.amount, row.currencyCode || 'VND')}</td>
+                <td className="text-end text-nowrap fw-semibold">{formatPrice(row.amount, row.currencyCode || 'VND')}</td>
                 <td>
-                  <code className="small">{row.transferContent || '—'}</code>
+                  <code className="small text-break">{row.transferContent || '—'}</code>
                 </td>
                 <td>
                   {row.expiresAt ? (
@@ -364,7 +364,8 @@ export default function PaymentReconciliationPage() {
   return (
     <div>
       <header className="mb-3">
-        <h1 className="h3 fw-bold mb-1">Đối soát thanh toán</h1>
+        <h1 className="h3 fw-bold mb-1">Đối soát gói tập</h1>
+        <p className="text-muted mb-0">Kiểm tra và xử lý các giao dịch chuyển khoản đang chờ đối soát.</p>
       </header>
 
       <div className="d-flex flex-wrap gap-3 align-items-end mb-3">
@@ -390,6 +391,7 @@ export default function PaymentReconciliationPage() {
               <Button
                 key={f.value}
                 variant={filter === f.value ? 'danger' : 'outline-danger'}
+                aria-pressed={filter === f.value}
                 onClick={() => handleFilterChange(f.value)}
               >
                 {f.label}
@@ -397,6 +399,7 @@ export default function PaymentReconciliationPage() {
             ))}
           </ButtonGroup>
         </div>
+        <Button size="sm" variant="outline-secondary" onClick={load} disabled={loading || submitting}>Tải lại</Button>
       </div>
 
       <ErrorAlert

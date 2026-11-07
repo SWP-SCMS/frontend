@@ -1,6 +1,8 @@
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useRef, useState } from 'react';
-import { Alert, Button, Form, Modal, Table } from 'react-bootstrap';
+import { Alert, Button, ButtonGroup, Form, InputGroup, Modal, Spinner, Table } from 'react-bootstrap';
+import Badge from '../../../components/common/SystemBadge';
+import EmptyState from '../../../components/common/EmptyState';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseReconciliationSchema, courseReconciliationSearchSchema } from '../../../schemas/courseReconciliationSchemas';
@@ -109,32 +111,56 @@ export default function CoursePaymentReconciliationPage() {
   const [revision, setRevision] = useState(0), [data, setData] = useState(null), [error, setError] = useState('');
   const [selected, setSelected] = useState(null), [busy, setBusy] = useState(false);
   const attempts = useRef({});
+  const [now, setNow] = useState(() => Date.now());
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(courseReconciliationSearchSchema), defaultValues: { query: '' } });
   usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true; if (!background) commitValue(setData, null); commitError(setError, '');
-    track(listCourseReconciliationQueue({ status: filter, query, page, size: 20 }).then(value => { if (active) commitValue(setData, value); })
+    track(listCourseReconciliationQueue({ status: filter, query, page, size: 20 }).then(value => { if (active) { commitValue(setData, value); commitValue(setNow, Date.now()); } })
       .catch(e => { failed(e);  if (active) commitError(setError, errorText(e)); }));
     return () => { active = false; };
   }, [query, filter, page, revision], !busy);
-  return <div className="container-fluid py-4">
-    <h1 className="h3">Đối soát thanh toán khóa học</h1>
-    <p>Các giao dịch chuyển khoản Course đang chờ xử lý. Giao dịch đã xử lý sẽ rời danh sách.</p>
-    <Form noValidate onSubmit={handleSubmit(values => { setQuery(values.query); setPage(0); setRevision(v => v + 1); })} className="d-flex gap-2 mb-3">
-      <div className="flex-grow-1"><Form.Control aria-label="Tìm đơn hoặc hội viên" placeholder="Mã đơn, nội dung chuyển khoản, tên hoặc mã hội viên" {...register('query')} isInvalid={!!errors.query} />
-        <Form.Control.Feedback type="invalid">{errors.query?.message}</Form.Control.Feedback></div><Button type="submit">Tìm kiếm</Button>
-    </Form>
-    <Form.Select aria-label="Hạn thanh toán" value={filter} onChange={e => { setFilter(e.target.value); setPage(0); }} className="mb-3">
-      <option value="ALL">Tất cả giao dịch chờ xử lý</option><option value="PENDING">Còn trong hạn</option><option value="EXPIRED_WINDOW">Quá hạn, chưa được xử lý</option>
-    </Form.Select>
-    <Button onClick={() => setRevision(v => v + 1)}>Tải lại danh sách</Button>
+  return <div>
+    <header className="mb-3">
+      <h1 className="h3 fw-bold mb-1">Đối soát khóa học</h1>
+      <p className="text-muted mb-0">Kiểm tra và xử lý các giao dịch chuyển khoản đang chờ đối soát.</p>
+    </header>
+    <div className="d-flex flex-wrap gap-3 align-items-end mb-3">
+      <Form noValidate onSubmit={handleSubmit(values => { setQuery(values.query); setPage(0); setRevision(v => v + 1); })} style={{ maxWidth: 360, flexGrow: 1 }}>
+        <InputGroup size="sm">
+          <Form.Control type="search" aria-label="Tìm đơn hoặc hội viên" placeholder="Mã đơn, nội dung chuyển khoản, hội viên…" {...register('query')} isInvalid={!!errors.query} />
+          <Button type="submit" variant="outline-danger">Tìm</Button>
+          <Form.Control.Feedback type="invalid">{errors.query?.message}</Form.Control.Feedback>
+        </InputGroup>
+      </Form>
+      <div>
+        <div className="text-muted small mb-1">Trạng thái hạn</div>
+        <ButtonGroup size="sm" aria-label="Hạn thanh toán">
+          {[['ALL', 'Tất cả'], ['PENDING', 'Còn trong hạn'], ['EXPIRED_WINDOW', 'Quá hạn']].map(([value, label]) => <Button key={value} variant={filter === value ? 'danger' : 'outline-danger'} aria-pressed={filter === value} onClick={() => { setFilter(value); setPage(0); }}>{label}</Button>)}
+        </ButtonGroup>
+      </div>
+      <Button size="sm" variant="outline-secondary" disabled={(!data && !error) || busy} onClick={() => setRevision(v => v + 1)}>Tải lại</Button>
+    </div>
     {error && <Alert className="mt-3" variant="danger">{error}</Alert>}
-    {!data && !error && <p>Đang tải…</p>}
-    {data && <><Table responsive className="mt-3"><thead><tr><th>Hội viên</th><th>Đơn / nội dung chuyển khoản</th><th>Số tiền</th><th>Hạn thanh toán</th><th /></tr></thead><tbody>
-      {data.content.map(item => <tr key={item.paymentId}><td>{item.memberName || 'Hội viên'}<br />{item.memberCode || 'Chưa có mã hội viên'}</td><td>{item.orderReference}<br />{item.paymentReference}</td><td>{money(item.amount)}</td><td>{date(item.deadlineAt)}</td><td><Button onClick={() => setSelected({ ...item, retryAttempt: attempts.current[item.paymentId] })}>Đối soát</Button></td></tr>)}
-      {!data.content.length && <tr><td colSpan={5}>Không có giao dịch chờ đối soát phù hợp.</td></tr>}
-    </tbody></Table><Button disabled={!page} onClick={() => setPage(v => v - 1)}>Trang trước</Button><span className="mx-3">Trang {page + 1}</span><Button disabled={page + 1 >= data.totalPages} onClick={() => setPage(v => v + 1)}>Trang sau</Button></>}
+    <div className="card border-0 shadow-sm">
+      {!data && !error && <div className="text-center py-5"><Spinner animation="border" variant="danger" /></div>}
+      {data && (data.content.length ? <>
+        <Table responsive hover className="align-middle mb-0"><thead className="table-light"><tr><th>Đơn / Hội viên</th><th className="text-end">Số tiền</th><th>Nội dung chuyển khoản</th><th>Hạn thanh toán</th><th className="text-end">Thao tác</th></tr></thead><tbody>
+          {data.content.map(item => <tr key={item.paymentId}>
+            <td><div className="fw-semibold">{item.memberName || 'Hội viên'}</div><div className="text-muted small text-break">{[item.memberCode, item.orderReference].filter(Boolean).join(' · ') || '—'}</div></td>
+            <td className="text-end text-nowrap fw-semibold">{money(item.amount)}</td>
+            <td><code className="small text-break">{item.paymentReference || '—'}</code></td>
+            <td>{item.deadlineAt ? <><div>{date(item.deadlineAt)}</div><Badge bg={Date.parse(item.deadlineAt) <= now ? 'secondary' : 'warning'}>{Date.parse(item.deadlineAt) <= now ? 'Đã quá hạn' : 'Còn trong hạn'}</Badge></> : <span className="text-muted small">Không có hạn</span>}</td>
+            <td className="text-end"><Button size="sm" variant="outline-danger" onClick={() => setSelected({ ...item, retryAttempt: attempts.current[item.paymentId] })}>Đối soát</Button></td>
+          </tr>)}
+        </tbody></Table>
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2 border-top">
+          <small className="text-muted">Trang {page + 1} / {Math.max(1, data.totalPages || 1)} · Tổng {data.totalElements} giao dịch</small>
+          <div className="d-flex gap-2"><Button size="sm" variant="outline-secondary" disabled={!page} onClick={() => setPage(v => v - 1)}>← Trang trước</Button><Button size="sm" variant="outline-secondary" disabled={page + 1 >= data.totalPages} onClick={() => setPage(v => v + 1)}>Trang sau →</Button></div>
+        </div>
+      </> : <EmptyState title="Không có giao dịch cần đối soát" message="Không có giao dịch chuyển khoản phù hợp với bộ lọc hiện tại." />)}
+    </div>
     <Modal show={!!selected} onHide={() => { if (!busy) setSelected(null); }} backdrop={busy ? 'static' : true} keyboard={!busy} size="lg">
-      <Modal.Header closeButton={!busy}><Modal.Title>Đối soát Course</Modal.Title></Modal.Header>
+      <Modal.Header closeButton={!busy}><Modal.Title>Đối soát khóa học</Modal.Title></Modal.Header>
       <Modal.Body>{selected && <Decision key={selected.paymentId} item={selected} attemptRef={attempts} onBusy={setBusy} onDone={() => setRevision(v => v + 1)} />}</Modal.Body>
     </Modal>
   </div>;

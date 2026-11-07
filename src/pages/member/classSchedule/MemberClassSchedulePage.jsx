@@ -1,3 +1,4 @@
+import { calendarSlotRows, sessionSlotKey } from '../../../utils/sessionSlots';
 import Badge from '../../../components/common/SystemBadge';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Member – Lịch của tôi: lịch tuần các buổi tập MÀ HỘI VIÊN ĐÃ ĐẶT.
@@ -34,7 +35,6 @@ import {
 import {
   GYM_TIME_ZONE,
   ISO_DATE_RE,
-  formatGymTime,
   getGymLocalIsoDate,
   getGymZoneTodayIsoDate,
   getWeekRangeDates,
@@ -256,7 +256,7 @@ export default function MemberClassSchedulePage() {
       />
 
       {selected?.classType === 'COURSE' && <Alert variant="info" dismissible onClose={closeSelected}>
-        <strong>{selected.className}</strong><p>{formatCourseDateTime(selected.startTime)} – {formatCourseDateTime(selected.endTime)}</p>
+        <strong>{selected.className}</strong><p className="mt-2 mb-2">HLV: {selected.coachName || 'Chưa có HLV'} · Phòng: {selected.roomName || 'Chưa có phòng'}</p><p>{formatCourseDateTime(selected.startTime)} – {formatCourseDateTime(selected.endTime)}</p>
         <p>{getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, selected.attendanceStatus)}</p>
         <Link to="/member/courses">Xem khóa học của tôi</Link>
       </Alert>}
@@ -317,6 +317,8 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
     return out;
   }, [weekRange]);
 
+  const [expandedCells, setExpandedCells] = useState(new Set());
+  const rows = calendarSlotRows((sessions || []).filter(s => days.some(day => day.ymd === getGymLocalIsoDate(s.startTime))));
   const grouped = useMemo(() => groupByLocalDay(sessions || []), [sessions]);
 
   // "Hôm nay" theo giờ phòng tập, không theo giờ của trình duyệt.
@@ -332,6 +334,7 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
         <div className="mcs-cal-scroll" role="grid" aria-label="Lịch của tôi">
           <div className="mcs-cal-table">
             <div className="mcs-cal-head" role="row">
+              <div className="mcs-cal-head-cell" role="columnheader">Khung giờ</div>
               {days.map((day) => (
                 <div
                   key={`h-${day.ymd}`}
@@ -346,19 +349,22 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
                 </div>
               ))}
             </div>
-            <div className="mcs-cal-body" role="row">
+            {rows.map(slot => <div className="mcs-cal-body" role="row" key={slot.key}>
+              <div className="mcs-cal-slot" role="rowheader"><strong>{slot.label}</strong><small>{slot.start}–{slot.end}</small></div>
               {days.map((day) => {
-                const daySessions = grouped.get(day.ymd) || [];
+                const daySessions = (grouped.get(day.ymd) || []).filter(s => sessionSlotKey(s) === slot.key);
+                const cellKey = `${day.ymd}-${slot.key}`;
+                const expanded = expandedCells.has(cellKey);
                 return (
                   <div
                     key={`c-${day.ymd}`}
                     className={`mcs-cal-cell${day.ymd === todayYmd ? ' mcs-cal-today' : ''}`}
-                    role="cell"
+                    role="gridcell"
                   >
                     {daySessions.length === 0 ? (
-                      <div className="mcs-cal-empty">Không có buổi tập</div>
+                      <div className="mcs-cal-empty" aria-label="Không có buổi tập">—</div>
                     ) : (
-                      daySessions.map((s) => (
+                      daySessions.slice(0, expanded ? undefined : 1).map((s) => (
                         <SessionCard
                           key={s.id}
                           session={s}
@@ -366,10 +372,13 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
                         />
                       ))
                     )}
+                    {daySessions.length > 1 && <Button size="sm" variant="outline-secondary" className="w-100 mt-2" aria-expanded={expanded} onClick={() => setExpandedCells(current => {
+                      const next = new Set(current); if (expanded) next.delete(cellKey); else next.add(cellKey); return next;
+                    })}>{expanded ? 'Thu gọn ▴' : `Xem tất cả ${daySessions.length} lớp ▾`}</Button>}
                   </div>
                 );
               })}
-            </div>
+            </div>)}
           </div>
         </div>
       )}
@@ -399,15 +408,14 @@ function SessionCard({ session, onClick }) {
       onClick={onClick}
       aria-label={`Xem chi tiết ${s.className || 'buổi tập'}`}
     >
-      <div className="mcs-cal-session-time">
-        {formatGymTime(s.startTime)} – {formatGymTime(s.endTime)}
-      </div>
-      <div className="mcs-cal-session-class">{s.className || '—'}</div>
-      {s.classType !== 'COURSE' && <div className="mcs-cal-session-meta">
-        <span>{s.coachName || '—'}</span>
-        <span> · </span>
-        <span>{s.roomName || '—'}</span>
+      <div className="mcs-cal-session-class">{s.courseName || s.className || '—'}</div>
+      {s.classType === 'COURSE' && <div className="mcs-cal-session-course">
+        <span>{s.runCode}</span><span>Buổi {s.unitNumber}</span>
       </div>}
+      <div className="mcs-cal-session-meta">
+        <span>HLV: {s.coachName || 'Chưa có HLV'}</span>
+        <span>Phòng: {s.roomName || 'Chưa có phòng'}</span>
+      </div>
       <div className="mcs-cal-session-foot">
         <ClassTypePill classType={s.classType} small />
         {/* Xám: chưa điểm danh. Xanh: đã điểm danh. Đỏ: vắng (quá hạn mà chưa PRESENT). */}

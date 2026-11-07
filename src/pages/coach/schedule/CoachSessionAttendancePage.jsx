@@ -185,12 +185,7 @@ export default function CoachSessionAttendancePage() {
             </p>
           ) : null}
 
-          {/* BR-VAL-ATT-02, BR-VIS-06: PRESENT cần Center Visit (lễ tân check-in). */}
-          <p className="text-muted small">
-            Lưu ý: chỉ ghi được &quot;Có mặt&quot; cho học viên đã được lễ tân
-            check-in trước đó. Nếu học viên có mặt nhưng khi bấm Lưu hệ thống báo
-            chưa check-in, vui lòng báo với lễ tân.
-          </p>
+
 
           {session.members?.length ? (
             <div className="scms-coach-card mb-3">
@@ -220,7 +215,7 @@ export default function CoachSessionAttendancePage() {
                 </div>
               </div>
               <Table responsive className="align-middle mb-0">
-                <thead>
+                <thead className="table-light">
                   <tr>
                     <th>Ảnh</th>
                     <th>Mã HV</th>

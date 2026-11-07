@@ -1,3 +1,4 @@
+import { calendarSlotRows, sessionSlotKey } from '../../../utils/sessionSlots';
 import Badge from '../../../components/common/SystemBadge';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Lịch phụ trách của Huấn luyện viên: lịch tuần (Thứ Hai → Chủ Nhật) các buổi
@@ -19,7 +20,6 @@ import { listCoachSessions } from '../../../services/coachScheduleService';
 import {
   GYM_TIME_ZONE,
   ISO_DATE_RE,
-  formatGymTime,
   getGymLocalIsoDate,
   getGymZoneTodayIsoDate,
   getWeekRangeDates,
@@ -237,6 +237,8 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
     return out;
   }, [weekRange]);
 
+  const [expandedCells, setExpandedCells] = useState(new Set());
+  const rows = calendarSlotRows((sessions || []).filter(s => days.some(day => day.ymd === getGymLocalIsoDate(s.startTime))));
   const grouped = useMemo(() => groupByLocalDay(sessions), [sessions]);
   const todayYmd = useMemo(() => getGymZoneTodayIsoDate(), []);
 
@@ -250,6 +252,7 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
         <div className="mcs-cal-scroll" role="grid" aria-label="Lịch phụ trách">
           <div className="mcs-cal-table">
             <div className="mcs-cal-head" role="row">
+              <div className="mcs-cal-head-cell" role="columnheader">Khung giờ</div>
               {days.map((day) => (
                 <div
                   key={`h-${day.ymd}`}
@@ -264,19 +267,22 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
                 </div>
               ))}
             </div>
-            <div className="mcs-cal-body" role="row">
+            {rows.map(slot => <div className="mcs-cal-body" role="row" key={slot.key}>
+              <div className="mcs-cal-slot" role="rowheader"><strong>{slot.label}</strong><small>{slot.start}–{slot.end}</small></div>
               {days.map((day) => {
-                const daySessions = grouped.get(day.ymd) || [];
+                const daySessions = (grouped.get(day.ymd) || []).filter(s => sessionSlotKey(s) === slot.key);
+                const cellKey = `${day.ymd}-${slot.key}`;
+                const expanded = expandedCells.has(cellKey);
                 return (
                   <div
                     key={`c-${day.ymd}`}
                     className={`mcs-cal-cell${day.ymd === todayYmd ? ' mcs-cal-today' : ''}`}
-                    role="cell"
+                    role="gridcell"
                   >
                     {daySessions.length === 0 ? (
-                      <div className="mcs-cal-empty">Không có buổi tập</div>
+                      <div className="mcs-cal-empty" aria-label="Không có buổi tập">—</div>
                     ) : (
-                      daySessions.map((s) => (
+                      daySessions.slice(0, expanded ? undefined : 1).map((s) => (
                         <SessionCard
                           key={s.id}
                           session={s}
@@ -284,10 +290,13 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
                         />
                       ))
                     )}
+                    {daySessions.length > 1 && <Button size="sm" variant="outline-secondary" className="w-100 mt-2" aria-expanded={expanded} onClick={() => setExpandedCells(current => {
+                      const next = new Set(current); if (expanded) next.delete(cellKey); else next.add(cellKey); return next;
+                    })}>{expanded ? 'Thu gọn ▴' : `Xem tất cả ${daySessions.length} lớp ▾`}</Button>}
                   </div>
                 );
               })}
-            </div>
+            </div>)}
           </div>
         </div>
       )}
@@ -312,9 +321,6 @@ function SessionCard({ session, onClick }) {
       onClick={onClick}
       aria-label={`Xem chi tiết ${s.className || 'buổi tập'}`}
     >
-      <div className="mcs-cal-session-time">
-        {formatGymTime(s.startTime)} – {formatGymTime(s.endTime)}
-      </div>
       <div className="mcs-cal-session-class">{s.className || '—'}</div>
       <div className="mcs-cal-session-meta">
         <span>{s.roomName || '—'}</span>

@@ -1,3 +1,4 @@
+import { formatSessionSlot } from '../../../utils/sessionSlots';
 // Hộp thông tin đầy đủ của một buổi tập trong "Lịch của tôi".
 //
 // Dữ liệu lấy từ phần tử booking của GET /members/me/bookings:
@@ -12,7 +13,6 @@
 import { Modal } from 'react-bootstrap';
 import {
   formatGymDayHeading,
-  formatGymTime,
 } from '../../../utils/gymTime';
 import { getAttendanceDisplay } from './attendance';
 
@@ -130,7 +130,7 @@ export default function SessionDetailModal({ session, onClose }) {
             {s ? formatGymDayHeading(s.startTime) : '—'}
           </Row>
           <Row icon="clock" label="Giờ học:">
-            {formatGymTime(s?.startTime)} - {formatGymTime(s?.endTime)}
+            {formatSessionSlot(s?.startTime, s?.endTime)}
           </Row>
           <Row icon="coach" label="HLV phụ trách:">
             {s?.coachName || '—'}
@@ -166,7 +166,7 @@ export default function SessionDetailModal({ session, onClose }) {
         </div>
 
         <div className="mcs-mactions">
-          <button type="button" className="mcs-mbtn" onClick={onClose}>
+          <button type="button" className="btn btn-outline-secondary mcs-mbtn" onClick={onClose}>
             Đóng
           </button>
         </div>

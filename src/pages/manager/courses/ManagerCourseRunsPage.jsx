@@ -1,6 +1,6 @@
+import StaffPagination from '../../../components/common/StaffPagination';
 import CourseRunStatusBadge from '../../../components/common/CourseRunStatusBadge';
 import WeeklyCourseRunModal from './WeeklyCourseRunModal';
-import { listRooms } from '../../../services/roomService';
 import useCachedPollingEffect from "../../../hooks/useCachedPollingEffect";
 import { useCallback, useState } from "react";
 import {
@@ -14,7 +14,6 @@ import {
   listManagerCourseRuns,
   listManagerCourses,
 } from "../../../services/courseAdminService";
-import { searchStaffAccounts } from "../../../services/staffAccountService";
 import {
   formatCourseDateTime,
   formatCourseMoney,
@@ -23,11 +22,9 @@ import {
 
 export default function ManagerCourseRunsPage() {
   const navigate = useNavigate();
-  const [rooms, setRooms] = useState([]);
   const [page, setPage] = useState(0);
   const [result, setResult] = useState({ content: [] });
   const [courses, setCourses] = useState([]);
-  const [coaches, setCoaches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -41,21 +38,12 @@ export default function ManagerCourseRunsPage() {
       if (!background) commitValue(setLoading, true);
       commitError(setError, "");
       try {
-        const [roomList, runPage, coursePage, coachPage] = await Promise.all([
-          listRooms(),
+        const [runPage, coursePage] = await Promise.all([
           listManagerCourseRuns({ page, size: 20 }),
           listManagerCourses({ page: 0, size: 100 }),
-          searchStaffAccounts({
-            role: "COACH",
-            status: "ACTIVE",
-            page: 0,
-            size: 100,
-          }),
         ]);
-        commitValue(setRooms, roomList);
         commitValue(setResult, runPage);
         commitValue(setCourses, coursePage.content || []);
-        commitValue(setCoaches, coachPage?.content || []);
       } catch (err) {
         failed(err);
         commitError(
@@ -78,15 +66,15 @@ export default function ManagerCourseRunsPage() {
     [load],
     {
       key: ["manager-runs", page],
-      setters: [setResult, setCourses, setCoaches, setRooms],
+      setters: [setResult, setCourses],
       setLoading,
     },
     !showCreate,
   );
 
   return (
-    <div className="container-fluid py-4">
-      <div className="d-flex justify-content-between align-items-start mb-4">
+    <div className="scms-course-workspace">
+      <div className="scms-course-header">
         <div>
           <h1 className="h3 mb-1">Đợt mở khóa học</h1>
           <p className="text-muted mb-0">
@@ -104,14 +92,14 @@ export default function ManagerCourseRunsPage() {
           onClose={() => setError("")}
         />
       )}
-      <div className="bg-white rounded shadow-sm p-3">
+      <div className="card border-0 shadow-sm">
         {loading ? (
           <div className="text-center py-5">
             <Spinner />
           </div>
         ) : (
           <Table responsive hover className="align-middle mb-0">
-            <thead>
+            <thead className="table-light">
               <tr>
                 <th>Mã đợt</th>
                 <th>Khóa học</th>
@@ -119,7 +107,7 @@ export default function ManagerCourseRunsPage() {
                 <th>Học phí</th>
                 <th>Khai giảng</th>
                 <th>Trạng thái</th>
-                <th />
+                <th className="text-end">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -155,27 +143,10 @@ export default function ManagerCourseRunsPage() {
             </tbody>
           </Table>
         )}
-        <div className="d-flex justify-content-end gap-2 mt-3">
-          <Button
-            size="sm"
-            variant="outline-secondary"
-            disabled={page === 0 || loading}
-            onClick={() => setPage((v) => v - 1)}
-          >
-            Trang trước
-          </Button>
-          <Button
-            size="sm"
-            variant="outline-secondary"
-            disabled={result.last || loading}
-            onClick={() => setPage((v) => v + 1)}
-          >
-            Trang sau
-          </Button>
-        </div>
+        <StaffPagination page={page} totalPages={result.totalPages} totalElements={result.totalElements} loading={loading} onPageChange={setPage} />
       </div>
 
-      {showCreate && <WeeklyCourseRunModal courses={courses} coaches={coaches} rooms={rooms}
+      {showCreate && <WeeklyCourseRunModal courses={courses}
         onClose={() => setShowCreate(false)} onCreated={run => navigate(`/manager/course-runs/${run.id}`)} />}
 
     </div>

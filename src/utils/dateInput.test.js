@@ -25,6 +25,14 @@ test('rejects invalid calendar dates', () => {
   assert.equal(parseDateInput('2026-10-28'), null);
 });
 
+test('accepts short day/month and compact pasted dates without shifting segments', () => {
+  assert.equal(parseDateInput('7/11/2026'), '2026-11-07');
+  assert.equal(parseDateInput('7/1/2026'), '2026-01-07');
+  assert.equal(parseDateInput('07112026'), '2026-11-07');
+  assert.equal(resolveDateInputValue('/11/2026', undefined, undefined, true), '/11/2026');
+  assert.equal(parseDateInput('71/12/026'), null);
+});
+
 test('inserts separators for numeric and mobile input', () => {
   assert.equal(normalizeDateInputDraft('2'), '2');
   assert.equal(normalizeDateInputDraft('2810'), '28/10');

@@ -1,3 +1,4 @@
+import SessionDateSlotInput from '../../../components/common/SessionDateSlotInput';
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -49,21 +50,17 @@ export default function CourseRunRescheduleModal({ run, sessions, onClose, onSav
     <Form noValidate onSubmit={event => handleSubmit(submit)(event)}><Modal.Header closeButton={!busy && !retry}><Modal.Title>Áp dụng lịch đợt học</Modal.Title></Modal.Header><Modal.Body>
       {error && <Alert variant="danger">{error}</Alert>}
       {retry && <Alert variant="warning">Chưa xác định kết quả. Bấm thử lại để gửi đúng lịch vừa xác nhận, tránh tạo thay đổi trùng.</Alert>}
-      <p>Chỉnh khung đợt học và lịch các buổi bên dưới. Các buổi giữ lại phải nằm trong khung mới. Toàn bộ thay đổi được áp dụng cùng nhau; buổi đã bắt đầu giữ nguyên.</p>
+      <p>Chỉ có thể thay đổi các buổi chưa bắt đầu.</p>
       <fieldset disabled={busy || retry}>
         <CourseDateTimeInput control={control} name="plannedStartAt" label="Khai giảng" />
         <p className="text-danger">{errors.plannedStartAt?.message}</p>
         <CourseDateTimeInput control={control} name="plannedEndAt" label="Kết thúc" />
         <p className="text-danger">{errors.plannedEndAt?.message}</p>
         <Form.Label htmlFor="reschedule-units">Số buổi giữ lại</Form.Label><Form.Control id="reschedule-units" type="number" min="1" max={run.totalUnits} {...register('totalUnits')} />
-        <p className="text-muted">Buổi bị giảm được hoàn theo phần tiền đã chốt lúc học viên thanh toán; không chia lại học phí theo số buổi mới.</p>
         <p className="text-danger">{errors.totalUnits?.message}</p>
         {editable.map((s, i) => <section key={s.id} className="border rounded p-3 mt-3">
           <h3 className="h6">Buổi {s.unitNumber}{s.isMakeup ? ' · Học bù' : ''} · {s.roomName} · {s.coachName}</h3>
-          <CourseDateTimeInput control={control} name={`sessions.${i}.startAt`} label={`Buổi ${s.unitNumber} bắt đầu`} />
-          <p className="text-danger">{errors.sessions?.[i]?.startAt?.message}</p>
-          <CourseDateTimeInput control={control} name={`sessions.${i}.endAt`} label={`Buổi ${s.unitNumber} kết thúc`} />
-          <p className="text-danger">{errors.sessions?.[i]?.endAt?.message}</p>
+          <SessionDateSlotInput control={control} startName={`sessions.${i}.startAt`} endName={`sessions.${i}.endAt`} label={`Buổi ${s.unitNumber}`} />
         </section>)}
       </fieldset>
     </Modal.Body><Modal.Footer><Button type="submit" disabled={busy}>{retry ? 'Thử lại lịch đã xác nhận' : 'Xác nhận áp dụng toàn bộ lịch'}</Button></Modal.Footer></Form>

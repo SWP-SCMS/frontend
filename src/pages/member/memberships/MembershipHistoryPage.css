@@ -1,11 +1,6 @@
 /* Lịch sử gói tập Hội viên (US21). Tiền tố .scms-mh- để không đụng class khác.
  * Nền trang (sáng) do MemberLayout cung cấp. */
 
-.scms-mh {
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
 /* ----- Tiêu đề ----- */
 
 .scms-mh-top {
@@ -14,9 +9,6 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 1.5rem;
-  padding: 1.5rem 0;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #e2e8f0;
 }
 
 .scms-mh-crumb {
@@ -24,12 +16,12 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--scms-muted);
   margin-bottom: 0.5rem;
 }
 
 .scms-mh-crumb strong {
-  color: #dc2626;
+  color: var(--scms-red);
   font-weight: 500;
 }
 
@@ -40,14 +32,14 @@
 .scms-mh-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   margin: 0;
 }
 
 .scms-mh-sub {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-mh-reload {
@@ -68,7 +60,7 @@
 }
 
 .scms-mh-reload:focus-visible {
-  outline: 2px solid #dc2626;
+  outline: 2px solid var(--scms-red);
   outline-offset: 2px;
 }
 
@@ -79,7 +71,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 3rem 0;
-  color: #64748b;
+  color: var(--scms-muted);
   font-size: 0.875rem;
 }
 
@@ -105,47 +97,31 @@
   margin-bottom: 0.5rem;
   border-radius: 50%;
   background: #fef2f2;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-mh-empty h2 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   margin: 0;
 }
 
 .scms-mh-empty p {
   margin: 0;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-mh-empty-cta {
   display: inline-block;
   margin-top: 0.75rem;
-  padding: 0.625rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #fff;
-  text-decoration: none;
-  background: #dc2626;
-  border-radius: 0.5rem;
   transition: background 0.15s ease;
-}
-
-.scms-mh-empty-cta:hover {
-  background: #b91c1c;
-  color: #fff;
 }
 
 /* ----- Bảng ----- */
 
 .scms-mh-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   overflow: hidden;
 }
 
@@ -156,25 +132,15 @@
 .scms-mh-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
 }
 
 .scms-mh-table thead th {
-  padding: 0.875rem 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
   text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #64748b;
-  background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
 }
 
 .scms-mh-table tbody td {
-  padding: 1rem 1.5rem;
-  color: #334155;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
 }
@@ -183,19 +149,15 @@
   border-bottom: none;
 }
 
-.scms-mh-table tbody tr:hover {
-  background: #f8fafc;
-}
-
 .scms-mh-plan {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-mh-plancode {
   margin-top: 0.125rem;
   font-size: 0.8125rem;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-mh-days {
@@ -208,7 +170,7 @@
 
 .scms-mh-price {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--scms-on-surface);
   white-space: nowrap;
 }
 
@@ -224,7 +186,7 @@
   white-space: nowrap;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-mh-status.active {
@@ -242,7 +204,7 @@
 .scms-mh-status.terminated {
   background: #fef2f2;
   border-color: #fecaca;
-  color: #b91c1c;
+  color: var(--scms-red-dark);
 }
 
 /* ----- Màn hình hẹp ----- */

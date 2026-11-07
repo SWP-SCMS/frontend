@@ -12,7 +12,7 @@ export default function MemberCoursesPage({ history = false }) {
   if (oldSections.includes(hash.slice(1))) return <Navigate replace to={`/member/courses/${hash.slice(1)}${search}`} />;
   return <div className="member-course-page">
     <header className="member-course-heading"><div><p className="member-course-eyebrow">Khóa học chuyên đề</p><h1>{history ? 'Lịch sử khóa học' : 'Khóa học của tôi'}</h1><p>{history ? 'Xem lại các khóa đã hoàn thành, đã rút, đã chuyển đợt hoặc bị hủy.' : 'Các khóa sắp học, đang học và đang chờ xử lý yêu cầu rút.'}</p></div><Link className="member-course-primary-link" to="/member/course-catalog">Khám phá khóa học</Link></header>
-    <nav aria-label="Danh sách khóa học" className="d-flex gap-3 mb-3"><Link to="/member/courses" aria-current={!history ? 'page' : undefined}>Khóa học của tôi</Link><Link to="/member/courses/history" aria-current={history ? 'page' : undefined}>Lịch sử khóa học</Link></nav>
+    <nav aria-label="Danh sách khóa học" className="nav nav-tabs scms-request-tabs mb-3"><Link className={`nav-link${!history ? ' active' : ''}`} to="/member/courses" aria-current={!history ? 'page' : undefined}>Khóa học của tôi</Link><Link className={`nav-link${history ? ' active' : ''}`} to="/member/courses/history" aria-current={history ? 'page' : undefined}>Lịch sử khóa học</Link></nav>
     <button className="btn btn-outline-secondary btn-sm" disabled={loading} onClick={() => reload()}>Tải lại dữ liệu</button>
     {error && <div className="member-course-alert" role="alert">{error}</div>}
     {loading ? <p>Đang tải khóa học…</p> : !error && <section className="member-course-section">

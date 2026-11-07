@@ -1,4 +1,4 @@
-import usePollingEffect from '../../../hooks/usePollingEffect';
+
 // Gói tập hiện tại của Hội viên — xem sau khi đăng ký thành công.
 //
 // Dữ liệu: dùng chung useMemberArea() (MemberLayout tải sẵn từ
@@ -11,15 +11,15 @@ import usePollingEffect from '../../../hooks/usePollingEffect';
 // Hợp đồng hiện tại trả record camelCase. `pick()` vẫn chấp nhận snake_case để
 // dữ liệu cũ hoặc môi trường chưa cập nhật không làm hỏng giao diện.
 
-import { useState } from 'react';
+
 import { Link } from 'react-router-dom';
 import { Spinner } from 'react-bootstrap';
 
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import MembershipBenefitList from '../../../components/common/MembershipBenefitList';
-import MemberOfferSection from './MemberOfferSection';
+
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
-import { getMyPendingMembershipOrder } from '../../../services/memberService';
+
 import { formatDate, formatPrice } from '../../../utils';
 import { hasBenefitContract } from '../../../utils/membershipBenefits';
 import './MyPlanPage.css';
@@ -81,26 +81,6 @@ export default function MyPlanPage() {
     error,
     reload,
   } = useMemberArea();
-  const [pendingOrder, setPendingOrder] = useState(null);
-  const [pendingLoading, setPendingLoading] = useState(true);
-
-  usePollingEffect(({ background, track, commitValue, failed }) => {
-    let cancelled = false;
-    track(getMyPendingMembershipOrder()
-      .then((order) => {
-        if (!cancelled) commitValue(setPendingOrder, order);
-      })
-      .catch(() => { failed();
-        // BE vẫn kiểm tra khi tạo đơn; lỗi đọc đơn chờ không nên khóa cả trang.
-      })
-      .finally(() => {
-        if (!cancelled) if (!background) commitValue(setPendingLoading, false);
-      }));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   if (loading) {
     return (
       <div className="scms-my-plan">
@@ -147,6 +127,7 @@ export default function MyPlanPage() {
                 ? 'Hãy đăng ký gói mới để tiếp tục sử dụng khu vực tập luyện.'
                 : 'Đăng ký gói tập đầu tiên để bắt đầu tập luyện tại SCMS.'}
             </p>
+            <Link to="/member/plan-registration" className="btn btn-danger">Đăng ký gói tập</Link>
           </div>
         )
       ) : (
@@ -160,19 +141,7 @@ export default function MyPlanPage() {
         </div>
       )}
 
-      {/* ACTIVE vẫn được mua một lần để gia hạn. Chỉ khóa khi đã có gói chờ
-          kích hoạt hoặc còn một đơn chờ thanh toán. */}
-      <MemberOfferSection
-        blockedReason={
-          reservedMembership
-            ? 'Bạn đã có một gói gia hạn đang chờ kích hoạt. Bạn chỉ có thể mua tiếp sau khi gói đó được kích hoạt.'
-            : pendingOrder
-              ? `Bạn đang có đơn ${pendingOrder.orderNumber} chờ thanh toán. Hãy hoàn tất đơn đó trước.`
-              : pendingLoading
-                ? 'Đang kiểm tra đơn chờ thanh toán...'
-                : null
-        }
-      />
+
     </div>
   );
 }
@@ -295,16 +264,16 @@ function PlanCard({ membership, kind }) {
 
       <div className="scms-my-plan-actions">
         {isActive ? (
-          <Link to="/member/membership-requests" className="scms-my-plan-btn ghost">
+          <Link to="/member/membership-requests" className="btn btn-outline-secondary scms-my-plan-btn ghost">
             Đóng băng / hủy gói
           </Link>
         ) : null}
         {!isReserved ? (
-          <a href="#member-offers" className="scms-my-plan-btn ghost">
+          <Link to="/member/plan-registration" className="btn btn-outline-secondary scms-my-plan-btn ghost">
             Nâng cấp / gia hạn
-          </a>
+          </Link>
         ) : null}
-        <Link to="/member/memberships" className="scms-my-plan-btn">
+        <Link to="/member/memberships" className="btn btn-danger scms-my-plan-btn">
           Xem lịch sử thanh toán
         </Link>
       </div>

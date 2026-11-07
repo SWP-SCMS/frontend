@@ -1,3 +1,4 @@
+import StaffPagination from '../../../components/common/StaffPagination';
 import Badge from '../../../components/common/SystemBadge';
 import CourseImageField from '../../../components/common/CourseImageField';
 import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
@@ -68,15 +69,15 @@ export default function ManagerCoursesPage() {
 
   return (
     <div className="scms-course-workspace">
-      <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
+      <div className="scms-course-header">
         <div><h1 className="h3 mb-1">Danh mục khóa học</h1><p className="text-muted mb-0">Quản lý khóa học độc lập với lớp tập thường.</p></div>
         <Button variant="danger" onClick={() => setShowCreate(true)}>+ Tạo khóa học</Button>
       </div>
       {error && <ErrorAlert error={error} title="Không thể xử lý khóa học" onClose={() => setError('')} />}
-      <div className="bg-white rounded shadow-sm p-3">
+      <div className="card border-0 shadow-sm">
         {loading ? <div className="text-center py-5"><Spinner /></div> : (
           <Table responsive hover className="align-middle mb-0">
-            <thead><tr><th>Mã</th><th>Tên khóa học</th><th>Bộ môn</th><th>Đăng ký tối thiểu</th><th>Trạng thái</th><th /></tr></thead>
+            <thead className="table-light"><tr><th>Mã</th><th>Tên khóa học</th><th>Bộ môn</th><th>Đăng ký tối thiểu</th><th>Trạng thái</th><th className="text-end">Thao tác</th></tr></thead>
             <tbody>
               {result.content.map((course) => <tr key={course.id}>
                 <td>{course.code}</td><td>{course.name}</td><td>{course.disciplineName || '—'}</td>
@@ -87,10 +88,7 @@ export default function ManagerCoursesPage() {
             </tbody>
           </Table>
         )}
-        <div className="d-flex justify-content-end gap-2 mt-3">
-          <Button size="sm" variant="outline-secondary" disabled={page === 0 || loading} onClick={() => setPage((v) => v - 1)}>Trang trước</Button>
-          <Button size="sm" variant="outline-secondary" disabled={result.last || loading} onClick={() => setPage((v) => v + 1)}>Trang sau</Button>
-        </div>
+        <StaffPagination page={page} totalPages={result.totalPages} totalElements={result.totalElements} loading={loading} onPageChange={setPage} />
       </div>
 
       <Modal show={showCreate} onHide={() => { if (!saving && !uploadingImage) setShowCreate(false); }} backdrop={saving || uploadingImage ? "static" : true} keyboard={!saving && !uploadingImage} centered size="lg">

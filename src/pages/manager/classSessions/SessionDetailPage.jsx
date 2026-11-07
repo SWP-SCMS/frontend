@@ -475,9 +475,6 @@ export default function SessionDetailPage() {
           <div className="d-flex justify-content-between align-items-center gap-2 mb-3">
             <div>
               <h2 className="h5 fw-bold mb-1">Hàng chờ</h2>
-              <p className="small text-muted mb-0">
-                Danh sách theo thứ tự FIFO của buổi tập này.
-              </p>
             </div>
             <Button
               type="button"
@@ -560,12 +557,6 @@ export default function SessionDetailPage() {
         </Modal.Header>
         <Form onSubmit={handleCancelSubmit(onCancelSubmit)} noValidate>
           <Modal.Body>
-            <p className="text-muted small mb-3">
-              Buổi tập sẽ được chuyển sang trạng thái Đã huỷ và vẫn
-              được giữ lại trong lịch sử. Các lượt đăng ký hiện đang
-              BOOKED của buổi tập này sẽ được hệ thống xử lý theo
-              quy tắc nghiệp vụ phía backend.
-            </p>
 
             {/* Read-only context block (mirrors the US30 read-only block) */}
             <div className="border rounded p-3 mb-3 bg-light">

@@ -83,7 +83,7 @@ export default function OpenCenterVisitsPage() {
       ) : (
         <div className="table-responsive">
           <Table hover className="align-middle bg-white shadow-sm">
-            <thead><tr><th>Hội viên</th><th>Quyền vào trung tâm</th><th>Check-in lúc</th><th className="text-end">Thao tác</th></tr></thead>
+            <thead className="table-light"><tr><th>Hội viên</th><th>Quyền vào trung tâm</th><th>Check-in lúc</th><th className="text-end">Thao tác</th></tr></thead>
             <tbody>{rows.map((visit) => (
               <tr key={visit.id}>
                 <td>

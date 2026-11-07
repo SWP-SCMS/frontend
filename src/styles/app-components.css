@@ -1,0 +1,29 @@
+/* One visual vocabulary for all authenticated roles. Page CSS only owns
+   domain layout (calendar grids, pricing comparisons and booking details). */
+:root {
+  --scms-app-bg: #f8fafc;
+  --scms-panel-radius: .75rem;
+  --scms-panel-padding: 1.5rem;
+  --scms-panel-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075);
+  --scms-control-radius: .375rem;
+}
+:is(.scms-md, .cbs, .mcs-page, .scms-mh, .scms-my-plan, .scms-membership-requests, .member-course-page, .mco) {
+  width: 100%; max-width: none; margin: 0; padding: 0; min-width: 0;
+}
+:is(.scms-md-top, .cbs-top, .mcs-top, .scms-mh-top, .scms-my-plan-top, .member-course-heading) {
+  padding: 0; margin-bottom: 1.5rem; border-bottom: 0;
+}
+:is(.scms-md-card, .scms-my-plan-card, .mco-card, .scms-mo-card, .cbs-filter, .scms-mo-filters, .member-course-section, .member-course-panel, .member-course-card) {
+  padding: var(--scms-panel-padding);
+  border: 0;
+  border-radius: var(--scms-panel-radius);
+  background: var(--scms-surface);
+  box-shadow: var(--scms-panel-shadow);
+}
+.scms-app-main h1 { font-size: calc(1.3rem + .6vw); font-weight: 700; color: var(--scms-on-surface); }
+@media (min-width: 1200px) { .scms-app-main h1 { font-size: 1.75rem; } }
+.scms-app-main :is(h2, .h5) { font-size: 1.25rem; }
+.scms-app-main :is(input, select, textarea) { font-family: inherit; }
+:is(.cbs-dialog, .mcs-dialog) .modal-content { border-radius: var(--scms-panel-radius); }
+:is(.cbs-modal, .mcs-modal) { padding: var(--scms-panel-padding); }
+:is(.cbs-mtitle, .mcs-mtitle) { font-size: 1.25rem; font-weight: 600; }

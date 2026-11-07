@@ -151,10 +151,6 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
           Vào danh sách chờ · {run.runCode}
         </Button>
       )}
-      <p>
-        Danh sách chờ chỉ nhận đăng ký khi đợt học đủ chỗ và còn mở theo hệ
-        thống.
-      </p>
       {error && <Alert variant="danger">{error}</Alert>}
       {orderId && (
         <Alert variant="info">

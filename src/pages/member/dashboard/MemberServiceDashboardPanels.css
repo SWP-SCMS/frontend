@@ -4,14 +4,14 @@
 .scms-pd-days {
   font-size: 2.25rem;
   font-weight: 800;
-  color: #dc2626;
+  color: var(--scms-red);
   line-height: 1.1;
 }
 
 .scms-pd-days small {
   font-size: 1rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--scms-muted);
 }
 
 .scms-pd-bar {
@@ -26,11 +26,11 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: #dc2626;
+  background: var(--scms-red);
 }
 
 .scms-pd-muted {
-  color: #64748b;
+  color: var(--scms-muted);
   font-size: 0.85rem;
 }
 
@@ -57,17 +57,17 @@
   display: flex;
   flex-direction: column;
   min-width: 90px;
-  color: #dc2626;
+  color: var(--scms-red);
 }
 
 .scms-pd-when span {
-  color: #64748b;
+  color: var(--scms-muted);
   font-size: 0.8rem;
 }
 
 .scms-pd-title {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--scms-on-surface);
 }
 
 .scms-pd-feedback {

@@ -27,21 +27,21 @@ export default function MemberHeader({
   const hasUnread = unreadCount > 0;
 
   return (
-    <header className="scms-ml-header">
+    <header className="scms-app-header">
       <NotificationDropdown align="start">
         <Dropdown.Toggle
           as="button"
           type="button"
-          className="scms-ml-bell"
+          className="scms-app-bell"
           aria-label={hasUnread ? `Thông báo (${unreadCount} mới)` : 'Thông báo'}
           id="member-bell"
         >
           <Icon name="bell" size={20} />
           {hasUnread ? (
-            <span className="scms-ml-bell-dot" aria-hidden="true"></span>
+            <span className="scms-app-bell-dot" aria-hidden="true"></span>
           ) : null}
         </Dropdown.Toggle>
-        <Dropdown.Menu className="scms-ml-bell-menu">
+        <Dropdown.Menu className="scms-app-bell-menu">
           <NotificationBellContent
             notifications={notifications}
             unreadCount={unreadCount}
@@ -49,30 +49,30 @@ export default function MemberHeader({
             loadingMore={loadingMore}
             loadMoreError={loadMoreError}
             onLoadMore={onLoadMore}
-            classPrefix="scms-ml"
+            classPrefix="scms-app"
           />
         </Dropdown.Menu>
       </NotificationDropdown>
 
-      <div className="scms-ml-user">
-        <span className="scms-ml-role">
-          <span className="scms-ml-role-dot" aria-hidden="true"></span>
+      <div className="scms-app-user">
+        <span className="scms-app-role">
+          <span className="scms-app-role-dot" aria-hidden="true"></span>
           Hội viên
         </span>
-        <div className="scms-ml-user-text">
-          <span className="scms-ml-user-name">
+        <div className="scms-app-user-text">
+          <span className="scms-app-user-name">
             {user?.fullName || 'Hội viên'}
           </span>
-          <span className="scms-ml-user-code">
+          <span className="scms-app-user-code">
             {user?.memberId || '—'}
           </span>
         </div>
-        <span className="scms-ml-avatar" aria-hidden="true">
+        <span className="scms-app-avatar" aria-hidden="true">
           <Icon name="user" size={18} />
         </span>
         <button
           type="button"
-          className="scms-ml-logout"
+          className="scms-app-logout"
           onClick={onRequestLogout}
         >
           Đăng xuất

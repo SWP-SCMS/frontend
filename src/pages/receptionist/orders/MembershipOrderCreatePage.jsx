@@ -190,7 +190,6 @@ export default function MembershipOrderCreatePage() {
           <Alert.Heading className="h6 mb-1">Đã tạo đơn thành công</Alert.Heading>
           <div className="small">
             Mã đơn <strong>{created.orderNumber}</strong> — chuyển khoản ngân hàng.
-            Hạn thanh toán được tính khi hệ thống tạo mã QR thanh toán.
             {created.fulfillmentMode === 'RESERVED' ? (
               <>
                 {' '}Đây là đơn gia hạn; sau khi thanh toán, gói mới sẽ chờ tới
@@ -355,8 +354,7 @@ export default function MembershipOrderCreatePage() {
                 </dl>
               ) : (
                 <p className="text-muted small mb-0">
-                  Chọn một gói tập để xem thông tin đơn. Giá và thời hạn hiển thị
-                  sau khi tạo là bản chụp tại thời điểm đặt đơn.
+                  Chọn một gói tập để xem thông tin đơn.
                 </p>
               )}
             </Card.Body>

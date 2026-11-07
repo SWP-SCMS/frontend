@@ -1,0 +1,57 @@
+.scms-date-input {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.scms-date-input > input {
+  padding-right: 2.75rem;
+}
+
+.scms-date-input > input.is-invalid {
+  padding-right: 4.25rem;
+  background-position: right 2.75rem center;
+}
+
+.scms-date-picker {
+  position: absolute;
+  right: .25rem;
+  top: 0;
+  bottom: 0;
+  width: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--scms-muted);
+  border-radius: .375rem;
+}
+
+.scms-date-picker:focus-within {
+  outline: 2px solid var(--scms-red);
+  outline-offset: -3px;
+}
+
+.scms-date-picker input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.scms-date-picker input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.scms-date-input:has(input:disabled) .scms-date-picker {
+  opacity: .5;
+}
+
+.scms-date-picker input:disabled { cursor: not-allowed; }

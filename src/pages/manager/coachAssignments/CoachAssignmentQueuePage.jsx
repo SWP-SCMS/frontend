@@ -305,9 +305,6 @@ export default function CoachAssignmentQueuePage() {
     <div>
       <header className="mb-3">
         <h1 className="h3 fw-bold mb-1">Phân công huấn luyện viên</h1>
-        <p className="text-muted mb-0">
-          Tìm hội viên có quyền huấn luyện cá nhân, tham khảo tải hiện tại và phân công HLV.
-        </p>
       </header>
 
       {notice ? (
@@ -466,7 +463,6 @@ export default function CoachAssignmentQueuePage() {
               <div className="d-flex justify-content-between align-items-start gap-2 mb-3">
                 <div>
                   <h2 className="h6 fw-bold mb-1">Tải huấn luyện viên</h2>
-                  <p className="small text-muted mb-0">Số hội viên đang phụ trách trên giới hạn được cấu hình.</p>
                 </div>
                 <Button type="button" variant="outline-secondary" size="sm" onClick={loadWorkloads}
                   disabled={workloadsLoading}>

@@ -1,3 +1,4 @@
+import { formatSessionSlot } from '../../../utils/sessionSlots';
 // Member – Đăng ký lớp (đặt / hủy lịch các buổi tập).
 //
 // API:
@@ -564,7 +565,6 @@ export default function ClassBookingPage({ ptOnly = false }) {
                     bookingAllowed={
                       !membershipEligibilityKnown || missingBenefitCodes.length === 0
                     }
-                    requiredBenefitNames={formatBenefitCodeList(requiredBenefitCodes)}
                     missingBenefitNames={formatBenefitCodeList(missingBenefitCodes)}
                     membershipLoading={membershipLoading}
                     nowMs={nowMs}
@@ -621,7 +621,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
           <span className="cbs-chips-label">Bộ môn:</span>
           <button
             type="button"
-            className={`cbs-chip${disciplineFilter === '' ? ' active' : ''}`}
+            className={`btn btn-outline-danger cbs-chip${disciplineFilter === '' ? ' active' : ''}`}
             onClick={() => changeFilter(setDisciplineFilter, '')}
           >
             Tất cả ({sessions.length})
@@ -630,7 +630,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
             <button
               key={d.key}
               type="button"
-              className={`cbs-chip${disciplineFilter === d.key ? ' active' : ''}`}
+              className={`btn btn-outline-danger cbs-chip${disciplineFilter === d.key ? ' active' : ''}`}
               onClick={() => changeFilter(setDisciplineFilter, d.key)}
             >
               {d.label} ({d.count})
@@ -643,7 +643,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
             <span className="cbs-select-icon">
               <CoachIcon />
             </span>
-            <select
+            <select className="form-select"
               aria-label="Lọc theo huấn luyện viên"
               value={coachFilter}
               onChange={(e) => changeFilter(setCoachFilter, e.target.value)}
@@ -661,7 +661,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
             <span className="cbs-select-icon">
               <FilterIcon />
             </span>
-            <select
+            <select className="form-select"
               aria-label="Lọc theo trạng thái"
               value={statusFilter}
               onChange={(e) => changeFilter(setStatusFilter, e.target.value)}
@@ -678,22 +678,20 @@ export default function ClassBookingPage({ ptOnly = false }) {
             <label htmlFor="cbs-from">Từ ngày</label>
             <DateInput
               id="cbs-from"
-              className="cbs-date"
-              unstyled
+              className="form-control cbs-date"
               value={fromYmd}
               onChange={(value) => changeFilter(setFromYmd, value)}
             />
             <label htmlFor="cbs-to">Đến ngày</label>
             <DateInput
               id="cbs-to"
-              className="cbs-date"
-              unstyled
+              className="form-control cbs-date"
               value={toYmd}
               onChange={(value) => changeFilter(setToYmd, value)}
             />
             <button
               type="button"
-              className="cbs-clear"
+              className="btn btn-outline-secondary cbs-clear"
               onClick={clearAll}
               disabled={!anyFilterOrRange}
             >
@@ -911,7 +909,7 @@ function BookingConfirmModal({
         <div className="cbs-mcard">
           <InfoRow icon="calendar" label="Thời gian:">
             {s ? formatGymDayHeading(s.startTime) : '—'} •{' '}
-            {formatGymTime(s?.startTime)} - {formatGymTime(s?.endTime)}
+            {formatSessionSlot(s?.startTime, s?.endTime)}
           </InfoRow>
           <InfoRow icon="room" label="Phòng tập:">
             {s?.roomName || '—'}
@@ -928,13 +926,16 @@ function BookingConfirmModal({
               Gói {planCode || '—'} • Xác nhận quyền khi đặt
             </span>
           </InfoRow>
-          <InfoRow icon="plan" label="Quyền lợi yêu cầu:">
-            {formatBenefitCodeList(
-              s?.requiredBenefitCodes?.length
-                ? s.requiredBenefitCodes
-                : ['CLASS_BOOKING'],
-            )}
-          </InfoRow>
+          <div className="cbs-mrow cbs-benefits-row">
+            <span className="cbs-mrow-label" id="cbs-required-benefits">
+              <RowIcon name="plan" />Quyền lợi yêu cầu:
+            </span>
+            <ul className="cbs-benefits-list" aria-labelledby="cbs-required-benefits">
+              {[...new Set(s?.requiredBenefitCodes?.length ? s.requiredBenefitCodes : ['CLASS_BOOKING'])].map((code) => (
+                <li key={code}>{formatBenefitCodeList([code])}</li>
+              ))}
+            </ul>
+          </div>
           <InfoRow icon="users" label="Số lượng:">
             <span className={avail != null && avail <= 0 ? 'cbs-qty full' : 'cbs-qty'}>
               {s?.bookedCount ?? '—'} / {s?.capacity ?? '—'} -{' '}
@@ -961,7 +962,7 @@ function BookingConfirmModal({
         <div className="cbs-mactions">
           <button
             type="button"
-            className="cbs-mbtn ghost"
+            className="btn btn-outline-secondary cbs-mbtn ghost"
             onClick={onClose}
             disabled={busy}
           >
@@ -969,7 +970,7 @@ function BookingConfirmModal({
           </button>
           <button
             type="button"
-            className="cbs-mbtn primary"
+            className="btn btn-danger cbs-mbtn primary"
             onClick={onConfirm}
             disabled={busy}
           >
@@ -990,7 +991,6 @@ function SessionItem({
   terminalWaitlistEntry,
   busy,
   bookingAllowed,
-  requiredBenefitNames,
   missingBenefitNames,
   membershipLoading,
   nowMs,
@@ -1000,6 +1000,7 @@ function SessionItem({
   onLeaveWaitlist,
 }) {
   const s = session;
+  const [slotLabel, slotTime] = formatSessionSlot(s.startTime, s.endTime).split(' · ');
   const avail = typeof s.availableCapacity === 'number' ? s.availableCapacity : null;
   const full = avail != null && avail <= 0;
   // BR-BKG-06: chỉ hủy được khi còn ít nhất 2 giờ trước giờ bắt đầu.
@@ -1008,7 +1009,8 @@ function SessionItem({
   return (
     <div className={`cbs-item${booked ? ' booked' : ''}`}>
       <div className="cbs-time">
-        {formatGymTime(s.startTime)} – {formatGymTime(s.endTime)}
+        <span className="cbs-slot-label">{slotLabel}</span>
+        <span className="cbs-slot-hours">{slotTime}</span>
       </div>
 
       <div className="cbs-info">
@@ -1016,9 +1018,6 @@ function SessionItem({
         <div className="cbs-meta">
           {s.coachName || '—'} · {s.roomName || '—'}
         </div>
-        {requiredBenefitNames ? (
-          <div className="cbs-note">Yêu cầu: {requiredBenefitNames}</div>
-        ) : null}
         <div className="cbs-tags">
           <span className="cbs-tag">{CLASS_TYPE_LABEL[s.classType] || '—'}</span>
           {s.disciplineName ? (
@@ -1038,7 +1037,7 @@ function SessionItem({
             <span className="cbs-tag green">Đã đặt</span>
             <button
               type="button"
-              className="cbs-btn cancel"
+              className="btn btn-outline-danger cbs-btn cancel"
               disabled={busy || !canCancel}
               onClick={onCancel}
             >
@@ -1055,7 +1054,7 @@ function SessionItem({
             </span>
             <button
               type="button"
-              className="cbs-btn cancel"
+              className="btn btn-outline-danger cbs-btn cancel"
               disabled={busy}
               onClick={onLeaveWaitlist}
             >
@@ -1066,7 +1065,7 @@ function SessionItem({
           <>
             <button
               type="button"
-              className="cbs-btn"
+              className="btn btn-danger cbs-btn"
               disabled={busy || membershipLoading || !bookingAllowed}
               onClick={full ? onJoinWaitlist : onBook}
             >

@@ -72,6 +72,8 @@ function notificationDestination(item, pathname) {
   }
 
   if (role === 'manager') {
+    if (type === 'PT_ASSIGNMENT_REQUIRED') return '/manager/coach-assignments?assignmentStatus=UNASSIGNED'
+      + (payload.memberCode ? '&query=' + encodeURIComponent(payload.memberCode) : '');
     if (type === 'MANUAL_ACTIVATION_REVIEW_REQUIRED') return '/manager/email-verification';
     if (type?.startsWith('MEMBERSHIP_REFUND_')) return '/manager/refunds';
     if (type?.startsWith('MEMBERSHIP_FREEZE_') || type?.startsWith('MEMBERSHIP_TERMINATION_')) {

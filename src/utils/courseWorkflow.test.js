@@ -44,7 +44,7 @@ test('money distinguishes missing amounts from zero and never silently rounds 19
 });
 
 test('course dates always use Vietnam time independently of the browser timezone', () => {
-  assert.match(formatCourseDateTime('2026-11-01T18:00:00Z'), /2\/11\/26/);
+  assert.match(formatCourseDateTime('2026-11-01T18:00:00Z'), /02\/11\/2026/);
   assert.match(formatCourseDateTime('2026-11-01T18:00:00Z'), /01:00/);
 });
 

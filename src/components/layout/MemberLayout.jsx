@@ -22,7 +22,6 @@ import MemberHeader from './MemberHeader';
 import ResponsiveSidebar from './ResponsiveSidebar';
 import { MEMBER_SIDEBAR_ITEMS } from './navConfig';
 import useNotificationUnreadCount from './useNotificationUnreadCount';
-import './MemberLayout.css';
 
 export default function MemberLayout({ children }) {
   const { user, logout } = useAuth();
@@ -211,7 +210,7 @@ export default function MemberLayout({ children }) {
 
   return (
     <MemberAreaContext.Provider value={areaValue}>
-      <div className="scms-ml">
+      <div className="scms-app">
         <ResponsiveSidebar><MemberSidebar
           user={user}
           activeMembership={activeMembership}
@@ -223,7 +222,7 @@ export default function MemberLayout({ children }) {
           onRequestLogout={requestLogout}
         /></ResponsiveSidebar>
 
-        <div className="scms-ml-body">
+        <div className="scms-app-body">
           <MemberHeader
             user={user}
             unreadCount={unreadCount}
@@ -235,7 +234,7 @@ export default function MemberLayout({ children }) {
             onRequestLogout={requestLogout}
           />
 
-          <main className="scms-ml-main">{children}</main>
+          <main className="scms-app-main">{children}</main>
         </div>
 
         <Modal
@@ -266,7 +265,7 @@ export default function MemberLayout({ children }) {
               variant="danger"
               onClick={() => {
                 setBenefitNoticeFor(null);
-                navigate('/member/plan');
+                navigate('/member/plan-registration');
               }}
             >
               Xem các gói tập

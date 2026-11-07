@@ -70,13 +70,10 @@ export const APP_SHELL_NAV_ITEMS = {
       ],
     },
     {
-      label: 'Vận hành lớp học',
+      label: 'Lớp học',
       items: [
-        { to: '/manager/disciplines', label: 'Bộ môn' },
         { to: '/manager/classes', label: 'Lớp học' },
         { to: '/manager/class-sessions', label: 'Buổi tập' },
-        { to: '/manager/coach-leave-requests', label: 'Duyệt nghỉ HLV' },
-        { to: '/manager/rooms', label: 'Phòng tập' },
       ],
     },
     {
@@ -84,19 +81,32 @@ export const APP_SHELL_NAV_ITEMS = {
       items: [
         { to: '/manager/courses', label: 'Danh mục khóa học' },
         { to: '/manager/course-runs', label: 'Đợt mở khóa học' },
-        { to: '/manager/course-withdrawals', label: 'Rút khóa học' },
-        { to: '/manager/course-transfers', label: 'Chuyển đợt học' },
-        { to: '/manager/course-refunds', label: 'Hoàn tiền khóa học' },
+      ],
+    },
+    {
+      label: 'Vận hành',
+      items: [
+        { to: '/manager/disciplines', label: 'Bộ môn' },
+        { to: '/manager/rooms', label: 'Phòng tập' },
+        { to: '/manager/coach-leave-requests', label: 'Duyệt nghỉ HLV' },
+      ],
+    },
+    {
+      label: 'Gói tập',
+      items: [
+        { to: '/manager/membership-plans', label: 'Loại gói & quyền lợi' },
+        { to: '/manager/membership-offers', label: 'Gói tập' },
       ],
     },
     {
       label: 'Kinh doanh',
       items: [
-        { to: '/manager/membership-plans', label: 'Loại gói & quyền lợi' },
-        { to: '/manager/membership-offers', label: 'Gói tập' },
-        { to: '/manager/membership-requests', label: 'Yêu cầu gói tập' },
-        { to: '/manager/refunds', label: 'Duyệt hoàn tiền' },
-        { to: '/manager/payments/reconcile', label: 'Đối soát' },
+        { to: '/manager/membership-requests', label: 'Yêu cầu gói tập', activePaths: ['/manager/refunds'] },
+        {
+          to: '/manager/course-withdrawals', label: 'Yêu cầu khóa học',
+          activePaths: ['/manager/course-transfers', '/manager/course-refunds'],
+        },
+        { to: '/manager/payments/reconcile', label: 'Đối soát gói tập' },
         { to: '/manager/course-payments/reconcile', label: 'Đối soát khóa học' },
       ],
     },
@@ -186,26 +196,21 @@ export const MEMBER_SIDEBAR_ITEMS = [
   {
     label: 'Khóa học',
     items: [
-      { to: '/member/course-catalog', label: 'Khám phá khóa học', icon: 'clipboard' },
+      { to: '/member/course-catalog', label: 'Đăng ký khóa học', icon: 'clipboard' },
       { to: '/member/courses', label: 'Khóa học của tôi', icon: 'calendar', end: true },
       { to: '/member/courses/history', label: 'Lịch sử khóa học', icon: 'clipboard' },
       { to: '/member/courses/waitlist', label: 'Danh sách chờ', icon: 'clipboard' },
-    ],
-  },
-  {
-    label: 'Yêu cầu khóa học',
-    collapsible: true,
-    items: [
-      { to: '/member/courses/schedule-changes', label: 'Thay đổi lịch học', icon: 'calendar' },
-      { to: '/member/courses/transfers', label: 'Chuyển đợt học', icon: 'calendar' },
-      { to: '/member/courses/withdrawals', label: 'Rút khóa học', icon: 'clipboard' },
-      { to: '/member/courses/refunds', label: 'Hoàn tiền khóa học', icon: 'receipt' },
+      {
+        to: '/member/courses/schedule-changes', label: 'Yêu cầu khóa học', icon: 'clipboard',
+        activePaths: ['/member/courses/transfers', '/member/courses/withdrawals', '/member/courses/refunds'],
+      },
     ],
   },
   {
     label: 'Gói tập và thanh toán',
     items: [
       { to: '/member/plan', label: 'Gói tập hiện tại', icon: 'dumbbell' },
+      { to: '/member/plan-registration', label: 'Đăng ký gói tập', icon: 'clipboard' },
       { to: '/member/membership-requests', label: 'Yêu cầu gói tập', icon: 'clipboard' },
       { to: '/member/memberships', label: 'Lịch sử gói tập', icon: 'receipt' },
       { to: '/member/receipts', label: 'Biên lai', icon: 'receipt' },

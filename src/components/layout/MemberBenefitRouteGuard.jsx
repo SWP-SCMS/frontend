@@ -34,7 +34,7 @@ export default function MemberBenefitRouteGuard({ benefitCode, serviceName, chil
             ? ` có trong gói ${requiredPlanLabel}.`
             : ' yêu cầu một gói tập phù hợp.'}
         </p>
-        <Button as={Link} to="/member/plan" variant="danger">
+        <Button as={Link} to="/member/plan-registration" variant="danger">
           Xem các gói tập
         </Button>
       </Card.Body>

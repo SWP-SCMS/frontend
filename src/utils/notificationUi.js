@@ -1,4 +1,5 @@
 const TYPE_LABELS = {
+  PT_ASSIGNMENT_REQUIRED: 'Có hội viên cần được phân công HLV cá nhân',
   COURSE_TRANSFER_REQUESTED: 'Có yêu cầu chuyển đợt học cần duyệt',
   COURSE_TRANSFER_OFFERED: 'Bạn có đề nghị chuyển đợt học cần chấp nhận',
   COURSE_TRANSFER_REJECTED: 'Yêu cầu chuyển đợt học đã bị từ chối',
@@ -116,6 +117,9 @@ export function reasonLabel(reasonCode) {
 }
 
 export function notificationDetail(item) {
+  if (item?.notificationType === 'PT_ASSIGNMENT_REQUIRED') {
+    return [item.payload?.memberFullName, item.payload?.memberCode].filter(Boolean).join(' · ');
+  }
   const reasonCode = item?.payload?.reasonCode;
   return reasonCode ? `Lý do: ${reasonLabel(reasonCode)}` : '';
 }

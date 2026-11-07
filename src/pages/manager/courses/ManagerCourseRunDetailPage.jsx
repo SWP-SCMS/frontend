@@ -1,13 +1,14 @@
+import SessionTime from '../../../components/common/SessionTime';
+import useCourseResourceAvailability from '../../../hooks/useCourseResourceAvailability';
 import CourseRunStatusBadge from '../../../components/common/CourseRunStatusBadge';
 import { z } from "zod";
 import usePollingEffect from "../../../hooks/usePollingEffect";
 import CourseRunRescheduleModal from "./CourseRunRescheduleModal";
-import CourseDateTimeInput from "../../../components/common/CourseDateTimeInput";
-import { useForm } from "react-hook-form";
+import SessionDateSlotInput from "../../../components/common/SessionDateSlotInput";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   minimumEnrollmentSchema,
-  courseOpenSchema,
   courseSessionSchema,
 } from "../../../schemas/courseSchemas";
 import { useCallback, useEffect, useState } from "react";
@@ -35,8 +36,6 @@ import {
   updateManagerCourseRun,
   updateManagerCourseSession,
 } from "../../../services/courseAdminService";
-import { listRooms } from "../../../services/roomService";
-import { searchStaffAccounts } from "../../../services/staffAccountService";
 import {
   formatCourseDateTime,
   formatCourseMoney,
@@ -44,6 +43,7 @@ import {
   COURSE_SESSION_STATUS_LABELS,
   getCourseStatusLabel,
 } from "../../../utils/courseUi";
+
 
 const toIso = (value) =>
   value ? new Date(`${value}:00+07:00`).toISOString() : null;
@@ -60,6 +60,7 @@ const emptySession = {
   endAt: "",
   allocationVnd: "",
 };
+const DEFAULT_COURSE_POLICY_VERSION = "course-mvp-v1";
 
 export default function ManagerCourseRunDetailPage() {
   const [now, setNow] = useState(() => Date.now());
@@ -70,8 +71,6 @@ export default function ManagerCourseRunDetailPage() {
   const { runId } = useParams();
   const [run, setRun] = useState(null);
   const [sessions, setSessions] = useState([]);
-  const [rooms, setRooms] = useState([]);
-  const [coaches, setCoaches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -96,16 +95,28 @@ export default function ManagerCourseRunDetailPage() {
     resolver: zodResolver(minimumEnrollmentSchema(run?.capacity)),
     defaultValues: { minimumEnrollment: "" },
   });
-  const openForm = useForm({
-    resolver: zodResolver(courseOpenSchema),
-    defaultValues: { policyVersion: "course-mvp-v1" },
-  });
   const sessionFields = useForm({
     resolver: zodResolver(
       courseSessionSchema(!!editingSession, run?.totalUnits),
     ),
     defaultValues: emptySession,
   });
+  const sessionStart = useWatch({ control: sessionFields.control, name: 'startAt' });
+  const sessionEnd = useWatch({ control: sessionFields.control, name: 'endAt' });
+  const safeIso = value => value && Number.isFinite(Date.parse(`${value}:00+07:00`)) ? toIso(value) : null;
+  const availability = useCourseResourceAvailability({
+    windows: [{ startAt: safeIso(sessionStart), endAt: safeIso(sessionEnd) }],
+    capacity: run?.capacity, enabled: modal === 'session', excludeSessionId: editingSession?.id,
+  });
+  const { rooms, coaches } = availability;
+  const { getValues: getSessionValues, setValue: setSessionValue } = sessionFields;
+  useEffect(() => {
+    if (!availability.ready) return;
+    const roomId = getSessionValues('roomId');
+    setSessionValue('roomId', rooms.some(r => r.id === roomId) ? roomId : '');
+    const coachId = getSessionValues('coachId');
+    setSessionValue('coachId', coaches.some(c => c.accountId === coachId) ? coachId : '');
+  }, [availability.ready, rooms, coaches, getSessionValues, setSessionValue]);
   const { reset: resetMinimum } = minimumForm;
   const { reset: setSessionForm } = sessionFields;
 
@@ -119,16 +130,9 @@ export default function ManagerCourseRunDetailPage() {
       if (!background) commitValue(setLoading, true);
       commitError(setError, "");
       try {
-        const [runData, sessionData, roomData, coachPage] = await Promise.all([
+        const [runData, sessionData] = await Promise.all([
           getManagerCourseRun(runId),
           listManagerCourseSessions(runId),
-          listRooms(),
-          searchStaffAccounts({
-            role: "COACH",
-            status: "ACTIVE",
-            page: 0,
-            size: 100,
-          }),
         ]);
         commitValue(setRun, runData);
         if (!background)
@@ -136,8 +140,6 @@ export default function ManagerCourseRunDetailPage() {
             minimumEnrollment: runData.minimumEnrollment,
           });
         commitValue(setSessions, sessionData);
-        commitValue(setRooms, Array.isArray(roomData) ? roomData : []);
-        commitValue(setCoaches, coachPage?.content || []);
       } catch (err) {
         failed(err);
         commitError(
@@ -178,7 +180,9 @@ export default function ManagerCourseRunDetailPage() {
     }
   }
 
-  async function openRegistration({ policyVersion }) {
+  async function openRegistration(event) {
+    event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
@@ -186,7 +190,7 @@ export default function ManagerCourseRunDetailPage() {
         await openManagerCourseRunRegistration(
           runId,
           run.version,
-          policyVersion,
+          DEFAULT_COURSE_POLICY_VERSION,
         ),
       );
       setModal("");
@@ -248,6 +252,8 @@ export default function ManagerCourseRunDetailPage() {
   }
 
   async function saveSession(sessionForm) {
+    if (!availability.ready || !rooms.some(r => r.id === sessionForm.roomId)
+        || !coaches.some(c => c.accountId === sessionForm.coachId)) return;
     setBusy(true);
     setError("");
     try {
@@ -304,13 +310,13 @@ export default function ManagerCourseRunDetailPage() {
     );
   if (!run)
     return (
-      <div className="container-fluid py-4">
+      <div className="scms-course-workspace">
         <ErrorAlert error={error} title="Không thể tải đợt mở khóa học" />
       </div>
     );
 
   return (
-    <div className="container-fluid py-4">
+    <div className="scms-course-workspace">
       <Link to="/manager/course-runs" className="text-decoration-none">
         ← Quay lại danh sách đợt mở
       </Link>
@@ -388,7 +394,7 @@ export default function ManagerCourseRunDetailPage() {
       )}
       <Row className="g-3 mb-4">
         <Col lg={8}>
-          <div className="bg-white rounded shadow-sm p-4 h-100">
+          <div className="card border-0 shadow-sm p-4 h-100">
             <Row className="g-3">
               <Col md={6}>
                 <strong>Huấn luyện viên chính</strong>
@@ -422,17 +428,14 @@ export default function ManagerCourseRunDetailPage() {
           </div>
         </Col>
         <Col lg={4}>
-          <div className="bg-white rounded shadow-sm p-4">
+          <div className="card border-0 shadow-sm p-4">
             <strong>Số buổi</strong>
             <div className="display-6">{run.totalUnits}</div>
-            <small className="text-muted">
-              Chính sách: {run.policyVersionSnapshot || "Chưa chốt"}
-            </small>
           </div>
         </Col>
       </Row>
 
-      <div className="bg-white rounded shadow-sm p-3">
+      <div className="card border-0 shadow-sm p-3">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h2 className="h5 mb-0">Lịch buổi học</h2>
           <Button variant="danger" size="sm" onClick={openNewSession}
@@ -441,13 +444,12 @@ export default function ManagerCourseRunDetailPage() {
           </Button>
         </div>
         <Table responsive hover className="align-middle mb-0">
-          <thead>
+          <thead className="table-light">
             <tr>
               <th>Buổi</th>
               <th>Thời gian</th>
               <th>Phòng</th>
               <th>Huấn luyện viên</th>
-              <th>Phân bổ học phí</th>
               <th>Trạng thái</th>
               <th />
             </tr>
@@ -457,15 +459,10 @@ export default function ManagerCourseRunDetailPage() {
               <tr key={item.id}>
                 <td>{item.unitNumber}</td>
                 <td>
-                  {formatCourseDateTime(item.startAt)}
-                  <br />
-                  <small className="text-muted">
-                    đến {formatCourseDateTime(item.endAt)}
-                  </small>
+                  <SessionTime startAt={item.startAt} endAt={item.endAt} />
                 </td>
                 <td>{item.roomName || "—"}</td>
                 <td>{item.coachName || "—"}</td>
-                <td>{formatCourseMoney(item.allocationVnd)}</td>
                 <td>
                   {getCourseStatusLabel(
                     COURSE_SESSION_STATUS_LABELS,
@@ -536,7 +533,7 @@ export default function ManagerCourseRunDetailPage() {
             ))}
             {!sessions.length && (
               <tr>
-                <td colSpan={7} className="text-center text-muted py-4">
+                <td colSpan={6} className="text-center text-muted py-4">
                   Chưa có lịch buổi học.
                 </td>
               </tr>
@@ -659,23 +656,16 @@ export default function ManagerCourseRunDetailPage() {
         keyboard={!busy}
         centered
       >
-        <Form noValidate onSubmit={openForm.handleSubmit(openRegistration)}>
+        <Form onSubmit={openRegistration}>
           <Modal.Header closeButton={!busy}>
             <Modal.Title>Mở đăng ký</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {error && <ErrorAlert error={error} title="Không thể mở đăng ký" />}
-            <Form.Label htmlFor="run-policy">Phiên bản chính sách *</Form.Label>
-            <Form.Control
-              id="run-policy"
-              required
-              maxLength={100}
-              {...openForm.register("policyVersion")}
-              isInvalid={!!openForm.formState.errors.policyVersion}
-            />
-            <Form.Control.Feedback type="invalid" className="d-block">
-              {openForm.formState.errors.policyVersion?.message}
-            </Form.Control.Feedback>
+            <p className="mb-0">
+              Bạn muốn mở đăng ký cho đợt học <strong>{run.runCode}</strong>?
+              {" "}Hội viên có thể đăng ký trong thời gian đăng ký đã thiết lập.
+            </p>
           </Modal.Body>
           <Modal.Footer>
             <Button
@@ -715,6 +705,8 @@ export default function ManagerCourseRunDetailPage() {
             {error && (
               <ErrorAlert error={error} title="Không thể lưu thay đổi" />
             )}
+            {availability.loading && <p role="status">Đang kiểm tra HLV và phòng…</p>}
+            {availability.error && <><ErrorAlert error={availability.error} title="Không tải được HLV và phòng trống"/><Button onClick={availability.retry}>Thử lại</Button></>}
             <Row className="g-3">
               {!editingSession && (
                 <Col md={4}>
@@ -735,29 +727,23 @@ export default function ManagerCourseRunDetailPage() {
                   </Form.Control.Feedback>
                 </Col>
               )}
+              <Col xs={12}><SessionDateSlotInput control={sessionFields.control} /></Col>
               <Col md={editingSession ? 6 : 4}>
                 <Form.Label htmlFor="course-session-roomId">Phòng *</Form.Label>
                 <Form.Select
                   id="course-session-roomId"
+                  disabled={!availability.ready}
                   required
                   {...sessionFields.register("roomId")}
                   isInvalid={!!sessionFields.formState.errors.roomId}
                 >
-                  <option value="">-- Chọn phòng --</option>
+                  <option value="">{!availability.ready ? 'Nhập ngày giờ để tìm phòng' : rooms.length ? '-- Chọn phòng --' : 'Không có phòng phù hợp'}</option>
                   {rooms.map((room) => (
                     <option
                       key={room.id}
                       value={room.id}
-                      disabled={
-                        room.status !== "ACTIVE" || room.capacity < run.capacity
-                      }
                     >
                       {room.name}
-                      {room.status !== "ACTIVE"
-                        ? " (ngừng hoạt động)"
-                        : room.capacity < run.capacity
-                          ? " (không đủ sức chứa)"
-                          : ""}
                     </option>
                   ))}
                 </Form.Select>
@@ -771,11 +757,12 @@ export default function ManagerCourseRunDetailPage() {
                 </Form.Label>
                 <Form.Select
                   id="course-session-coachId"
+                  disabled={!availability.ready}
                   required
                   {...sessionFields.register("coachId")}
                   isInvalid={!!sessionFields.formState.errors.coachId}
                 >
-                  <option value="">-- Chọn huấn luyện viên --</option>
+                  <option value="">{!availability.ready ? 'Nhập ngày giờ để tìm HLV' : coaches.length ? '-- Chọn huấn luyện viên --' : 'Không có HLV phù hợp'}</option>
                   {coaches.map((coach) => (
                     <option key={coach.accountId} value={coach.accountId}>
                       {coach.fullName || coach.name || coach.email}
@@ -784,28 +771,6 @@ export default function ManagerCourseRunDetailPage() {
                 </Form.Select>
                 <Form.Control.Feedback type="invalid" className="d-block">
                   {sessionFields.formState.errors.coachId?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={6}>
-                <Form.Label htmlFor="startAt">Bắt đầu *</Form.Label>
-                <CourseDateTimeInput
-                  control={sessionFields.control}
-                  name="startAt"
-                  label="Bắt đầu"
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {sessionFields.formState.errors.startAt?.message}
-                </Form.Control.Feedback>
-              </Col>
-              <Col md={6}>
-                <Form.Label htmlFor="endAt">Kết thúc *</Form.Label>
-                <CourseDateTimeInput
-                  control={sessionFields.control}
-                  name="endAt"
-                  label="Kết thúc"
-                />
-                <Form.Control.Feedback type="invalid" className="d-block">
-                  {sessionFields.formState.errors.endAt?.message}
                 </Form.Control.Feedback>
               </Col>
               {!editingSession && (
@@ -836,7 +801,7 @@ export default function ManagerCourseRunDetailPage() {
             >
               Hủy
             </Button>
-            <Button variant="danger" type="submit" disabled={busy}>
+            <Button variant="danger" type="submit" disabled={busy || !availability.ready || !rooms.length || !coaches.length}>
               Lưu buổi học
             </Button>
           </Modal.Footer>

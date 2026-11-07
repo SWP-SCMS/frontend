@@ -37,7 +37,7 @@ function StatusBadge({ status }) {
 function SessionTable({ sessions, showDate }) {
   return (
     <Table responsive className="align-middle mb-0">
-      <thead>
+      <thead className="table-light">
         <tr>
           {showDate ? <th>Ngày</th> : null}
           <th>Giờ</th>
@@ -250,7 +250,7 @@ export default function CoachDashboardPage() {
               <p className="text-muted mb-0">Hôm nay bạn không có buổi dạy.</p>
             ) : (
               <Table responsive hover className="align-middle mb-0">
-                <thead>
+                <thead className="table-light">
                   <tr>
                     <th>Giờ</th>
                     <th>Lớp</th>
@@ -294,7 +294,7 @@ export default function CoachDashboardPage() {
               <p className="text-muted mb-0">Bạn chưa có lớp đang mở.</p>
             ) : (
               <Table responsive className="align-middle mb-0">
-                <thead>
+                <thead className="table-light">
                   <tr>
                     <th>Lớp</th>
                     <th>Bộ môn</th>
@@ -320,7 +320,7 @@ export default function CoachDashboardPage() {
               <p className="text-muted mb-0">Chưa có lượt đăng ký sắp tới.</p>
             ) : (
               <Table responsive className="align-middle mb-0">
-                <thead>
+                <thead className="table-light">
                   <tr>
                     <th>Ngày</th>
                     <th>Lớp</th>

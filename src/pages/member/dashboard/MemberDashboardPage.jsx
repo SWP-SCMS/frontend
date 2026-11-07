@@ -13,7 +13,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button, Modal, Spinner } from 'react-bootstrap';
 import { useAuth } from '../../../context/useAuth';
 import { useMemberArea } from '../../../components/layout/MemberAreaContext';
-import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import MemberServiceDashboardPanels from './MemberServiceDashboardPanels';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import MemberCoachCard from '../../../components/member/MemberCoachCard';
@@ -246,7 +245,7 @@ function PlanCard({ planCode, offers, blockedReason, onChoose }) {
       <div>
         <button
           type="button"
-          className="scms-md-plan-btn"
+          className="btn btn-danger scms-md-plan-btn"
           disabled={Boolean(blockedReason)}
           onClick={() => onChoose(offer)}
         >
@@ -367,7 +366,6 @@ export default function MemberDashboardPage() {
     <div className="scms-md">
       <div className="scms-md-top">
         <div>
-          <MemberBreadcrumb current="Trang tổng quan" />
           <h1 className="scms-md-title">
             Chào mừng bạn đến với SCMS Sports Center, {fullName}!
           </h1>
@@ -395,7 +393,7 @@ export default function MemberDashboardPage() {
               </p>
             </div>
           </div>
-          <Link to="/member/profile" className="scms-md-btn-dark">
+          <Link to="/member/profile" className="btn btn-danger scms-md-btn-dark">
             <Icon name="edit" />
             Cập nhật thêm thông tin
           </Link>
@@ -422,7 +420,7 @@ export default function MemberDashboardPage() {
           </div>
           <Link
             to={`/member/checkout/${pendingOrder.offerId}`}
-            className="scms-md-btn-dark"
+            className="btn btn-danger scms-md-btn-dark"
           >
             Tiếp tục thanh toán
             <Icon name="arrow" size={16} />
@@ -430,28 +428,6 @@ export default function MemberDashboardPage() {
         </div>
       ) : null}
 
-      {reservedMembership ? (
-        <div className="scms-md-banner pending">
-          <div className="scms-md-banner-main">
-            <div className="scms-md-banner-icon">
-              <Icon name="clock" size={24} />
-            </div>
-            <div>
-              <h3>Gói gia hạn đã sẵn sàng</h3>
-              <p>
-                {reservedMembership.offerName ||
-                  reservedMembership.offer_name_snapshot ||
-                  reservedMembership.planCode ||
-                  'Gói kế tiếp'}{' '}
-                sẽ tự động kích hoạt sau khi gói hiện tại kết thúc.
-              </p>
-            </div>
-          </div>
-          <Link to="/member/plan" className="scms-md-btn-dark">
-            Xem chi tiết
-          </Link>
-        </div>
-      ) : null}
 
       <MemberCoachCard />
 
@@ -527,7 +503,7 @@ export default function MemberDashboardPage() {
                   </span>
                 </div>
               </div>
-              <Link to="/member/plan#member-offers" className="scms-md-link">
+              <Link to="/member/plan-registration" className="scms-md-link">
                 Tất cả gói tập <Icon name="arrow" size={16} />
               </Link>
             </div>

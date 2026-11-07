@@ -1,3 +1,4 @@
+import SessionSlotSelect from '../../../components/common/SessionSlotSelect';
 // Manager – Single Class Session Creation (US27).
 //
 // Reached from a specific Class Detail page:
@@ -241,6 +242,10 @@ export default function SingleSessionCreatePage() {
       return undefined;
     }
 
+    setCoaches([]);
+    setCoachesLoading(true);
+    setCoachesError(null);
+    setValue('coachId', '');
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       setCoachesLoading(true);
@@ -277,6 +282,9 @@ export default function SingleSessionCreatePage() {
   }, [availabilityDate, availabilityStart, availabilityEnd, getValues, setValue]);
 
   useEffect(() => {
+    setRoomAvailability(null);
+    setRoomAvailabilityError(null);
+    setValue('roomId', '');
     const startTime = gymLocalDateToIsoInstant(availabilityDate, availabilityStart);
     const endTime = gymLocalDateToIsoInstant(availabilityDate, availabilityEnd);
     const requestedCapacity = Number(availabilityCapacity);
@@ -292,6 +300,7 @@ export default function SingleSessionCreatePage() {
       setRoomAvailabilityLoading(false);
       return undefined;
     }
+    setRoomAvailabilityLoading(true);
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       setRoomAvailabilityLoading(true);
@@ -312,10 +321,10 @@ export default function SingleSessionCreatePage() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [availabilityDate, availabilityStart, availabilityEnd, availabilityCapacity]);
+  }, [availabilityDate, availabilityStart, availabilityEnd, availabilityCapacity, setValue]);
 
   const roomOptions = useMemo(() => {
-    const source = roomAvailability || activeRooms;
+    const source = (roomAvailability || []).filter(room => room.available === true);
     return source
       .map((r) => ({
         value: r.roomId || r.id,
@@ -325,7 +334,7 @@ export default function SingleSessionCreatePage() {
         available: r.available !== false,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [activeRooms, roomAvailability]);
+  }, [roomAvailability]);
 
   const coachOptions = useMemo(() => {
     return coaches
@@ -346,14 +355,8 @@ export default function SingleSessionCreatePage() {
     !supportingDataLoading &&
     !supportingDataError &&
     activeRooms.length > 0 &&
+    !roomAvailabilityLoading && !roomAvailabilityError && roomAvailability !== null && roomOptions.length > 0 &&
     coachOptions.length > 0;
-
-  // Selected room helper text.
-  const selectedRoomId = useWatch({ control, name: 'roomId' });
-  const selectedRoomCapacity = useMemo(() => {
-    const found = roomOptions.find((r) => r.value === selectedRoomId);
-    return found ? found.capacity : null;
-  }, [roomOptions, selectedRoomId]);
 
   // ---- Submit / reset ----
 
@@ -371,6 +374,8 @@ export default function SingleSessionCreatePage() {
   }, [reset]);
 
   async function onSubmit(data) {
+    if (!canSubmit || !roomOptions.some(room => room.value === data.roomId)
+        || !coachOptions.some(coach => coach.value === data.coachId)) return;
     setServerError(null);
     setSuccess(null);
 
@@ -604,11 +609,7 @@ export default function SingleSessionCreatePage() {
         ← Quay lại chi tiết lớp
       </Link>
 
-      <h1 className="h3 fw-bold mt-2 mb-1">Tạo buổi tập</h1>
-      <p className="text-muted mb-4">
-        Tạo một buổi tập độc lập (không thuộc lịch cố định) cho lớp
-        này.
-      </p>
+      <h1 className="h3 fw-bold mt-2 mb-4">Tạo buổi tập</h1>
 
       {/* Class context (readonly) */}
       <div className="border rounded p-3 mb-4 bg-light">
@@ -653,7 +654,67 @@ export default function SingleSessionCreatePage() {
       />
 
       <Form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Form.Group controlId="ssc-coachId">
+        <SessionSlotSelect control={control} id="ssc-slot" disabled={!classIsActive} />
+
+        <Form.Group className="mt-3" controlId="ssc-sessionDate">
+          <Form.Label>Ngày buổi tập *</Form.Label>
+          <RhfDateInput
+            control={control}
+            name="sessionDate"
+            isInvalid={Boolean(errors.sessionDate)}
+            disabled={!classIsActive}
+          />
+          <Form.Control.Feedback type="invalid">
+            {errors.sessionDate?.message}
+          </Form.Control.Feedback>
+        </Form.Group>
+
+        <Form.Group className="mt-3" controlId="ssc-capacity">
+          <Form.Label>Sức chứa *</Form.Label>
+          <Form.Control
+            type="number"
+            min={1}
+            step={1}
+            {...register('capacity')}
+            isInvalid={Boolean(errors.capacity)}
+            placeholder="VD: 20"
+            disabled={!classIsActive}
+          />
+          <Form.Control.Feedback type="invalid">
+            {errors.capacity?.message}
+          </Form.Control.Feedback>
+        </Form.Group>
+
+        <Form.Group className="mt-3" controlId="ssc-roomId">
+          <Form.Label>Phòng tập *</Form.Label>
+          <Form.Select
+            {...register('roomId')}
+            isInvalid={Boolean(errors.roomId)}
+            disabled={roomsLoading || roomAvailabilityLoading || roomAvailability === null || !!roomAvailabilityError || !classIsActive}
+          >
+            <option value="">
+              {roomsLoading || roomAvailabilityLoading
+                ? 'Đang kiểm tra phòng…'
+                : roomAvailability === null
+                  ? 'Nhập ngày giờ và sức chứa để tìm phòng'
+                  : roomOptions.length === 0
+                  ? 'Không có phòng phù hợp'
+                  : '— Chọn phòng tập —'}
+            </option>
+            {roomOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+                {o.capacity != null ? ` (Sức chứa: ${o.capacity})` : ''}
+                {o.availableCapacity != null ? ` · Còn ${o.availableCapacity} chỗ` : ''}
+              </option>
+            ))}
+          </Form.Select>
+          <Form.Control.Feedback type="invalid">
+            {errors.roomId?.message}
+          </Form.Control.Feedback>
+        </Form.Group>
+
+        <Form.Group className="mt-3" controlId="ssc-coachId">
           <Form.Label>Huấn luyện viên *</Form.Label>
           <Form.Select
             {...register('coachId')}
@@ -675,105 +736,8 @@ export default function SingleSessionCreatePage() {
               </option>
             ))}
           </Form.Select>
-          <Form.Text className="text-muted">
-            Chỉ hiển thị huấn luyện viên đang hoạt động và còn trống trong thời gian đã chọn.
-          </Form.Text>
           <Form.Control.Feedback type="invalid">
             {errors.coachId?.message}
-          </Form.Control.Feedback>
-        </Form.Group>
-
-        <Form.Group className="mt-3" controlId="ssc-roomId">
-          <Form.Label>Phòng tập *</Form.Label>
-          <Form.Select
-            {...register('roomId')}
-            isInvalid={Boolean(errors.roomId)}
-            disabled={roomsLoading || roomAvailabilityLoading || !classIsActive}
-          >
-            <option value="">
-              {roomsLoading
-                ? 'Đang tải…'
-                : roomOptions.length === 0
-                  ? 'Không có phòng tập đang hoạt động'
-                  : '— Chọn phòng tập —'}
-            </option>
-            {roomOptions.map((o) => (
-              <option key={o.value} value={o.value} disabled={!o.available}>
-                {o.label}
-                {o.capacity != null ? ` (Sức chứa: ${o.capacity})` : ''}
-                {o.availableCapacity != null ? ` · Còn ${o.availableCapacity} chỗ` : ''}
-                {!o.available ? ' · Không khả dụng' : ''}
-              </option>
-            ))}
-          </Form.Select>
-          {selectedRoomCapacity != null ? (
-            <Form.Text className="text-muted">
-              Sức chứa phòng: {selectedRoomCapacity}. Vui lòng đặt sức
-              chứa buổi tập không vượt quá con số này.
-            </Form.Text>
-          ) : null}
-          <Form.Control.Feedback type="invalid">
-            {errors.roomId?.message}
-          </Form.Control.Feedback>
-        </Form.Group>
-
-        <Form.Group className="mt-3" controlId="ssc-sessionDate">
-          <Form.Label>Ngày buổi tập *</Form.Label>
-          <RhfDateInput
-            control={control}
-            name="sessionDate"
-            isInvalid={Boolean(errors.sessionDate)}
-            disabled={!classIsActive}
-          />
-          <Form.Control.Feedback type="invalid">
-            {errors.sessionDate?.message}
-          </Form.Control.Feedback>
-        </Form.Group>
-
-        <div className="row mt-3 g-3">
-          <Form.Group className="col-sm-6" controlId="ssc-startTime">
-            <Form.Label>Giờ bắt đầu *</Form.Label>
-            <Form.Control
-              type="time"
-              {...register('startTime')}
-              isInvalid={Boolean(errors.startTime)}
-              disabled={!classIsActive}
-            />
-            <Form.Control.Feedback type="invalid">
-              {errors.startTime?.message}
-            </Form.Control.Feedback>
-          </Form.Group>
-          <Form.Group className="col-sm-6" controlId="ssc-endTime">
-            <Form.Label>Giờ kết thúc *</Form.Label>
-            <Form.Control
-              type="time"
-              {...register('endTime')}
-              isInvalid={Boolean(errors.endTime)}
-              disabled={!classIsActive}
-            />
-            <Form.Control.Feedback type="invalid">
-              {errors.endTime?.message}
-            </Form.Control.Feedback>
-          </Form.Group>
-        </div>
-
-        <Form.Group className="mt-3" controlId="ssc-capacity">
-          <Form.Label>Sức chứa *</Form.Label>
-          <Form.Control
-            type="number"
-            min={1}
-            step={1}
-            {...register('capacity')}
-            isInvalid={Boolean(errors.capacity)}
-            placeholder="VD: 20"
-            disabled={!classIsActive}
-          />
-          <Form.Text className="text-muted">
-            Sức chứa phải lớn hơn 0 và không vượt quá sức chứa của
-            phòng đã chọn. Hệ thống sẽ kiểm tra lại khi tạo buổi tập.
-          </Form.Text>
-          <Form.Control.Feedback type="invalid">
-            {errors.capacity?.message}
           </Form.Control.Feedback>
         </Form.Group>
 
