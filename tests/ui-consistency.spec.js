@@ -2,6 +2,43 @@ import { test, expect } from '@playwright/test';
 
 const pageOf = content => ({ content, page: 0, size: 20, totalElements: content.length, totalPages: 1, last: true });
 
+test.describe('coach leave dates', () => {
+  test.use({ locale: 'en-US', timezoneId: 'America/Los_Angeles' });
+  test('dd/mm date entry sends ISO timestamps in the gym timezone', async ({ page }) => {
+    const writes = [];
+    let rows = [];
+    await mock(page, 'COACH', (path, url, route) => {
+      if (path === '/coach/me/leave-requests') return rows;
+      if (path === '/coach/leave-requests' && route.request().method() === 'POST') {
+        const body = route.request().postDataJSON();
+        writes.push(body);
+        const created = { id: 'leave-1', ...body, status: 'PENDING', createdAt: body.startTime, affectedSessionIds: [] };
+        rows = [created];
+        return created;
+      }
+    });
+    await page.goto('/coach/leave-requests');
+    const from = page.getByRole('textbox', { name: 'Từ thời điểm - ngày', exact: true });
+    const to = page.getByRole('textbox', { name: 'Đến thời điểm - ngày', exact: true });
+    await expect(from).toHaveAttribute('placeholder', 'dd/mm/yyyy');
+    await expect(page.locator('input[type="datetime-local"]')).toHaveCount(0);
+    await from.fill('31/02/2030');
+    await page.getByLabel('Từ thời điểm - giờ', { exact: true }).fill('08:00');
+    await to.fill('09/11/2030');
+    await page.getByLabel('Đến thời điểm - giờ', { exact: true }).fill('09:00');
+    await page.getByLabel('Lý do').fill('Nghỉ có việc riêng');
+    await page.getByRole('button', { name: 'Gửi yêu cầu' }).click();
+    await expect(page.getByRole('alert')).toContainText('ngày hợp lệ');
+    expect(writes).toHaveLength(0);
+    await from.fill('09/11/2030');
+    await page.getByRole('button', { name: 'Gửi yêu cầu' }).click();
+    await expect(page.getByText('Đã gửi yêu cầu nghỉ.', { exact: true })).toBeVisible();
+    expect(writes).toEqual([{ startTime: '2030-11-09T01:00:00.000Z', endTime: '2030-11-09T02:00:00.000Z', reason: 'Nghỉ có việc riêng' }]);
+    await expect(page.locator('tbody')).toContainText('09/11/2030 08:00');
+    await expect(page.locator('tbody')).toContainText('09/11/2030 09:00');
+  });
+});
+
 test('date editing preserves day month and year while typing and deleting', async ({ page }) => {
   await mock(page, 'MANAGER', path => {
     if (path === '/manager/course-runs' || path === '/manager/courses') return pageOf([]);

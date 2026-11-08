@@ -46,14 +46,28 @@
 }
 
 .cbs-selects {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  align-items: end;
   gap: 0.75rem;
+}
+
+.cbs-filter-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.cbs-filter-field > label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--scms-muted);
 }
 
 .cbs-select {
   position: relative;
-  min-width: 220px;
+  min-width: 0;
 }
 
 .cbs-select-icon {
@@ -70,18 +84,23 @@
   width: 100%;
 }
 
-/* Ô chọn ngày và nút "Bỏ bộ lọc" */
-.cbs-dates {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+/* Keep the date text field and its calendar inside the same width. */
+.cbs-filter-field .cbs-date {
+  width: 100%;
 }
 
-.cbs-dates label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--scms-muted);
+.cbs-clear {
+  white-space: nowrap;
+}
+
+@media (max-width: 1199.98px) {
+  .cbs-selects { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cbs-clear { justify-self: start; }
+}
+
+@media (max-width: 575.98px) {
+  .cbs-selects { grid-template-columns: minmax(0, 1fr); }
+  .cbs-clear { width: 100%; }
 }
 
 .cbs-clear:disabled {
@@ -438,4 +457,3 @@
 }
 
 .cbs-select .form-select { padding-left: 2.4rem; }
-.cbs-dates .cbs-date { width: auto; max-width: 100%; }

@@ -448,7 +448,7 @@ export default function ReceptionistMemberBookingPage() {
   useAutoRefresh(
     refreshBookingData,
     7_000,
-    Boolean(accountId) && !bookTarget && !cancelTarget && !waitlistTarget && !busyId && !waitlistSubmitting,
+    Boolean(accountId) && !bookTarget && !cancelTarget && !waitlistTarget && !bookingSubmitting && !cancelling && !waitlistSubmitting,
   );
 
   useEffect(() => {

@@ -30,3 +30,29 @@ export async function reviewCoachLeaveRequest(requestId, action, note) {
   );
   return data;
 }
+
+export async function getCoachLeaveImpact(requestId) {
+  const { data } = await api.get(`/manager/coach-leave-requests/${encodeURIComponent(requestId)}/impact`);
+  if (!data?.request || !Array.isArray(data.sessions)) throw new TypeError('Invalid leave impact response');
+  return data;
+}
+
+export async function getLeaveReplacementCoaches(requestId, session) {
+  const { data } = await api.get(`/manager/coach-leave-requests/${encodeURIComponent(requestId)}/affected-sessions/${session.type}/${encodeURIComponent(session.id)}/available-coaches`);
+  return Array.isArray(data) ? data : [];
+}
+
+function batchSelection(sessions) {
+  return sessions.map(session => ({ type: session.type, id: session.id, expectedVersion: session.version }));
+}
+export async function getLeaveBatchReplacementCoaches(requestId, sessions) {
+  const { data } = await api.post(`/manager/coach-leave-requests/${encodeURIComponent(requestId)}/batch/available-coaches`, { sessions: batchSelection(sessions) });
+  return Array.isArray(data) ? data : [];
+}
+export async function resolveLeaveBatch(requestId, sessions, action, coachId, reason) {
+  const { data } = await api.post(`/manager/coach-leave-requests/${encodeURIComponent(requestId)}/batch`, {
+    sessions: batchSelection(sessions), action, coachId: action === 'reassign' ? coachId : null,
+    reason: action === 'cancel' ? reason.trim() : null,
+  });
+  return data;
+}
