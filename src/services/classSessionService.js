@@ -153,6 +153,10 @@ export async function updateSessionAssignment(sessionId, patch) {
   return data;
 }
 
+export async function rescheduleSession(sessionId, payload) {
+  return (await api.patch(`/manager/class-sessions/${encodeURIComponent(sessionId)}/schedule`, payload)).data;
+}
+
 // PATCH /api/v1/manager/class-sessions/{id}/cancel (US31)
 //
 // Path param:

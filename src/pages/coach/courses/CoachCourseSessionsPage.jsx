@@ -1,3 +1,4 @@
+import { Link, useSearchParams } from 'react-router-dom';
 import SessionTime from '../../../components/common/SessionTime';
 import Badge from '../../../components/common/SystemBadge';
 import StaffPagination from '../../../components/common/StaffPagination';
@@ -13,7 +14,8 @@ export default function CoachCourseSessionsPage() {
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
-  const [selected, setSelected] = useState(null);
+  const [params] = useSearchParams();
+  const [selected, setSelected] = useState(() => params.get('session'));
   const [detail, setDetail] = useState(null);
   const [roster, setRoster] = useState([]);
   const [detailError, setDetailError] = useState('');
@@ -48,7 +50,7 @@ export default function CoachCourseSessionsPage() {
       {detailError && <Alert variant="danger">{detailError}</Alert>}
       <Button variant="outline-secondary" className="mb-3" disabled={busy} onClick={() => setRevision((v) => v + 1)}>Tải lại danh sách</Button>
       {!detail && !detailError && <p>Đang tải…</p>}
-      {detail && <><p className="fw-semibold mb-1">{detail.courseName}</p><p className="text-muted">{detail.runCode} · Buổi {detail.unitNumber}</p><Alert variant="light">{reasons[detail.attendanceWriteReason] || 'Chưa xác định quyền điểm danh'}</Alert><Table responsive hover className="align-middle"><thead className="table-light"><tr><th>Hội viên</th><th>Điểm danh</th><th className="text-end">Thao tác</th></tr></thead><tbody>{roster.map((row) => <tr key={row.enrollmentSessionId}><td><span className="fw-semibold">{row.fullName}</span><small className="d-block text-muted mt-1">{row.memberCode}</small></td><td><Badge>{COURSE_ATTENDANCE_STATUS_LABELS[row.attendanceStatus] || 'Chưa ghi nhận'}</Badge></td><td><div className="d-flex flex-wrap justify-content-end gap-2">{['PRESENT', 'ABSENT'].map((status) => <Button size="sm" variant="outline-danger" key={status} disabled={busy || !detail.attendanceWritable || row.attendanceStatus === status} onClick={() => mark(row, status)}>{COURSE_ATTENDANCE_STATUS_LABELS[status]}</Button>)}</div></td></tr>)}</tbody></Table>{!roster.length && <p>Chưa có học viên.</p>}</>}
+      {detail && <><p className="fw-semibold mb-1">{detail.courseName}</p><p className="text-muted">{detail.runCode} · Buổi {detail.unitNumber}</p><Alert variant="light">{reasons[detail.attendanceWriteReason] || 'Chưa xác định quyền điểm danh'}</Alert><Table responsive hover className="align-middle"><thead className="table-light"><tr><th>Hội viên</th><th>Điểm danh</th><th className="text-end">Thao tác</th></tr></thead><tbody>{roster.map((row) => <tr key={row.enrollmentSessionId}><td><span className="fw-semibold">{row.fullName}</span><small className="d-block text-muted mt-1">{row.memberCode}</small></td><td><Badge>{COURSE_ATTENDANCE_STATUS_LABELS[row.attendanceStatus] || 'Chưa ghi nhận'}</Badge></td><td><div className="d-flex flex-wrap justify-content-end gap-2">{['PRESENT', 'ABSENT'].map((status) => <Button size="sm" variant="outline-danger" key={status} disabled={busy || !detail.attendanceWritable || row.attendanceStatus === status} onClick={() => mark(row, status)}>{COURSE_ATTENDANCE_STATUS_LABELS[status]}</Button>)}<Button as={Link} size="sm" variant="outline-secondary" to={`/coach/course-sessions/${selected}/members/${row.memberAccountId}/training`}>Kết quả và nhận xét</Button></div></td></tr>)}</tbody></Table>{!roster.length && <p>Chưa có học viên.</p>}</>}
     </Modal.Body></Modal>
   </div>;
 }

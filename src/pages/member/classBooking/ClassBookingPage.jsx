@@ -639,11 +639,14 @@ export default function ClassBookingPage({ ptOnly = false }) {
         </div>
 
         <div className="cbs-selects">
+          <div className="cbs-filter-field">
+            <label htmlFor="cbs-coach">Huấn luyện viên</label>
           <div className="cbs-select">
             <span className="cbs-select-icon">
               <CoachIcon />
             </span>
             <select className="form-select"
+              id="cbs-coach"
               aria-label="Lọc theo huấn luyện viên"
               value={coachFilter}
               onChange={(e) => changeFilter(setCoachFilter, e.target.value)}
@@ -656,12 +659,16 @@ export default function ClassBookingPage({ ptOnly = false }) {
               ))}
             </select>
           </div>
+          </div>
 
+          <div className="cbs-filter-field">
+            <label htmlFor="cbs-status">Trạng thái</label>
           <div className="cbs-select">
             <span className="cbs-select-icon">
               <FilterIcon />
             </span>
             <select className="form-select"
+              id="cbs-status"
               aria-label="Lọc theo trạng thái"
               value={statusFilter}
               onChange={(e) => changeFilter(setStatusFilter, e.target.value)}
@@ -673,8 +680,9 @@ export default function ClassBookingPage({ ptOnly = false }) {
               ))}
             </select>
           </div>
+          </div>
 
-          <div className="cbs-dates">
+          <div className="cbs-filter-field">
             <label htmlFor="cbs-from">Từ ngày</label>
             <DateInput
               id="cbs-from"
@@ -682,6 +690,8 @@ export default function ClassBookingPage({ ptOnly = false }) {
               value={fromYmd}
               onChange={(value) => changeFilter(setFromYmd, value)}
             />
+          </div>
+          <div className="cbs-filter-field">
             <label htmlFor="cbs-to">Đến ngày</label>
             <DateInput
               id="cbs-to"
@@ -689,6 +699,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
               value={toYmd}
               onChange={(value) => changeFilter(setToYmd, value)}
             />
+          </div>
             <button
               type="button"
               className="btn btn-outline-secondary cbs-clear"
@@ -697,7 +708,6 @@ export default function ClassBookingPage({ ptOnly = false }) {
             >
               Bỏ bộ lọc
             </button>
-          </div>
         </div>
         {rangeInvalid ? (
           <div className="cbs-range-error">

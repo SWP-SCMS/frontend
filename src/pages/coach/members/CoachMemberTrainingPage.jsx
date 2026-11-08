@@ -95,7 +95,7 @@ const EMPTY_PLAN_FORM = {
 };
 
 function displayTime(item) {
-  const value = item.updatedAt || item.activityAt || item.createdAt;
+  const value = item.sessionStartTime || item.activityAt || item.updatedAt || item.createdAt;
   return value ? `${formatGymDate(value)} · ${formatGymTime(value)}` : null;
 }
 
@@ -144,6 +144,10 @@ function trainingPlanErrorMessage(error) {
 
 export default function CoachMemberTrainingPage({ kind }) {
   const { memberAccountId } = useParams();
+  return <MemberTrainingPage key={`${memberAccountId}/${kind}`} kind={kind} memberAccountId={memberAccountId} />;
+}
+
+function MemberTrainingPage({ kind, memberAccountId }) {
   const config = CONFIG[kind];
   const isPlanPage = kind === 'plans';
   const [page, setPage] = useState(0);
@@ -331,7 +335,7 @@ export default function CoachMemberTrainingPage({ kind }) {
       <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mt-3">
         <div>
           <h1 className="h3 fw-bold mb-1">{config.title}</h1>
-          <p className="text-muted">Lịch sử do bạn quản lý cho hội viên này.</p>
+          <p className="text-muted">{isPlanPage ? 'Giáo án do bạn quản lý cho hội viên này.' : 'Lịch sử được tổng hợp từ các buổi tập. Mở buổi tương ứng để ghi hoặc chỉnh sửa.'}</p>
         </div>
         {isPlanPage ? (
           <Button variant="danger" onClick={openCreateModal}>
@@ -356,7 +360,7 @@ export default function CoachMemberTrainingPage({ kind }) {
               <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
                 <div>
                   <div className="d-flex flex-wrap align-items-center gap-2">
-                    <h2 className="h6 mb-0">{item.title || `${config.title} ${index + 1}`}</h2>
+                    <h2 className="h6 mb-0">{item.title || (item.courseSessionId ? 'Buổi khóa học' : item.classSessionId ? 'Buổi tập' : `${config.title} ${index + 1}`)}</h2>
                     {isPlanPage && item.status ? (
                       <Badge bg={item.status === 'ACTIVE' ? 'success' : 'secondary'}>
                         {statusLabel(item.status)}
@@ -376,9 +380,19 @@ export default function CoachMemberTrainingPage({ kind }) {
                     <Button size="sm" variant="outline-danger" disabled={item.status !== 'ACTIVE'} onClick={() => openEditModal(item)}>Cập nhật</Button>
                     <Button size="sm" variant="danger" disabled={item.status !== 'ACTIVE' || archivingId === item.id} onClick={() => setArchiveTarget(item)}>{archivingId === item.id ? 'Đang lưu trữ…' : 'Lưu trữ'}</Button>
                   </div>
+                ) : item.courseSessionId ? (
+                  <Button size="sm" variant="outline-secondary" as={Link} to={`/coach/course-sessions/${item.courseSessionId}/members/${memberAccountId}/training`}>
+                    Xem buổi khóa học
+                  </Button>
+                ) : item.classSessionId ? (
+                  <Button size="sm" variant="outline-secondary" as={Link} to={`/coach/schedule/${item.classSessionId}/members/${memberAccountId}/training`}>
+                    Xem buổi tập
+                  </Button>
                 ) : null}
               </div>
-              <TrainingContent value={item.content ?? item} />
+              <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                <TrainingContent value={item.content ?? item} />
+              </div>
               {isPlanPage ? <div className="small text-muted mt-2">Cập nhật: {item.updatedAt ? displayTime(item) : '—'} · Version tạo lúc: {item.versionCreatedAt ? `${formatGymDate(item.versionCreatedAt)} · ${formatGymTime(item.versionCreatedAt)}` : '—'} · Schema v{item.contentSchemaVersion || 1}</div> : null}
             </Card.Body>
           </Card>

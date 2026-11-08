@@ -138,7 +138,7 @@ const CoachSessionAttendancePage = lazy(
   () => import('../pages/coach/schedule/CoachSessionAttendancePage'),
 );
 const CoachSessionMemberTrainingPage = lazy(
-  () => import('../pages/coach/schedule/CoachSessionMemberTrainingPage'),
+  () => import('../pages/coach/schedule/BookedSessionTrainingPage'),
 );
 const CoachProfilePage = lazy(
   () => import('../pages/coach/profile/CoachProfilePage'),
@@ -162,6 +162,9 @@ const MembershipRequestReviewPage = lazy(
 );
 const CoachLeaveReviewPage = lazy(
   () => import('../pages/manager/coachLeave/CoachLeaveReviewPage'),
+);
+const CoachLeaveImpactPage = lazy(
+  () => import('../pages/manager/coachLeave/CoachLeaveImpactPage'),
 );
 const ManagerReportsPage = lazy(
   () => import('../pages/manager/reports/ManagerReportsPage'),
@@ -734,6 +737,7 @@ export default function AppRoutes() {
         <Route path="dashboard" element={withSuspense(<CoachDashboardPage />)} />
         <Route path="schedule" element={withSuspense(<CoachSchedulePage />)} />
         <Route path="course-sessions" element={withSuspense(<CoachCourseSessionsPage />)} />
+        <Route path="course-sessions/:sessionId/members/:memberAccountId/training" element={withSuspense(<CoachSessionMemberTrainingPage course />)} />
         <Route path="leave-requests" element={withSuspense(<CoachLeaveRequestsPage />)} />
         <Route
           path="schedule/:sessionId"
@@ -790,6 +794,7 @@ export default function AppRoutes() {
         <Route path="membership-offers" element={withSuspense(<MembershipOfferListPage />)} />
         <Route path="membership-requests" element={withSuspense(<MembershipRequestReviewPage />)} />
         <Route path="coach-leave-requests" element={withSuspense(<CoachLeaveReviewPage />)} />
+        <Route path="coach-leave-requests/:requestId" element={withSuspense(<CoachLeaveImpactPage />)} />
         <Route path="membership-offers/new" element={withSuspense(<MembershipOfferCreatePage />)} />
         <Route path="membership-offers/:offerId" element={withSuspense(<MembershipOfferDetailPage />)} />
         <Route path="membership-offers/:offerId/edit" element={withSuspense(<MembershipOfferEditPage />)} />

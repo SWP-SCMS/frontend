@@ -9,13 +9,17 @@ import {
   listManagerCoachLeaveRequests,
   reviewCoachLeaveRequest,
 } from '../../../services/coachLeaveService';
-import { formatDateTime } from '../../../utils';
+import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
+
+const formatDateTime = value => `${formatGymDate(value)} ${formatGymTime(value)}`;
 
 const STATUS = {
   PENDING: ['Chờ duyệt', 'warning'],
   APPROVED: ['Đã duyệt', 'success'],
   REJECTED: ['Từ chối', 'danger'],
   WITHDRAWN: ['Đã rút', 'secondary'],
+  CANCELLED: ['Đã hủy', 'secondary'],
+  EXPIRED: ['Đã hết hạn', 'secondary'],
 };
 
 function StatusBadge({ value }) {
@@ -104,7 +108,7 @@ export default function CoachLeaveReviewPage() {
       <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
           <h1 className="h3 fw-bold mb-1">Yêu cầu nghỉ của huấn luyện viên</h1>
-          <p className="text-muted mb-0">Duyệt đơn nghỉ và kiểm tra các buổi tập cần phân công hoặc dời lịch.</p>
+          <p className="text-muted mb-0">Duyệt đơn nghỉ và kiểm tra các buổi tập cần đổi HLV hoặc hủy buổi.</p>
         </div>
         <div className="d-flex gap-2">
           <Form.Select aria-label="Lọc trạng thái" value={status} onChange={(event) => { setStatus(event.target.value); setPage(0); }}>
@@ -113,6 +117,8 @@ export default function CoachLeaveReviewPage() {
             <option value="APPROVED">Đã duyệt</option>
             <option value="REJECTED">Từ chối</option>
             <option value="WITHDRAWN">Đã rút</option>
+            <option value="CANCELLED">Đã hủy</option>
+            <option value="EXPIRED">Đã hết hạn</option>
           </Form.Select>
           <Button variant="outline-secondary" onClick={load} disabled={loading}>Tải lại</Button>
         </div>
@@ -141,13 +147,12 @@ export default function CoachLeaveReviewPage() {
                         {!row.affectedSessionIds?.length ? '0' : (
                           <div className="d-flex flex-wrap gap-1">
                             <span className="w-100">{row.affectedSessionIds.length} buổi tập / khóa học</span>
-                            <Button as={Link} to={'/manager/class-sessions?view=list&coachId=' + encodeURIComponent(row.coachId)} size="sm" variant="outline-secondary">Lịch lớp tập</Button>
-                            <Button as={Link} to="/manager/course-runs" size="sm" variant="outline-secondary">Lịch khóa học</Button>
+                            <Button as={Link} to={`/manager/coach-leave-requests/${row.id}`} size="sm" variant="outline-primary">Xử lý {row.affectedSessionIds.length} buổi</Button>
                           </div>
                         )}
                       </td>
                       <td><StatusBadge value={row.status} /></td>
-                      <td className="text-end">{row.status === 'PENDING' ? <div className="d-flex justify-content-end gap-2"><Button size="sm" variant="outline-success" disabled={Boolean(row.affectedSessionIds?.length)} title={row.affectedSessionIds?.length ? 'Hãy xử lý hết các buổi tập bị ảnh hưởng trước.' : undefined} onClick={() => openDecision(row, 'approve')}>Duyệt</Button><Button size="sm" variant="outline-danger" onClick={() => openDecision(row, 'reject')}>Từ chối</Button></div> : '—'}</td>
+                      <td className="text-end"><Button as={Link} to={`/manager/coach-leave-requests/${row.id}`} size="sm" variant="outline-secondary" className="mb-2">Xem chi tiết</Button>{row.status === 'PENDING' ? <div className="d-flex justify-content-end gap-2"><Button size="sm" variant="outline-success" disabled={Boolean(row.affectedSessionIds?.length)} title={row.affectedSessionIds?.length ? 'Hãy xử lý hết các buổi tập bị ảnh hưởng trước.' : undefined} onClick={() => openDecision(row, 'approve')}>Duyệt</Button><Button size="sm" variant="outline-danger" onClick={() => openDecision(row, 'reject')}>Từ chối</Button></div> : '—'}</td>
                     </tr>
                   );
                 })}</tbody>
@@ -166,7 +171,7 @@ export default function CoachLeaveReviewPage() {
         <Modal.Header closeButton={!busy}><Modal.Title className="h5">{decision?.action === 'approve' ? 'Duyệt yêu cầu nghỉ' : 'Từ chối yêu cầu nghỉ'}</Modal.Title></Modal.Header>
         <Modal.Body>
           <p>Xác nhận {decision?.action === 'approve' ? 'duyệt' : 'từ chối'} yêu cầu của <strong>{selectedCoach?.coachFullName || 'huấn luyện viên này'}</strong>?</p>
-          {decision?.action === 'approve' && decision?.row.affectedSessionIds?.length ? <Alert variant="warning" className="small">Có {decision.row.affectedSessionIds.length} buổi tập bị ảnh hưởng. Hãy phân công lại hoặc dời lịch toàn bộ trước khi duyệt.</Alert> : null}
+          {decision?.action === 'approve' && decision?.row.affectedSessionIds?.length ? <Alert variant="warning" className="small">Có {decision.row.affectedSessionIds.length} buổi tập bị ảnh hưởng. Hãy đổi HLV hoặc hủy toàn bộ trước khi duyệt.</Alert> : null}
           <Form.Group>
             <Form.Label>Ghi chú phản hồi</Form.Label>
             <Form.Control as="textarea" rows={3} maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} />
