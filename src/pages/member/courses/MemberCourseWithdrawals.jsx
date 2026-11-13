@@ -1,4 +1,4 @@
-import Badge from '../../../components/common/SystemBadge';
+import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
 import useConfirmation from '../../../hooks/useConfirmation';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import CancelCourseWithdrawal from './CancelCourseWithdrawal';
@@ -10,7 +10,6 @@ import { courseWithdrawalSchema } from '../../../schemas/courseSchemas';
 import { createMyCourseWithdrawal, listMyCourseWithdrawals } from '../../../services/courseWithdrawalService';
 import { formatCourseDateTime, formatCourseMoney, getCourseErrorMessage } from '../../../utils/courseUi';
 
-const STATUS_LABELS = { PENDING: 'Chờ Quản lý duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối', CANCELLED: 'Đã hủy' };
 
 export default function MemberCourseWithdrawals({ enrollments, onRequested, selectedEnrollmentId = '' }) {
   const { confirm, dialog } = useConfirmation();
@@ -88,7 +87,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested, sele
       const enrollment = enrollmentById.get(request.enrollmentId);
       return <article className="member-course-card mt-3" key={request.id}>
         <h3>{enrollment ? `${enrollment.courseName} · ${enrollment.runCode}` : 'Yêu cầu rút khóa học của bạn'}</h3>
-        <p><Badge>{STATUS_LABELS[request.status] || 'Đang cập nhật'}</Badge> · Gửi lúc {formatCourseDateTime(request.requestedAt)}</p>
+        <p><CourseWorkflowStatusBadge kind="withdrawals" status={request.status} refundStatus={request.refundStatus} /> · Gửi lúc {formatCourseDateTime(request.requestedAt)}</p>
         <p>Lý do xin rút: {request.requestReason}</p>
         {request.decisionReason && <p>Lý do quyết định: {request.decisionReason}</p>}
         {request.decidedAt && <p>Thời điểm quyết định: {formatCourseDateTime(request.decidedAt)}</p>}

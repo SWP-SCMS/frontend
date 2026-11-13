@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const backend = path.resolve(process.env.COURSE_QA_BACKEND || '../backend');
 const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: backend, encoding: 'utf8' }).trim();
-const expected = 'ef4091734d32a3672999e05ec4089be20455ea9f';
+const expected = '7ca0e59a6250a9d09543f6800b61ce88d2601e6b';
 if (sha !== expected) throw new Error(`Backend must be pinned to ${expected}; found ${sha}`);
 const dir = path.resolve('.course-qa', `runtime-${Date.now()}`);
 mkdirSync(dir, { recursive: true });

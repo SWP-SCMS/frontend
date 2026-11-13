@@ -86,7 +86,7 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   const confirmation = page.getByRole('dialog');
   await expect(confirmation).toContainText('tạm ngừng học');
   await confirmation.getByRole('button', { name: 'Xác nhận', exact: true }).click();
-  await expect(page.locator('#withdrawals article').filter({ hasText: 'QA below seventy percent' })).toContainText('Chờ Quản lý duyệt');
+  await expect(page.locator('#withdrawals article').filter({ hasText: 'QA below seventy percent' })).toContainText('Chờ duyệt rút');
   let zeroRequest = (await api(request, 'member', 'GET', '/members/me/course-withdrawal-requests')).find(w => w.enrollmentId === zeroEnrollment.enrollmentId && w.status === 'PENDING');
   expect(zeroRequest.remainingUnits).toBe(6); expect(zeroRequest.refundAmountVnd).toBe(0);
   const zeroCard = page.locator('#withdrawals article').filter({ hasText: 'QA below seventy percent' });
