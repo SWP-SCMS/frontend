@@ -278,7 +278,7 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
               )}
               {o.differenceOrderId && (
                 <Link className="ms-2" to={paymentLink(o.differenceOrderId)}>
-                  Thanh toán chênh lệch
+                  {o.status === "PENDING_PAYMENT" ? "Thanh toán chênh lệch" : "Xem đơn chênh lệch"}
                 </Link>
               )}
             </Card>
@@ -292,7 +292,7 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
                 <Badge>{COURSE_WITHDRAWAL_STATUS_LABELS[w.status] || "Đang cập nhật"}</Badge>
               </p>
               <p>
-                Khoản hoàn đã ghi nhận:{" "}
+                Mức hoàn dự kiến của yêu cầu:{" "}
                 {w.snapshotSource === "UNAVAILABLE" || w.refundAmountVnd == null
                   ? "Chưa có dữ liệu"
                   : money(w.refundAmountVnd)}
