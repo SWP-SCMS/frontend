@@ -1,3 +1,4 @@
+import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
 import Badge from '../../../components/common/SystemBadge';
 import useConfirmation from "../../../hooks/useConfirmation";
 import usePollingEffect from "../../../hooks/usePollingEffect";
@@ -16,7 +17,6 @@ import {
   getCourseErrorMessage,
 } from "../../../utils/courseUi";
 import {
-  COURSE_WITHDRAWAL_STATUS_LABELS,
   COURSE_TRANSFER_STATUS_LABELS,
   COURSE_REFUND_STATUS_LABELS,
   COURSE_RESPONSE_LABELS,
@@ -289,7 +289,7 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
             <Card as="article" body className="mb-3 shadow-sm" key={w.id}>
               <p>
                 {w.courseName} · {w.runCode} ·{" "}
-                <Badge>{COURSE_WITHDRAWAL_STATUS_LABELS[w.status] || "Đang cập nhật"}</Badge>
+                <CourseWorkflowStatusBadge kind="withdrawals" status={w.status} refundStatus={w.refundStatus} />
               </p>
               <p>
                 Mức hoàn dự kiến của yêu cầu:{" "}

@@ -218,7 +218,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
                 {money(row.grossObligationVnd)}
               </td>
             </>}
-            <td><CourseWorkflowStatusBadge kind={kind} status={row.status} /></td>
+            <td><CourseWorkflowStatusBadge kind={kind} status={row.status} refundStatus={row.refundStatus} /></td>
             <td className="text-end text-nowrap">
               <Button size="sm" variant="outline-primary" onClick={() => setParams({ id: row.id })}>Xem hồ sơ</Button>
             </td>
@@ -238,7 +238,8 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
           <h2 className="h5">{context.member.fullName} · {context.member.memberCode || 'Chưa có mã hội viên'}</h2>
           <p><Link to={'/manager/members/' + detail.memberAccountId}>Hồ sơ hội viên</Link> · <Link to={'/manager/course-runs/' + context.run.id}>{context.run.courseName} · {context.run.runCode}</Link></p>
           {context.targetRun && <p>Đợt học thay thế: <Link to={'/manager/course-runs/' + context.targetRun.id}>{context.targetRun.courseName} · {context.targetRun.runCode}</Link></p>}
-          <CourseWorkflowStatusBadge kind={kind} status={detail.status} className="mb-3" />
+          <CourseWorkflowStatusBadge kind={kind} status={detail.status} refundStatus={detail.refundStatus} className="mb-3" />
+          {kind === 'withdrawals' && detail.status === 'APPROVED' && detail.refundObligationId && <p><Link to={'/manager/course-refunds?id=' + detail.refundObligationId}>Xem khoản hoàn</Link></p>}
           {kind === 'refunds' ? <>
             <p>{COURSE_REFUND_SOURCE_LABELS[detail.source] || 'Hoàn tiền khóa học'}</p>
             <dl className="row">{[['grossObligationVnd', 'Nghĩa vụ hoàn'], ['approvedAmountVnd', 'Đã duyệt'], ['disbursedAmountVnd', 'Đã ghi nhận chi'], ['verifiedAmountVnd', 'Đã xác minh']].map(([field, label]) => <div key={field} className="col-sm-6"><dt>{label}</dt><dd>{money(detail[field])}</dd></div>)}</dl>
