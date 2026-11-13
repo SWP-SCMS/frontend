@@ -19,7 +19,20 @@ export const COURSE_TRANSFER_REQUEST_STATUS_LABELS = {
   REJECTED: 'Đã từ chối', EXPIRED: 'Đã hết hạn',
 };
 
-export const COURSE_WITHDRAWAL_STATUS_LABELS = { PENDING: 'Chờ duyệt', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối', CANCELLED: 'Đã hủy' };
+export const COURSE_WITHDRAWAL_STATUS_LABELS = { PENDING: 'Chờ duyệt rút', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối rút', CANCELLED: 'Đã hủy yêu cầu rút' };
+const WITHDRAWAL_REFUND_LABELS = {
+  PENDING_REVIEW: 'Đã duyệt rút — chờ duyệt hoàn tiền',
+  APPROVED: 'Đã duyệt hoàn tiền — chờ chi',
+  DISBURSEMENT_RECORDED: 'Đã chi hoàn tiền — chờ xác minh',
+  PENDING_VERIFICATION: 'Đã chi hoàn tiền — chờ xác minh',
+  COMPLETED: 'Hoàn tiền thành công', REJECTED: 'Khoản hoàn bị từ chối',
+  FAILED: 'Hoàn tiền thất bại', RETURNED: 'Khoản chi hoàn tiền đã bị trả lại',
+};
+export function courseWithdrawalStatusLabel(status, refundStatus) {
+  return status === 'APPROVED'
+    ? WITHDRAWAL_REFUND_LABELS[refundStatus] || 'Đã duyệt rút — chưa xác định trạng thái hoàn tiền'
+    : COURSE_WITHDRAWAL_STATUS_LABELS[status] || 'Đang cập nhật';
+}
 export const COURSE_RESPONSE_LABELS = { CONTINUE: 'Tiếp tục học', REQUEST_TRANSFER: 'Đề nghị chuyển đợt học', REQUEST_WITHDRAWAL: 'Yêu cầu rút do đổi lịch' };
 export const COURSE_ELIGIBILITY_LABELS = { ELIGIBLE: 'Đủ điều kiện chi', AWAITING_COURSE_COMPLETION: 'Chờ đợt học hoàn thành', COURSE_RUN_NOT_FOUND: 'Không tìm thấy đợt học' };
 

@@ -11,3 +11,13 @@ test('status colors preserve financial progression and distinguish inactive from
   assert.equal(statusTone('ACTIVE'), 'green');
   assert.equal(statusTone('Đã từ chối'), 'red');
 });
+
+
+test('withdrawal refund colors reserve success for verified completion', () => {
+  for (const label of ['Đã duyệt rút — chờ duyệt hoàn tiền', 'Đã duyệt hoàn tiền — chờ chi', 'Đã duyệt rút — chưa xác định trạng thái hoàn tiền']) assert.equal(statusTone(label), 'amber');
+  assert.equal(statusTone('Đã chi hoàn tiền — chờ xác minh'), 'purple');
+  assert.equal(statusTone('Hoàn tiền thành công'), 'green');
+  assert.equal(statusTone('Hoàn tiền thất bại'), 'red');
+  assert.equal(statusTone('Khoản hoàn bị từ chối'), 'red');
+  assert.equal(statusTone('Khoản chi hoàn tiền đã bị trả lại'), 'orange');
+});

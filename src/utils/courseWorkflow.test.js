@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { courseRefundActions, canAcceptCourseTransfer, canRespondToCourseChange, courseAmountText, courseMakeupIds, courseNotificationDestination } from './courseWorkflow.js';
+import { courseWithdrawalStatusLabel, courseRefundActions, canAcceptCourseTransfer, canRespondToCourseChange, courseAmountText, courseMakeupIds, courseNotificationDestination } from './courseWorkflow.js';
 import { formatCourseMoney, formatCourseDateTime, getCourseErrorMessage } from './courseUi.js';
 import { courseDecisionSchema, courseTransferDecisionSchema, courseVerificationSchema } from '../schemas/courseWorkflowSchemas.js';
 
@@ -80,4 +80,26 @@ test('new financial conflicts surface actionable Vietnamese text without interna
   assert.match(getCourseErrorMessage({ response: { data: { code: 'COURSE_REFUND_CHANGED', detail: 'secret-id' } } }), /Tải lại hồ sơ/);
   assert.match(getCourseErrorMessage({ response: { data: { code: 'COURSE_REFUND_EVIDENCE_MISMATCH' } } }), /không khớp/);
   assert.match(getCourseErrorMessage({ response: { data: { code: 'COURSE_TRANSFER_OFFER_EXPIRED' } } }), /hết hạn/);
+});
+
+
+test('withdrawal status follows refund progress without inventing a successful payment', () => {
+  const expected = {
+    PENDING_REVIEW: 'Đã duyệt rút — chờ duyệt hoàn tiền',
+    APPROVED: 'Đã duyệt hoàn tiền — chờ chi',
+    DISBURSEMENT_RECORDED: 'Đã chi hoàn tiền — chờ xác minh',
+    PENDING_VERIFICATION: 'Đã chi hoàn tiền — chờ xác minh',
+    COMPLETED: 'Hoàn tiền thành công',
+    REJECTED: 'Khoản hoàn bị từ chối',
+    FAILED: 'Hoàn tiền thất bại',
+    RETURNED: 'Khoản chi hoàn tiền đã bị trả lại',
+  };
+  for (const [refundStatus, label] of Object.entries(expected)) {
+    assert.equal(courseWithdrawalStatusLabel('APPROVED', refundStatus), label);
+    assert.equal(courseWithdrawalStatusLabel('PENDING', refundStatus), 'Chờ duyệt rút');
+    assert.equal(courseWithdrawalStatusLabel('CANCELLED', refundStatus), 'Đã hủy yêu cầu rút');
+    assert.equal(courseWithdrawalStatusLabel('REJECTED', refundStatus), 'Đã từ chối rút');
+  }
+  for (const missing of [null, undefined, 'UNKNOWN'])
+    assert.equal(courseWithdrawalStatusLabel('APPROVED', missing), 'Đã duyệt rút — chưa xác định trạng thái hoàn tiền');
 });

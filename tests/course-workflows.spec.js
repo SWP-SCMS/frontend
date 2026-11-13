@@ -485,3 +485,77 @@ test('split selected-course filters hide requests belonging to another enrollmen
   await page.getByLabel('Khóa học', { exact: true }).selectOption('');
   await expect(page.locator('main article')).toHaveCount(2);
 });
+
+
+test('withdrawal queue and detail show live refund progress and link the matching obligation', async ({ page }) => {
+  let current = { id: 'withdraw-progress', enrollmentId: enrollment.enrollmentId, memberAccountId: member.accountId, memberName: member.fullName, memberCode: member.memberId, courseRunId: run.id, courseName: run.courseName, runCode: run.runCode, status: 'APPROVED', requestReason: 'Xin rút để kiểm tra tiến độ hoàn', requestedAt: yesterday, refundObligationId: refund.id, refundStatus: 'PENDING_REVIEW' };
+  const { errors } = await mockApi(page, 'MANAGER', ({ path }) => {
+    if (path === '/manager/course-withdrawal-requests') return { body: [current] };
+    if (path === '/manager/course-withdrawal-requests/withdraw-progress') return { body: current };
+    if (path === '/manager/course-refund-obligations') return { body: pageOf([{ ...refund, status: current.refundStatus }]) };
+    if (path === '/manager/course-refund-obligations/refund-1') return { body: { ...refund, status: current.refundStatus } };
+  });
+  const cases = [
+    ['PENDING_REVIEW', 'Đã duyệt rút — chờ duyệt hoàn tiền'],
+    ['APPROVED', 'Đã duyệt hoàn tiền — chờ chi'],
+    ['DISBURSEMENT_RECORDED', 'Đã chi hoàn tiền — chờ xác minh'],
+    ['COMPLETED', 'Hoàn tiền thành công'],
+  ];
+  await page.goto('/manager/course-withdrawals');
+  for (const [refundStatus, label] of cases) {
+    current = { ...current, refundStatus };
+    await page.getByRole('button', { name: 'Tải lại', exact: true }).click();
+    const row = page.getByRole('row').filter({ hasText: current.requestReason });
+    await expect(row.locator('.system-badge')).toHaveText(label);
+    await row.getByRole('button', { name: 'Xem hồ sơ' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.locator('.system-badge')).toHaveText(label);
+    await expect(dialog.getByRole('button', { name: 'Duyệt', exact: true })).toHaveCount(0);
+    await expect(dialog.getByRole('link', { name: 'Xem khoản hoàn' })).toHaveAttribute('href', '/manager/course-refunds?id=refund-1');
+    await page.reload();
+    await expect(page.getByRole('dialog').locator('.system-badge')).toHaveText(label);
+    await page.getByRole('dialog').getByRole('button', { name: 'Đóng', exact: true }).click();
+  }
+  current = { ...current, refundStatus: null, refundObligationId: null };
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const row = page.getByRole('row').filter({ hasText: current.requestReason });
+  await expect(row).toContainText('Đã duyệt rút — chưa xác định trạng thái hoàn tiền');
+  await page.screenshot({ path: test.info().outputPath('withdrawal-refund-mobile-list.png'), fullPage: true, animations: 'disabled' });
+  await row.getByRole('button', { name: 'Xem hồ sơ' }).click();
+  await expect(page.getByRole('dialog').locator('.system-badge')).toHaveText('Đã duyệt rút — chưa xác định trạng thái hoàn tiền');
+  await expect(page.getByRole('dialog').getByRole('link', { name: 'Xem khoản hoàn' })).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath('withdrawal-refund-mobile.png'), fullPage: true, animations: 'disabled' });
+  expect(errors).toEqual([]);
+});
+
+for (const role of ['MEMBER', 'RECEPTIONIST']) {
+  test(`${role} withdrawal history refreshes refund status without changing the withdrawal decision`, async ({ page }) => {
+    let refundStatus = 'DISBURSEMENT_RECORDED';
+    const current = () => ({ id: 'withdraw-progress', enrollmentId: enrollment.enrollmentId, courseRunId: run.id, courseName: run.courseName, runCode: run.runCode, status: 'APPROVED', refundStatus, refundObligationId: refund.id, requestedAt: yesterday, requestReason: 'Tiến độ hoàn tiền riêng', refundAmountVnd: 700000 });
+    const { errors } = await mockApi(page, role, ({ path }) => {
+      if (path.endsWith('/course-withdrawal-requests')) return { body: [current()] };
+      if (path === '/reception/members/search') return { body: { ...member, status: 'ACTIVE' } };
+      if (path.startsWith('/reception/members/')) {
+        if (path.endsWith('/course-enrollments')) return { body: { content: [], totalPages: 0, totalElements: 0 } };
+        if (path.endsWith('/course-refund-obligations')) return { body: pageOf([]) };
+        return { body: [] };
+      }
+    });
+    const open = async () => {
+      await page.goto(role === 'MEMBER' ? '/member/courses/withdrawals' : '/reception/courses');
+      if (role === 'RECEPTIONIST') {
+        await page.getByLabel('Mã hội viên hoặc số điện thoại').fill(member.memberId);
+        await page.getByRole('button', { name: 'Tra cứu', exact: true }).click();
+      }
+    };
+    for (const [state, label] of [['DISBURSEMENT_RECORDED', 'Đã chi hoàn tiền — chờ xác minh'], ['COMPLETED', 'Hoàn tiền thành công'], ['RETURNED', 'Khoản chi hoàn tiền đã bị trả lại']]) {
+      refundStatus = state;
+      await open();
+      const card = page.locator('article').filter({ hasText: role === 'MEMBER' ? 'Tiến độ hoàn tiền riêng' : run.runCode });
+      await expect(card.locator('.system-badge')).toHaveText(label);
+      await expect(card.getByRole('button', { name: 'Hủy yêu cầu rút', exact: true })).toHaveCount(0);
+    }
+    expect(errors).toEqual([]);
+  });
+}
