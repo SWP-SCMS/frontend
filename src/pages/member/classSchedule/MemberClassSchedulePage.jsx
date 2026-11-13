@@ -25,7 +25,6 @@ import EmptyState from '../../../components/common/EmptyState';
 import MemberBreadcrumb from '../../../components/layout/MemberBreadcrumb';
 import { listMyCourseEnrollments } from '../../../services/courseEnrollmentService';
 import { courseScheduleEntries } from '../../../utils/courseWorkflow';
-import { COURSE_ATTENDANCE_STATUS_LABELS, getCourseStatusLabel, formatCourseDateTime } from '../../../utils/courseUi';
 import SessionDetailModal from './SessionDetailModal';
 import { getAttendanceDisplay } from './attendance';
 import {
@@ -255,13 +254,8 @@ export default function MemberClassSchedulePage() {
         onSelect={setSelected}
       />
 
-      {selected?.classType === 'COURSE' && <Alert variant="info" dismissible onClose={closeSelected}>
-        <strong>{selected.className}</strong><p className="mt-2 mb-2">HLV: {selected.coachName || 'Chưa có HLV'} · Phòng: {selected.roomName || 'Chưa có phòng'}</p><p>{formatCourseDateTime(selected.startTime)} – {formatCourseDateTime(selected.endTime)}</p>
-        <p>{getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, selected.attendanceStatus)}</p>
-        <Link to="/member/courses">Xem khóa học của tôi</Link>
-      </Alert>}
       <SessionDetailModal
-        session={selected?.classType === 'COURSE' ? null : selected}
+        session={selected}
         onClose={closeSelected}
       />
     </div>
@@ -400,7 +394,7 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
 // ----- Một buổi tập trong lưới (bấm để xem chi tiết) -----
 function SessionCard({ session, onClick }) {
   const s = session || {};
-  const att = s.classType === 'COURSE' ? { key: 'course', text: getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, s.attendanceStatus) } : getAttendanceDisplay(s);
+  const att = getAttendanceDisplay(s);
   return (
     <button
       type="button"

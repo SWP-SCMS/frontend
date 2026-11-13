@@ -7,7 +7,9 @@ import TrainingContent from "../../../components/common/TrainingContent";
 import { listMyTrainingFeedback } from "../../../services/trainingService";
 import { formatGymDate, formatGymTime } from "../../../utils/gymTime";
 
-export default function MemberTrainingFeedbackPage() {
+const titles = { PT: "Nhận xét PT 1-1", COURSE: "Nhận xét khóa học", CLASS: "Nhận xét lớp học" };
+
+export default function MemberTrainingFeedbackPage({ type }) {
   const [page, setPage] = useState(0);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export default function MemberTrainingFeedbackPage() {
       try {
         commitValue(
           setResult,
-          await listMyTrainingFeedback({ page, size: 20 }),
+          await listMyTrainingFeedback({ type, page, size: 20 }),
         );
       } catch (err) {
         failed(err);
@@ -33,18 +35,18 @@ export default function MemberTrainingFeedbackPage() {
         if (!background) commitValue(setLoading, false);
       }
     },
-    [page],
+    [type, page],
   );
   useCachedPollingEffect(
     ({ background, track, commitValue, commitError, failed }) => {
       track(load({ background, commitValue, commitError, failed }));
     },
     [load],
-    { key: ["member-feedback", page], setters: [setResult], setLoading },
+    { key: ["member-feedback", type, page], setters: [setResult], setLoading },
   );
   return (
     <div>
-      <h1 className="h3 fw-bold">Nhận xét của huấn luyện viên</h1>
+      <h1 className="h3 fw-bold">{titles[type]}</h1>
       <p className="text-muted">
         Lịch sử nhận xét vẫn xem được sau khi gói tập hết hạn.
       </p>

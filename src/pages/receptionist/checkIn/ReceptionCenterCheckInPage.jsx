@@ -22,7 +22,7 @@ import ReceptionActiveMembershipSummary from '../../../components/common/Recepti
 import { ACCOUNT_STATUS } from '../../../constants';
 import {
   createReceptionCenterVisit,
-  searchReceptionMember,
+  searchCheckInMember,
 } from '../../../services/receptionistService';
 import { normalizePhone } from '../../../utils';
 
@@ -87,6 +87,7 @@ const CENTER_CHECK_IN_TIME_FORMATTER = new Intl.DateTimeFormat('vi-VN', {
 });
 
 const CHECK_IN_BUSINESS_ERRORS = {
+  COURSE_CHECK_IN_NOT_ELIGIBLE: 'Buổi khóa học không còn đủ điều kiện check-in. Vui lòng tra cứu lại.',
   MEMBERSHIP_FROZEN:
     'Gói tập của hội viên đang được đóng băng nên chưa thể check-in trung tâm.',
   CENTER_VISIT_MEMBER_NOT_ACTIVE:
@@ -157,7 +158,7 @@ export default function ReceptionCenterCheckInPage() {
   const watchedMemberCode = selectedMember?.memberId;
   usePollingEffect(({ track, commitValue }) => {
     if (!watchedMemberCode) return;
-    track(searchReceptionMember({ memberId: watchedMemberCode }).then(value => commitValue(setSelectedMember, value)));
+    track(searchCheckInMember({ memberId: watchedMemberCode }).then(value => commitValue(setSelectedMember, value)));
   }, [watchedMemberCode], !searchSubmitting && !checkInSubmitting);
 
   async function searchMember(values) {
@@ -167,7 +168,7 @@ export default function ReceptionCenterCheckInPage() {
 
     try {
       const query = values.query.trim();
-      const result = await searchReceptionMember(
+      const result = await searchCheckInMember(
         values.criterion === 'memberId'
           ? { memberId: query }
           : { phone: normalizePhone(query) },
@@ -199,6 +200,7 @@ export default function ReceptionCenterCheckInPage() {
         {
           memberId: selectedMember.memberId,
           identityVerified: values.identityVerified,
+          ...(selectedMember.courseSessionId && { courseSessionId: selectedMember.courseSessionId }),
         },
         checkInIdempotencyKeyRef.current,
       );
@@ -232,9 +234,7 @@ export default function ReceptionCenterCheckInPage() {
   const checkInBlocked = selectedMember
     ? selectedMember.status !== ACCOUNT_STATUS.ACTIVE ||
       !selectedMember.profileImageUrl ||
-      !activeMembership ||
-      activeMembership.frozen ||
-      !hasCenterAccess
+      (!selectedMember.courseSessionId && (!hasCenterAccess || activeMembership?.frozen))
     : true;
 
   return (
@@ -391,12 +391,26 @@ export default function ReceptionCenterCheckInPage() {
                   </dd>
                 </dl>
 
-                <ReceptionActiveMembershipSummary
+                {selectedMember.courseLookupFailed && (
+                  <Alert variant="warning">Đã tìm thấy hội viên. Chưa kiểm tra được buổi khóa học để xác nhận check-in.</Alert>
+                )}
+                {selectedMember.courseAdmission && (
+                  <Alert variant="info">
+                    <strong>{selectedMember.courseAdmission.courseName}</strong>
+                    {' · '}{formatCenterCheckInTime(selectedMember.courseAdmission.startsAt)}
+                    <div>{selectedMember.courseAdmission.eligible
+                      ? 'Đang trong khung giờ check-in của buổi học.'
+                      : selectedMember.courseAdmission.today
+                        ? 'Hôm nay có buổi học. Hiện tại ngoài khung giờ check-in.'
+                        : 'Hội viên đã đăng ký khóa học nhưng hôm nay không có buổi học.'}</div>
+                  </Alert>
+                )}
+                {(activeMembership || !selectedMember.courseAdmission) && <ReceptionActiveMembershipSummary
                   membership={activeMembership}
                   memberCode={selectedMember.memberId}
-                />
+                />}
 
-                {activeMembership && !activeMembership.frozen && !hasCenterAccess ? (
+                {!selectedMember.courseSessionId && activeMembership && !activeMembership.frozen && !hasCenterAccess ? (
                   <Alert variant="warning" className="mt-3">
                     Gói hiện tại không có quyền sử dụng khu tự tập luyện nên chưa thể check-in.
                   </Alert>

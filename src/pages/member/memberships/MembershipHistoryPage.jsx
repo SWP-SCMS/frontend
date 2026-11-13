@@ -39,6 +39,7 @@ const STATUS_LABELS = {
   ACTIVE: 'Đang hoạt động',
   EXPIRED: 'Đã hết hạn',
   TERMINATED: 'Đã chấm dứt',
+  CANCELLED: 'Đã hủy',
 };
 
 function formatPeriod(startsAt, endsAt, status) {

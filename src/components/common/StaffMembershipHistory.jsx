@@ -17,6 +17,7 @@ const STATUS_LABELS = {
   ACTIVE: 'Đang hiệu lực',
   EXPIRED: 'Đã hết hạn',
   TERMINATED: 'Đã chấm dứt',
+  CANCELLED: 'Đã hủy',
 };
 
 const STATUS_VARIANTS = {
@@ -24,6 +25,7 @@ const STATUS_VARIANTS = {
   ACTIVE: 'success',
   EXPIRED: 'secondary',
   TERMINATED: 'danger',
+  CANCELLED: 'secondary',
 };
 
 function membershipHistoryError(error) {

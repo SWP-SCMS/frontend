@@ -7,7 +7,9 @@ import TrainingContent from "../../../components/common/TrainingContent";
 import { listMyTrainingResults } from "../../../services/trainingService";
 import { formatGymDate, formatGymTime } from "../../../utils/gymTime";
 
-export default function MemberTrainingResultsPage() {
+const titles = { COURSE: "Kết quả khóa học", CLASS: "Kết quả lớp học", PT: "Kết quả PT 1-1" };
+
+export default function MemberTrainingResultsPage({ type }) {
   const [page, setPage] = useState(0);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ export default function MemberTrainingResultsPage() {
       if (!background) commitValue(setLoading, true);
       commitError(setError, null);
       try {
-        commitValue(setResult, await listMyTrainingResults({ page, size: 20 }));
+        commitValue(setResult, await listMyTrainingResults({ type, page, size: 20 }));
       } catch (err) {
         failed(err);
         commitError(setError, err);
@@ -30,18 +32,18 @@ export default function MemberTrainingResultsPage() {
         if (!background) commitValue(setLoading, false);
       }
     },
-    [page],
+    [type, page],
   );
   useCachedPollingEffect(
     ({ background, track, commitValue, commitError, failed }) => {
       track(load({ background, commitValue, commitError, failed }));
     },
     [load],
-    { key: ["member-results", page], setters: [setResult], setLoading },
+    { key: ["member-results", type, page], setters: [setResult], setLoading },
   );
   return (
     <div>
-      <h1 className="h3 fw-bold">Kết quả tập luyện</h1>
+      <h1 className="h3 fw-bold">{titles[type]}</h1>
       <p className="text-muted">Lịch sử kết quả do huấn luyện viên ghi nhận.</p>
       <ErrorAlert error={error} title="Không tải được kết quả" />
       {loading ? (
@@ -54,23 +56,22 @@ export default function MemberTrainingResultsPage() {
           message="Chưa có kết quả tập luyện nào được ghi nhận."
         />
       ) : (
-        result.content.map((item) => (
-          <Card key={item.id} className="border-0 shadow-sm mb-2">
-            <Card.Body>
-              <div className="fw-semibold">
-                {item.className ||
-                  item.sessionName ||
-                  "Buổi huấn luyện cá nhân"}
-              </div>
-              <div className="small text-muted mb-2">
-                HLV {item.coachName || "—"} ·{" "}
-                {formatGymDate(item.sessionStartTime || item.activityAt)} ·{" "}
-                {formatGymTime(item.sessionStartTime || item.activityAt)}
-              </div>
-              <TrainingContent value={item.content} />
-            </Card.Body>
-          </Card>
-        ))
+        <Card className="shadow-sm">
+          <ul className="list-group list-group-flush">
+            {result.content.map(item => {
+              const time = item.sessionStartTime || item.activityAt;
+              return (
+                <li key={item.id} className="list-group-item py-3 text-break">
+                  <div className="small text-muted">{formatGymDate(time)} · {formatGymTime(time)}</div>
+                  <h2 className="h6 fw-semibold mt-1 mb-1">{item.sessionName || item.className || "Buổi PT 1-1"}</h2>
+                  {item.runCode && <div>Đợt {item.runCode} · Buổi {item.unitNumber}</div>}
+                  <div className="small text-muted mb-2">HLV {item.coachName || "—"}</div>
+                  <TrainingContent value={item.content} />
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
       )}
       {(result?.totalPages || 0) > 1 ? (
         <div className="d-flex justify-content-between mt-3">

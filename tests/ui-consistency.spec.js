@@ -490,8 +490,8 @@ test('member course calendar shows room and coach before the course starts', asy
   await expect(card).toContainText('F1-020');
   await expect(card).toContainText('HLV Aerobic');
   await card.click();
-  await expect(page.getByRole('alert')).toContainText('F1-020');
-  await expect(page.getByRole('alert')).toContainText('HLV Aerobic');
+  await expect(page.getByRole('dialog')).toContainText('F1-020');
+  await expect(page.getByRole('dialog')).toContainText('HLV Aerobic');
   expect(errors).toEqual([]);
 });
 

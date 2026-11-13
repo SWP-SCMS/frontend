@@ -90,7 +90,7 @@ export default function CoachSessionAttendancePage() {
       const next = {};
       for (const member of session?.members ?? []) {
         const record = attendanceByMember.get(member.memberId);
-        if (record?.id && record.status !== status) next[record.id] = status;
+        if (record?.id && record.receptionistCheckedIn && record.status !== status) next[record.id] = status;
       }
       return next;
     });
@@ -243,7 +243,7 @@ export default function CoachSessionAttendancePage() {
                               name={`attendance-${m.memberId}`}
                               label="Có mặt"
                               checked={status === 'PRESENT'}
-                              disabled={!editable || saving || !record?.id}
+                              disabled={!editable || saving || !record?.id || !record.receptionistCheckedIn}
                               onChange={() => choose(record, 'PRESENT')}
                             />
                             <Form.Check
@@ -252,10 +252,11 @@ export default function CoachSessionAttendancePage() {
                               name={`attendance-${m.memberId}`}
                               label="Vắng"
                               checked={status === 'ABSENT'}
-                              disabled={!editable || saving || !record?.id}
+                              disabled={!editable || saving || !record?.id || !record.receptionistCheckedIn}
                               onChange={() => choose(record, 'ABSENT')}
                             />
                           </div>
+                          {record && !record.receptionistCheckedIn && <small className="text-muted">Chưa có lượt check-in hợp lệ cho buổi học.</small>}
                           {record?.id && failures[record.id] ? (
                             <div className="text-danger small mt-1">
                               {failures[record.id]}
