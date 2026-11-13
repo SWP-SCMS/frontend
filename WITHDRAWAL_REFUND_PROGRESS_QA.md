@@ -6,7 +6,7 @@ Manager list/detail, member history and receptionist history use the same badge 
 
 ## Revisions and reproduction
 
-- Backend: `198d3008af94a820648a66c8e2f3a8e77b4f1547`, branch `codex/fix-course-withdrawal-refund-status`.
+- Backend: `7ca0e59a6250a9d09543f6800b61ce88d2601e6b` on `main`, squash merge of [PR #209](https://github.com/SWP-SCMS/backend/pull/209). Its tree is identical to the tested fix `198d3008af94a820648a66c8e2f3a8e77b4f1547`.
 - Frontend: the commit containing this report, on the same branch name. Every runtime run writes both exact SHAs and the frontend dirty flag to `.course-qa/runtime-*/sources.json`; the CI artifact records the committed frontend SHA.
 - Runtime launcher and CI pin the backend SHA above and retain the version check.
 - Compile backend test classes and classpath: `./mvnw -ntp test-compile dependency:build-classpath -Dmdep.includeScope=test -Dmdep.outputFile=target/qa-classpath.txt`.
@@ -32,4 +32,4 @@ Updating the previously stale backend pin exposed an old schedule fixture that c
 
 ## Boundaries
 
-No attendance fix, full-system audit, production deployment or merge is included. Existing untracked `.playwright-cli/` files are excluded from the commit. The production build retains its existing authService dynamic/static import warning; it does not fail the build.
+No attendance fix, full-system audit or production deployment is included. Backend PR #209 was merged after all push/PR checks and CodeQL passed; the frontend pin now targets that merged commit. Existing untracked `.playwright-cli/` files are excluded from the commit. The production build retains its existing authService dynamic/static import warning; it does not fail the build.
