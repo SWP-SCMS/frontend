@@ -40,14 +40,15 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   clock(Date.parse(sessions[0].startAt) + 1000);
   await expect.poll(async () => (await api(request, 'manager', 'GET', `/manager/course-runs/${f.runId}`)).status).toBe('IN_PROGRESS');
   await api(request, 'coach2', 'PATCH', mark, { status: 'PRESENT' }, 404);
+  await api(request, 'coach', 'PATCH', mark, { status: 'ABSENT' }, 409);
+  const visit = { memberId: env.accounts.member.memberCode, identityVerified: true, courseSessionId: sessions[0].courseSessionId };
+  await api(request, 'reception', 'POST', '/reception/center-visits', visit, 201, key());
   await page.clock.setFixedTime(new Date(Date.parse(sessions[0].startAt) + 1000));
   await login(page, 'coach', '/coach/course-sessions');
   const row = page.getByRole('row').filter({ hasText: e.runCode }).filter({ has: page.getByRole('cell', { name: '1', exact: true }) });
   await row.getByRole('button', { name: /Học viên \/ điểm danh/ }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Có mặt', exact: true }).click();
   expect((await enrollment(request, f.runId)).sessions.find(s => s.courseSessionId === sessions[0].courseSessionId).attendanceStatus).toBe('PRESENT');
-  const visit = { memberId: env.accounts.member.memberCode, identityVerified: true, courseSessionId: sessions[0].courseSessionId };
-  await api(request, 'reception', 'POST', '/reception/center-visits', visit, 201, key());
   await api(request, 'reception', 'POST', '/reception/center-visits', { memberId: env.accounts.member.memberCode, identityVerified: true }, 409, key());
   const bEnrollment = (await api(request, 'member2', 'GET', '/members/me/course-enrollments')).find(x => x.courseRunId === env.fixtures.reconcile.runId);
   const bPending = await api(request, 'member2', 'POST', `/members/me/course-enrollments/${bEnrollment.enrollmentId}/withdrawal-requests`, { reason: 'QA Membership remains usable during own Course suspension' }, 201);

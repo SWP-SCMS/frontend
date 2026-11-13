@@ -44,6 +44,19 @@ export async function searchReceptionMember({ memberId, phone } = {}) {
   return data;
 }
 
+export async function searchCheckInMember(criteria) {
+  const member = await searchReceptionMember(criteria);
+  const plan = member.activeMembership;
+  const canEnterWithPlan = !plan?.frozen && plan?.benefitCodes?.includes('CENTER_ACCESS');
+  try {
+    const { data } = await api.get(`/reception/members/${member.accountId}/center-visits/course-admission`);
+    return { ...member, courseAdmission: data || null, courseSessionId: data?.eligible && !canEnterWithPlan ? data.sessionId : null };
+  } catch (error) {
+    if ([401, 403].includes(error.response?.status)) throw error;
+    return { ...member, courseLookupFailed: true };
+  }
+}
+
 // POST /api/v1/reception/center-visits
 // `memberId` is the public MB-* Member code, never the account UUID.
 // A retained idempotency key lets an ambiguous retry replay the original

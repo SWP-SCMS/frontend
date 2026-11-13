@@ -19,6 +19,19 @@ async function setup(page, role, handler) {
   return calls;
 }
 
+test('Reception keeps the member profile when the course lookup is unavailable', async ({ page }) => {
+  await setup(page, 'RECEPTIONIST', path => path === '/reception/members/search'
+    ? { accountId: 'qa-member', memberId: 'MB-QA', fullName: 'Hội viên QA', status: 'ACTIVE' }
+    : undefined);
+  await page.route('**/center-visits/course-admission', route => route.fulfill({ status: 404 }));
+  await page.goto('/reception/check-in');
+  await page.getByLabel('Mã hội viên hoặc số điện thoại').fill('0927927901');
+  await page.getByRole('button', { name: 'Tìm hội viên' }).click();
+  await expect(page.getByRole('heading', { name: 'Hội viên QA' })).toBeVisible();
+  await expect(page.getByText(/Chưa kiểm tra được buổi khóa học/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xác nhận check-in' })).toBeDisabled();
+});
+
 test('T14 reconciliation has distinct columns and inline validation', async ({ page }) => {
   await setup(page, 'MANAGER', path => path === '/payments/reconciliation-queue' ? { content: [{ paymentId: 'p1', paymentReference: 'SCMS-ORD-1', orderNumber: 'ORD-1', memberName: 'QA', transferContent: 'SCMS-ORD-1', amount: 1000, expiresAt: '2099-01-01T00:00:00Z' }], totalPages: 1 } : undefined);
   await page.goto('/manager/payments/reconcile');
@@ -81,19 +94,23 @@ test('T21 radio attendance, mark all and unsaved navigation guard', async ({ pag
   const start = new Date(Date.now() - 60000).toISOString();
   const end = new Date(Date.now() + 3600000).toISOString();
   await setup(page, 'COACH', path => {
-    if (path === '/coach/class-sessions/qa') return { id: 'qa', className: 'Lớp QA', startTime: start, endTime: end, capacity: 2, status: 'IN_PROGRESS', members: [{ memberId: 'm1', fullName: 'HV QA', memberCode: 'MB-QA' }] };
-    if (path === '/coach/class-sessions/qa/attendance') return [{ id: 'a1', memberId: 'm1', status: 'NOT_RECORDED' }];
+    if (path === '/coach/class-sessions/qa') return { id: 'qa', className: 'Lớp QA', startTime: start, endTime: end, capacity: 2, status: 'IN_PROGRESS', members: [{ memberId: 'm1', fullName: 'HV QA', memberCode: 'MB-QA' }, { memberId: 'm2', fullName: 'HV tại quầy', memberCode: 'MB-QB' }] };
+    if (path === '/coach/class-sessions/qa/attendance') return [{ id: 'a1', memberId: 'm1', receptionistCheckedIn: true, status: 'NOT_RECORDED' }, { id: 'a2', memberId: 'm2', receptionistCheckedIn: false, status: 'NOT_RECORDED' }];
   });
   await page.goto('/coach/schedule/qa/attendance');
+  const eligible = page.getByRole('row').filter({ hasText: 'MB-QA' });
+  const waiting = page.getByRole('row').filter({ hasText: 'MB-QB' });
+  await expect(waiting.getByRole('radio', { name: 'Có mặt' })).toBeDisabled();
+  await expect(waiting.getByRole('radio', { name: 'Vắng' })).toBeDisabled();
   await page.getByRole('button', { name: 'Tất cả có mặt', exact: true }).click();
-  await expect(page.getByRole('radio', { name: 'Có mặt', exact: true })).toBeChecked();
-  await page.getByRole('radio', { name: 'Vắng', exact: true }).check();
-  await expect(page.getByRole('radio', { name: 'Có mặt', exact: true })).not.toBeChecked();
+  await expect(eligible.getByRole('radio', { name: 'Có mặt', exact: true })).toBeChecked();
+  await eligible.getByRole('radio', { name: 'Vắng', exact: true }).check();
+  await expect(eligible.getByRole('radio', { name: 'Có mặt', exact: true })).not.toBeChecked();
   await page.getByRole('button', { name: 'Quay lại lịch phụ trách' }).click();
   await expect(page.getByRole('dialog')).toContainText('1 thay đổi chưa lưu');
   await page.getByRole('button', { name: 'Ở lại', exact: true }).click();
   await expect(page).toHaveURL(/\/attendance$/);
-  await expect(page.getByRole('radio', { name: 'Vắng', exact: true })).toBeChecked();
+  await expect(eligible.getByRole('radio', { name: 'Vắng', exact: true })).toBeChecked();
   await page.getByRole('button', { name: 'Quay lại lịch phụ trách' }).click();
   await page.getByRole('button', { name: 'Bỏ thay đổi và rời trang' }).click();
   await expect(page).toHaveURL(/\/coach\/schedule$/);

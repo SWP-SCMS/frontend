@@ -159,16 +159,57 @@ export async function listMyTrainingPlans() {
   return data;
 }
 
-export async function listMyTrainingResults({ page = 0, size = 20 } = {}) {
+async function fetchMyResults(type, page, size) {
   const { data } = await api.get('/members/me/training-results', {
+    params: { type, page, size },
+  });
+  return normalizePage(data, page, size);
+}
+
+function trainingHistoryType(item) {
+  if (item.courseSessionId) return 'COURSE';
+  if (item.classSessionId && item.className != null) return 'CLASS';
+  return 'PT';
+}
+
+export async function listMyTrainingResults({ type, page = 0, size = 20 } = {}) {
+  const result = await fetchMyResults(type, page, size);
+  if (!type) return result;
+  // Older API versions ignore type. Their response omits the new runCode field.
+  if (result.content.length && result.content.every(item =>
+    Object.hasOwn(item, 'runCode') && trainingHistoryType(item) === type)) return result;
+
+  let rows = result.content;
+  if (result.totalPages > 1 || (page > 0 && !rows.length)) {
+    const first = await fetchMyResults(undefined, 0, 100);
+    rows = [...first.content];
+    for (let i = 1; i < first.totalPages; i++) {
+      rows.push(...(await fetchMyResults(undefined, i, 100)).content);
+    }
+  }
+  return paginateTrainingHistory(rows, type, page, size);
+}
+
+function paginateTrainingHistory(rows, type, page, size) {
+  const matches = rows.filter(item => trainingHistoryType(item) === type)
+    .sort((a, b) => Date.parse(b.sessionStartTime || b.activityAt || b.createdAt) - Date.parse(a.sessionStartTime || a.activityAt || a.createdAt));
+  return { content: matches.slice(page * size, (page + 1) * size), page, size,
+    totalElements: matches.length, totalPages: Math.ceil(matches.length / size) };
+}
+
+async function fetchFeedbackPage(page, size) {
+  const { data } = await api.get('/members/me/feedback', {
     params: { page, size },
   });
   return normalizePage(data, page, size);
 }
 
-export async function listMyTrainingFeedback({ page = 0, size = 20 } = {}) {
-  const { data } = await api.get('/members/me/feedback', {
-    params: { page, size },
-  });
-  return normalizePage(data, page, size);
+export async function listMyTrainingFeedback({ type, page = 0, size = 20 } = {}) {
+  if (!type) return fetchFeedbackPage(page, size);
+  const first = await fetchFeedbackPage(0, 100);
+  const rows = [...first.content];
+  for (let i = 1; i < first.totalPages; i++) {
+    rows.push(...(await fetchFeedbackPage(i, 100)).content);
+  }
+  return paginateTrainingHistory(rows, type, page, size);
 }

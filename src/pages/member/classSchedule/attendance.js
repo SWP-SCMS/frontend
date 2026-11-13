@@ -1,3 +1,5 @@
+import { COURSE_ATTENDANCE_STATUS_LABELS, getCourseStatusLabel } from '../../../utils/courseUi.js';
+
 // Trạng thái điểm danh của một buổi tập đã đặt (dùng ở "Lịch của tôi").
 //
 // BE chưa trả `attendanceStatus` cho Hội viên (đã nhờ BE bổ sung). Khi có,
@@ -18,6 +20,11 @@ const ATTENDANCE_LOCK_MS = 30 * 60 * 1000;
 //   'absent'  -> "Vắng" (quá hạn điểm danh mà vẫn chưa PRESENT)
 //   'pending' -> "Chưa điểm danh"
 export function getAttendanceDisplay(session, now = Date.now()) {
+  if (session?.classType === 'COURSE') {
+    const status = session.attendanceStatus;
+    const key = { PRESENT: 'present', ABSENT: 'absent' }[status] || 'pending';
+    return { key, text: getCourseStatusLabel(COURSE_ATTENDANCE_STATUS_LABELS, status) };
+  }
   if (isAttended(session)) return { key: 'present', text: 'Đã điểm danh' };
   const end = new Date(session?.endTime).getTime();
   if (Number.isFinite(end) && now >= end + ATTENDANCE_LOCK_MS) {

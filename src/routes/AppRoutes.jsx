@@ -655,9 +655,15 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route path="/member/training-plans" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_PLAN" serviceName="Giáo án tập luyện">{withSuspense(<MemberTrainingPlansPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
-      <Route path="/member/training-results" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_RESULT" serviceName="Kết quả tập luyện">{withSuspense(<MemberTrainingResultsPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
-      <Route path="/member/feedback" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout><MemberBenefitRouteGuard benefitCode="TRAINING_FEEDBACK" serviceName="Nhận xét huấn luyện viên">{withSuspense(<MemberTrainingFeedbackPage />)}</MemberBenefitRouteGuard></MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/training-plans" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingPlansPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/training-results" element={<Navigate to="/member/training-results/pt" replace />} />
+      <Route path="/member/training-results/pt" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingResultsPage key="PT" type="PT" />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/training-results/classes" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingResultsPage key="CLASS" type="CLASS" />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/training-results/courses" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingResultsPage key="COURSE" type="COURSE" />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/feedback" element={<Navigate to="/member/feedback/pt" replace />} />
+      <Route path="/member/feedback/pt" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingFeedbackPage key="PT" type="PT" />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/feedback/courses" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingFeedbackPage key="COURSE" type="COURSE" />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
+      <Route path="/member/feedback/classes" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberTrainingFeedbackPage key="CLASS" type="CLASS" />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/receipts" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<MemberReceiptListPage />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
       <Route path="/member/receipts/:receiptId" element={<ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(<ReceiptPage memberMode />)}</MemberLayout></RoleRoute></ProtectedRoute>} />
 

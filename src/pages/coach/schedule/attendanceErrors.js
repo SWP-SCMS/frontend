@@ -5,7 +5,7 @@ const MESSAGES = {
   ATTENDANCE_WINDOW_CLOSED:
     'Đã hết thời gian điểm danh (hoặc buổi tập chưa bắt đầu).',
   CENTER_VISIT_REQUIRED:
-    'Học viên chưa được lễ tân check-in nên chưa thể ghi "Có mặt".',
+    'Học viên chưa được lễ tân check-in nên chưa thể điểm danh.',
   SESSION_NOT_FOUND: 'Không tìm thấy buổi tập này trong lịch của bạn.',
   VALIDATION_ERROR: 'Dữ liệu điểm danh không hợp lệ.',
 };

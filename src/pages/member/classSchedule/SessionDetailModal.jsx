@@ -10,6 +10,7 @@ import { formatSessionSlot } from '../../../utils/sessionSlots';
 // Khi BE chưa trả hai trường này thì hiện "Chưa điểm danh" và
 // "Coach chưa gửi nhận xét".
 
+import { Link } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
 import {
   formatGymDayHeading,
@@ -95,7 +96,10 @@ export default function SessionDetailModal({ session, onClose }) {
   const att = getAttendanceDisplay(s);
   const feedback =
     typeof s?.coachFeedback === 'string' ? s.coachFeedback.trim() : '';
-  const subtitle = [s?.disciplineName, CLASS_TYPE_LABEL[s?.classType]]
+  const isCourse = s?.classType === 'COURSE';
+  const subtitle = (isCourse
+    ? [s.runCode, s.unitNumber != null && `Buổi ${s.unitNumber}`]
+    : [s?.disciplineName, CLASS_TYPE_LABEL[s?.classType]])
     .filter(Boolean)
     .join(' · ');
 
@@ -111,7 +115,7 @@ export default function SessionDetailModal({ session, onClose }) {
         <div className="mcs-mhead">
           <div>
             <h2 className="mcs-mtitle" id="mcs-detail-title">
-              {s?.className || '—'}
+              {s?.courseName || s?.className || '—'}
             </h2>
             {subtitle ? <p className="mcs-msub">{subtitle}</p> : null}
           </div>
@@ -153,7 +157,7 @@ export default function SessionDetailModal({ session, onClose }) {
           </Row>
         </div>
 
-        <div className="mcs-mfeedback">
+        {(!isCourse || feedback) && <div className="mcs-mfeedback">
           <div className="mcs-mfeedback-title">
             <Icon name="message" />
             Nhận xét của coach
@@ -163,9 +167,10 @@ export default function SessionDetailModal({ session, onClose }) {
           ) : (
             <p className="mcs-mfeedback-empty">Coach chưa gửi nhận xét.</p>
           )}
-        </div>
+        </div>}
 
         <div className="mcs-mactions">
+          {isCourse && <Link className="btn btn-outline-primary mcs-mbtn" to="/member/courses">Xem khóa học của tôi</Link>}
           <button type="button" className="btn btn-outline-secondary mcs-mbtn" onClick={onClose}>
             Đóng
           </button>
