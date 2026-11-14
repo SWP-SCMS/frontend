@@ -275,6 +275,37 @@ test('manager request workspace has no transfer tab or API calls', async ({ page
   expect(calls.some(call => call.path.includes('course-transfer'))).toBe(false);
 });
 
+test('reception searches refund members across pages and combines eligibility without changing payments', async ({ page }) => {
+  const item = { refundId: 'refund-search', memberName: 'Loc Test One', memberCode: 'MB-100082', courseName: 'Aerobic', runCode: 'TEST-HUY-SAU-1-BUOI', amount: 900000, disbursementEligibilityReason: 'ELIGIBLE' };
+  const { calls, errors } = await mockApi(page, 'RECEPTIONIST', ({ path, url }) => {
+    if (path !== '/reception/course-refunds') return;
+    const query = url.searchParams.get('query');
+    if (query === 'khong-co') return { body: pageOf([]) };
+    return { body: { ...pageOf([item]), totalPages: query ? 1 : 2, totalElements: query ? 1 : 21 } };
+  });
+  await page.goto('/reception/course-refunds');
+  await page.getByRole('button', { name: 'Trang sau', exact: false }).click();
+  await expect.poll(() => calls.filter(c => c.path === '/reception/course-refunds').at(-1)?.url.searchParams.get('page')).toBe('1');
+  await page.getByLabel('Tên, mã hoặc số điện thoại hội viên').fill('  MB-100082  ');
+  await page.getByRole('button', { name: 'Tìm', exact: true }).click();
+  await expect.poll(() => calls.filter(c => c.path === '/reception/course-refunds').at(-1)?.url.searchParams.get('query')).toBe('MB-100082');
+  expect(calls.filter(c => c.path === '/reception/course-refunds').at(-1).url.searchParams.get('page')).toBe('0');
+  await page.getByLabel('Điều kiện chi').selectOption('false');
+  await expect.poll(() => calls.filter(c => c.path === '/reception/course-refunds').at(-1)?.url.searchParams.get('eligible')).toBe('false');
+  expect(calls.filter(c => c.path === '/reception/course-refunds').at(-1).url.searchParams.get('query')).toBe('MB-100082');
+  await page.getByLabel('Tên, mã hoặc số điện thoại hội viên').fill('0901234567');
+  await page.getByRole('button', { name: 'Tìm', exact: true }).click();
+  await expect.poll(() => calls.filter(c => c.path === '/reception/course-refunds').at(-1)?.url.searchParams.get('query')).toBe('0901234567');
+  await page.getByLabel('Tên, mã hoặc số điện thoại hội viên').fill('khong-co');
+  await page.getByLabel('Tên, mã hoặc số điện thoại hội viên').press('Enter');
+  await expect(page.getByText('Không có khoản hoàn phù hợp.')).toBeVisible();
+  await page.getByRole('button', { name: 'Xóa tìm kiếm', exact: true }).click();
+  await expect(page.getByRole('cell', { name: /Loc Test One/ })).toBeVisible();
+  expect(calls.filter(c => c.path === '/reception/course-refunds').at(-1).url.searchParams.has('query')).toBe(false);
+  expect(calls.some(c => c.method !== 'GET' && c.path !== '/auth/refresh')).toBe(false);
+  expect(errors).toEqual([]);
+});
+
 test('reception uses only its queue/detail APIs and sends eligible=false correctly', async ({ page }) => {
   const item = { refundId: 'refund-1', memberId: member.accountId, memberName: member.fullName, memberCode: member.memberId, courseName: run.courseName, runCode: run.runCode, courseRunStatus: 'IN_PROGRESS', amount: 700000, source: 'MEMBER_WITHDRAWAL', approvedAt: yesterday, disbursementEligible: false, disbursementEligibilityReason: 'AWAITING_COURSE_COMPLETION' };
   const { calls, errors } = await mockApi(page, 'RECEPTIONIST', ({ path }) => {
@@ -522,6 +553,10 @@ test('course history separates terminal enrollments and keeps pending withdrawal
   await expect(page.locator('main')).not.toContainText('Khóa current');
   await expect(page.locator('main')).not.toContainText('Khóa pending');
   await expect(page.locator('main article').filter({ hasText: 'Khóa cancelled' })).toContainText('Đã hủy');
+  await page.locator('main article').filter({ hasText: 'Khóa cancelled' }).getByRole('link', { name: 'Xem chi tiết' }).click();
+  await expect(page.locator('.member-course-status')).toHaveText('Đã hủy');
+  await expect(page.locator('main')).not.toContainText('Đang theo học');
+  await page.getByRole('link', { name: '← Lịch sử khóa học', exact: true }).click();
   await page.locator('main article').filter({ hasText: 'Khóa completed' }).getByRole('link', { name: 'Xem chi tiết' }).click();
   await page.reload();
   await expect(page.locator('main')).toContainText('Buổi 1');

@@ -33,8 +33,8 @@ export async function decideCourseRefund(id, action, payload) {
   return data;
 }
 
-export async function listReceptionCourseRefunds({ page = 0, eligible } = {}) {
-  const { data } = await api.get('/reception/course-refunds', { params: { page, size: 20, eligible } });
+export async function listReceptionCourseRefunds({ page = 0, eligible, query } = {}) {
+  const { data } = await api.get('/reception/course-refunds', { params: { page, size: 20, eligible, query: query || undefined } });
   return data;
 }
 
