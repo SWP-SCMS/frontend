@@ -9,6 +9,7 @@ export default function MemberCoursesPage({ history = false }) {
   const { hash, search } = useLocation();
   const { enrollments, loading, error, reload } = useMyCourseEnrollments();
   const visibleEnrollments = enrollments.filter(e => isHistoricalCourse(e) === history);
+  if (hash === '#transfers') return <Navigate replace to={`/member/courses/schedule-changes${search}`} />;
   if (oldSections.includes(hash.slice(1))) return <Navigate replace to={`/member/courses/${hash.slice(1)}${search}`} />;
   return <div className="member-course-page">
     <header className="member-course-heading"><div><p className="member-course-eyebrow">Khóa học chuyên đề</p><h1>{history ? 'Lịch sử khóa học' : 'Khóa học của tôi'}</h1><p>{history ? 'Xem lại các khóa đã hoàn thành, đã rút, đã chuyển đợt hoặc bị hủy.' : 'Các khóa sắp học, đang học và đang chờ xử lý yêu cầu rút.'}</p></div><Link className="member-course-primary-link" to="/member/course-catalog">Khám phá khóa học</Link></header>

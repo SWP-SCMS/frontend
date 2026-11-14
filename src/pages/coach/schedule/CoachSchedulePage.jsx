@@ -4,19 +4,18 @@ import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 // Lịch phụ trách của Huấn luyện viên: lịch tuần (Thứ Hai → Chủ Nhật) các buổi
 // MÌNH đứng lớp. Giao diện dùng lại CSS của "Lịch của tôi" bên Hội viên (mcs-*).
 //
-// Dữ liệu:
-//   - GET /coach/class-sessions?from&to : các buổi trong tuần (BE lọc theo Coach)
-//   - Danh sách đã trả sẵn tên lớp, phòng, loại lớp và số lượt đặt.
-// Bấm một thẻ để xem chi tiết + điểm danh (CoachSessionInfoModal).
+// Lớp/PT và khóa học được tải theo cùng khoảng tuần, BE giới hạn theo HLV.
+// Thẻ khóa học mở hồ sơ buổi khóa học; lớp/PT dùng CoachSessionInfoModal.
 
 import { useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {Button, Card, Form, Spinner} from 'react-bootstrap';
 
 import { DateInput } from '../../../components/common/DateInput';
 import ErrorAlert from '../../../components/common/ErrorAlert';
 import EmptyState from '../../../components/common/EmptyState';
-import { listCoachSessions } from '../../../services/coachScheduleService';
+import { listCoachTeachingSessions } from '../../../services/coachScheduleService';
+import { COURSE_SESSION_STATUS_LABELS } from '../../../utils/courseUi';
 import {
   GYM_TIME_ZONE,
   ISO_DATE_RE,
@@ -33,6 +32,7 @@ const CLASS_TYPE_LABEL = {
   GROUP: 'Nhóm',
   YOGA: 'Yoga',
   PT_1_1: 'PT 1-1',
+  COURSE: 'Khóa học',
 };
 
 const WEEKDAY_LABELS = [
@@ -59,6 +59,7 @@ function groupByLocalDay(sessions) {
 
 export default function CoachSchedulePage() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Tuần đang xem lấy từ URL (?week=YYYY-MM-DD), mặc định là hôm nay.
   const calYmd = params.get('week') || getGymZoneTodayIsoDate();
@@ -78,8 +79,7 @@ export default function CoachSchedulePage() {
     if (!background) commitValue(setLoading, true);
     commitError(setError, null);
     try {
-      const res = await listCoachSessions({ from, to, size: 100 });
-      const list = res.content ?? [];
+      const list = await listCoachTeachingSessions({ from, to });
       commitValue(setSessions, list);
     } catch (err) { failed(err);
       commitError(setError, err);
@@ -90,7 +90,7 @@ export default function CoachSchedulePage() {
 
   useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     track(load({ background, commitValue, commitError, failed }));
-  }, [load], { key: ['coach-week', calYmd], setters: [setSessions], setLoading });
+  }, [load], { key: ['coach-teaching-week', calYmd], setters: [setSessions], setLoading });
 
   const setWeek = useCallback(
     (ymd) => {
@@ -118,7 +118,7 @@ export default function CoachSchedulePage() {
         <div>
           <h1 className="mcs-title">Lịch phụ trách</h1>
           <p className="mcs-sub">
-            Các buổi tập bạn đứng lớp, theo từng tuần. Bấm vào một buổi để xem
+            Lịch dạy lớp, PT và khóa học của bạn theo từng tuần. Bấm vào một buổi để xem
             chi tiết, danh sách học viên và điểm danh.
           </p>
         </div>
@@ -175,7 +175,9 @@ export default function CoachSchedulePage() {
         loading={loading}
         sessions={sessions}
         weekRange={weekRange}
-        onSelect={(s) => setSelectedId(s.id)}
+        onSelect={(s) => s.courseSessionId
+          ? navigate(`/coach/course-sessions?session=${encodeURIComponent(s.courseSessionId)}`)
+          : setSelectedId(s.id)}
       />
 
       {selectedId ? (
@@ -313,7 +315,10 @@ function CalendarView({ loading, sessions, weekRange, onSelect }) {
 // ----- Một buổi tập trong lưới (bấm để xem chi tiết) -----
 function SessionCard({ session, onClick }) {
   const s = session;
-  const info = SESSION_STATUS_LABELS[s.status];
+  const isCourse = s.classType === 'COURSE';
+  const info = isCourse
+    ? { text: COURSE_SESSION_STATUS_LABELS[s.status] || 'Đang cập nhật', variant: s.status === 'COMPLETED' ? 'secondary' : 'primary' }
+    : SESSION_STATUS_LABELS[s.status];
   return (
     <button
       type="button"
@@ -322,10 +327,11 @@ function SessionCard({ session, onClick }) {
       aria-label={`Xem chi tiết ${s.className || 'buổi tập'}`}
     >
       <div className="mcs-cal-session-class">{s.className || '—'}</div>
+      {isCourse && <div className="mcs-cal-session-meta">{s.runCode}</div>}
       <div className="mcs-cal-session-meta">
         <span>{s.roomName || '—'}</span>
         <span> · </span>
-        <span>{s.bookedCount ?? '—'} / {s.capacity ?? '—'} học viên</span>
+        <span>{s.bookedCount ?? '—'}{!isCourse && <> / {s.capacity ?? '—'}</>} học viên</span>
       </div>
       <div className="mcs-cal-session-foot">
         {s.classType ? (

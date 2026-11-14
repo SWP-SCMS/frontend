@@ -23,7 +23,6 @@ const groups = [
   ['Thanh toán', [['grossAmountVnd','Tổng giá trị',true],['paidAmountVnd','Đã thu',true],['pendingPayments','Số khoản chờ'],['pendingPaymentAmountVnd','Tiền chờ',true],['failedPayments','Số khoản lỗi'],['failedPaymentAmountVnd','Tiền lỗi',true]]],
   ['Hoàn tiền', [['outstandingRefundObligations','Số khoản còn xử lý'],['outstandingRefundAmountVnd','Tiền còn xử lý',true],['completedRefunds','Số khoản hoàn tất'],['completedRefundAmountVnd','Tiền hoàn tất',true]]],
   ['Hàng chờ', [['waitlistWaiting','Đang chờ'],['waitlistInvited','Đã mời'],['waitlistAccepted','Đã nhận']]],
-  ['Chuyển đợt', [['transferPending','Chờ duyệt'],['transferOffered','Đã đề nghị'],['transferRejected','Từ chối'],['transferCompleted','Hoàn tất'],['transferExpired','Hết hạn']]],
 ];
 export default function ManagerCourseReportPage() {
   const [searchParams, setSearchParams] = useSearchParams();

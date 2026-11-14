@@ -2,6 +2,32 @@ import { test, expect } from '@playwright/test';
 
 const pageOf = content => ({ content, page: 0, size: 20, totalElements: content.length, totalPages: 1, last: true });
 
+for (const membershipStatus of ['TERMINATED', 'EXPIRED']) {
+  test(`member can read training history with ${membershipStatus} membership`, async ({ page }) => {
+    const requested = new Set();
+    await mock(page, 'MEMBER', path => {
+      if (path === '/members/me/memberships') return [{ id: 'old-plan', status: membershipStatus, benefitCodes: ['TRAINING_PLAN', 'TRAINING_RESULT', 'TRAINING_FEEDBACK'] }];
+      if (path === '/members/me/training-plans') {
+        requested.add(path);
+        return [{ id: 'plan', title: 'Saved training history', status: 'ARCHIVED', versions: [] }];
+      }
+      if (path === '/members/me/training-results' || path === '/members/me/feedback') {
+        requested.add(path);
+        return pageOf([]);
+      }
+    });
+    await page.goto('/member/training-plans');
+    await expect(page.getByRole('heading', { name: 'Saved training history' })).toBeVisible();
+    await page.getByRole('link', { name: 'Kết quả PT 1-1', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Kết quả PT 1-1', exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Nhận xét PT 1-1', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Nhận xét PT 1-1', exact: true })).toBeVisible();
+    await expect.poll(() => requested.size).toBe(3);
+    await page.goto('/member/pt-booking');
+    await expect(page.getByRole('heading', { name: 'Gói tập chưa bao gồm tính năng này' })).toBeVisible();
+  });
+}
+
 test.describe('coach leave dates', () => {
   test.use({ locale: 'en-US', timezoneId: 'America/Los_Angeles' });
   test('dd/mm date entry sends ISO timestamps in the gym timezone', async ({ page }) => {
@@ -466,6 +492,7 @@ for (const role of ['MEMBER', 'COACH']) {
     const sessions = ['a','b'].map(id => ({ id, classSessionId: id, className: 'Yoga', startTime: '2030-01-07T02:00:00Z', endTime: '2030-01-07T03:00:00Z', status: role === 'MEMBER' ? 'BOOKED' : 'SCHEDULED', capacity: 20, bookedCount: 1 }));
     const errors = await mock(page, role, path => {
       if (path === '/members/me/bookings' || path === '/coach/class-sessions') return pageOf(sessions);
+      if (path === '/coach/course-sessions') return pageOf([]);
     });
     await page.goto(`${role === 'MEMBER' ? '/member/class-sessions' : '/coach/schedule'}?week=2030-01-07`);
     await expect(page.locator('.mcs-cal-slot')).toHaveCount(8);

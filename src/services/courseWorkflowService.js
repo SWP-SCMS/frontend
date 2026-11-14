@@ -17,32 +17,6 @@ export async function decideCourseWithdrawal(id, action, reason) {
   return data;
 }
 
-export async function listCourseTransfers() {
-  const { data } = await api.get('/manager/course-transfer-requests');
-  return data;
-}
-
-export async function listCourseTransferTargets(id) {
-  const { data } = await api.get(`/manager/course-transfer-requests/${id}/targets`);
-  return data;
-}
-
-export async function decideCourseTransfer(id, action, payload) {
-  if (!['approve', 'reject'].includes(action)) throw new TypeError('Invalid transfer action');
-  const { data } = await api.post(`/manager/course-transfer-requests/${id}/${action}`, payload);
-  return data;
-}
-
-export async function listMyCourseTransferOffers() {
-  const { data } = await api.get('/members/me/course-transfer-offers');
-  return data;
-}
-
-export async function acceptCourseTransferOffer(id, key) {
-  const { data } = await api.post(`/members/me/course-transfer-offers/${id}/accept`, undefined, courseIdempotencyConfig(key));
-  return data;
-}
-
 export async function listCourseRefunds({ page = 0, size = 20, status } = {}) {
   const { data } = await api.get('/manager/course-refund-obligations', { params: { page, size, status: status || undefined } });
   return data;
