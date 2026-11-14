@@ -82,10 +82,12 @@ test('T19 cancellation preview is read-only and requires a valid reason', async 
   await page.goto('/manager/course-runs/qa');
   await page.getByRole('button', { name: 'Hủy đợt mở', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await expect(dialog).toContainText('3 đăng ký đang học/chờ rút và 2 đơn chờ thanh toán');
+  await expect(dialog.locator('.course-run-cancel-impact dt')).toHaveText(['Đăng ký bị ảnh hưởng', 'Đơn chờ thanh toán']);
+  await expect(dialog.locator('.course-run-cancel-impact dd')).toHaveText(['3', '2']);
+  await expect(dialog).toContainText('Hoàn 100% giá trị các buổi chưa được tổ chức');
   await dialog.getByRole('button', { name: 'Xác nhận hủy đợt học' }).click();
   await expect(dialog).toContainText('Lý do cần ít nhất 5 ký tự.');
-  await dialog.getByRole('button', { name: 'Quay lại', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Giữ đợt học', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   expect(calls.filter(c => c.path.endsWith('/cancel'))).toHaveLength(0);
 });

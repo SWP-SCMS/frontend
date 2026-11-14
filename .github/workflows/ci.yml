@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: SWP-SCMS/backend
-          ref: 18561521b841d23280eb429cd098c1b228ad4042
+          ref: 3b8b8771cab383d6ac9f0ebae6af5b56564d8b49
           path: .qa-backend
       - uses: actions/setup-java@v6
         with:

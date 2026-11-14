@@ -1,4 +1,5 @@
 import SessionTime from '../../../components/common/SessionTime';
+import './ManagerCourseRunDetailPage.css';
 import useCourseResourceAvailability from '../../../hooks/useCourseResourceAvailability';
 import CourseRunStatusBadge from '../../../components/common/CourseRunStatusBadge';
 import { z } from "zod";
@@ -556,33 +557,53 @@ export default function ManagerCourseRunDetailPage() {
         backdrop={busy ? "static" : true}
         keyboard={!busy}
         centered
+        scrollable
+        dialogClassName="course-run-cancel-dialog"
+        aria-labelledby="cancel-run-title"
       >
         <Form onSubmit={cancellationForm.handleSubmit(cancelRun)}>
           <Modal.Header closeButton={!busy}>
-            <Modal.Title>Hủy đợt học {run.runCode}</Modal.Title>
+            <Modal.Title id="cancel-run-title">Hủy đợt học?</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <ErrorAlert error={error} title="Không thể hủy đợt học" />
-            <p>
-              {run.courseName} · {run.runCode}
-            </p>
+            <div className="course-run-cancel-context">
+              <strong>{run.courseName}</strong>
+              <span>{run.runCode}</span>
+            </div>
             {impact ? (
-              <p>
-                {impact.enrollmentCount} đăng ký đang học/chờ rút và{" "}
-                {impact.pendingOrderCount} đơn chờ thanh toán bị ảnh hưởng.
-              </p>
+              <dl className="course-run-cancel-impact">
+                <div>
+                  <dt>Đăng ký bị ảnh hưởng</dt>
+                  <dd>{impact.enrollmentCount}</dd>
+                  <small>Đang học hoặc chờ rút</small>
+                </div>
+                <div>
+                  <dt>Đơn chờ thanh toán</dt>
+                  <dd>{impact.pendingOrderCount}</dd>
+                  <small>Sẽ hết hạn khi hủy đợt</small>
+                </div>
+              </dl>
             ) : (
-              <p>Đang tải số lượng bị ảnh hưởng…</p>
+              <p className="text-muted" role="status">Đang tải số lượng bị ảnh hưởng…</p>
             )}
-            <p>
-              Các buổi học sẽ bị hủy, đơn chờ sẽ hết hạn. Khoản hoàn được hệ
-              thống xác định và cần xử lý riêng. Số lượng có thể thay đổi đến
-              khi xác nhận.
-            </p>
-            <Form.Label htmlFor="cancel-run-reason">Lý do hủy</Form.Label>
+            <div className="course-run-cancel-consequences">
+              <strong>Sau khi hủy</strong>
+              <ul>
+                <li>Các buổi học trong đợt sẽ bị hủy.</li>
+                <li>Đơn chờ thanh toán sẽ hết hạn.</li>
+                <li>Hoàn 100% giá trị các buổi chưa được tổ chức, theo phân bổ lúc thanh toán.</li>
+                <li>Các buổi đã học không được hoàn tiền. Khoản hoàn cần được duyệt và chi riêng.</li>
+              </ul>
+            </div>
+            <Form.Label htmlFor="cancel-run-reason" className="fw-semibold">Lý do hủy <span className="text-danger" aria-hidden="true">*</span></Form.Label>
             <Form.Control
               as="textarea"
               id="cancel-run-reason"
+              rows={3}
+              placeholder="Nhập lý do để học viên và nhân viên nắm được."
+              aria-required="true"
+              aria-describedby="cancel-run-reason-hint"
               maxLength={1000}
               disabled={busy}
               {...cancellationForm.register("reason")}
@@ -591,6 +612,8 @@ export default function ManagerCourseRunDetailPage() {
             <Form.Control.Feedback type="invalid">
               {cancellationForm.formState.errors.reason?.message}
             </Form.Control.Feedback>
+            <Form.Text id="cancel-run-reason-hint">Từ 5 đến 1.000 ký tự.</Form.Text>
+            <p className="course-run-cancel-note">Số lượng bị ảnh hưởng được cập nhật tại thời điểm xác nhận.</p>
           </Modal.Body>
           <Modal.Footer>
             <Button
@@ -598,7 +621,7 @@ export default function ManagerCourseRunDetailPage() {
               disabled={busy}
               onClick={() => setModal("")}
             >
-              Quay lại
+              Giữ đợt học
             </Button>
             <Button variant="danger" type="submit" disabled={busy || !impact}>
               {busy ? "Đang hủy…" : "Xác nhận hủy đợt học"}

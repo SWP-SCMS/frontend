@@ -181,6 +181,17 @@ export const COURSE_ENROLLMENT_STATUS_LABELS = {
   ACTIVE: 'Đang theo học', TRANSFERRED: 'Đã chuyển đợt học',
   COMPLETED: 'Đã hoàn thành', WITHDRAWAL_PENDING: 'Chờ xử lý yêu cầu rút', WITHDRAWN: 'Đã rút',
 };
+
+export function courseEnrollmentStatusLabel(enrollment) {
+  const { lifecycleStatus, courseRunStatus } = enrollment;
+  if ((lifecycleStatus === 'ACTIVE' || lifecycleStatus === 'WITHDRAWAL_PENDING') && courseRunStatus === 'CANCELLED') {
+    return getCourseStatusLabel(COURSE_RUN_STATUS_LABELS, courseRunStatus);
+  }
+  if (lifecycleStatus === 'ACTIVE' && courseRunStatus === 'COMPLETED') {
+    return getCourseStatusLabel(COURSE_RUN_STATUS_LABELS, courseRunStatus);
+  }
+  return getCourseStatusLabel(COURSE_ENROLLMENT_STATUS_LABELS, lifecycleStatus);
+}
 export const COURSE_DISPOSITION_LABELS = {
   ENROLLED: 'Có suất học', NOT_ENROLLED: 'Không có suất học', UNRESOLVED: 'Chờ xử lý buổi học',
 };
