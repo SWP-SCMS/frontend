@@ -1,3 +1,4 @@
+import { groupCourseScheduleChanges } from '../../../utils/courseScheduleChangeGroups';
 import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
 import Badge from '../../../components/common/SystemBadge';
 import useConfirmation from "../../../hooks/useConfirmation";
@@ -17,11 +18,9 @@ import {
   getCourseErrorMessage,
 } from "../../../utils/courseUi";
 import {
-  COURSE_TRANSFER_STATUS_LABELS,
   COURSE_REFUND_STATUS_LABELS,
   COURSE_RESPONSE_LABELS,
   canRespondToCourseChange,
-  canAcceptCourseTransfer,
 } from "../../../utils/courseWorkflow";
 
 export default function ReceptionCourseActions({
@@ -50,17 +49,15 @@ export default function ReceptionCourseActions({
           [
             "course-waitlists",
             "course-schedule-changes",
-            "course-transfer-offers",
             "course-withdrawal-requests",
             `course-refund-obligations?page=${page}&size=20`,
           ].map((path) => api.get(`${base}/${path}`).then((r) => r.data)),
         )
-          .then(([waitlists, changes, offers, withdrawals, refunds]) => {
+          .then(([waitlists, changes, withdrawals, refunds]) => {
             if (active)
               commitValue(setData, {
                 waitlists,
                 changes,
-                offers,
                 withdrawals,
                 refunds,
               });
@@ -210,12 +207,10 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
           ))}
           <h3 className="h6 mt-3">Thay đổi lịch</h3>
           {!data.changes.length && <p>Chưa có thay đổi.</p>}
-          {data.changes.map((c) => (
-            <Card as="article" body className="mb-3 shadow-sm" key={c.id}>
-              <p>
-                {date(c.oldStartAt)} → {date(c.newStartAt)} · Hạn{" "}
-                {date(c.responseDeadline)}
-              </p>
+          {groupCourseScheduleChanges(data.changes).map((c) => (
+            <Card as="article" body className="mb-3 shadow-sm" key={c.key}>
+              {c.changes.map(change => <p key={change.id}>{date(change.oldStartAt)} → {date(change.newStartAt)}</p>)}
+              <p>Hạn phản hồi: {date(c.responseDeadline)}</p>
               {canRespondToCourseChange(c) &&
                 Object.entries(COURSE_RESPONSE_LABELS).map(
                   ([response, label]) => (
@@ -235,7 +230,7 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
                           "post",
                           response === "REQUEST_WITHDRAWAL"
                             ? "Yêu cầu rút sẽ tạm ngừng học/điểm danh, vẫn giữ chỗ khi chờ duyệt. Nếu hủy hoặc bị từ chối, các buổi đã lỡ không được học bù."
-                            : `Gửi phản hồi: ${label}.`,
+                            : `Gửi phản hồi cho toàn bộ lần thay đổi lịch: ${label}.`,
                         )
                       }
                     >
@@ -243,44 +238,6 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
                     </Button>
                   ),
                 )}
-            </Card>
-          ))}
-          <h3 className="h6 mt-3">Đề nghị chuyển đợt</h3>
-          {!data.offers.length && <p>Chưa có đề nghị.</p>}
-          {data.offers.map((o) => (
-            <Card as="article" body className="mb-3 shadow-sm" key={o.id}>
-              <p>
-                {o.sourceCourseName} · {o.sourceRunCode} → {o.targetCourseName}{" "}
-                · {o.targetRunCode}
-              </p>
-              <p>
-                <Badge>{COURSE_TRANSFER_STATUS_LABELS[o.status] || "Đang cập nhật"}</Badge> ·
-                Chênh lệch {money(o.differenceVnd)} · Hạn {date(o.expiresAt)}
-              </p>
-              <Link to={`/course-runs/${o.targetRunId}`}>Xem đợt học</Link>
-              {canAcceptCourseTransfer(o) && (
-                <Button
-                  variant="outline-danger"
-                  className="me-2 mb-2"
-                  disabled={disabled}
-                  onClick={() =>
-                    act(
-                      `course-transfer-offers/${o.id}/accept`,
-                      undefined,
-                      true,
-                      "post",
-                      `Chấp nhận chuyển từ ${o.sourceRunCode} sang ${o.targetRunCode}. Chênh lệch học phí: ${money(o.differenceVnd)}. Nếu có khoản cần đóng thêm, phải hoàn tất thanh toán theo đơn của hệ thống.`,
-                    )
-                  }
-                >
-                  Chấp nhận chuyển hộ
-                </Button>
-              )}
-              {o.differenceOrderId && (
-                <Link className="ms-2" to={paymentLink(o.differenceOrderId)}>
-                  {o.status === "PENDING_PAYMENT" ? "Thanh toán chênh lệch" : "Xem đơn chênh lệch"}
-                </Link>
-              )}
             </Card>
           ))}
           <h3 className="h6 mt-3">Lịch sử yêu cầu rút</h3>

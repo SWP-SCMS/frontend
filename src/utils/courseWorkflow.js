@@ -9,16 +9,6 @@ export const COURSE_REFUND_SOURCE_LABELS = {
   UNRESOLVED_SESSIONS: 'Buổi học chưa xử lý', REDUCED_SESSION_COUNT: 'Hoàn tiền buổi bị giảm', TRANSFER_CREDIT_EXCESS: 'Chênh lệch chuyển đợt', PAYMENT_EXCEPTION: 'Điều chỉnh thanh toán',
 };
 
-export const COURSE_TRANSFER_STATUS_LABELS = {
-  PENDING: 'Chờ duyệt', OFFERED: 'Chờ hội viên chấp nhận', PENDING_PAYMENT: 'Chờ thanh toán chênh lệch',
-  COMPLETED: 'Đã chuyển đợt học', REJECTED: 'Đã từ chối', EXPIRED: 'Đã hết hạn', CANCELLED: 'Đã hủy',
-};
-
-export const COURSE_TRANSFER_REQUEST_STATUS_LABELS = {
-  PENDING: 'Chờ duyệt', OFFERED: 'Đã gửi đề nghị', COMPLETED: 'Đã chuyển đợt học',
-  REJECTED: 'Đã từ chối', EXPIRED: 'Đã hết hạn',
-};
-
 export const COURSE_WITHDRAWAL_STATUS_LABELS = { PENDING: 'Chờ duyệt rút', APPROVED: 'Đã duyệt rút', REJECTED: 'Đã từ chối rút', CANCELLED: 'Đã hủy yêu cầu rút' };
 const WITHDRAWAL_REFUND_LABELS = {
   PENDING_REVIEW: 'Đã duyệt rút — chờ duyệt hoàn tiền',
@@ -33,7 +23,7 @@ export function courseWithdrawalStatusLabel(status, refundStatus) {
     ? WITHDRAWAL_REFUND_LABELS[refundStatus] || 'Đã duyệt rút — chưa xác định trạng thái hoàn tiền'
     : COURSE_WITHDRAWAL_STATUS_LABELS[status] || 'Đang cập nhật';
 }
-export const COURSE_RESPONSE_LABELS = { CONTINUE: 'Tiếp tục học', REQUEST_TRANSFER: 'Đề nghị chuyển đợt học', REQUEST_WITHDRAWAL: 'Yêu cầu rút do đổi lịch' };
+export const COURSE_RESPONSE_LABELS = { CONTINUE: 'Theo lịch mới', REQUEST_WITHDRAWAL: 'Yêu cầu hủy do đổi lịch' };
 export const COURSE_ELIGIBILITY_LABELS = { ELIGIBLE: 'Đủ điều kiện chi', AWAITING_COURSE_COMPLETION: 'Chờ đợt học hoàn thành', COURSE_RUN_NOT_FOUND: 'Không tìm thấy đợt học' };
 
 export function courseRefundActions(status) {
@@ -45,10 +35,6 @@ export function courseRefundActions(status) {
 
 export function canRespondToCourseChange(change, now = Date.now()) {
   return change.status === 'PENDING' && !change.response && Date.parse(change.responseDeadline) > now;
-}
-
-export function canAcceptCourseTransfer(offer, now = Date.now()) {
-  return offer.status === 'OFFERED' && !offer.acceptedAt && Date.parse(offer.expiresAt) > now;
 }
 
 // Ignore invalid/rounded amounts rather than silently sending a different financial value.
@@ -83,7 +69,7 @@ export function courseNotificationDestination(item, role) {
   if (!type.startsWith('COURSE_')) return null;
   if (role === 'member') {
     if (type.startsWith('COURSE_REFUND_')) return '/member/courses/refunds';
-    if (type.startsWith('COURSE_TRANSFER_')) return '/member/courses/transfers';
+    if (type.startsWith('COURSE_TRANSFER_')) return '/member/courses/history';
     if (type === 'COURSE_SCHEDULE_CHANGED') return '/member/courses/schedule-changes';
     if (type.startsWith('COURSE_WITHDRAWAL_')) return '/member/courses/withdrawals';
     if (type.startsWith('COURSE_WAITLIST_')) return '/member/courses/waitlist';
@@ -94,7 +80,6 @@ export function courseNotificationDestination(item, role) {
     const pages = [
       ['COURSE_REFUND_', 'refunds', 'COURSE_REFUND_OBLIGATION'],
       ['COURSE_WITHDRAWAL_', 'withdrawals', 'COURSE_WITHDRAWAL_REQUEST'],
-      ['COURSE_TRANSFER_', 'transfers', 'COURSE_TRANSFER_REQUEST'],
     ];
     for (const [prefix, page, targetType] of pages) {
       if (type.startsWith(prefix)) return '/manager/course-' + page

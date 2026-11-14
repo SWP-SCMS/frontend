@@ -521,7 +521,8 @@ export default function AppRoutes() {
         ['enrollments/:enrollmentId', <MemberCourseWorkspacePage key="detail" section="detail" />],
         ['history', <MemberCoursesPage key="history" history />],
         ['waitlist', <MemberCourseWaitlistPage key="waitlist" />],
-        ...['refunds', 'withdrawals', 'transfers', 'schedule-changes'].map(section => [section, <MemberCourseWorkspacePage key={section} section={section} />]),
+        ['transfers', <Navigate key="retired-transfers" replace to="/member/courses/schedule-changes" />],
+        ...['refunds', 'withdrawals', 'schedule-changes'].map(section => [section, <MemberCourseWorkspacePage key={section} section={section} />]),
       ].map(([path, page]) => <Route key={path} path={`/member/courses/${path}`} element={
         <ProtectedRoute><RoleRoute allow={ROLES.MEMBER}><MemberLayout>{withSuspense(page)}</MemberLayout></RoleRoute></ProtectedRoute>
       } />)}
@@ -823,7 +824,7 @@ export default function AppRoutes() {
         <Route path="classes/:classId/edit" element={withSuspense(<ClassEditPage />)} />
         <Route path="courses" element={withSuspense(<ManagerCoursesPage />)} />
         <Route path="course-withdrawals" element={withSuspense(<ManagerCourseWorkflowPage key="withdrawals" kind="withdrawals" />)} />
-        <Route path="course-transfers" element={withSuspense(<ManagerCourseWorkflowPage key="transfers" kind="transfers" />)} />
+        <Route path="course-transfers" element={<Navigate replace to="/manager/course-withdrawals" />} />
         <Route path="course-refunds" element={withSuspense(<ManagerCourseWorkflowPage key="refunds" kind="refunds" />)} />
         <Route path="courses/:courseId" element={withSuspense(<ManagerCourseDetailPage />)} />
         <Route path="course-runs" element={withSuspense(<ManagerCourseRunsPage />)} />

@@ -8,6 +8,147 @@ const enrollment = { enrollmentId: 'enrollment-1', courseRunId: run.id, courseNa
 const refund = { memberName: member.fullName, memberCode: member.memberId, courseName: run.courseName, runCode: run.runCode, id: 'refund-1', memberAccountId: member.accountId, courseRunId: run.id, enrollmentId: enrollment.enrollmentId, source: 'MEMBER_WITHDRAWAL', status: 'PENDING_REVIEW', grossObligationVnd: 700000, approvedAmountVnd: null, disbursedAmountVnd: null, verifiedAmountVnd: null, version: 3, createdAt: yesterday, requestReason: 'Đổi lịch làm việc' };
 const pageOf = (items) => ({ items, page: 0, size: 20, totalElements: items.length, totalPages: items.length ? 1 : 0 });
 
+for (const mode of ['batch', 'retry', 'single']) {
+  test(`manager saves selected session schedules in one request: ${mode}`, async ({ page }) => {
+    let currentRun = { ...run, status: 'OPEN_FOR_REGISTRATION', capacity: 10, minimumEnrollment: 1, totalUnits: 4, tuitionVnd: 1000000, version: 7, plannedStartAt: '2099-02-02T12:00:00Z', plannedEndAt: '2099-02-23T13:00:00Z' };
+    let sessions = ['02', '09', '16', '23'].map((day, i) => ({ id: `session-${i + 1}`, unitNumber: i + 1, roomId: 'room-1', coachId: 'coach-1', roomName: 'Phòng A', coachName: 'HLV An', startAt: `2099-02-${day}T12:00:00Z`, endAt: `2099-02-${day}T13:00:00Z`, status: 'SCHEDULED', version: 3 }));
+    let attempts = 0;
+    const { calls, errors } = await mockApi(page, 'MANAGER', ({ path, method, body }) => {
+      if (path === '/manager/course-runs/run-1') return { body: currentRun };
+      if (path === '/manager/course-runs/run-1/sessions') return { body: sessions };
+      if (path === '/manager/course-runs/resource-availability') return { body: { rooms: [{ id: 'room-1', name: 'Phòng A' }], coaches: [{ accountId: 'coach-1', fullName: 'HLV An' }] } };
+      if (path === '/manager/course-runs/run-1/reschedule' && method === 'POST') {
+        attempts++;
+        if (mode === 'retry' && attempts === 1) return { status: 503, body: { message: 'Thử lại' } };
+        sessions = sessions.map(session => {
+          const change = body.sessions.find(item => item.sessionId === session.id);
+          return change ? { ...session, startAt: change.startAt, endAt: change.endAt, version: 4 } : session;
+        });
+        currentRun = { ...currentRun, plannedStartAt: body.plannedStartAt, plannedEndAt: body.plannedEndAt, version: 8 };
+        return { body: { run: currentRun, sessions, changeEventId: 'one-event' } };
+      }
+    });
+    await page.goto('/manager/course-runs/run-1');
+    await expect(page.getByRole('button', { name: 'Chỉnh sửa', exact: true })).toHaveCount(4);
+    await page.getByRole('button', { name: 'Dời nhiều buổi', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('button', { name: 'Lưu tất cả' })).toBeDisabled();
+    await dialog.getByLabel('Buổi 1', { exact: true }).check();
+    await expect(dialog.getByRole('button', { name: 'Lưu tất cả' })).toBeEnabled();
+    if (mode === 'batch') {
+      await dialog.getByRole('button', { name: 'Lưu tất cả' }).click();
+      await expect(dialog).toContainText('Chọn buổi và thay đổi ngày hoặc khung giờ');
+      expect(calls.filter(call => call.method === 'POST' && call.path.endsWith('/reschedule'))).toHaveLength(0);
+    }
+    await dialog.getByLabel('Buổi 1 - slot', { exact: true }).selectOption('8');
+    if (mode !== 'single') {
+      await dialog.getByLabel('Buổi 4', { exact: true }).check();
+      await dialog.getByLabel('Buổi 4 - ngày', { exact: true }).fill('02/03/2099');
+      await dialog.getByLabel('Buổi 4 - slot', { exact: true }).selectOption('8');
+      // Unchecked edits must not reach the API.
+      await dialog.getByLabel('Buổi 2', { exact: true }).check();
+      await dialog.getByLabel('Buổi 2 - slot', { exact: true }).selectOption('8');
+      await dialog.getByLabel('Buổi 2', { exact: true }).uncheck();
+    }
+    if (mode === 'batch') {
+      await page.screenshot({ path: test.info().outputPath('batch-reschedule-desktop.png') });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect(dialog.getByRole('button', { name: 'Lưu tất cả' })).toBeInViewport();
+      expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+      await page.screenshot({ path: test.info().outputPath('batch-reschedule-mobile.png') });
+    }
+    await dialog.getByRole('button', { name: 'Lưu tất cả' }).click();
+    if (mode === 'retry') {
+      await expect(dialog).toContainText('Chưa xác định kết quả');
+      await expect(dialog.getByLabel('Buổi 1', { exact: true })).toBeDisabled();
+      await dialog.getByRole('button', { name: 'Thử lại', exact: true }).click();
+    }
+    await expect(dialog).toHaveCount(0);
+    const posts = calls.filter(call => call.method === 'POST' && call.path.endsWith('/reschedule'));
+    expect(posts).toHaveLength(mode === 'retry' ? 2 : 1);
+    expect(posts[0].body).toEqual({
+      expectedVersion: 7, totalUnits: 4,
+      plannedStartAt: '2099-02-02T14:00:00.000Z',
+      plannedEndAt: mode === 'single' ? '2099-02-23T13:00:00.000Z' : '2099-03-02T15:00:00.000Z',
+      sessions: [
+        { sessionId: 'session-1', expectedVersion: 3, startAt: '2099-02-02T14:00:00.000Z', endAt: '2099-02-02T15:00:00.000Z', roomId: 'room-1', coachId: 'coach-1' },
+        ...(mode === 'single' ? [] : [{ sessionId: 'session-4', expectedVersion: 3, startAt: '2099-03-02T14:00:00.000Z', endAt: '2099-03-02T15:00:00.000Z', roomId: 'room-1', coachId: 'coach-1' }]),
+      ],
+    });
+    if (mode === 'retry') {
+      expect(posts[1].body).toEqual(posts[0].body);
+      expect(posts[1].headers['idempotency-key']).toBe(posts[0].headers['idempotency-key']);
+    }
+    expect(errors).toEqual([]);
+  });
+}
+
+for (const failure of [false, true]) {
+  test(`batch reschedule replaces unavailable resources and blocks internal conflicts: retry=${failure}`, async ({ page }) => {
+    const currentRun = { ...run, status: 'OPEN_FOR_REGISTRATION', capacity: 10, totalUnits: 2, version: 1, plannedStartAt: '2099-02-02T12:00:00Z', plannedEndAt: '2099-02-09T13:00:00Z' };
+    const sessions = ['02', '09'].map((day, i) => ({ id: `session-${i + 1}`, unitNumber: i + 1, roomId: 'r1', coachId: 'c1', roomName: 'Phòng cũ', coachName: 'HLV cũ', startAt: `2099-02-${day}T12:00:00Z`, endAt: `2099-02-${day}T13:00:00Z`, status: 'SCHEDULED', version: 1 }));
+    let shouldFail = failure;
+    const { calls, errors } = await mockApi(page, 'MANAGER', ({ path, method, body }) => {
+      if (path === '/manager/course-runs/run-1') return { body: currentRun };
+      if (path === '/manager/course-runs/run-1/sessions') return { body: sessions };
+      if (path.endsWith('/resource-availability')) {
+        const changed = body.windows[0].startAt.includes('T14:');
+        if (changed && shouldFail) { shouldFail = false; return { status: 503, body: {} }; }
+        return { body: { rooms: [{ id: changed ? 'r2' : 'r1', name: changed ? 'Phòng mới' : 'Phòng cũ' }], coaches: [{ accountId: changed ? 'c2' : 'c1', fullName: changed ? 'HLV mới' : 'HLV cũ' }] } };
+      }
+      if (path.endsWith('/reschedule') && method === 'POST') return { body: { run: { ...currentRun, version: 2 }, sessions } };
+    });
+    await page.goto('/manager/course-runs/run-1');
+    await page.getByRole('button', { name: 'Dời nhiều buổi', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    const save = dialog.getByRole('button', { name: 'Lưu tất cả' });
+    await dialog.getByLabel('Buổi 1', { exact: true }).check();
+    await expect(dialog.getByLabel('Buổi 1 - phòng', { exact: true })).toHaveValue('r1');
+    await dialog.getByLabel('Buổi 1 - slot', { exact: true }).selectOption('8');
+    await expect(save).toBeDisabled();
+    if (failure) {
+      await expect(dialog).toContainText('Không tải được phòng và HLV trống');
+      await dialog.getByRole('button', { name: 'Tải lại', exact: true }).click();
+    }
+    await expect(dialog.getByLabel('Buổi 1 - phòng', { exact: true })).toHaveValue('');
+    await expect(dialog.getByLabel('Buổi 1 - HLV', { exact: true })).toHaveValue('');
+    await expect(dialog.getByLabel('Buổi 1 - phòng', { exact: true })).toBeEnabled();
+    await expect(dialog.locator('.is-invalid')).toHaveCount(0);
+    await expect(dialog.getByText('Chọn phòng còn trống.', { exact: true })).toHaveCount(0);
+    await expect(dialog.getByText('Chọn HLV còn trống.', { exact: true })).toHaveCount(0);
+    await dialog.getByLabel('Buổi 1 - phòng', { exact: true }).focus();
+    await dialog.getByLabel('Buổi 1 - phòng', { exact: true }).press('Tab');
+    await expect(dialog.getByLabel('Buổi 1 - phòng', { exact: true })).toHaveClass(/is-invalid/);
+    await expect(dialog.getByLabel('Buổi 1 - phòng').locator('option[value="r1"]')).toHaveCount(0);
+    await dialog.getByLabel('Buổi 1 - phòng', { exact: true }).selectOption('r2');
+    await dialog.getByLabel('Buổi 1 - HLV', { exact: true }).selectOption('c2');
+    await expect(dialog.getByLabel('Buổi 1 - phòng', { exact: true })).not.toHaveClass(/is-invalid/);
+    await expect(dialog.getByLabel('Buổi 1 - HLV', { exact: true })).not.toHaveClass(/is-invalid/);
+    await dialog.getByLabel('Buổi 2', { exact: true }).check();
+    await dialog.getByLabel('Buổi 2 - ngày', { exact: true }).fill('02/02/2099');
+    await dialog.getByLabel('Buổi 2 - slot', { exact: true }).selectOption('8');
+    await expect(dialog.getByLabel('Buổi 2 - phòng')).toContainText('Không có phòng trống');
+    await expect(dialog.getByLabel('Buổi 2 - HLV')).toContainText('Không có HLV trống');
+    await expect(save).toBeDisabled();
+    expect(calls.filter(call => call.path.endsWith('/reschedule'))).toHaveLength(0);
+    await dialog.getByLabel('Buổi 2 - slot', { exact: true }).selectOption('7');
+    await expect(dialog.getByLabel('Buổi 2 - phòng').locator('option[value="r1"]')).toHaveCount(1);
+    await dialog.getByLabel('Buổi 2 - phòng').selectOption('r1');
+    await dialog.getByLabel('Buổi 2 - HLV').selectOption('c1');
+    await expect(save).toBeEnabled();
+    await save.click();
+    await expect(dialog).toHaveCount(0);
+    const posts = calls.filter(call => call.method === 'POST' && call.path.endsWith('/reschedule'));
+    expect(posts).toHaveLength(1);
+    expect(posts[0].body.sessions).toEqual([
+      expect.objectContaining({ sessionId: 'session-1', roomId: 'r2', coachId: 'c2' }),
+      expect.objectContaining({ sessionId: 'session-2', roomId: 'r1', coachId: 'c1' }),
+    ]);
+    expect(calls.filter(call => call.path.endsWith('/resource-availability')).at(-1).body.excludeSessionIds).toEqual(['session-1', 'session-2']);
+    expect(errors).toEqual([]);
+  });
+}
+
 async function mockApi(page, role, handler) {
   const calls = [];
   const errors = [];
@@ -116,25 +257,22 @@ test('withdrawal decision sends reason only and uses the returned refund includi
   expect(errors).toEqual([]);
 });
 
-test('manager chooses a transfer target supplied by backend', async ({ page }) => {
-  let current = { id: 'request-1', memberAccountId: member.accountId, sourceRunId: run.id, status: 'PENDING', requestedAt: yesterday };
-  const { errors } = await mockApi(page, 'MANAGER', ({ path, method, body }) => {
-    if (path === '/manager/course-transfer-requests') return { body: [current] };
-    if (path.endsWith('/request-1/targets')) return { body: [{ runId: 'target-1', courseName: 'Yoga tối', runCode: 'YOGA-02', tuitionVnd: 900000, capacity: 20, usedSeats: 10 }] };
-    if (path.endsWith('/request-1/approve') && method === 'POST') {
-      expect(body).toEqual({ targetRunId: 'target-1', reason: 'Phù hợp lịch mới' });
-      current = { ...current, status: 'OFFERED' };
-      return { body: { id: 'offer-1', status: 'OFFERED' } };
-    }
+test('retired transfer URLs redirect without requesting transfer APIs', async ({ page }) => {
+  const { calls } = await mockApi(page, 'MEMBER', () => undefined);
+  await page.goto('/member/courses/transfers');
+  await expect(page).toHaveURL(/member\/courses\/schedule-changes$/);
+  await expect(page.getByRole('link', { name: 'Chuyển đợt học', exact: true })).toHaveCount(0);
+  expect(calls.some(call => call.path.includes('course-transfer'))).toBe(false);
+});
+
+test('manager request workspace has no transfer tab or API calls', async ({ page }) => {
+  const { calls } = await mockApi(page, 'MANAGER', ({ path }) => {
+    if (path === '/manager/course-withdrawal-requests') return { body: [] };
   });
-  await page.goto('/manager/course-transfers?id=request-1');
-  const dialog = page.getByRole('dialog');
-  await dialog.getByRole('button', { name: 'Duyệt', exact: true }).click();
-  await dialog.getByLabel('Đợt học thay thế').selectOption('target-1');
-  await dialog.getByLabel('Lý do / kết quả đối chiếu').fill('Phù hợp lịch mới');
-  await dialog.getByRole('button', { name: 'Xác nhận duyệt' }).click();
-  await expect(dialog).toContainText('Đã gửi đề nghị');
-  expect(errors).toEqual([]);
+  await page.goto('/manager/course-transfers');
+  await expect(page).toHaveURL(/manager\/course-withdrawals$/);
+  await expect(page.getByRole('link', { name: 'Chuyển đợt học', exact: true })).toHaveCount(0);
+  expect(calls.some(call => call.path.includes('course-transfer'))).toBe(false);
 });
 
 test('reception uses only its queue/detail APIs and sends eligible=false correctly', async ({ page }) => {
@@ -157,50 +295,48 @@ test('reception uses only its queue/detail APIs and sends eligible=false correct
   expect(errors).toEqual([]);
 });
 
-test('member responds to schedule change while expired requests have no response buttons', async ({ page }) => {
-  const changes = [{ id: 'change-1', enrollmentSessionId: 'enrollment-session-1', oldStartAt: nextMonth, oldEndAt: nextMonth, newStartAt: nextMonth, newEndAt: nextMonth, status: 'PENDING', responseDeadline: nextMonth }, { id: 'expired-change', status: 'PENDING', responseDeadline: yesterday }];
-  const { calls, errors } = await mockApi(page, 'MEMBER', ({ path, body }) => {
-    if (path === '/members/me/course-schedule-changes') return { body: changes };
-    if (path === '/members/me/course-schedule-changes/change-1/response') {
-      expect(body).toEqual({ response: 'REQUEST_TRANSFER' });
-      return { body: { ...changes[0], status: 'RESPONDED', response: 'REQUEST_TRANSFER', respondedAt: new Date().toISOString() } };
+for (const [choice, label, notice] of [
+  ['CONTINUE', 'Theo lịch mới', 'Đã xác nhận tiếp tục học theo lịch mới.'],
+  ['REQUEST_WITHDRAWAL', 'Yêu cầu hủy do đổi lịch', 'Đã gửi yêu cầu hủy do đổi lịch, chờ quản lý duyệt.'],
+]) {
+  test(`member can only continue or cancel after a schedule change: ${choice}`, async ({ page }) => {
+    const changes = [
+      { id: 'change-1', enrollmentSessionId: 'enrollment-session-1', oldStartAt: nextMonth, oldEndAt: nextMonth, newStartAt: nextMonth, newEndAt: nextMonth, status: 'PENDING', responseDeadline: nextMonth, withdrawalEligible: true, refundAmountVnd: 400000 },
+      { id: 'expired-change', status: 'PENDING', responseDeadline: yesterday, withdrawalEligible: true },
+    ];
+    const { calls, errors } = await mockApi(page, 'MEMBER', ({ path, body }) => {
+      if (path === '/members/me/course-schedule-changes') return { body: changes };
+      if (path === '/members/me/course-schedule-changes/change-1/response') {
+        expect(body).toEqual({ response: choice });
+        changes[0] = { ...changes[0], status: 'RESPONDED', response: choice, respondedAt: new Date().toISOString() };
+        return { body: changes[0] };
+      }
+    });
+    await page.goto('/member/courses/schedule-changes');
+    await expect(page.getByRole('button', { name: 'Theo lịch mới', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Yêu cầu hủy do đổi lịch', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: /chuyển đợt/i })).toHaveCount(0);
+    await page.getByRole('button', { name: label, exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    if (choice === 'REQUEST_WITHDRAWAL') {
+      await expect(dialog).toContainText('toàn bộ đợt học này');
+      await expect(dialog).toContainText('Hoàn tiền dự kiến');
+      await expect(dialog).toContainText('400.000');
+      await expect(dialog).toContainText('quản lý để xét duyệt');
+      await expect(dialog.getByRole('listitem')).toHaveCount(3);
     }
+    await page.screenshot({ path: test.info().outputPath(`confirmation-${choice}-desktop.png`) });
+    await page.setViewportSize({ width: 390, height: 844 });
+    const confirm = dialog.getByRole('button', { name: choice === 'REQUEST_WITHDRAWAL' ? 'Gửi yêu cầu hủy' : 'Xác nhận theo lịch mới', exact: true });
+    await expect(confirm).toBeInViewport();
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await page.screenshot({ path: test.info().outputPath(`confirmation-${choice}-mobile.png`) });
+    await confirm.click();
+    await expect(page.getByText(notice)).toBeVisible();
+    expect(calls.filter(call => call.path.endsWith('/response'))).toHaveLength(1);
+    expect(errors).toEqual([]);
   });
-  await page.goto('/member/courses/schedule-changes');
-  await expect(page.getByRole('button', { name: 'Đề nghị chuyển đợt học', exact: true })).toHaveCount(1);
-  await page.getByRole('button', { name: 'Đề nghị chuyển đợt học', exact: true }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Gửi phản hồi' }).click();
-  await expect(page.getByText('Đã gửi yêu cầu chuyển đợt học cho quản lý.')).toBeVisible();
-  expect(calls.filter((call) => call.path.endsWith('/response'))).toHaveLength(1);
-  expect(errors).toEqual([]);
-});
-
-test('member acceptance retries with a stable key and continues the difference order', async ({ page }) => {
-  const offer = { id: 'offer-1', sourceEnrollmentId: enrollment.enrollmentId, sourceRunId: run.id, targetRunId: 'target-1', status: 'OFFERED', expiresAt: nextMonth, creditVnd: 700000, targetTuitionVnd: 900000, differenceVnd: 200000 };
-  let attempts = 0;
-  const { calls, errors } = await mockApi(page, 'MEMBER', ({ path, method }) => {
-    if (path === '/members/me/course-transfer-offers') return { body: [offer] };
-    if (path === '/course-runs/target-1') return { body: { ...run, id: 'target-1', runCode: 'YOGA-02', sessions: [] } };
-    if (path === '/members/me/course-transfer-offers/offer-1/accept' && method === 'POST') {
-      attempts++;
-      return attempts === 1 ? { status: 503, body: {} } : { body: { ...offer, status: 'PENDING_PAYMENT', differenceOrderId: 'order-1' } };
-    }
-    if (path === '/members/me/course-orders/order-1') return { body: { orderId: 'order-1', orderStatus: 'PENDING_PAYMENT', tuitionVnd: 200000, currencyCode: 'VND', expiresAt: nextMonth } };
-  });
-  await page.goto('/member/courses/transfers');
-  await page.getByRole('button', { name: 'Xem đợt thay thế và chấp nhận' }).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toContainText('YOGA-02');
-  await dialog.getByRole('button', { name: 'Chấp nhận đề nghị', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toContainText('Chưa xác nhận được kết quả');
-  await dialog.getByRole('button', { name: 'Chấp nhận đề nghị', exact: true }).click();
-  await expect(page).toHaveURL(/target-1\/register\?orderId=order-1/);
-  const accepts = calls.filter((call) => call.path.endsWith('/accept'));
-  expect(accepts).toHaveLength(2);
-  expect(accepts[0].headers['idempotency-key']).toBeTruthy();
-  expect(accepts[1].headers['idempotency-key']).toBe(accepts[0].headers['idempotency-key']);
-  expect(errors).toEqual([]);
-});
+}
 
 test('course-only room impact cannot be applied as an empty gym impact', async ({ page }) => {
   const { calls, errors } = await mockApi(page, 'MANAGER', ({ path }) => {
@@ -408,7 +544,7 @@ test('split course pages load only their workflow and preserve details, filters 
   await expect(page.locator('main')).toContainText('Buổi 1');
   await page.getByRole('navigation', { name: 'Yêu cầu của khóa học' }).getByRole('link', { name: 'Rút khóa học' }).click();
   await expect(page.locator('#course-withdrawal-enrollment')).toHaveValue('enrollment-1');
-  for (const [hash, heading] of [['refunds','Hoàn tiền khóa học'], ['withdrawals','Rút khóa học'], ['transfers','Chuyển đợt học'], ['schedule-changes','Thay đổi lịch học']]) {
+  for (const [hash, heading] of [['refunds','Hoàn tiền khóa học'], ['withdrawals','Rút khóa học'], ['schedule-changes','Thay đổi lịch học']]) {
     await page.goto('/member/courses#' + hash);
     await expect(page).toHaveURL(new RegExp('/member/courses/' + hash + '$'));
     await expect(page.getByRole('heading', { name: 'Yêu cầu khóa học', level: 1 })).toBeVisible();
@@ -420,6 +556,41 @@ test('split course pages load only their workflow and preserve details, filters 
   await expect(page.getByRole('heading', { name: 'Danh sách chờ khóa học', level: 1 })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('member withdrawal card localizes system reasons, shows estimated refund, and still cancels', async ({ page }) => {
+  let current = { id: 'withdraw-design', enrollmentId: enrollment.enrollmentId, status: 'PENDING',
+    requestReason: 'Withdrawal requested after a material schedule change', requestedAt: yesterday,
+    refundAmountVnd: 800000, remainingUnits: 4, totalUnits: 4, canCancel: true, learningSuspended: true };
+  const { calls, errors } = await mockApi(page, 'MEMBER', ({ path, method, body }) => {
+    if (path === '/members/me/course-enrollments') return { body: [{ ...enrollment, lifecycleStatus: current.status === 'PENDING' ? 'WITHDRAWAL_PENDING' : 'ACTIVE' }] };
+    if (path === '/members/me/course-withdrawal-requests') return { body: [current] };
+    if (path === '/members/me/course-withdrawal-requests/withdraw-design/cancel' && method === 'POST') {
+      expect(body).toEqual({ reason: 'Đã sắp xếp được thời gian học' });
+      current = { ...current, status: 'CANCELLED', canCancel: false, learningSuspended: false, cancelledAt: new Date().toISOString(), cancellationReason: body.reason };
+      return { body: current };
+    }
+  });
+  await page.goto('/member/courses/withdrawals?enrollmentId=enrollment-1');
+  const card = page.locator('#withdrawals article');
+  await expect(card).toContainText('Trung tâm thay đổi lịch học.');
+  await expect(card).not.toContainText('Withdrawal requested');
+  await expect(card).toContainText('Hoàn tiền dự kiến');
+  await expect(card).toContainText('800.000');
+  await expect(card).toContainText('4/4 buổi');
+  await expect(card.locator('.system-badge')).toHaveText('Chờ duyệt rút');
+  await page.screenshot({ path: test.info().outputPath('withdrawal-card-desktop.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await card.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('withdrawal-card-mobile.png'), fullPage: true });
+  await card.getByRole('button', { name: 'Hủy yêu cầu rút', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Lý do hủy', { exact: true }).fill('Đã sắp xếp được thời gian học');
+  await page.getByRole('dialog').getByRole('button', { name: 'Xác nhận hủy yêu cầu', exact: true }).click();
+  await expect(card.locator('.system-badge')).toHaveText('Đã hủy yêu cầu rút');
+  await expect(card).toContainText('Đã sắp xếp được thời gian học');
+  await expect(card.getByRole('button', { name: 'Hủy yêu cầu rút', exact: true })).toHaveCount(0);
+  expect(calls.filter(call => call.path.endsWith('/cancel'))).toHaveLength(1);
   expect(errors).toEqual([]);
 });
 
@@ -559,3 +730,127 @@ for (const role of ['MEMBER', 'RECEPTIONIST']) {
     expect(errors).toEqual([]);
   });
 }
+
+for (const [status, label, endpoint] of [
+  ['SCHEDULED', 'Hủy và xếp bù', 'cancel-with-makeup'],
+  ['CANCELLED_PENDING_MAKEUP', 'Xếp buổi bù', 'makeup'],
+]) {
+  test(`makeup suggests next weekly occurrence and saves beyond the old run end: ${status}`, async ({ page }) => {
+    let currentRun = { ...run, status: 'OPEN_FOR_REGISTRATION', capacity: 10, minimumEnrollment: 1, totalUnits: 4, tuitionVnd: 1000000, version: 1, plannedStartAt: '2099-02-02T12:00:00Z', plannedEndAt: '2099-02-23T13:00:00Z' };
+    let sessions = ['02', '09', '16', '23'].map((day, i) => ({ id: `session-${i + 1}`, runId: 'run-1', unitNumber: i + 1, roomId: 'room-1', roomName: 'Phòng A', coachId: 'coach-1', coachName: 'HLV An', startAt: `2099-02-${day}T12:00:00Z`, endAt: `2099-02-${day}T13:00:00Z`, status: i === 0 ? status : 'SCHEDULED', isMakeup: false, version: 1, allocationVnd: 250000 }));
+    const { calls, errors } = await mockApi(page, 'MANAGER', ({ path, method, body }) => {
+      if (path === '/manager/course-runs/run-1') return { body: currentRun };
+      if (path === '/manager/course-runs/run-1/sessions') return { body: sessions };
+      if (path === '/manager/course-runs/resource-availability') return { body: { rooms: [{ id: 'room-1', name: 'Phòng A' }], coaches: [{ accountId: 'coach-1', fullName: 'HLV An' }] } };
+      if (path === `/manager/course-runs/run-1/sessions/session-1/${endpoint}` && method === 'POST') {
+        expect(body).toEqual({ expectedVersion: 1, roomId: 'room-1', coachId: 'coach-1', startAt: '2099-03-02T12:00:00.000Z', endAt: '2099-03-02T13:00:00.000Z' });
+        const makeup = { ...sessions[0], id: 'makeup-1', startAt: body.startAt, endAt: body.endAt, status: 'MAKEUP_SCHEDULED', isMakeup: true, originalSessionId: 'session-1' };
+        sessions = [{ ...sessions[0], status: 'CANCELLED_PENDING_MAKEUP', replacementSessionId: makeup.id }, ...sessions.slice(1), makeup];
+        currentRun = { ...currentRun, plannedStartAt: sessions[1].startAt, plannedEndAt: body.endAt, version: 2 };
+        return { body: { originalSession: sessions[0], makeupSession: makeup } };
+      }
+    });
+    await page.goto('/manager/course-runs/run-1');
+    await page.getByRole('row').filter({ hasText: '2/2/2099' }).getByRole('button', { name: label, exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByLabel('Buổi học - ngày', { exact: true })).toHaveValue('02/03/2099');
+    await expect(dialog.getByLabel('Buổi học - slot', { exact: true })).toHaveValue('7');
+    await expect(dialog.getByRole('button', { name: 'Lưu buổi học', exact: true })).toBeEnabled();
+    await dialog.getByRole('button', { name: 'Lưu buổi học', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole('row').filter({ hasText: '2/3/2099' })).toBeVisible();
+    expect(calls.filter(c => c.path.endsWith('/' + endpoint))).toHaveLength(1);
+    expect(errors).toEqual([]);
+  });
+}
+
+test('coach teaching calendar merges PT and draft course sessions, reads all pages and opens the right details', async ({ page }) => {
+  const gym = { id: 'session-1', className: 'PT lịch tuần', classType: 'PT_1_1', startTime: '2030-01-07T10:00:00Z', endTime: '2030-01-07T11:00:00Z', roomName: 'Khu PT', bookedCount: 1, capacity: 1, status: 'SCHEDULED', members: [] };
+  const course = { courseSessionId: 'session-1', unitNumber: 1, courseName: 'Aerobic lịch tuần', runCode: 'NHOM-GOC-A', courseRunStatus: 'DRAFT', startsAt: '2030-01-07T12:00:00Z', endsAt: '2030-01-07T13:00:00Z', roomName: 'F1-020', rosterCount: 0, sessionStatus: 'SCHEDULED' };
+  const makeup = { ...course, courseSessionId: 'makeup-1', unitNumber: 2, startsAt: '2030-01-09T14:00:00Z', endsAt: '2030-01-09T15:00:00Z', sessionStatus: 'MAKEUP_SCHEDULED' };
+  const { calls, errors } = await mockApi(page, 'COACH', ({ path, url }) => {
+    if (path === '/coach/class-sessions') return { body: { content: [gym], totalPages: 1 } };
+    if (path === '/coach/course-sessions') {
+      if (url.searchParams.get('size') === '100') return { body: { content: url.searchParams.get('page') === '1' ? [makeup] : [course], totalPages: 2 } };
+      return { body: { content: [course, makeup], totalPages: 1 } };
+    }
+    if (path === '/coach/class-sessions/session-1') return { body: gym };
+    if (path === '/coach/course-sessions/session-1') return { body: course };
+    if (path === '/coach/course-sessions/session-1/roster') return { body: [] };
+  });
+  await page.goto('/coach/schedule?week=2030-01-07');
+  await expect(page.getByRole('button', { name: 'Xem chi tiết PT lịch tuần', exact: true })).toBeVisible();
+  const courseCard = page.getByRole('button', { name: 'Xem chi tiết Aerobic lịch tuần · Buổi 1', exact: true });
+  await expect(courseCard).toContainText('NHOM-GOC-A');
+  await expect(courseCard).toContainText('F1-020');
+  await expect(courseCard).toContainText('Đã lên lịch');
+  await expect(page.getByRole('button', { name: 'Xem chi tiết Aerobic lịch tuần · Buổi 2', exact: true })).toContainText('Đã xếp lịch học bù');
+  for (const call of calls.filter(c => ['/coach/class-sessions', '/coach/course-sessions'].includes(c.path))) {
+    expect(call.url.searchParams.get('from')).toBe('2030-01-06T17:00:00.000Z');
+    expect(call.url.searchParams.get('to')).toBe('2030-01-13T17:00:00.000Z');
+  }
+  expect(calls.some(c => c.path === '/coach/course-sessions' && c.url.searchParams.get('page') === '1')).toBe(true);
+  await page.getByRole('button', { name: 'Xem chi tiết PT lịch tuần', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('PT lịch tuần');
+  await page.getByRole('dialog').getByRole('button', { name: 'Đóng', exact: true }).click();
+  await courseCard.click();
+  await expect(page).toHaveURL(/coach\/course-sessions\?session=session-1$/);
+  await expect(page.getByRole('dialog')).toContainText('Aerobic lịch tuần');
+  await expect(page.getByRole('dialog')).toContainText('Chưa có học viên.');
+  expect(errors).toEqual([]);
+});
+
+for (const choice of ['CONTINUE', 'REQUEST_WITHDRAWAL']) {
+  test(`one schedule change event with two units requires only one response: ${choice}`, async ({ page }) => {
+    const currentEnrollment = { ...enrollment, sessions: [...enrollment.sessions, { ...enrollment.sessions[0], enrollmentSessionId: 'unit-2', unitNumber: 2 }] };
+    let changes = [1, 2].map((n) => ({ id: `change-${n}`, enrollmentSessionId: n === 1 ? 'enrollment-session-1' : 'unit-2', changeEventId: 'batch-event', oldStartAt: nextMonth, oldEndAt: nextMonth, newStartAt: nextMonth, newEndAt: nextMonth, status: 'PENDING', responseDeadline: nextMonth, withdrawalEligible: true, cause: 'CENTER_SESSION_RESCHEDULE', refundBasisVnd: 1000000, refundAmountVnd: 1000000 }));
+    const { calls, errors } = await mockApi(page, 'MEMBER', ({ path, body }) => {
+      if (path === '/members/me/course-enrollments') return { body: [currentEnrollment] };
+      if (path === '/members/me/course-schedule-changes') return { body: changes };
+      if (path === '/members/me/course-schedule-changes/change-1/response') {
+        expect(body).toEqual({ response: choice });
+        changes = changes.map(change => ({ ...change, status: 'RESPONDED', response: choice, respondedAt: new Date().toISOString() }));
+        return { body: changes[0] };
+      }
+    });
+    await page.goto('/member/courses/schedule-changes');
+    await expect(page.locator('#schedule-changes article')).toHaveCount(1);
+    await expect(page.locator('#schedule-changes article .course-change-refund')).toContainText('1.000.000');
+    await expect(page.locator('#schedule-changes article')).toContainText('Buổi 1');
+    await expect(page.locator('#schedule-changes article .course-change-session')).toHaveCount(1);
+    const expand = page.getByRole('button', { name: 'Xem tất cả (2 buổi)', exact: true });
+    await expect(expand).toHaveAttribute('aria-expanded', 'false');
+    await expand.click();
+    await expect(page.locator('#schedule-changes article .course-change-unit')).toHaveText(['Buổi 1', 'Buổi 2']);
+    await page.getByRole('button', { name: 'Thu gọn', exact: true }).click();
+    await expect(page.locator('#schedule-changes article .course-change-session')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Theo lịch mới', exact: true })).toHaveCount(1);
+    await page.getByRole('button', { name: choice === 'CONTINUE' ? 'Theo lịch mới' : 'Yêu cầu hủy do đổi lịch', exact: true }).click();
+    await expect(page.getByRole('dialog')).toContainText(choice === 'REQUEST_WITHDRAWAL' ? 'toàn bộ đợt học này' : 'toàn bộ các buổi');
+    await page.getByRole('dialog').getByRole('button', { name: choice === 'REQUEST_WITHDRAWAL' ? 'Gửi yêu cầu hủy' : 'Xác nhận theo lịch mới', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Theo lịch mới', exact: true })).toHaveCount(0);
+    await expect(page.locator('#schedule-changes article')).toHaveCount(1);
+    expect(calls.filter(call => call.path.endsWith('/response'))).toHaveLength(1);
+    expect(errors).toEqual([]);
+  });
+}
+
+test('schedule change comparison stays readable on desktop and mobile', async ({ page }) => {
+  const e = { ...enrollment, courseName: 'Aerobic', runCode: 'NHOM-GOC-A' };
+  const change = { id: 'design-change', enrollmentSessionId: 'enrollment-session-1', changeEventId: 'design-event', oldStartAt: '2099-11-23T12:00:00Z', oldEndAt: '2099-11-23T13:00:00Z', newStartAt: '2099-11-23T14:00:00Z', newEndAt: '2099-11-23T15:00:00Z', status: 'PENDING', responseDeadline: '2099-11-17T04:00:00Z', withdrawalEligible: true, refundAmountVnd: 800000 };
+  await mockApi(page, 'MEMBER', ({ path }) => {
+    if (path === '/members/me/course-enrollments') return { body: [e] };
+    if (path === '/members/me/course-schedule-changes') return { body: [change] };
+  });
+  await page.goto('/member/courses/schedule-changes');
+  const card = page.locator('.course-change-card');
+  await expect(card.getByRole('heading', { name: 'Aerobic', exact: true })).toBeVisible();
+  await expect(card).toContainText('19:00 – 20:00');
+  await expect(card).toContainText('21:00 – 22:00');
+  await expect(card).toContainText('800.000');
+  await page.screenshot({ path: test.info().outputPath('schedule-changes-desktop.png'), fullPage: true, animations: 'disabled' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(card.getByRole('button', { name: 'Theo lịch mới', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('schedule-changes-mobile.png'), fullPage: true, animations: 'disabled' });
+});

@@ -4,6 +4,7 @@ import CourseRunStatusBadge from '../../../components/common/CourseRunStatusBadg
 import { z } from "zod";
 import usePollingEffect from "../../../hooks/usePollingEffect";
 import CourseRunRescheduleModal from "./CourseRunRescheduleModal";
+import CourseSessionsRescheduleModal from "./CourseSessionsRescheduleModal";
 import SessionDateSlotInput from "../../../components/common/SessionDateSlotInput";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +24,7 @@ import {
 } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import ErrorAlert from "../../../components/common/ErrorAlert";
+import { suggestCourseMakeup } from "../../../utils/courseMakeup";
 import { courseMakeupIds } from "../../../utils/courseWorkflow";
 import {
   cancelCourseSessionWithMakeup,
@@ -231,12 +233,6 @@ export default function ManagerCourseRunDetailPage() {
     }
   }
 
-  function openNewSession() {
-    setMakeup(false);
-    setEditingSession(null);
-    setSessionForm({ ...emptySession, coachId: run.primaryCoachId });
-    setModal("session");
-  }
   function openEditSession(item) {
     setMakeup(false);
     setEditingSession(item);
@@ -247,6 +243,21 @@ export default function ManagerCourseRunDetailPage() {
       startAt: toLocalInput(item.startAt),
       endAt: toLocalInput(item.endAt),
       allocationVnd: item.allocationVnd || "",
+    });
+    setModal("session");
+  }
+
+  function openMakeupSession(item) {
+    const suggested = suggestCourseMakeup(sessions);
+    setEditingSession(item);
+    setMakeup(true);
+    setSessionForm({
+      unitNumber: item.unitNumber,
+      roomId: item.roomId || "",
+      coachId: item.coachId || "",
+      allocationVnd: item.allocationVnd || "",
+      startAt: suggested?.startAt || "",
+      endAt: suggested?.endAt || "",
     });
     setModal("session");
   }
@@ -375,6 +386,18 @@ export default function ManagerCourseRunDetailPage() {
       {modal === "schedule" && (
         <CourseRunRescheduleModal
           run={run}
+          onClose={() => setModal("")}
+          onSaved={(result) => {
+            setRun(result.run);
+            setSessions(result.sessions);
+            setModal("");
+            setError("");
+          }}
+        />
+      )}
+      {modal === "sessions-schedule" && (
+        <CourseSessionsRescheduleModal
+          run={run}
           sessions={sessions}
           onClose={() => setModal("")}
           onSaved={(result) => {
@@ -438,10 +461,9 @@ export default function ManagerCourseRunDetailPage() {
       <div className="card border-0 shadow-sm p-3">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h2 className="h5 mb-0">Lịch buổi học</h2>
-          <Button variant="danger" size="sm" onClick={openNewSession}
-            disabled={busy || ["CANCELLED", "COMPLETED", "SETTLEMENT_PENDING"].includes(run.status)}>
-            + Thêm buổi học
-          </Button>
+          {!["CANCELLED", "COMPLETED", "SETTLEMENT_PENDING"].includes(run.status) && <Button disabled={busy || !sessions.some(session =>
+            ["SCHEDULED", "MAKEUP_SCHEDULED"].includes(session.status) && !session.replacementSessionId && Date.parse(session.startAt) > now)}
+            onClick={() => setModal("sessions-schedule")}>Dời nhiều buổi</Button>}
         </div>
         <Table responsive hover className="align-middle mb-0">
           <thead className="table-light">
@@ -491,15 +513,7 @@ export default function ManagerCourseRunDetailPage() {
                         size="sm"
                         variant="outline-danger"
                         disabled={busy || Date.parse(item.startAt) <= now}
-                        onClick={() => {
-                          openEditSession(item);
-                          setMakeup(true);
-                          setSessionForm({
-                            ...sessionFields.getValues(),
-                            startAt: "",
-                            endAt: "",
-                          });
-                        }}
+                        onClick={() => openMakeupSession(item)}
                       >
                         Hủy và xếp bù
                       </Button>
@@ -512,15 +526,7 @@ export default function ManagerCourseRunDetailPage() {
                         className="ms-2"
                         size="sm"
                         disabled={busy}
-                        onClick={() => {
-                          openEditSession(item);
-                          setMakeup(true);
-                          setSessionForm({
-                            ...sessionFields.getValues(),
-                            startAt: "",
-                            endAt: "",
-                          });
-                        }}
+                        onClick={() => openMakeupSession(item)}
                       >
                         Xếp buổi bù
                       </Button>
@@ -705,6 +711,7 @@ export default function ManagerCourseRunDetailPage() {
             {error && (
               <ErrorAlert error={error} title="Không thể lưu thay đổi" />
             )}
+            {editingSession && !makeup && <p className="text-muted">Thời gian khai giảng và kết thúc đợt học sẽ tự cập nhật theo buổi bắt đầu sớm nhất và buổi kết thúc muộn nhất.</p>}
             {availability.loading && <p role="status">Đang kiểm tra HLV và phòng…</p>}
             {availability.error && <><ErrorAlert error={availability.error} title="Không tải được HLV và phòng trống"/><Button onClick={availability.retry}>Thử lại</Button></>}
             <Row className="g-3">
