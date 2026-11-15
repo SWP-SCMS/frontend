@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import { useEffect, useRef, useState } from 'react';
 import usePollingEffect from '../../../hooks/usePollingEffect';
@@ -87,6 +88,7 @@ const CENTER_CHECK_IN_TIME_FORMATTER = new Intl.DateTimeFormat('vi-VN', {
 });
 
 const CHECK_IN_BUSINESS_ERRORS = {
+  CENTER_VISIT_ALREADY_OPEN: 'Hội viên đã check-in. Vui lòng check-out lượt hiện tại trong mục “Lượt vào đang mở” trước khi check-in lại.',
   COURSE_CHECK_IN_NOT_ELIGIBLE: 'Buổi khóa học không còn đủ điều kiện check-in. Vui lòng tra cứu lại.',
   MEMBERSHIP_FROZEN:
     'Gói tập của hội viên đang được đóng băng nên chưa thể check-in trung tâm.',
@@ -107,11 +109,15 @@ function formatCenterCheckInTime(value) {
 
 export default function ReceptionCenterCheckInPage() {
   const [selectedMember, setSelectedMember] = useState(null);
+  const [loadedPhoto, setLoadedPhoto] = useState(null);
+  const [photoAttempt, setPhotoAttempt] = useState(0);
+  const photoUrl = selectedMember?.profileImageUrl?.trim();
+  const photoKey = JSON.stringify([selectedMember?.memberId, photoUrl, photoAttempt]);
   const [searched, setSearched] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [checkInBusinessError, setCheckInBusinessError] = useState(null);
   const [checkInError, setCheckInError] = useState(null);
-  const [checkInSuccess, setCheckInSuccess] = useState(null);
+  const [checkInSuccess, setCheckInSuccess] = useTransientNotice(null);
   const checkInIdempotencyKeyRef = useRef(null);
   const checkInRequestInFlightRef = useRef(false);
 
@@ -147,13 +153,13 @@ export default function ReceptionCenterCheckInPage() {
   });
 
   useEffect(() => {
+    setLoadedPhoto(null);
     checkInIdempotencyKeyRef.current = null;
     checkInRequestInFlightRef.current = false;
     setCheckInBusinessError(null);
     setCheckInError(null);
-    setCheckInSuccess(null);
     resetCheckIn({ identityVerified: false });
-  }, [selectedMember?.memberId, resetCheckIn]);
+  }, [selectedMember?.memberId, photoUrl, resetCheckIn]);
 
   const watchedMemberCode = selectedMember?.memberId;
   usePollingEffect(({ track, commitValue }) => {
@@ -163,6 +169,7 @@ export default function ReceptionCenterCheckInPage() {
 
   async function searchMember(values) {
     setSearchError(null);
+    setCheckInSuccess(null);
     setSearched(true);
     setSelectedMember(null);
 
@@ -185,7 +192,7 @@ export default function ReceptionCenterCheckInPage() {
   }
 
   async function submitCenterCheckIn(values) {
-    if (!selectedMember || checkInRequestInFlightRef.current) return;
+    if (checkInBlocked || checkInRequestInFlightRef.current) return;
 
     checkInRequestInFlightRef.current = true;
     setCheckInBusinessError(null);
@@ -233,7 +240,7 @@ export default function ReceptionCenterCheckInPage() {
   const hasCenterAccess = activeMembership?.benefitCodes?.includes('CENTER_ACCESS');
   const checkInBlocked = selectedMember
     ? selectedMember.status !== ACCOUNT_STATUS.ACTIVE ||
-      !selectedMember.profileImageUrl ||
+      !photoUrl || loadedPhoto !== photoKey ||
       (!selectedMember.courseSessionId && (!hasCenterAccess || activeMembership?.frozen))
     : true;
 
@@ -341,7 +348,13 @@ export default function ReceptionCenterCheckInPage() {
             <Row className="g-4 align-items-start">
               <Col md="auto" className="text-center">
                 <AuthenticatedProfileImage
-                  src={selectedMember.profileImageUrl}
+                  key={photoKey}
+                  src={photoUrl}
+                  onLoad={() => setLoadedPhoto(photoKey)}
+                  onError={() => {
+                    setLoadedPhoto(null);
+                    resetCheckIn({ identityVerified: false });
+                  }}
                   alt={`Ảnh hồ sơ của ${selectedMember.fullName || selectedMember.memberId}`}
                   className="img-thumbnail rounded"
                   width="200"
@@ -351,7 +364,13 @@ export default function ReceptionCenterCheckInPage() {
                     className="border rounded bg-light text-muted d-flex align-items-center justify-content-center p-3"
                     style={{ width: 200, height: 200 }}
                   >
-                    Chưa có ảnh hồ sơ
+                    {photoUrl ? 'Đang tải ảnh hồ sơ…' : 'Chưa có ảnh hồ sơ'}
+                  </div>}
+                  errorFallback={<div className="border rounded bg-light p-3" style={{ width: 200 }}>
+                    <p>Không tải được ảnh hồ sơ.</p>
+                    <Button variant="outline-secondary" size="sm" onClick={() => setPhotoAttempt(value => value + 1)}>
+                      Thử lại
+                    </Button>
                   </div>}
                 />
               </Col>
@@ -423,7 +442,7 @@ export default function ReceptionCenterCheckInPage() {
                   </Alert>
                 ) : null}
 
-                {!selectedMember.profileImageUrl ? (
+                {!photoUrl ? (
                   <Alert variant="warning">
                     Hội viên chưa có ảnh hồ sơ nên chưa thể check-in.{' '}
                     <Alert.Link

@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import StaffPagination from '../../../components/common/StaffPagination';
 import './ManagerCourseWorkflowPage.css';
 import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
@@ -50,13 +51,13 @@ function DecisionForm({ kind, item, action, onSubmit, busy }) {
 export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
   const [params, setParams] = useSearchParams();
   const selectedId = params.get('id');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(kind === 'withdrawals' ? 'PENDING' : '');
   const [page, setPage] = useState(0);
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useTransientNotice('');
   const [detail, setDetail] = useState(null);
   const [context, setContext] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -127,7 +128,8 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
   const allRows = kind === 'refunds' ? data?.items || [] : Array.isArray(data) ? data : [];
   const filtered = kind === 'refunds' || !status ? allRows : allRows.filter((row) => row.status === status);
   const totalPages = kind === 'refunds' ? data?.totalPages || 0 : Math.ceil(filtered.length / 20);
-  const rows = kind === 'refunds' ? filtered : filtered.slice(page * 20, (page + 1) * 20);
+  const visiblePage = kind === 'withdrawals' ? Math.min(page, Math.max(0, totalPages - 1)) : page;
+  const rows = kind === 'refunds' ? filtered : filtered.slice(visiblePage * 20, (visiblePage + 1) * 20);
   const available = !detail ? [] : kind === 'refunds' ? courseRefundActions(detail.status) : detail.status === 'PENDING' ? ['approve', 'reject'] : [];
 
   return <div className="scms-course-workspace">
@@ -199,11 +201,11 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
               <Button size="sm" variant="outline-primary" onClick={() => setParams({ id: row.id })}>Xem hồ sơ</Button>
             </td>
           </tr>)}
-          {!rows.length && <tr><td colSpan={kind === 'refunds' ? 7 : 6} className="text-center py-4">Không có yêu cầu phù hợp.</td></tr>}
+          {!rows.length && <tr><td colSpan={kind === 'refunds' ? 7 : 6} className="text-center py-4">{kind === 'withdrawals' && status === 'PENDING' ? 'Không có yêu cầu rút chờ duyệt.' : 'Không có yêu cầu phù hợp.'}</td></tr>}
         </tbody>
       </Table>
     </Card>}
-    <StaffPagination page={page} totalPages={totalPages} loading={loading} onPageChange={setPage} />
+    <StaffPagination page={visiblePage} totalPages={totalPages} loading={loading} onPageChange={setPage} />
 
     <Modal show={!!selectedId} onHide={() => { if (!busy) setParams({}); }} size="lg" centered backdrop={busy ? 'static' : true} keyboard={!busy}>
       <Modal.Header closeButton={!busy}><Modal.Title>{titles[kind]}</Modal.Title></Modal.Header>

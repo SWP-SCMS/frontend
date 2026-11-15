@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 // Manager – Edit discipline (US23).
 //
 // Loads via GET /api/v1/manager/disciplines/{id}, then PATCHes only the
@@ -87,7 +88,7 @@ export default function DisciplineEditPage() {
   const [loadError, setLoadError] = useState(null);
   const [serverError, setServerError] = useState(null);
   // 'no-changes' | 'saved' | null
-  const [saved, setSaved] = useState(null);
+  const [saved, setSaved] = useTransientNotice(null);
   // Form-level (non-field) error for the friendly "at least one field" hint.
   const [formLevelError, setFormLevelError] = useState(null);
   const [blockingSessions, setBlockingSessions] = useState([]);
@@ -125,7 +126,7 @@ export default function DisciplineEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [disciplineId, reset]);
+  }, [disciplineId, reset, setSaved]);
 
   useEffect(() => {
     load();

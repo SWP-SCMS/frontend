@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useState } from "react";
 import {Alert,
@@ -43,7 +44,7 @@ export default function ManualActivationReviewPage() {
   const [decision, setDecision] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useTransientNotice("");
   const form = useForm({
     resolver: zodResolver(decisionSchema),
     defaultValues: { decisionNote: "" },

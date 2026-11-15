@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import useAutoRefresh from '../../../hooks/useAutoRefresh';
 import usePollingEffect from '../../../hooks/usePollingEffect';
@@ -71,7 +72,7 @@ export default function RefundRequestDeskPage() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const [submitting, setSubmitting] = useState(false);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [sourceCandidates, setSourceCandidates] = useState([]);

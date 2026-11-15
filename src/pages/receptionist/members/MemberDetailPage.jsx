@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 // Receptionist – Member profile at the front desk (US11).
@@ -178,7 +179,7 @@ export default function MemberDetailPage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
 
   // Reset-password modal state.
   const [showReset, setShowReset] = useState(false);
@@ -323,10 +324,12 @@ export default function MemberDetailPage() {
       if (code === 'EMAIL_ALREADY_EXISTS') {
         setNotice(
           'Email này đã được một tài khoản khác sử dụng. Vui lòng nhập email khác.',
+          { persistent: true },
         );
       } else if (code === 'PHONE_ALREADY_EXISTS') {
         setNotice(
           'Số điện thoại này đã được một tài khoản khác sử dụng. Vui lòng nhập số khác.',
+          { persistent: true },
         );
       }
 

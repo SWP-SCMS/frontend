@@ -78,7 +78,10 @@ test('SYSTEM_CLOCK Reception withdrawal and cancellation refresh all member pane
   // Own setup so this case can be run independently.
   let e = await enrollment(request, fixture.runId);
   if (!e) { await cash(request, fixture); e = await enrollment(request, fixture.runId); }
-  await login(page, 'reception', `/reception/courses?orderId=${fixture.orderId}&memberCode=${env.accounts.member.memberCode}`);
+  await login(page, 'reception', '/reception/course-requests');
+  await page.getByLabel('Mã hội viên hoặc số điện thoại').fill(env.accounts.member.memberCode);
+  await page.getByRole('button', { name: 'Tra cứu', exact: true }).click();
+  await page.getByRole('button', { name: /^Sắp học/ }).click();
   const row = page.getByRole('row').filter({ hasText: e.runCode });
   await row.getByRole('button', { name: 'Yêu cầu rút hộ', exact: true }).click();
   let dialog = page.getByRole('dialog');
@@ -86,12 +89,12 @@ test('SYSTEM_CLOCK Reception withdrawal and cancellation refresh all member pane
   await dialog.getByLabel('Lý do', { exact: true }).fill('QA temporary withdrawal');
   await dialog.getByRole('button', { name: 'Xác nhận gửi yêu cầu' }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(row.getByRole('button', { name: 'Yêu cầu rút hộ', exact: true })).toBeDisabled();
+  await expect(row.getByRole('button', { name: 'Yêu cầu rút hộ', exact: true })).toHaveCount(0);
   await expect(page.getByText('Tạm ngừng học/điểm danh, vẫn giữ chỗ.', { exact: true })).toBeVisible();
   const w = (await api(request, 'member', 'GET', '/members/me/course-withdrawal-requests')).find(w => w.enrollmentId === e.enrollmentId && w.status === 'PENDING');
   expect(w.requesterAccountId).toBe(env.accounts.reception.accountId);
   expect(w.snapshotSource).toBe('REQUEST_TIME'); expect(w.refundAmountVnd).toBe(400000);
-  await page.getByRole('button', { name: 'Hủy yêu cầu rút', exact: true }).click();
+  await row.getByRole('button', { name: 'Hủy yêu cầu rút', exact: true }).click();
   dialog = page.getByRole('dialog');
   await expect(dialog).toContainText(/[Kk]hông/);
   await dialog.getByLabel('Lý do hủy').fill('QA return to class');

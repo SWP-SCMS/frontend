@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -28,7 +29,7 @@ function SessionTrainingPage({ sessionId, memberAccountId }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({ notes: '', feedback: '' });
   const [saveError, setSaveError] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useTransientNotice(false);
   const saveLock = useRef(false);
 
   usePollingEffect(({ background, track, commitValue, commitError, failed }) => {

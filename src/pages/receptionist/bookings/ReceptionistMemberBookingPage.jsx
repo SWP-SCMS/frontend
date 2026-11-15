@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import { formatSessionSlot } from '../../../utils/sessionSlots';
 import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
@@ -274,7 +275,7 @@ export default function ReceptionistMemberBookingPage() {
   const [cancelModalError, setCancelModalError] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [actionError, setActionError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const [waitlistTarget, setWaitlistTarget] = useState(null);
   const [waitlistRows, setWaitlistRows] = useState([]);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
@@ -428,7 +429,7 @@ export default function ReceptionistMemberBookingPage() {
     setNotice(null);
     loadProfile();
     loadMemberships();
-  }, [loadMemberships, loadProfile]);
+  }, [loadMemberships, loadProfile, setNotice]);
 
   useEffect(() => {
     loadSessions();
@@ -567,8 +568,12 @@ export default function ReceptionistMemberBookingPage() {
     }
   }
 
-  async function openWaitlistModal(session) {
-    setWaitlistTarget(session);
+  const memberIsWaiting = waitlistRows.some(
+    entry => entry.memberId === accountId && entry.status === 'WAITING',
+  );
+
+  async function openWaitlistModal(session, canJoin) {
+    setWaitlistTarget({ ...session, canJoin });
     setWaitlistRows([]);
     setWaitlistError(null);
     setWaitlistLoading(true);
@@ -589,14 +594,11 @@ export default function ReceptionistMemberBookingPage() {
   }
 
   async function toggleMemberWaitlist() {
-    if (!accountId || !waitlistTarget) return;
-    const waiting = waitlistRows.find(
-      (entry) => entry.memberId === accountId && entry.status === 'WAITING',
-    );
+    if (!accountId || !waitlistTarget || !mutationsAllowed || (!memberIsWaiting && !waitlistTarget.canJoin)) return;
     setWaitlistSubmitting(true);
     setWaitlistError(null);
     try {
-      if (waiting) {
+      if (memberIsWaiting) {
         await leaveReceptionMemberWaitlist(accountId, waitlistTarget.id);
         setNotice(`Đã rời hàng chờ cho hội viên ${profile.memberId}.`);
       } else {
@@ -840,10 +842,10 @@ export default function ReceptionistMemberBookingPage() {
                             type="button"
                             variant={selectable || waitlistSelectable ? 'danger' : 'outline-secondary'}
                             size="sm"
-                            disabled={full ? !waitlistSelectable : !selectable}
+                            disabled={full ? !mutationsAllowed : !selectable}
                             onClick={() =>
                               full
-                                ? openWaitlistModal(session)
+                                ? openWaitlistModal(session, waitlistSelectable)
                                 : openBookModal(session)
                             }
                             title={unavailableTitle}
@@ -858,6 +860,12 @@ export default function ReceptionistMemberBookingPage() {
                                 ? 'Chọn buổi tập'
                                 : 'Không thể đặt'}
                           </Button>
+                          {!full && (
+                            <Button size="sm" variant="outline-secondary" className="ms-2"
+                              disabled={!mutationsAllowed} onClick={() => openWaitlistModal(session, false)}>
+                              Xem hàng chờ
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1161,22 +1169,13 @@ export default function ReceptionistMemberBookingPage() {
           </Button>
           <Button
             type="button"
-            variant={
-              waitlistRows.some(
-                (entry) => entry.memberId === accountId && entry.status === 'WAITING',
-              )
-                ? 'outline-danger'
-                : 'danger'
-            }
+            variant={memberIsWaiting ? 'outline-danger' : 'danger'}
             onClick={toggleMemberWaitlist}
-            disabled={waitlistLoading || waitlistSubmitting}
+            disabled={waitlistLoading || waitlistSubmitting || Boolean(waitlistError) || (!memberIsWaiting && !waitlistTarget?.canJoin)}
           >
             {waitlistSubmitting
               ? 'Đang xử lý...'
-              : waitlistRows.some(
-                    (entry) =>
-                      entry.memberId === accountId && entry.status === 'WAITING',
-                  )
+              : memberIsWaiting
                 ? 'Rời hàng chờ cho hội viên'
                 : 'Thêm hội viên vào hàng chờ'}
           </Button>

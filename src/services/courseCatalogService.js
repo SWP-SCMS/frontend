@@ -26,6 +26,15 @@ export async function listCatalogCourseRuns({ page = 0, size = 20 } = {}) {
   return normalizeCoursePage(data);
 }
 
+export async function listAllCatalogCourseRuns() {
+  const runs = [];
+  for (let page = 0; ; page++) {
+    const result = await listCatalogCourseRuns({ page, size: 100 });
+    runs.push(...result.content);
+    if (result.last) return runs;
+  }
+}
+
 export async function getCatalogCourseRun(runId) {
   const { data } = await publicApi.get(`/course-runs/${runId}`);
   return data;

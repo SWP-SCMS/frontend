@@ -1,15 +1,15 @@
 import usePollingEffect from '../../../hooks/usePollingEffect';
 import ReceptionCourseActions from './ReceptionCourseActions';
-import ReceptionCourseWithdrawals from './ReceptionCourseWithdrawals';
+import CourseMemberLookup from './CourseMemberLookup';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { courseMemberSearchSchema } from '../../../schemas/courseSchemas';
 import { normalizePhone } from '../../../utils';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Card, Form, Modal } from 'react-bootstrap';
+import { Alert, Button, Card, Form, Modal, Table } from 'react-bootstrap';
 import { Link, useSearchParams } from 'react-router-dom';
 import { searchReceptionMember } from '../../../services/receptionistService';
-import { getCatalogCourseRun, listCatalogCourseRuns } from '../../../services/courseCatalogService';
+import { getCatalogCourseRun, listAllCatalogCourseRuns } from '../../../services/courseCatalogService';
 import { createReceptionCourseOrder, getReceptionCourseOrder, startReceptionCourseSepayPayment, confirmReceptionCourseCashPayment } from '../../../services/courseOrderService';
 import { createCourseIdempotencyKey } from '../../../services/courseServiceUtils';
 import { COURSE_ORDER_STATUS_LABELS, formatCourseMoney, formatCourseDateTime, getCourseStatusLabel, getCourseErrorMessage } from '../../../utils/courseUi';
@@ -29,10 +29,16 @@ export default function ReceptionCourseBookingPage() {
   const { register, handleSubmit, reset, formState: { errors } } = useForm({ resolver: zodResolver(courseMemberSearchSchema), defaultValues: { kind: 'memberId', query: '' } });
   const [member, setMember] = useState(null);
   const [runs, setRuns] = useState([]);
-  const [page, setPage] = useState(0);
-  const [last, setLast] = useState(true);
-  const [run, setRun] = useState(null);
+  const [courseId, setCourseId] = useState('');
+  const [selectedRun, setRun] = useState(null);
+  const courses = new Map();
+  for (const item of runs) {
+    if (!courses.has(item.courseId)) courses.set(item.courseId, { name: item.courseName, code: item.courseCode, runs: [] });
+    courses.get(item.courseId).runs.push(item);
+  }
+  const course = courses.get(courseId);
   const [order, setOrder] = useState(null);
+  const run = requestedOrderId || order ? selectedRun : course?.runs.find(item => item.id === selectedRun?.id && item.registrationStatus === 'OPEN');
   const [payment, setPayment] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -67,14 +73,13 @@ export default function ReceptionCourseBookingPage() {
     if (requestedOrderId) return;
     let active = true;
     if (!background) commitValue(setLoading, true);
-    track(listCatalogCourseRuns({ page, size: 20 }).then((data) => {
+    track(listAllCatalogCourseRuns().then((data) => {
       if (!active) return;
-      commitValue(setRuns, data.content || []);
-      commitValue(setLast, page + 1 >= data.totalPages);
+      commitValue(setRuns, data);
     }).catch((e) => { failed(e);  if (active) commitError(setError, getCourseErrorMessage(e)); })
       .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
-  }, [page, catalogRevision, requestedOrderId], !busy);
+  }, [catalogRevision, requestedOrderId], !busy);
   async function perform(action) {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -111,35 +116,38 @@ export default function ReceptionCourseBookingPage() {
     <p className="text-muted mb-4">Đăng ký theo đợt học. Học phí khóa học độc lập với gói tập gym.</p>
     {error && <Alert variant="danger" role="alert">{error}</Alert>}
     <Card className="border-0 shadow-sm mb-4"><Card.Body>
-      <Form className="scms-course-member-search" noValidate onSubmit={(event) => handleSubmit(searchMember)(event)}>
-        <Form.Label htmlFor="course-member-kind">Tra cứu hội viên</Form.Label>
-        <Form.Select id="course-member-kind" {...register('kind')} disabled={busy || !!order}>
-          <option value="memberId">Mã hội viên</option><option value="phone">Số điện thoại</option>
-        </Form.Select>
-        <Form.Control className="my-2" aria-label="Mã hội viên hoặc số điện thoại" {...register('query')} isInvalid={!!errors.query} disabled={busy || !!order} />
-        <Form.Control.Feedback type="invalid">{errors.query?.message}</Form.Control.Feedback>
-        <Button type="submit" disabled={busy || !!order}>Tra cứu</Button>
-      </Form>
+      <CourseMemberLookup register={register} errors={errors} onSubmit={handleSubmit(searchMember)} disabled={busy || !!order} />
       {member && <p className="mt-3">{member.fullName} · {member.memberId} · {member.phone}</p>}
-      {member && <ReceptionCourseWithdrawals key={"withdrawals-" + member.accountId} member={member} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
       {member && <ReceptionCourseActions key={"actions-" + member.accountId} member={member} run={run} refreshRevision={memberRevision} onChanged={refreshMemberPanels} />}
       {member && member.status !== 'ACTIVE' && <Alert variant="warning">Hội viên chưa ở trạng thái hoạt động.</Alert>}
     </Card.Body></Card>
     {!order && <Card className="border-0 shadow-sm mb-4"><Card.Body>
-      <h2>Chọn đợt học</h2>
-      <Button size="sm" variant="outline-secondary" disabled={loading || busy} onClick={() => setCatalogRevision((value) => value + 1)}>Tải lại danh sách đợt học</Button>
-      {loading ? <p>Đang tải đợt học…</p> : <>
-        {!runs.length && <p>Chưa có đợt học để đăng ký.</p>}
-        {runs.map((item) => <div key={item.id} className="border-bottom py-2">
-          <strong>{item.courseName} · {item.runCode}</strong>
-          <p>{formatCourseDateTime(item.plannedStartAt)} · {formatCourseMoney(item.tuitionVnd)}</p>
-          <Button variant={run?.id === item.id ? 'primary' : 'outline-primary'} disabled={busy || item.registrationStatus !== 'OPEN'} onClick={() => { if (run?.id !== item.id) keys.current = {}; setRun(item); }}>
-            {item.registrationStatus !== 'OPEN' ? 'Chưa mở hoặc đã đóng đăng ký' : run?.id === item.id ? 'Đã chọn' : 'Chọn đợt học'}
-          </Button>
-        </div>)}
-      </>}
-      <div className="d-flex gap-2 my-3"><Button size="sm" variant="outline-secondary" disabled={busy || loading || page === 0} onClick={() => setPage(page - 1)}>Trang trước</Button><span className="text-muted small align-self-center">Trang {page + 1}</span><Button size="sm" variant="outline-secondary" disabled={busy || loading || last} onClick={() => setPage(page + 1)}>Trang sau</Button></div>
-      <Button disabled={busy || !run || member?.status !== 'ACTIVE'} onClick={() => perform(async () => {
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h2 className="mb-0">Chọn khóa học</h2>
+        <Button size="sm" variant="outline-secondary" disabled={loading || busy} onClick={() => setCatalogRevision(value => value + 1)}>Tải lại</Button>
+      </div>
+      {loading ? <p>Đang tải khóa học…</p> : !courses.size ? <p>Chưa có đợt học để đăng ký.</p> : (
+        <Form.Select aria-label="Khóa học" value={course ? courseId : ''} disabled={busy} onChange={event => {
+          setCourseId(event.target.value);
+          setRun(null);
+          keys.current = {};
+        }}>
+          <option value="">Chọn khóa học</option>
+          {Array.from(courses, ([id, group]) => <option key={id} value={id}>{group.name} · {group.code} ({group.runs.length} đợt)</option>)}
+        </Form.Select>
+      )}
+      {course && <Table responsive className="align-middle mt-3">
+        <thead><tr><th>Mã đợt</th><th>Khai giảng</th><th>Huấn luyện viên</th><th>Học phí</th><th>Thao tác</th></tr></thead>
+        <tbody>{course.runs.map(item => <tr key={item.id}>
+          <td>{item.runCode}</td><td>{formatCourseDateTime(item.plannedStartAt)}</td>
+          <td>{item.primaryCoachName}</td><td>{formatCourseMoney(item.tuitionVnd)}</td>
+          <td><Button size="sm" variant={run?.id === item.id ? 'primary' : 'outline-primary'} disabled={busy || item.registrationStatus !== 'OPEN'} onClick={() => {
+            if (run?.id !== item.id) keys.current = {};
+            setRun(item);
+          }}>{item.registrationStatus !== 'OPEN' ? 'Chưa mở hoặc đã đóng đăng ký' : run?.id === item.id ? 'Đã chọn' : 'Chọn đợt học'}</Button></td>
+        </tr>)}</tbody>
+      </Table>}
+      <Button className="mt-2" disabled={busy || !run || member?.status !== 'ACTIVE'} onClick={() => perform(async () => {
         const created = await createReceptionCourseOrder(member.accountId, run.id, key('course-reception-order'));
         setOrder(created); setPayment(created.payment);
         setSearchParams({ orderId: created.orderId, memberCode: member.memberId }, { replace: true });

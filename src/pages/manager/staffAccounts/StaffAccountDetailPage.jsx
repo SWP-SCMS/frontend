@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Staff/Manager account detail (US06).
@@ -32,7 +33,7 @@ export default function StaffAccountDetailPage() {
   const [deactivateError, setDeactivateError] = useState(null);
 
   const [resetting, setResetting] = useState(false);
-  const [resetMessage, setResetMessage] = useState(null);
+  const [resetMessage, setResetMessage] = useTransientNotice(null);
   const [resetError, setResetError] = useState(null);
 
   const load = useCallback(async ({ background = false, commitValue = (setter, value) => setter(value), commitError = (setter, value) => setter(value), failed = () => {} } = {}) => {

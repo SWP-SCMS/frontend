@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useState } from 'react';
 import {Alert,  Button, Card, Form, Modal, Spinner, Table} from 'react-bootstrap';
@@ -66,7 +67,7 @@ export default function CoachLeaveRequestsPage() {
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [actionError, setActionError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const [withdrawRow, setWithdrawRow] = useState(null);
 
   const load = useCallback(async () => {

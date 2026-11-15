@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Modal, Spinner, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
@@ -14,7 +15,7 @@ export default function OpenCenterVisitsPage() {
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useTransientNotice('');
 
   const load = useCallback(async () => {
     setLoading(true);

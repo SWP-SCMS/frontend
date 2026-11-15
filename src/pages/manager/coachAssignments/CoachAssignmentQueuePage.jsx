@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 // Manager – PERSONAL_COACHING assignment discovery workflow.
 //
@@ -108,7 +109,7 @@ export default function CoachAssignmentQueuePage() {
   const [workloads, setWorkloads] = useState([]);
   const [workloadsLoading, setWorkloadsLoading] = useState(true);
   const [workloadsError, setWorkloadsError] = useState(null);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useTransientNotice('');
 
   const [assignMember, setAssignMember] = useState(null);
   const [currentAssignment, setCurrentAssignment] = useState(null);

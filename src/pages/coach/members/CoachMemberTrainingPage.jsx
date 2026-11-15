@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import { statusLabel } from '../../../utils/statusLabels';
 import usePollingEffect from '../../../hooks/usePollingEffect';
@@ -158,7 +159,7 @@ function MemberTrainingPage({ kind, memberAccountId }) {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [saveError, setSaveError] = useState(null);
   const [businessError, setBusinessError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useTransientNotice('');
   const [versions, setVersions] = useState(null);
   const [versionsPlan, setVersionsPlan] = useState(null);
   const [versionsLoading, setVersionsLoading] = useState(false);

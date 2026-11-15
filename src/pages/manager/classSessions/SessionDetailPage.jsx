@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
 // Manager – Session detail (US29) + Cancel (US31).
@@ -140,12 +141,11 @@ export default function SessionDetailPage() {
   // The flag is consumed (and stripped from the history state) on
   // mount so that refresh / back / forward do not replay the same
   // success message.
-  const [assignmentUpdated] = useState(() =>
-    readAssignmentUpdatedFlag(location.state),
-  );
+  const [assignmentUpdated, setAssignmentUpdated] = useTransientNotice(false);
 
   useEffect(() => {
-    if (!assignmentUpdated) return undefined;
+    if (!readAssignmentUpdatedFlag(location.state)) return undefined;
+    setAssignmentUpdated(true);
     // Build the next history state with the flag removed. We keep
     // every other safe key (notably `from`) intact so the existing
     // back-link behavior is unchanged.
@@ -156,9 +156,6 @@ export default function SessionDetailPage() {
       replace: true,
       state: hasAnything ? next : null,
     });
-    // Intentionally no `setTimeout`. Cleanup runs once; the flag
-    // also stays in local state so the Alert renders for the rest
-    // of this mount.
     return undefined;
     // location.state is captured intentionally at mount; further
     // mutations to it would only be the strip-effect itself.
@@ -171,7 +168,7 @@ export default function SessionDetailPage() {
   // is applied directly via setSession. One-time success feedback is
   // local component state — it does not ride in location.state.
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelSuccess, setCancelSuccess] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useTransientNotice(false);
   const [cancelServerError, setCancelServerError] = useState(null);
   const [cancelling, setCancelling] = useState(false);
 

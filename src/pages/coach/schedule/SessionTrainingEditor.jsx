@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +11,7 @@ export default function SessionTrainingEditor({ label, value, disabled, onSave, 
     resolver: zodResolver(sessionTrainingTextSchema), defaultValues: { content: value },
   });
   const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useTransientNotice(false);
   const inFlight = useRef(false);
   // Polling chỉ cập nhật form chưa sửa; tuyệt đối không ghi đè bản nháp.
   useEffect(() => { if (!isDirty && !inFlight.current) reset({ content: value }); }, [value, isDirty, reset]);

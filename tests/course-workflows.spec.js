@@ -708,7 +708,11 @@ test('withdrawal queue and detail show live refund progress and link the matchin
     ['COMPLETED', 'Hoàn tiền thành công'],
   ];
   await page.goto('/manager/course-withdrawals');
+  const filter = page.getByLabel('Lọc trạng thái');
+  await expect(filter).toHaveValue('PENDING');
+  await expect(page.getByText('Không có yêu cầu rút chờ duyệt.')).toBeVisible();
   for (const [refundStatus, label] of cases) {
+    await filter.selectOption('APPROVED');
     current = { ...current, refundStatus };
     await page.getByRole('button', { name: 'Tải lại', exact: true }).click();
     const row = page.getByRole('row').filter({ hasText: current.requestReason });
@@ -725,6 +729,7 @@ test('withdrawal queue and detail show live refund progress and link the matchin
   current = { ...current, refundStatus: null, refundObligationId: null };
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
+  await filter.selectOption('APPROVED');
   const row = page.getByRole('row').filter({ hasText: current.requestReason });
   await expect(row).toContainText('Đã duyệt rút — chưa xác định trạng thái hoàn tiền');
   await page.screenshot({ path: test.info().outputPath('withdrawal-refund-mobile-list.png'), fullPage: true, animations: 'disabled' });
@@ -733,6 +738,54 @@ test('withdrawal queue and detail show live refund progress and link the matchin
   await expect(page.getByRole('dialog').getByRole('link', { name: 'Xem khoản hoàn' })).toHaveCount(0);
   await page.screenshot({ path: test.info().outputPath('withdrawal-refund-mobile.png'), fullPage: true, animations: 'disabled' });
   expect(errors).toEqual([]);
+});
+
+test('Reception cancels a pending withdrawal from its enrollment row', async ({ page }) => {
+  let pending = true;
+  await mockApi(page, 'RECEPTIONIST', ({ path }) => {
+    if (path === '/reception/members/search') return { body: { ...member, status: 'ACTIVE' } };
+    if (path.endsWith('/course-enrollments')) return { body: { content: [{ ...enrollment, runCode: 'QA-ROW', courseRunStatus: 'IN_PROGRESS', enrollmentStatus: pending ? 'WITHDRAWAL_PENDING' : 'ACTIVE', withdrawalEligible: !pending },
+      { ...enrollment, enrollmentId: 'closed', runCode: 'QA-CLOSED', courseRunStatus: 'IN_PROGRESS', enrollmentStatus: 'ACTIVE', withdrawalReason: 'FINAL_UNIT_ALREADY_STARTED', withdrawalEligible: false },
+      { ...enrollment, enrollmentId: 'cancelled', runCode: 'QA-CANCELLED', courseRunStatus: 'CANCELLED', enrollmentStatus: 'ACTIVE' },
+      { ...enrollment, enrollmentId: 'upcoming', runCode: 'QA-UPCOMING', courseRunStatus: 'CONFIRMED', enrollmentStatus: 'ACTIVE', plannedStartAt: '2026-12-01T02:00:00Z' }], totalPages: 1 } };
+    if (path.endsWith('/course-withdrawal-requests')) return { body: pending ? [{
+      id: 'w-row', enrollmentId: enrollment.enrollmentId, status: 'PENDING', canCancel: true, refundAmountVnd: 800000,
+    }] : [] };
+    if (path.endsWith('/w-row/cancel')) { pending = false; return { body: {} }; }
+    if (path.endsWith('/course-refund-obligations')) return { body: pageOf([{ ...refund, enrollmentId: 'cancelled', source: 'COURSE_RUN_CANCELLED', grossObligationVnd: 900000 }]) };
+    if (path.endsWith('/course-schedule-changes')) return { body: [] };
+  });
+  await page.goto('/reception/course-requests');
+  await page.getByLabel('Mã hội viên hoặc số điện thoại').fill(member.memberId);
+  await page.getByRole('button', { name: 'Tra cứu', exact: true }).click();
+  await expect(page.getByText('Buổi cuối đã bắt đầu')).toBeVisible();
+  await page.getByText('Lịch sử (1)', { exact: true }).click();
+  await expect(page.getByText('Đợt học đã bị hủy')).toBeVisible();
+  await expect(page.getByRole('row').filter({ hasText: 'QA-CANCELLED' })).toContainText('900.000');
+  await expect(page.getByText('Lịch sử hoàn tiền', { exact: true })).toHaveCount(0);
+  await page.getByText('Sắp học (1)', { exact: true }).click();
+  await expect(page.getByText('Ngày khai giảng')).toBeVisible();
+  await page.getByText('Đang học (2)', { exact: true }).click();
+  const row = page.getByRole('row').filter({ hasText: 'QA-ROW' });
+  await page.clock.install();
+  async function cancelFromRow() {
+    await row.getByRole('button', { name: 'Hủy yêu cầu rút' }).click();
+    await page.getByLabel('Lý do hủy').fill('Hội viên muốn tiếp tục học');
+    await page.getByRole('dialog').getByRole('button', { name: /Xác nhận/ }).click();
+    await expect(row.getByRole('button', { name: 'Yêu cầu rút hộ' })).toBeEnabled();
+  }
+  await cancelFromRow();
+  const notice = page.getByText('Đã hủy yêu cầu rút.', { exact: true });
+  await expect(notice).toBeVisible();
+  await page.clock.fastForward(2500);
+  // A second pending request arrives while the previous confirmation is visible.
+  pending = true;
+  await page.getByRole('button', { name: 'Tải lại đăng ký' }).click();
+  await cancelFromRow();
+  await page.clock.fastForward(2500);
+  await expect(notice).toBeVisible();
+  await page.clock.fastForward(1600);
+  await expect(notice).toBeHidden();
 });
 
 for (const role of ['MEMBER', 'RECEPTIONIST']) {
@@ -749,7 +802,7 @@ for (const role of ['MEMBER', 'RECEPTIONIST']) {
       }
     });
     const open = async () => {
-      await page.goto(role === 'MEMBER' ? '/member/courses/withdrawals' : '/reception/courses');
+      await page.goto(role === 'MEMBER' ? '/member/courses/withdrawals' : '/reception/course-requests');
       if (role === 'RECEPTIONIST') {
         await page.getByLabel('Mã hội viên hoặc số điện thoại').fill(member.memberId);
         await page.getByRole('button', { name: 'Tra cứu', exact: true }).click();
@@ -758,6 +811,7 @@ for (const role of ['MEMBER', 'RECEPTIONIST']) {
     for (const [state, label] of [['DISBURSEMENT_RECORDED', 'Đã chi hoàn tiền — chờ xác minh'], ['COMPLETED', 'Hoàn tiền thành công'], ['RETURNED', 'Khoản chi hoàn tiền đã bị trả lại']]) {
       refundStatus = state;
       await open();
+      if (role === 'RECEPTIONIST') await page.locator('summary').filter({ hasText: 'Lịch sử yêu cầu rút' }).click();
       const card = page.locator('article').filter({ hasText: role === 'MEMBER' ? 'Tiến độ hoàn tiền riêng' : run.runCode });
       await expect(card.locator('.system-badge')).toHaveText(label);
       await expect(card.getByRole('button', { name: 'Hủy yêu cầu rút', exact: true })).toHaveCount(0);
@@ -888,4 +942,41 @@ test('schedule change comparison stays readable on desktop and mobile', async ({
   await expect(card.getByRole('button', { name: 'Theo lịch mới', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: test.info().outputPath('schedule-changes-mobile.png'), fullPage: true, animations: 'disabled' });
+});
+
+test('Reception looks up upcoming member sessions and refreshes the result', async ({ page }) => {
+  let sessions = [{ sessionId: 'qa-session', classType: 'COURSE', className: 'Aerobic', runCode: 'QA-AM', unitNumber: 2, startAt: '2026-12-01T02:00:00Z', endAt: '2026-12-01T03:00:00Z', roomName: 'A2', coachName: 'Minh' }];
+  await mockApi(page, 'RECEPTIONIST', ({ path }) => {
+    if (path === '/reception/members/search') return { body: member };
+    if (path === '/reception/members/' + member.accountId + '/upcoming-sessions') return { body: sessions };
+  });
+  await page.goto('/reception/member-schedule');
+  await page.getByLabel('Mã hội viên hoặc số điện thoại').fill(member.memberId);
+  const search = page.getByRole('button', { name: 'Tra cứu' });
+  await search.click();
+  const row = page.getByRole('row').filter({ hasText: 'QA-AM' });
+  await expect(row).toContainText('09:00');
+  await expect(row).toContainText('Minh');
+  sessions = [];
+  await search.click();
+  await expect(page.getByText('Hội viên chưa có buổi học sắp tới.')).toBeVisible();
+  await expect(row).toHaveCount(0);
+});
+
+test('Reception selects a course before choosing its run across catalog pages', async ({ page }) => {
+  await mockApi(page, 'RECEPTIONIST', ({ path, url }) => {
+    if (path !== '/course-runs') return;
+    const make = (id, courseId, courseName) => ({ ...run, id, courseId, courseName, courseCode: courseId, runCode: id, registrationStatus: 'OPEN' });
+    const first = url.searchParams.get('page') === '0';
+    return { body: { content: first ? [make('GYM-1', 'gym', 'Gym'), make('AERO-1', 'aero', 'Aerobic')] : [make('AERO-2', 'aero', 'Aerobic')], last: !first, totalPages: 2 } };
+  });
+  await page.goto('/reception/courses');
+  const picker = page.getByRole('combobox', { name: 'Khóa học', exact: true });
+  await picker.selectOption('aero');
+  await expect(page.getByRole('cell', { name: 'GYM-1' })).toHaveCount(0);
+  await page.getByRole('row').filter({ hasText: 'AERO-2' }).getByRole('button').click();
+  await expect(page.getByRole('button', { name: 'Đã chọn' })).toBeVisible();
+  await picker.selectOption('gym');
+  await expect(page.getByRole('cell', { name: 'GYM-1' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Đã chọn' })).toHaveCount(0);
 });

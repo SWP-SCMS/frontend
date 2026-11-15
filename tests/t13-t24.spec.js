@@ -32,6 +32,76 @@ test('Reception keeps the member profile when the course lookup is unavailable',
   await expect(page.getByRole('button', { name: 'Xác nhận check-in' })).toBeDisabled();
 });
 
+for (const admission of ['plan', 'course']) {
+  test(`Reception requires a visible photo for ${admission} check-in`, async ({ page }) => {
+    await setup(page, 'RECEPTIONIST', path => {
+      if (path === '/reception/members/search') return {
+        accountId: 'qa-member', memberId: 'MB-QA', fullName: 'QA Member', status: 'ACTIVE',
+        profileImageUrl: '/profile-images/qa.png',
+        activeMembership: admission === 'plan' ? { benefitCodes: ['CENTER_ACCESS'] } : null,
+      };
+      if (path.endsWith('/course-admission')) return { eligible: admission === 'course', sessionId: 'qa-session' };
+    });
+    let validImage = false;
+    await page.route('**/profile-images/qa.png', route => validImage
+      ? route.fulfill({ path: 'tests/fixtures/reconciliation-evidence.png', contentType: 'image/png' })
+      : route.fulfill({ body: 'invalid image', contentType: 'image/png' }));
+    await page.goto('/reception/check-in');
+    await page.getByLabel('Mã hội viên hoặc số điện thoại').fill('0927927901');
+    await page.getByRole('button', { name: 'Tìm hội viên' }).click();
+    const verify = page.getByLabel('Tôi đã đối chiếu hội viên với ảnh hồ sơ');
+    const submit = page.getByRole('button', { name: 'Xác nhận check-in' });
+    await expect(page.getByText('Không tải được ảnh hồ sơ.')).toBeVisible();
+    await expect(verify).toBeDisabled();
+    await expect(submit).toBeDisabled();
+    validImage = true;
+    await page.getByRole('button', { name: 'Thử lại' }).click();
+    await expect(verify).toBeEnabled();
+    await verify.check();
+    const request = page.waitForRequest(req => req.method() === 'POST' && req.url().endsWith('/reception/center-visits'));
+    await submit.click();
+    expect((await request).postDataJSON()).toEqual({
+      memberId: 'MB-QA', identityVerified: true, ...(admission === 'course' && { courseSessionId: 'qa-session' }),
+    });
+  });
+}
+
+test('Reception withdraws pending freeze and termination requests for the selected member', async ({ page }) => {
+  const calls = await setup(page, 'RECEPTIONIST', (path, req) => {
+    if (path === '/reception/members/search') return { memberId: 'MB-QA', fullName: 'QA' };
+    if (req.method() === 'DELETE') return {};
+    if (path.endsWith('-requests')) return { content: [{ id: 'request-1', status: 'PENDING' }] };
+  });
+  await page.goto('/reception/membership-requests');
+  await page.getByPlaceholder('VD: MB-100001').fill('MB-QA');
+  await page.getByRole('button', { name: 'Tra cứu yêu cầu' }).click();
+  for (const [index, kind] of ['termination', 'freeze'].entries()) {
+    await page.getByRole('button', { name: 'Rút yêu cầu' }).nth(index).click();
+    await expect.poll(() => calls.some(call => call.method === 'DELETE' &&
+      call.path === `/reception/members/MB-QA/membership-${kind}-requests/request-1`)).toBe(true);
+  }
+});
+
+test('Reception can remove a waiting member when the class has space and the benefit is gone', async ({ page }) => {
+  const member = { accountId: 'qa-member', memberId: 'MB-QA', fullName: 'QA Member', status: 'ACTIVE' };
+  let waiting = true;
+  await setup(page, 'RECEPTIONIST', (path, req) => {
+    if (path.endsWith('/profile') || path.endsWith('/search')) return member;
+    if (path.endsWith('/memberships')) return [{ status: 'ACTIVE', benefitCodes: ['CENTER_ACCESS'] }];
+    if (path.endsWith('/class-sessions')) return { content: [{ id: 'qa-session', className: 'QA Class',
+      classType: 'GROUP', availableCapacity: 1, capacity: 2, bookingAvailable: true,
+      startTime: '2035-11-10T01:00:00Z', endTime: '2035-11-10T02:00:00Z', requiredBenefitCodes: ['CLASS_BOOKING'] }] };
+    if (req.method() === 'DELETE' && path === '/reception/members/qa-member/class-sessions/qa-session/waitlist') waiting = false;
+    if (path.endsWith('/waitlist')) return waiting ? [{ id: 'w', memberId: member.accountId, status: 'WAITING' }] : [];
+    if (path.endsWith('/pt-sessions') || path.endsWith('/bookings')) return { content: [] };
+  });
+  await page.goto('/reception/members/MB-QA/bookings');
+  await page.getByRole('button', { name: 'Xem hàng chờ' }).click();
+  await page.getByRole('button', { name: 'Rời hàng chờ cho hội viên' }).click();
+  await expect(page.getByRole('button', { name: 'Thêm hội viên vào hàng chờ' })).toBeDisabled();
+  expect(waiting).toBe(false);
+});
+
 test('T14 reconciliation has distinct columns and inline validation', async ({ page }) => {
   await setup(page, 'MANAGER', path => path === '/payments/reconciliation-queue' ? { content: [{ paymentId: 'p1', paymentReference: 'SCMS-ORD-1', orderNumber: 'ORD-1', memberName: 'QA', transferContent: 'SCMS-ORD-1', amount: 1000, expiresAt: '2099-01-01T00:00:00Z' }], totalPages: 1 } : undefined);
   await page.goto('/manager/payments/reconcile');

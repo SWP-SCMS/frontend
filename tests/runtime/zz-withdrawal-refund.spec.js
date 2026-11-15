@@ -65,6 +65,7 @@ test('CONTROLLED_CLOCK withdrawal refund progress stays consistent across three 
     const current = await api(request, 'member', 'GET', `/members/me/course-withdrawal-requests/${withdrawal.id}`);
     expect(current.status).toBe('APPROVED'); expect(current.refundStatus).toBe(status); expect(current.refundObligationId).toBe(refundId);
     await login(page, 'manager', '/manager/course-withdrawals');
+    await page.getByLabel('Lọc trạng thái').selectOption('APPROVED');
     const row = page.getByRole('row').filter({ hasText: run.runCode });
     await expect(row.locator('.system-badge')).toHaveText(label);
     await row.getByRole('button', { name: 'Xem hồ sơ' }).click();
@@ -77,9 +78,10 @@ test('CONTROLLED_CLOCK withdrawal refund progress stays consistent across three 
     await expect(page.locator('#withdrawals article').filter({ hasText: run.runCode }).locator('.system-badge')).toHaveText(label);
     await page.screenshot({ path: info.outputPath(`member-${status}.png`), fullPage: true, animations: 'disabled' });
     await evidence(info, { withdrawalId: current.id, refundId, withdrawalStatus: current.status, refundStatus: current.refundStatus });
-    await login(page, 'reception', '/reception/courses');
+    await login(page, 'reception', '/reception/course-requests');
     await page.getByLabel('Mã hội viên hoặc số điện thoại').fill(env.accounts.member.memberCode);
     await page.getByRole('button', { name: 'Tra cứu', exact: true }).click();
+    await page.locator('summary').filter({ hasText: 'Lịch sử yêu cầu rút' }).click();
     await expect(page.locator('article').filter({ hasText: run.runCode }).locator('.system-badge')).toHaveText(label);
     await page.screenshot({ path: info.outputPath(`reception-${status}.png`), fullPage: true, animations: 'disabled' });
   };

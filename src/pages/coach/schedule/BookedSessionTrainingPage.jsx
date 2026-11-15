@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Card, Form, Modal, Spinner } from 'react-bootstrap';
@@ -42,7 +43,7 @@ function TrainingPage({ course, sessionId, memberId }) {
   const [optionsError, setOptionsError] = useState(null);
   const [saveError, setSaveError] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useTransientNotice(false);
   const lock = useRef(false);
 
   usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
