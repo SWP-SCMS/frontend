@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useState } from 'react';
 import {Alert,  Button, Card, Form, Modal, Spinner, Table} from 'react-bootstrap';
@@ -11,6 +12,7 @@ import {
   createReceptionFreezeRequest,
   createReceptionTerminationRequest,
   endReceptionFreezeEarly,
+  withdrawReceptionMembershipRequest,
   listReceptionFreezeRequests,
   listReceptionTerminationRequests,
 } from '../../../services/membershipRequestService';
@@ -61,7 +63,7 @@ export default function MembershipRequestDeskPage() {
   const [freezeRows, setFreezeRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const [busy, setBusy] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState(null);
   const [endEarlyTarget, setEndEarlyTarget] = useState(null);
@@ -170,13 +172,29 @@ export default function MembershipRequestDeskPage() {
     } finally { setBusy(false); }
   }
 
+  async function withdrawRequest(kind, requestId) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await withdrawReceptionMembershipRequest(memberCode, kind, requestId);
+      await loadFor(memberCode);
+      setNotice('Đã rút yêu cầu cho hội viên.');
+    } catch (requestError) {
+      await refreshForCurrentMember();
+      setError(new Error(messageOf(requestError, 'Không thể rút yêu cầu.')));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function collectPayment() {
     if (!paymentTarget) return;
     setBusy(true); setError(null); setNotice(null);
     try {
       const receipt = await collectFreezeCashPayment(paymentTarget.id, paymentTarget.version);
       setPaymentTarget(null);
-      setNotice(`Đã thu ${formatPrice(receipt.amount, receipt.currencyCode)} và lên lịch đóng băng.`);
+      setNotice(`Đã thu ${formatPrice(receipt.amount, receipt.currencyCode)} và lên lịch đóng băng.`, { persistent: true });
       await loadFor(memberCode);
     } catch (requestError) {
       setError(new Error(messageOf(requestError, 'Không thể ghi nhận thanh toán phí đóng băng.')));
@@ -205,8 +223,8 @@ export default function MembershipRequestDeskPage() {
           <Form.Group>
             <Form.Label>Tra cứu theo</Form.Label>
             <div className="btn-group d-flex" role="group" aria-label="Tiêu chí tra cứu hội viên">
-              <Button type="button" variant={criterion === 'memberId' ? 'danger' : 'outline-danger'} onClick={() => { setCriterion('memberId'); setMemberCodeInput(''); setSelectedMember(null); setMemberCode(''); }}>Mã hội viên</Button>
-              <Button type="button" variant={criterion === 'phone' ? 'danger' : 'outline-danger'} onClick={() => { setCriterion('phone'); setMemberCodeInput(''); setSelectedMember(null); setMemberCode(''); }}>Số điện thoại</Button>
+              <Button type="button" disabled={busy || loading} variant={criterion === 'memberId' ? 'danger' : 'outline-danger'} onClick={() => { setCriterion('memberId'); setMemberCodeInput(''); setSelectedMember(null); setMemberCode(''); }}>Mã hội viên</Button>
+              <Button type="button" disabled={busy || loading} variant={criterion === 'phone' ? 'danger' : 'outline-danger'} onClick={() => { setCriterion('phone'); setMemberCodeInput(''); setSelectedMember(null); setMemberCode(''); }}>Số điện thoại</Button>
             </div>
           </Form.Group>
           <Form.Group style={{ minWidth: 280 }}>
@@ -218,7 +236,7 @@ export default function MembershipRequestDeskPage() {
               inputMode={criterion === 'phone' ? 'numeric' : undefined}
             />
           </Form.Group>
-          <Button type="submit" variant="danger" disabled={loading}>{loading ? 'Đang tìm...' : 'Tra cứu yêu cầu'}</Button>
+          <Button type="submit" variant="danger" disabled={busy || loading}>{loading ? 'Đang tìm...' : 'Tra cứu yêu cầu'}</Button>
         </Form>
         {selectedMember && memberCode ? (
           <div className="mt-3 pt-3 border-top">
@@ -240,7 +258,7 @@ export default function MembershipRequestDeskPage() {
             <Form.Group className="col-lg-6"><Form.Label>Lý do</Form.Label><Form.Control maxLength={1000} value={termination.reason} onChange={(event) => setTermination((value) => ({ ...value, reason: event.target.value }))} /></Form.Group>
             <div className="col-lg-3"><Button className="w-100" type="submit" variant="danger" disabled={busy}>Tạo yêu cầu hộ</Button></div>
           </Form>
-          <RequestTable kind="termination" rows={terminationRows} />
+          <RequestTable kind="termination" busy={busy} onWithdraw={withdrawRequest} rows={terminationRows} />
         </Card.Body></Card>
 
         <Card className="border-0 shadow-sm mb-4"><Card.Body className="p-4">
@@ -251,7 +269,7 @@ export default function MembershipRequestDeskPage() {
             <Form.Group className="col-lg-5"><Form.Label>Lý do</Form.Label><Form.Control maxLength={1000} value={freeze.reason} onChange={(event) => setFreeze((value) => ({ ...value, reason: event.target.value }))} /></Form.Group>
             <div className="col-lg-3"><Button className="w-100" type="submit" variant="danger" disabled={busy}>Tạo yêu cầu hộ</Button></div>
           </Form>
-          <RequestTable kind="freeze" rows={freezeRows} onPayment={setPaymentTarget} onEndEarly={setEndEarlyTarget} />
+          <RequestTable kind="freeze" busy={busy} onWithdraw={withdrawRequest} rows={freezeRows} onPayment={setPaymentTarget} onEndEarly={setEndEarlyTarget} />
         </Card.Body></Card>
       </> : null}
 
@@ -277,8 +295,42 @@ export default function MembershipRequestDeskPage() {
   );
 }
 
-function RequestTable({ kind, rows, onPayment, onEndEarly }) {
+function RequestTable({ kind, rows, busy, onWithdraw, onPayment, onEndEarly }) {
   const termination = kind === 'termination';
   if (!rows.length) return <p className="small text-muted mt-4 mb-0">Chưa có yêu cầu.</p>;
-  return <div className="table-responsive mt-4"><Table hover className="align-middle mb-0"><thead className="table-light"><tr><th>Ngày gửi</th><th>Nội dung</th><th>Lý do</th>{!termination ? <th>Phí</th> : null}<th>Trạng thái</th>{!termination ? <th className="text-end">Thao tác</th> : null}</tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td>{formatDateTime(row.createdAt)}</td><td>{termination ? row.mode === 'IMMEDIATE' ? 'Hủy ngay' : 'Cuối chu kỳ' : `${formatDate(row.startDate)} – ${formatDate(row.endDate)}`}</td><td>{row.reason}</td>{!termination ? <td>{row.feeAmount == null ? '—' : formatPrice(row.feeAmount, 'VND')}</td> : null}<td>{statusBadge(row.status)}</td>{!termination ? <td className="text-end">{row.status === 'APPROVED_PENDING_PAYMENT' ? <Button size="sm" variant="outline-danger" onClick={() => onPayment(row)}>Thu tiền mặt</Button> : row.status === 'ACTIVE' ? <Button size="sm" variant="outline-danger" onClick={() => onEndEarly(row)}>Kết thúc sớm</Button> : '—'}</td> : null}</tr>)}</tbody></Table></div>;
+  return (
+    <Table responsive hover className="align-middle mt-4 mb-0">
+      <thead className="table-light">
+        <tr>
+          <th>Ngày gửi</th><th>Nội dung</th><th>Lý do</th>
+          {!termination && <th>Phí</th>}
+          <th>Trạng thái</th><th className="text-end">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(row => (
+          <tr key={row.id}>
+            <td>{formatDateTime(row.createdAt)}</td>
+            <td>{termination
+              ? (row.mode === 'IMMEDIATE' ? 'Hủy ngay' : 'Cuối chu kỳ')
+              : `${formatDate(row.startDate)} – ${formatDate(row.endDate)}`}</td>
+            <td>{row.reason}</td>
+            {!termination && <td>{row.feeAmount == null ? '—' : formatPrice(row.feeAmount, 'VND')}</td>}
+            <td>{statusBadge(row.status)}</td>
+            <td className="text-end">
+              {row.status === 'PENDING' && (
+                <Button size="sm" variant="outline-danger" disabled={busy} onClick={() => onWithdraw(kind, row.id)}>Rút yêu cầu</Button>
+              )}
+              {!termination && row.status === 'APPROVED_PENDING_PAYMENT' && (
+                <Button size="sm" variant="outline-danger" disabled={busy} onClick={() => onPayment(row)}>Thu tiền mặt</Button>
+              )}
+              {!termination && row.status === 'ACTIVE' && (
+                <Button size="sm" variant="outline-danger" disabled={busy} onClick={() => onEndEarly(row)}>Kết thúc sớm</Button>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  );
 }

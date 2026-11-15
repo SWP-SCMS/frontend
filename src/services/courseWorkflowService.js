@@ -49,4 +49,27 @@ export async function disburseCourseRefund(id, payload, key) {
 }
 
 export async function listReceptionCourseEnrollments(memberId, page = 0) { return (await api.get(`/reception/members/${memberId}/course-enrollments`, { params: { page, size: 20 } })).data; }
+export async function listAllReceptionCourseEnrollments(memberId) {
+  const first = await listReceptionCourseEnrollments(memberId);
+  const content = [...first.content];
+  for (let page = 1; page < first.totalPages; page++) {
+    const next = await listReceptionCourseEnrollments(memberId, page);
+    content.push(...next.content);
+  }
+  return content;
+}
+
+export async function listAllMemberCourseRefundsForReception(memberId) {
+  const refunds = [];
+  let page = 0;
+  let totalPages;
+  do {
+    const { data } = await api.get(`/reception/members/${memberId}/course-refund-obligations`, { params: { page, size: 20 } });
+    refunds.push(...data.items);
+    totalPages = data.totalPages;
+    page++;
+  } while (page < totalPages);
+  return refunds;
+}
+
 export async function requestReceptionCourseWithdrawal(memberId, enrollmentId, reason) { return (await api.post(`/reception/members/${memberId}/course-enrollments/${enrollmentId}/withdrawal-requests`, { reason })).data; }

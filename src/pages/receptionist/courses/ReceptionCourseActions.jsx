@@ -1,6 +1,4 @@
 import { groupCourseScheduleChanges } from '../../../utils/courseScheduleChangeGroups';
-import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
-import Badge from '../../../components/common/SystemBadge';
 import useConfirmation from "../../../hooks/useConfirmation";
 import usePollingEffect from "../../../hooks/usePollingEffect";
 import { useRef, useState } from "react";
@@ -11,14 +9,11 @@ import {
   courseIdempotencyConfig,
   createCourseIdempotencyKey,
 } from "../../../services/courseServiceUtils";
-import CancelCourseWithdrawal from "../../member/courses/CancelCourseWithdrawal";
 import {
-  formatCourseMoney as money,
   formatCourseDateTime as date,
   getCourseErrorMessage,
 } from "../../../utils/courseUi";
 import {
-  COURSE_REFUND_STATUS_LABELS,
   COURSE_RESPONSE_LABELS,
   canRespondToCourseChange,
 } from "../../../utils/courseWorkflow";
@@ -26,6 +21,7 @@ import {
 export default function ReceptionCourseActions({
   member,
   run,
+  afterRegistration = false,
   refreshRevision,
   onChanged,
 }) {
@@ -34,7 +30,6 @@ export default function ReceptionCourseActions({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0),
-    [page, setPage] = useState(0),
     [orderId, setOrderId] = useState(null);
   const keys = useRef({}),
     lock = useRef(false);
@@ -45,22 +40,9 @@ export default function ReceptionCourseActions({
       if (!background) commitValue(setData, null);
       commitError(setError, "");
       track(
-        Promise.all(
-          [
-            "course-waitlists",
-            "course-schedule-changes",
-            "course-withdrawal-requests",
-            `course-refund-obligations?page=${page}&size=20`,
-          ].map((path) => api.get(`${base}/${path}`).then((r) => r.data)),
-        )
-          .then(([waitlists, changes, withdrawals, refunds]) => {
-            if (active)
-              commitValue(setData, {
-                waitlists,
-                changes,
-                withdrawals,
-                refunds,
-              });
+        api.get(`${base}/${afterRegistration ? 'course-schedule-changes' : 'course-waitlists'}`)
+          .then(({ data: rows }) => {
+            if (active) commitValue(setData, afterRegistration ? { changes: rows } : { waitlists: rows });
           })
           .catch((e) => {
             failed(e);
@@ -71,7 +53,7 @@ export default function ReceptionCourseActions({
         active = false;
       };
     },
-    [base, revision, page, refreshRevision],
+    [base, revision, refreshRevision, afterRegistration],
     !busy,
   );
   async function act(
@@ -119,10 +101,17 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
   const paymentLink = (id) =>
     `/reception/courses?orderId=${encodeURIComponent(id)}&memberCode=${encodeURIComponent(member.memberId)}`;
   const disabled = busy || member.status !== "ACTIVE";
+  const pendingChanges = [];
+  const pastChanges = [];
+  const now = Date.now();
+  for (const change of groupCourseScheduleChanges(data?.changes)) {
+    if (canRespondToCourseChange(change, now)) pendingChanges.push(change);
+    else pastChanges.push(change);
+  }
   return (
     <section className="mt-4">
       {dialog}
-      <h2 className="h5">Thao tác khóa học hộ {member.fullName}</h2>
+      <h2 className="h5">{afterRegistration ? "Lịch và yêu cầu của hội viên" : "Hàng chờ đăng ký"}</h2>
       <Button
         variant="outline-danger"
         className="me-2 mb-2"
@@ -157,7 +146,7 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
         </Alert>
       )}
       {!data && !error && <p>Đang tải…</p>}
-      {data && (
+      {data && !afterRegistration && (
         <>
           <h3 className="h6 mt-3">Danh sách chờ</h3>
           {!data.waitlists.length && <p>Chưa có yêu cầu.</p>}
@@ -205,14 +194,17 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
               )}
             </Card>
           ))}
-          <h3 className="h6 mt-3">Thay đổi lịch</h3>
-          {!data.changes.length && <p>Chưa có thay đổi.</p>}
-          {groupCourseScheduleChanges(data.changes).map((c) => (
+        </>
+      )}
+      {data && afterRegistration && (
+        <>
+          <h3 className="h6 mt-3">Thay đổi lịch chờ phản hồi</h3>
+          {!pendingChanges.length && <p>Không có lịch cần phản hồi.</p>}
+          {pendingChanges.map((c) => (
             <Card as="article" body className="mb-3 shadow-sm" key={c.key}>
               {c.changes.map(change => <p key={change.id}>{date(change.oldStartAt)} → {date(change.newStartAt)}</p>)}
               <p>Hạn phản hồi: {date(c.responseDeadline)}</p>
-              {canRespondToCourseChange(c) &&
-                Object.entries(COURSE_RESPONSE_LABELS).map(
+              {Object.entries(COURSE_RESPONSE_LABELS).map(
                   ([response, label]) => (
                     <Button
                       className="m-1"
@@ -240,59 +232,21 @@ Hội viên: ${member.fullName} · ${member.memberId}. Tiếp tục?`))
                 )}
             </Card>
           ))}
-          <h3 className="h6 mt-3">Lịch sử yêu cầu rút</h3>
-          {!data.withdrawals.length && <p>Chưa có yêu cầu.</p>}
-          {data.withdrawals.map((w) => (
-            <Card as="article" body className="mb-3 shadow-sm" key={w.id}>
-              <p>
-                {w.courseName} · {w.runCode} ·{" "}
-                <CourseWorkflowStatusBadge kind="withdrawals" status={w.status} refundStatus={w.refundStatus} />
-              </p>
-              <p>
-                Mức hoàn dự kiến của yêu cầu:{" "}
-                {w.snapshotSource === "UNAVAILABLE" || w.refundAmountVnd == null
-                  ? "Chưa có dữ liệu"
-                  : money(w.refundAmountVnd)}
-              </p>
-              {w.learningSuspended && (
-                <p>Tạm ngừng học/điểm danh, vẫn giữ chỗ.</p>
-              )}
-              <CancelCourseWithdrawal
-                memberId={member.accountId}
-                request={w}
-                onCancelled={onChanged}
-              />
-            </Card>
-          ))}
-          <h3 className="h6 mt-3">Lịch sử hoàn tiền</h3>
-          {!data.refunds.items?.length && (
-            <p>Chưa có khoản hoàn trong trang này.</p>
+          {pastChanges.length > 0 && (
+            <details className="mb-3">
+              <summary>Lịch sử đổi lịch ({pastChanges.length})</summary>
+              <ul className="mt-2">
+                {pastChanges.map(change => (
+                  <li key={change.key} className="mb-2">
+                    <strong>{change.status === 'SUPERSEDED' ? 'Đã thay thế'
+                      : change.response ? (COURSE_RESPONSE_LABELS[change.response] || 'Đã phản hồi')
+                      : 'Đã đóng phản hồi'}</strong>
+                    {change.changes.map(item => <div key={item.id}>{date(item.oldStartAt)} → {date(item.newStartAt)}</div>)}
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
-          {data.refunds.items?.map((r) => (
-            <p key={r.id}>
-              <Badge>{COURSE_REFUND_STATUS_LABELS[r.status] || "Đang cập nhật"}</Badge> · Nghĩa
-              vụ {money(r.grossObligationVnd)} · Đã duyệt{" "}
-              {money(r.approvedAmountVnd)} · Đã chi{" "}
-              {money(r.disbursedAmountVnd)}
-            </p>
-          ))}
-          <Button
-            variant="outline-danger"
-            className="me-2 mb-2"
-            disabled={busy || page === 0}
-            onClick={() => setPage(page - 1)}
-          >
-            Trang hoàn trước
-          </Button>
-          <span className="mx-2">{page + 1}</span>
-          <Button
-            variant="outline-danger"
-            className="me-2 mb-2"
-            disabled={busy || page + 1 >= data.refunds.totalPages}
-            onClick={() => setPage(page + 1)}
-          >
-            Trang hoàn sau
-          </Button>
         </>
       )}
     </section>

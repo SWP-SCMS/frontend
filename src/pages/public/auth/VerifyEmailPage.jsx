@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -73,7 +74,7 @@ export default function VerifyEmailPage() {
   });
   const [nowTick, setNowTick] = useState(PAGE_LOADED_AT);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useTransientNotice('');
   const [resending, setResending] = useState(false);
   const [changing, setChanging] = useState(false);
 

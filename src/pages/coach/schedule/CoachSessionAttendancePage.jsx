@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 // /coach/schedule/:sessionId/attendance — điểm danh học viên.
 //
 // Mỗi học viên có 2 ô tích: "Có mặt" (PRESENT) hoặc "Vắng" (ABSENT); chỉ chọn
@@ -51,7 +52,7 @@ export default function CoachSessionAttendancePage() {
   // Lựa chọn chưa lưu: { [attendanceId]: 'PRESENT' | 'ABSENT' }.
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useTransientNotice(false);
   // Lỗi theo từng học viên: { [attendanceId]: thông báo }.
   const [failures, setFailures] = useState({});
 

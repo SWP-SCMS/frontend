@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 // Manager – Edit room (US25).
 //
 // Loads via GET /api/v1/manager/rooms/{id}, then PATCHes only the
@@ -72,7 +73,7 @@ export default function RoomEditPage() {
   const [loadError, setLoadError] = useState(null);
   const [serverError, setServerError] = useState(null);
   // 'no-changes' | null
-  const [saved, setSaved] = useState(null);
+  const [saved, setSaved] = useTransientNotice(null);
   const [formLevelError, setFormLevelError] = useState(null);
 
   const {
@@ -106,7 +107,7 @@ export default function RoomEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [roomId, reset]);
+  }, [roomId, reset, setSaved]);
 
   useEffect(() => {
     load();

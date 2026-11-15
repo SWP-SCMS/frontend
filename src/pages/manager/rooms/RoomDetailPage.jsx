@@ -10,7 +10,8 @@ import usePollingEffect from '../../../hooks/usePollingEffect';
 //   { id, name, capacity, status, usageMode }
 // createdAt / updatedAt / version are NOT in the response DTO.
 
-import { useCallback, useState } from 'react';
+import useTransientNotice from '../../../hooks/useTransientNotice';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
@@ -26,6 +27,10 @@ const STATUS_BADGE = {
 export default function RoomDetailPage() {
   const { roomId } = useParams();
   const location = useLocation();
+  const [notice, setNotice] = useTransientNotice();
+  useEffect(() => {
+    setNotice(location.state?.notice);
+  }, [location.key, location.state, setNotice]);
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -122,8 +127,8 @@ export default function RoomDetailPage() {
         </div>
       </div>
 
-      {location.state?.notice ? (
-        <Alert variant="success">{location.state.notice}</Alert>
+      {notice ? (
+        <Alert variant="success">{notice}</Alert>
       ) : null}
 
       <Row className="g-3 mb-3">

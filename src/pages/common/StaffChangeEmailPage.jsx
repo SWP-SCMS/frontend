@@ -1,3 +1,4 @@
+import useTransientNotice from '../../hooks/useTransientNotice';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Card, Form, Modal, Spinner } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
@@ -62,7 +63,7 @@ export default function StaffChangeEmailPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [serverError, setServerError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const [busy, setBusy] = useState(false);
   const [clockNow, setClockNow] = useState(() => Date.now());
   const [verifiedEmail, setVerifiedEmail] = useState(null);

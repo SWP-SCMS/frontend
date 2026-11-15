@@ -124,6 +124,12 @@ export async function createReceptionFreezeRequest(memberCode, payload) {
   return data;
 }
 
+export async function withdrawReceptionMembershipRequest(memberCode, kind, requestId) {
+  await api.delete(
+    `/reception/members/${encodeURIComponent(memberCode)}/membership-${kind}-requests/${encodeURIComponent(requestId)}`,
+  );
+}
+
 export async function collectFreezeCashPayment(requestId, expectedVersion) {
   const { data } = await api.post(
     `/reception/membership-freeze-requests/${encodeURIComponent(requestId)}/cash-payment`,

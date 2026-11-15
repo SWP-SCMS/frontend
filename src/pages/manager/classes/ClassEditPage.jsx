@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 // Manager – Edit class (US24).
 //
 // Loads via GET /api/v1/manager/classes/{id}, then PATCHes only the
@@ -118,7 +119,7 @@ export default function ClassEditPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [serverError, setServerError] = useState(null);
-  const [saved, setSaved] = useState(null);
+  const [saved, setSaved] = useTransientNotice(null);
   const [formLevelError, setFormLevelError] = useState(null);
   const [blockingSessions, setBlockingSessions] = useState([]);
   const [supportedClassTypes, setSupportedClassTypes] = useState([]);
@@ -179,7 +180,7 @@ export default function ClassEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [classId, reset]);
+  }, [classId, reset, setSaved]);
 
   useEffect(() => {
     load();

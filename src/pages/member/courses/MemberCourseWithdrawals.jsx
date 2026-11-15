@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
 import './MemberCourseWithdrawals.css';
 import useConfirmation from '../../../hooks/useConfirmation';
@@ -18,12 +19,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested, sele
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  useEffect(() => {
-    if (!notice) return undefined;
-    const timer = window.setTimeout(() => setNotice(''), 4000);
-    return () => window.clearTimeout(timer);
-  }, [notice]);
+  const [notice, setNotice] = useTransientNotice('');
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({

@@ -55,6 +55,8 @@ test('CONTROLLED_CLOCK attendance, immutable 7/10 snapshot, late approval and sc
   expect(bPending.learningSuspended).toBe(true);
   expect(await api(request, 'member', 'GET', '/members/me/memberships')).toEqual([]);
   await api(request, 'reception', 'POST', '/reception/center-visits', { memberId: env.accounts.member2.memberCode, identityVerified: true }, 201, key());
+  await api(request, 'member2', 'PATCH', '/members/me/center-visits/current/checkout');
+  await api(request, 'member', 'PATCH', '/members/me/center-visits/current/checkout');
   clock(Date.parse(sessions[2].startAt) + 1000);
   const pending = await api(request, 'member', 'POST', `/members/me/course-enrollments/${e.enrollmentId}/withdrawal-requests`, { reason: 'QA snapshot 7 of 10' }, 201);
   expect(pending.remainingUnits).toBe(7); expect(pending.refundAmountVnd).toBe(280000); expect(pending.snapshotSource).toBe('REQUEST_TIME');

@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import CalendarView from './SessionCalendarView';
 import usePollingEffect from '../../../hooks/usePollingEffect';
@@ -310,7 +311,7 @@ export default function ManagerSessionListPage() {
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showBulkCancel, setShowBulkCancel] = useState(false);
-  const [bulkNotice, setBulkNotice] = useState(null);
+  const [bulkNotice, setBulkNotice] = useTransientNotice(null);
   const [reloadVersion, setReloadVersion] = useState(0);
 
   // Calendar view state (concatenated content across all pages of the bounded week).

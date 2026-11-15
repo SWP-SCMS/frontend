@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import StaffPagination from '../../../components/common/StaffPagination';
 import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
@@ -60,7 +61,7 @@ function DisbursementForm({ item, onDone, onBusy }) {
 
 export default function ReceptionCourseRefundPage() {
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useTransientNotice('');
   const [page, setPage] = useState(0);
   const [eligible, setEligible] = useState('');
   const [search, setSearch] = useState('');

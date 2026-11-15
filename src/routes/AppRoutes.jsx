@@ -27,6 +27,8 @@ const ForgotPasswordPage = lazy(
 const OfferListPage = lazy(() => import('../pages/public/offers/OfferListPage'));
 const OfferDetailPage = lazy(() => import('../pages/public/offers/OfferDetailPage'));
 const ReceptionCourseBookingPage = lazy(() => import('../pages/receptionist/courses/ReceptionCourseBookingPage'));
+const ReceptionMemberSchedulePage = lazy(() => import('../pages/receptionist/courses/ReceptionMemberSchedulePage'));
+const ReceptionCourseRequestsPage = lazy(() => import('../pages/receptionist/courses/ReceptionCourseRequestsPage'));
 const ReceptionCourseRefundPage = lazy(() => import('../pages/receptionist/courses/ReceptionCourseRefundPage'));
 const ManagerCourseWorkflowPage = lazy(() => import('../pages/manager/courses/ManagerCourseWorkflowPage'));
 
@@ -707,6 +709,8 @@ export default function AppRoutes() {
         <Route path="membership-requests" element={withSuspense(<MembershipRequestDeskPage />)} />
         <Route path="orders/new" element={withSuspense(<CashPaymentPage />)} />
         <Route path="courses" element={withSuspense(<ReceptionCourseBookingPage />)} />
+        <Route path="member-schedule" element={withSuspense(<ReceptionMemberSchedulePage />)} />
+        <Route path="course-requests" element={withSuspense(<ReceptionCourseRequestsPage />)} />
         <Route path="course-refunds" element={withSuspense(<ReceptionCourseRefundPage />)} />
         <Route path="payments/reconcile" element={withSuspense(<PaymentReconciliationPage />)} />
         <Route path="course-payments/reconcile" element={withSuspense(<CoursePaymentReconciliationPage />)} />
