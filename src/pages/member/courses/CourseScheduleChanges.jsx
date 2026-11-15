@@ -69,10 +69,10 @@ export default function CourseScheduleChanges({ enrollments, onResponded, select
     try {
       const result = await respondToCourseScheduleChange(choice.change.id, choice.response);
       setChanges((items) => applyCourseScheduleGroupResponse(items, choice.change, result));
-      setRevision(value => value + 1);
       setNotice(choice.response === 'REQUEST_WITHDRAWAL' ? 'Đã gửi yêu cầu hủy do đổi lịch, chờ quản lý duyệt.' : 'Đã xác nhận tiếp tục học theo lịch mới.');
       setChoice(null);
       if (choice.response === 'REQUEST_WITHDRAWAL') await onResponded?.();
+      setRevision(value => value + 1);
     } catch (err) { setSubmitError(getCourseErrorMessage(err, 'Chưa gửi được phản hồi. Vui lòng thử lại hoặc tải lại lịch.')); }
     finally { mutationLock.current = false; setBusy(false); }
   }
