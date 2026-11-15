@@ -5,6 +5,7 @@ import useCachedPollingEffect from "../../../hooks/useCachedPollingEffect";
 import { useCallback, useState } from "react";
 import {
   Button,
+  Form,
   Spinner,
   Table,
 } from "react-bootstrap";
@@ -15,6 +16,7 @@ import {
   listManagerCourses,
 } from "../../../services/courseAdminService";
 import {
+  COURSE_RUN_STATUS_LABELS,
   formatCourseDateTime,
   formatCourseMoney,
   getCourseErrorMessage,
@@ -23,7 +25,9 @@ import {
 export default function ManagerCourseRunsPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
-  const [result, setResult] = useState({ content: [] });
+  const [runs, setRuns] = useState([]);
+  const [courseId, setCourseId] = useState("");
+  const [status, setStatus] = useState("");
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -39,10 +43,15 @@ export default function ManagerCourseRunsPage() {
       commitError(setError, "");
       try {
         const [runPage, coursePage] = await Promise.all([
-          listManagerCourseRuns({ page, size: 20 }),
+          listManagerCourseRuns({ page: 0, size: 100 }),
           listManagerCourses({ page: 0, size: 100 }),
         ]);
-        commitValue(setResult, runPage);
+        const allRuns = [...runPage.content];
+        for (let next = 1; next < runPage.totalPages; next++) {
+          const batch = await listManagerCourseRuns({ page: next, size: 100 });
+          allRuns.push(...batch.content);
+        }
+        commitValue(setRuns, allRuns);
         commitValue(setCourses, coursePage.content || []);
       } catch (err) {
         failed(err);
@@ -57,7 +66,7 @@ export default function ManagerCourseRunsPage() {
         if (!background) commitValue(setLoading, false);
       }
     },
-    [page],
+    [],
   );
   useCachedPollingEffect(
     ({ background, track, commitValue, commitError, failed }) => {
@@ -65,12 +74,21 @@ export default function ManagerCourseRunsPage() {
     },
     [load],
     {
-      key: ["manager-runs", page],
-      setters: [setResult, setCourses],
+      key: ["manager-runs", "all"],
+      setters: [setRuns, setCourses],
       setLoading,
     },
     !showCreate,
   );
+
+  const courseOptions = Array.from(new Map(runs.map(run => [run.courseId, run.courseName])))
+    .sort((a, b) => a[1].localeCompare(b[1], "vi"));
+  const filtered = runs.filter(run =>
+    (!courseId || run.courseId === courseId) && (!status || run.status === status));
+  const pageSize = 20;
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const visiblePage = Math.min(page, Math.max(0, totalPages - 1));
+  const visible = filtered.slice(visiblePage * pageSize, (visiblePage + 1) * pageSize);
 
   return (
     <div className="scms-course-workspace">
@@ -84,6 +102,22 @@ export default function ManagerCourseRunsPage() {
         <Button variant="danger" disabled={loading} onClick={() => setShowCreate(true)}>
           + Tạo đợt mở
         </Button>
+      </div>
+      <div className="row g-3 mb-3">
+        <Form.Group controlId="run-filter-course" className="col-md-4">
+          <Form.Label>Khóa học</Form.Label>
+          <Form.Select value={courseId} onChange={event => { setCourseId(event.target.value); setPage(0); }}>
+            <option value="">Tất cả khóa học</option>
+            {courseOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </Form.Select>
+        </Form.Group>
+        <Form.Group controlId="run-filter-status" className="col-md-3">
+          <Form.Label>Trạng thái</Form.Label>
+          <Form.Select value={status} onChange={event => { setStatus(event.target.value); setPage(0); }}>
+            <option value="">Tất cả trạng thái</option>
+            {Object.entries(COURSE_RUN_STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </Form.Select>
+        </Form.Group>
       </div>
       {error && (
         <ErrorAlert
@@ -111,7 +145,7 @@ export default function ManagerCourseRunsPage() {
               </tr>
             </thead>
             <tbody>
-              {result.content.map((run) => (
+              {visible.map((run) => (
                 <tr key={run.id}>
                   <td>{run.runCode}</td>
                   <td>{run.courseName}</td>
@@ -133,17 +167,17 @@ export default function ManagerCourseRunsPage() {
                   </td>
                 </tr>
               ))}
-              {!result.content.length && (
+              {!visible.length && (
                 <tr>
                   <td colSpan={7} className="text-center text-muted py-4">
-                    Chưa có đợt mở khóa học.
+                    {courseId || status ? "Không có đợt học phù hợp với bộ lọc." : "Chưa có đợt mở khóa học."}
                   </td>
                 </tr>
               )}
             </tbody>
           </Table>
         )}
-        <StaffPagination page={page} totalPages={result.totalPages} totalElements={result.totalElements} loading={loading} onPageChange={setPage} />
+        <StaffPagination page={visiblePage} totalPages={totalPages} totalElements={filtered.length} loading={loading} onPageChange={setPage} />
       </div>
 
       {showCreate && <WeeklyCourseRunModal courses={courses}
