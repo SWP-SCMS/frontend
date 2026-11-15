@@ -980,3 +980,21 @@ test('Reception selects a course before choosing its run across catalog pages', 
   await expect(page.getByRole('cell', { name: 'GYM-1' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Đã chọn' })).toHaveCount(0);
 });
+
+test('manager filters course runs across API pages by course and status', async ({ page }) => {
+  const first = { ...run, id: 'a', courseId: 'aerobic', courseName: 'Aerobic', runCode: 'AER-1', status: 'CONFIRMED' };
+  const second = { ...first, id: 'b', courseId: 'boxing', courseName: 'Boxing', runCode: 'BOX-1' };
+  await mockApi(page, 'MANAGER', ({ path, url }) => {
+    if (path === '/manager/courses') return { body: [] };
+    if (path === '/manager/course-runs') {
+      const index = Number(url.searchParams.get('page'));
+      return { body: { content: [index === 0 ? first : second], page: index, totalPages: 2, totalElements: 2 } };
+    }
+  });
+  await page.goto('/manager/course-runs');
+  await page.getByLabel('Khóa học', { exact: true }).selectOption('boxing');
+  await expect(page.getByRole('cell', { name: 'BOX-1' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'AER-1' })).toHaveCount(0);
+  await page.getByLabel('Trạng thái', { exact: true }).selectOption('CANCELLED');
+  await expect(page.getByText('Không có đợt học phù hợp với bộ lọc.')).toBeVisible();
+});
