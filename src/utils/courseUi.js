@@ -88,6 +88,7 @@ export function formatCourseDateTime(value) {
 }
 
 const COURSE_ERROR_MESSAGES = {
+  CENTER_VISIT_REQUIRED: 'Học viên cần có lượt check-in đang mở cho buổi học để điểm danh.',
   COURSE_APPROVAL_ALREADY_DECIDED: 'Khóa học đã được xử lý. Vui lòng tải lại hàng chờ.',
   COURSE_SCHEDULE_CHANGE_RESPONSE_CLOSED: 'Đã hết thời hạn phản hồi hoặc thay đổi không còn khả dụng.',
   COURSE_SCHEDULE_CHANGE_RESPONSE_CONFLICT: 'Bạn đã gửi phản hồi khác. Vui lòng tải lại dữ liệu.',
