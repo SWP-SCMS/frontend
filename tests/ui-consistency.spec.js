@@ -11,18 +11,19 @@ for (const membershipStatus of ['TERMINATED', 'EXPIRED']) {
         requested.add(path);
         return [{ id: 'plan', title: 'Saved training history', status: 'ARCHIVED', versions: [] }];
       }
-      if (path === '/members/me/training-results' || path === '/members/me/feedback') {
+      if (path === '/members/me/bookings') return pageOf([{ bookingId: 'old-booking', sessionId: 'old-session', classType: 'PT_1_1', className: 'Saved PT session', startTime: '2026-11-17T03:00:00Z', endTime: '2026-11-17T04:00:00Z' }]);
+      if (path === '/members/me/class-sessions/old-session/training-summary') {
         requested.add(path);
-        return pageOf([]);
+        return { result: { content: { notes: 'Saved training result' } }, feedback: { content: 'Saved coach feedback' } };
       }
     });
     await page.goto('/member/training-plans');
     await expect(page.getByRole('heading', { name: 'Saved training history' })).toBeVisible();
-    await page.getByRole('link', { name: 'Kết quả PT 1-1', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Kết quả PT 1-1', exact: true })).toBeVisible();
-    await page.getByRole('link', { name: 'Nhận xét PT 1-1', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Nhận xét PT 1-1', exact: true })).toBeVisible();
-    await expect.poll(() => requested.size).toBe(3);
+    await page.goto('/member/class-sessions?week=2026-11-16');
+    await page.getByRole('button', { name: 'Xem chi tiết Saved PT session', exact: true }).click();
+    await expect(page.getByRole('dialog')).toContainText('Saved training result');
+    await expect(page.getByRole('dialog')).toContainText('Saved coach feedback');
+    await expect.poll(() => requested.size).toBe(2);
     await page.goto('/member/pt-booking');
     await expect(page.getByRole('heading', { name: 'Gói tập chưa bao gồm tính năng này' })).toBeVisible();
   });

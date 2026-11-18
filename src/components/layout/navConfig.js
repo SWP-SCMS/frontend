@@ -164,8 +164,6 @@ export const MEMBER_SIDEBAR_ITEMS = [
         label: 'Lịch của tôi',
         icon: 'calendar',
       },
-      { to: '/member/training-results/classes', label: 'Kết quả lớp học', icon: 'clipboard' },
-      { to: '/member/feedback/classes', label: 'Nhận xét lớp học', icon: 'clipboard' },
     ],
   },
   {
@@ -182,16 +180,6 @@ export const MEMBER_SIDEBAR_ITEMS = [
         label: 'Giáo án tập luyện',
         icon: 'clipboard',
       },
-      {
-        to: '/member/training-results/pt',
-        label: 'Kết quả PT 1-1',
-        icon: 'dashboard',
-      },
-      {
-        to: '/member/feedback/pt',
-        label: 'Nhận xét PT 1-1',
-        icon: 'profile',
-      },
     ],
   },
   {
@@ -199,8 +187,6 @@ export const MEMBER_SIDEBAR_ITEMS = [
     items: [
       { to: '/member/course-catalog', label: 'Đăng ký khóa học', icon: 'clipboard' },
       { to: '/member/courses', label: 'Khóa học của tôi', icon: 'calendar', end: true },
-      { to: '/member/training-results/courses', label: 'Kết quả khóa học', icon: 'clipboard' },
-      { to: '/member/feedback/courses', label: 'Nhận xét khóa học', icon: 'clipboard' },
       { to: '/member/courses/history', label: 'Lịch sử khóa học', icon: 'clipboard' },
       { to: '/member/courses/waitlist', label: 'Danh sách chờ', icon: 'clipboard' },
       {

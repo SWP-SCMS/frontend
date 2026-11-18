@@ -1,5 +1,13 @@
 import api from './api';
 
+export async function getMySessionTraining(sessionId, course = false) {
+  const { data } = await api.get(`/members/me/${course ? 'course' : 'class'}-sessions/${encodeURIComponent(sessionId)}/training-summary`);
+  if (!data || !Object.hasOwn(data, 'result') || !Object.hasOwn(data, 'feedback')) {
+    throw new TypeError('Invalid session training summary response');
+  }
+  return data;
+}
+
 function path(sessionId, memberId, kind, id) {
   const base = `/coach/class-sessions/${encodeURIComponent(sessionId)}/members/${encodeURIComponent(memberId)}/${kind}`;
   return id ? `${base}/${encodeURIComponent(id)}` : base;

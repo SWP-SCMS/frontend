@@ -38,3 +38,14 @@ test('active calendar excludes pending withdrawals and restores sessions after c
   assert.equal(pending.sessions.length, 2, 'filtering the active calendar must preserve source history');
   assert.equal(courseScheduleEntries([{ ...entries[0], courseRunStatus: 'CANCELLED' }]).length, 0);
 });
+
+test('calendar history keeps past enrolled sessions after course completion or withdrawal without restoring future bookings', () => {
+  const now = Date.parse('2026-11-18T10:00:00Z');
+  const past = { courseSessionId: 'past', disposition: 'ENROLLED', sessionStatus: 'COMPLETED', endAt: '2026-11-17T10:00:00Z' };
+  const future = { ...past, courseSessionId: 'future', sessionStatus: 'SCHEDULED', endAt: '2026-11-19T10:00:00Z' };
+  for (const lifecycleStatus of ['COMPLETED', 'WITHDRAWAL_PENDING', 'WITHDRAWN', 'TRANSFERRED']) {
+    const enrollment = { lifecycleStatus, sessions: [past, future, { ...past, courseSessionId: 'cancelled', sessionStatus: 'CANCELLED' }, { ...past, courseSessionId: 'not-enrolled', disposition: 'NOT_ENROLLED' }] };
+    assert.deepEqual(courseScheduleEntries([enrollment], { includeHistory: true, now }).map(row => row.sessionId), ['past']);
+    assert.equal(courseScheduleEntries([enrollment]).length, 0, 'upcoming dashboard keeps its active-only behavior');
+  }
+});
