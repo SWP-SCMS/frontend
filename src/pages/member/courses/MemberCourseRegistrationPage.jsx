@@ -188,7 +188,7 @@ export default function MemberCourseRegistrationPage() {
         <section className="member-course-panel member-course-payment-panel">
           {isPaid ? (
             <div className="member-course-complete">
-              <span>✓</span><h2>Thanh toán đã được xác nhận</h2><p>Xem Khóa học của tôi để theo dõi trạng thái đăng ký, lịch học và các yêu cầu rút hoặc chuyển đợt.</p>
+              <span>✓</span><h2>Thanh toán đã được xác nhận</h2><p>Xem Khóa học của tôi để theo dõi trạng thái đăng ký, lịch học và các yêu cầu rút hoặc hủy do đổi lịch.</p>
               <Link className="member-course-primary-link" to="/member/courses">Xem khóa học của tôi</Link>
             </div>
           ) : isExpired ? (

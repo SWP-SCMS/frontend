@@ -5,7 +5,10 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const backend = path.resolve(process.env.COURSE_QA_BACKEND || '../backend');
 const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: backend, encoding: 'utf8' }).trim();
-const expected = '18561521b841d23280eb429cd098c1b228ad4042';
+// Use the same pin as checkout in CI, so updating it cannot silently drift here.
+const workflow = readFileSync(path.resolve('.github/workflows/ci.yml'), 'utf8');
+const expected = workflow.match(/repository:\s*SWP-SCMS\/backend\s*\r?\n\s*ref:\s*([a-f0-9]{40})\b/i)?.[1];
+if (!expected) throw new Error('CI must pin SWP-SCMS/backend to a full commit SHA.');
 if (sha !== expected) throw new Error(`Backend must be pinned to ${expected}; found ${sha}`);
 const dir = path.resolve('.course-qa', `runtime-${Date.now()}`);
 mkdirSync(dir, { recursive: true });

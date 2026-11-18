@@ -1,3 +1,4 @@
+import useTransientNotice from '../../hooks/useTransientNotice';
 import { useState } from 'react';
 import { Button, Form, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
@@ -24,7 +25,7 @@ const uploadSchema = z.object({
 
 export default function ProfileImageUploadControl({ onUpload, onUploaded }) {
   const [serverError, setServerError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const {
     register,
     handleSubmit,

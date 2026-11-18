@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import { Fragment, useCallback, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Button, Card, Form, Modal, Nav, Spinner, Table } from 'react-bootstrap';
@@ -23,7 +24,7 @@ function ImpactPage({ requestId }) {
   const [impact, setImpact] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useTransientNotice('');
   const [editor, setEditor] = useState(null);
   const [batch, setBatch] = useState(null);
   const [tab, setTab] = useState('CLASS');

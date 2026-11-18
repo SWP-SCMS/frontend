@@ -9,7 +9,7 @@
 //     báo người dùng trước khi họ điền form. Xem MemberChangePasswordPage.
 //   - `?emailChanged=1` means staff verified a new email and must sign in again.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/useAuth';
 import { ROLES } from '../../../constants';
@@ -76,6 +76,17 @@ export default function LoginPage() {
   const emailChanged = params.get('emailChanged') === '1';
   const accountVerified = params.get('verified') === '1';
   const accountRegistered = params.get('registered') === '1';
+
+  useEffect(() => {
+    const flags = ['changed', 'reset', 'emailChanged', 'verified', 'registered'];
+    if (!flags.some(key => params.get(key) === '1')) return undefined;
+    const timer = window.setTimeout(() => {
+      const next = new URLSearchParams(params);
+      for (const key of flags) next.delete(key);
+      setParams(next, { replace: true });
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [params, setParams]);
 
   function dismissPasswordChangedNotice() {
     params.delete('changed');

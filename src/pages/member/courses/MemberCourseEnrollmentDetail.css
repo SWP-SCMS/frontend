@@ -1,0 +1,163 @@
+.member-enrollment-detail {
+  margin-top: 1.25rem;
+}
+
+.member-enrollment-detail .member-enrollment-run-state {
+  margin: .5rem 0 0;
+  font-size: .875rem;
+}
+
+.member-enrollment-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1.5rem 0 0;
+  padding: 1.25rem;
+  gap: 1.25rem;
+  border-radius: .75rem;
+  background: var(--scms-surface-alt);
+}
+
+.member-enrollment-overview dt {
+  color: var(--scms-muted);
+  font-size: .8rem;
+  font-weight: 500;
+  margin-bottom: .5rem;
+}
+
+.member-enrollment-overview dd {
+  margin: 0;
+  font-size: .9rem;
+}
+
+.member-enrollment-overview dd > span {
+  display: block;
+  margin-top: .3rem;
+  font-size: .8rem;
+  color: var(--scms-muted);
+}
+
+.member-enrollment-sessions {
+  margin-top: 1.75rem;
+}
+
+.member-enrollment-sessions-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.member-enrollment-sessions-heading > div {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+}
+
+.member-enrollment-sessions-heading h4 {
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.member-enrollment-sessions-heading span,
+.member-enrollment-sessions-heading a {
+  font-size: .85rem;
+}
+
+.member-enrollment-sessions-heading span {
+  color: var(--scms-muted);
+}
+
+.member-enrollment-session-table {
+  width: 100%;
+  font-size: .875rem;
+}
+
+.member-enrollment-session-table thead {
+  background: var(--scms-surface-alt);
+}
+
+.member-enrollment-session-table th,
+.member-enrollment-session-table td {
+  padding: 1rem .75rem;
+  border-bottom: 1px solid var(--bs-border-color);
+  vertical-align: middle;
+}
+
+.member-enrollment-session-table thead th {
+  color: var(--scms-muted);
+  font-size: .8rem;
+  font-weight: 500;
+}
+
+.member-enrollment-session-table tbody th {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.member-enrollment-session-table td > small,
+.member-enrollment-session-table th > small {
+  display: block;
+  margin-top: .35rem;
+  font-size: .8rem;
+  font-weight: 400;
+}
+
+@media (max-width: 1000px) {
+  .member-enrollment-overview {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .member-enrollment-overview > div + div {
+    padding-top: 1rem;
+    border-top: 1px solid var(--bs-border-color);
+  }
+
+  .member-enrollment-session-table,
+  .member-enrollment-session-table tbody {
+    display: block;
+  }
+
+  .member-enrollment-session-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .member-enrollment-session-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .75rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--bs-border-color);
+  }
+
+  .member-enrollment-session-table th,
+  .member-enrollment-session-table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .member-enrollment-session-table td {
+    grid-column: 1 / -1;
+  }
+
+  .member-enrollment-session-table td:nth-child(4) {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+  }
+
+  .member-enrollment-session-table td:not(:nth-child(4))::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: .25rem;
+    color: var(--scms-muted);
+    font-size: .75rem;
+  }
+}

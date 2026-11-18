@@ -1,9 +1,11 @@
 import SessionTime from '../../../components/common/SessionTime';
+import './ManagerCourseRunDetailPage.css';
 import useCourseResourceAvailability from '../../../hooks/useCourseResourceAvailability';
 import CourseRunStatusBadge from '../../../components/common/CourseRunStatusBadge';
 import { z } from "zod";
 import usePollingEffect from "../../../hooks/usePollingEffect";
 import CourseRunRescheduleModal from "./CourseRunRescheduleModal";
+import CourseSessionsRescheduleModal from "./CourseSessionsRescheduleModal";
 import SessionDateSlotInput from "../../../components/common/SessionDateSlotInput";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +25,7 @@ import {
 } from "react-bootstrap";
 import { Link, useParams } from "react-router-dom";
 import ErrorAlert from "../../../components/common/ErrorAlert";
+import { suggestCourseMakeup } from "../../../utils/courseMakeup";
 import { courseMakeupIds } from "../../../utils/courseWorkflow";
 import {
   cancelCourseSessionWithMakeup,
@@ -231,12 +234,6 @@ export default function ManagerCourseRunDetailPage() {
     }
   }
 
-  function openNewSession() {
-    setMakeup(false);
-    setEditingSession(null);
-    setSessionForm({ ...emptySession, coachId: run.primaryCoachId });
-    setModal("session");
-  }
   function openEditSession(item) {
     setMakeup(false);
     setEditingSession(item);
@@ -247,6 +244,21 @@ export default function ManagerCourseRunDetailPage() {
       startAt: toLocalInput(item.startAt),
       endAt: toLocalInput(item.endAt),
       allocationVnd: item.allocationVnd || "",
+    });
+    setModal("session");
+  }
+
+  function openMakeupSession(item) {
+    const suggested = suggestCourseMakeup(sessions);
+    setEditingSession(item);
+    setMakeup(true);
+    setSessionForm({
+      unitNumber: item.unitNumber,
+      roomId: item.roomId || "",
+      coachId: item.coachId || "",
+      allocationVnd: item.allocationVnd || "",
+      startAt: suggested?.startAt || "",
+      endAt: suggested?.endAt || "",
     });
     setModal("session");
   }
@@ -375,6 +387,18 @@ export default function ManagerCourseRunDetailPage() {
       {modal === "schedule" && (
         <CourseRunRescheduleModal
           run={run}
+          onClose={() => setModal("")}
+          onSaved={(result) => {
+            setRun(result.run);
+            setSessions(result.sessions);
+            setModal("");
+            setError("");
+          }}
+        />
+      )}
+      {modal === "sessions-schedule" && (
+        <CourseSessionsRescheduleModal
+          run={run}
           sessions={sessions}
           onClose={() => setModal("")}
           onSaved={(result) => {
@@ -438,10 +462,9 @@ export default function ManagerCourseRunDetailPage() {
       <div className="card border-0 shadow-sm p-3">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h2 className="h5 mb-0">Lịch buổi học</h2>
-          <Button variant="danger" size="sm" onClick={openNewSession}
-            disabled={busy || ["CANCELLED", "COMPLETED", "SETTLEMENT_PENDING"].includes(run.status)}>
-            + Thêm buổi học
-          </Button>
+          {!["CANCELLED", "COMPLETED", "SETTLEMENT_PENDING"].includes(run.status) && <Button disabled={busy || !sessions.some(session =>
+            ["SCHEDULED", "MAKEUP_SCHEDULED"].includes(session.status) && !session.replacementSessionId && Date.parse(session.startAt) > now)}
+            onClick={() => setModal("sessions-schedule")}>Dời nhiều buổi</Button>}
         </div>
         <Table responsive hover className="align-middle mb-0">
           <thead className="table-light">
@@ -491,15 +514,7 @@ export default function ManagerCourseRunDetailPage() {
                         size="sm"
                         variant="outline-danger"
                         disabled={busy || Date.parse(item.startAt) <= now}
-                        onClick={() => {
-                          openEditSession(item);
-                          setMakeup(true);
-                          setSessionForm({
-                            ...sessionFields.getValues(),
-                            startAt: "",
-                            endAt: "",
-                          });
-                        }}
+                        onClick={() => openMakeupSession(item)}
                       >
                         Hủy và xếp bù
                       </Button>
@@ -512,15 +527,7 @@ export default function ManagerCourseRunDetailPage() {
                         className="ms-2"
                         size="sm"
                         disabled={busy}
-                        onClick={() => {
-                          openEditSession(item);
-                          setMakeup(true);
-                          setSessionForm({
-                            ...sessionFields.getValues(),
-                            startAt: "",
-                            endAt: "",
-                          });
-                        }}
+                        onClick={() => openMakeupSession(item)}
                       >
                         Xếp buổi bù
                       </Button>
@@ -550,33 +557,53 @@ export default function ManagerCourseRunDetailPage() {
         backdrop={busy ? "static" : true}
         keyboard={!busy}
         centered
+        scrollable
+        dialogClassName="course-run-cancel-dialog"
+        aria-labelledby="cancel-run-title"
       >
         <Form onSubmit={cancellationForm.handleSubmit(cancelRun)}>
           <Modal.Header closeButton={!busy}>
-            <Modal.Title>Hủy đợt học {run.runCode}</Modal.Title>
+            <Modal.Title id="cancel-run-title">Hủy đợt học?</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <ErrorAlert error={error} title="Không thể hủy đợt học" />
-            <p>
-              {run.courseName} · {run.runCode}
-            </p>
+            <div className="course-run-cancel-context">
+              <strong>{run.courseName}</strong>
+              <span>{run.runCode}</span>
+            </div>
             {impact ? (
-              <p>
-                {impact.enrollmentCount} đăng ký đang học/chờ rút và{" "}
-                {impact.pendingOrderCount} đơn chờ thanh toán bị ảnh hưởng.
-              </p>
+              <dl className="course-run-cancel-impact">
+                <div>
+                  <dt>Đăng ký bị ảnh hưởng</dt>
+                  <dd>{impact.enrollmentCount}</dd>
+                  <small>Đang học hoặc chờ rút</small>
+                </div>
+                <div>
+                  <dt>Đơn chờ thanh toán</dt>
+                  <dd>{impact.pendingOrderCount}</dd>
+                  <small>Sẽ hết hạn khi hủy đợt</small>
+                </div>
+              </dl>
             ) : (
-              <p>Đang tải số lượng bị ảnh hưởng…</p>
+              <p className="text-muted" role="status">Đang tải số lượng bị ảnh hưởng…</p>
             )}
-            <p>
-              Các buổi học sẽ bị hủy, đơn chờ sẽ hết hạn. Khoản hoàn được hệ
-              thống xác định và cần xử lý riêng. Số lượng có thể thay đổi đến
-              khi xác nhận.
-            </p>
-            <Form.Label htmlFor="cancel-run-reason">Lý do hủy</Form.Label>
+            <div className="course-run-cancel-consequences">
+              <strong>Sau khi hủy</strong>
+              <ul>
+                <li>Các buổi học trong đợt sẽ bị hủy.</li>
+                <li>Đơn chờ thanh toán sẽ hết hạn.</li>
+                <li>Hoàn 100% giá trị các buổi chưa được tổ chức, theo phân bổ lúc thanh toán.</li>
+                <li>Các buổi đã học không được hoàn tiền. Khoản hoàn cần được duyệt và chi riêng.</li>
+              </ul>
+            </div>
+            <Form.Label htmlFor="cancel-run-reason" className="fw-semibold">Lý do hủy <span className="text-danger" aria-hidden="true">*</span></Form.Label>
             <Form.Control
               as="textarea"
               id="cancel-run-reason"
+              rows={3}
+              placeholder="Nhập lý do để học viên và nhân viên nắm được."
+              aria-required="true"
+              aria-describedby="cancel-run-reason-hint"
               maxLength={1000}
               disabled={busy}
               {...cancellationForm.register("reason")}
@@ -585,6 +612,8 @@ export default function ManagerCourseRunDetailPage() {
             <Form.Control.Feedback type="invalid">
               {cancellationForm.formState.errors.reason?.message}
             </Form.Control.Feedback>
+            <Form.Text id="cancel-run-reason-hint">Từ 5 đến 1.000 ký tự.</Form.Text>
+            <p className="course-run-cancel-note">Số lượng bị ảnh hưởng được cập nhật tại thời điểm xác nhận.</p>
           </Modal.Body>
           <Modal.Footer>
             <Button
@@ -592,7 +621,7 @@ export default function ManagerCourseRunDetailPage() {
               disabled={busy}
               onClick={() => setModal("")}
             >
-              Quay lại
+              Giữ đợt học
             </Button>
             <Button variant="danger" type="submit" disabled={busy || !impact}>
               {busy ? "Đang hủy…" : "Xác nhận hủy đợt học"}
@@ -705,6 +734,7 @@ export default function ManagerCourseRunDetailPage() {
             {error && (
               <ErrorAlert error={error} title="Không thể lưu thay đổi" />
             )}
+            {editingSession && !makeup && <p className="text-muted">Thời gian khai giảng và kết thúc đợt học sẽ tự cập nhật theo buổi bắt đầu sớm nhất và buổi kết thúc muộn nhất.</p>}
             {availability.loading && <p role="status">Đang kiểm tra HLV và phòng…</p>}
             {availability.error && <><ErrorAlert error={availability.error} title="Không tải được HLV và phòng trống"/><Button onClick={availability.retry}>Thử lại</Button></>}
             <Row className="g-3">

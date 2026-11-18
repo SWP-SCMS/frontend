@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 
-export default function useCourseResourceAvailability({ windows, capacity, excludeSessionId, enabled = true }) {
+export default function useCourseResourceAvailability({ windows, capacity, excludeSessionId, excludeSessionIds, enabled = true }) {
   const valid = enabled && windows.length > 0 && Number.isSafeInteger(Number(capacity)) && Number(capacity) > 0
     && windows.every(w => Number.isFinite(Date.parse(w.startAt)) && Date.parse(w.endAt) > Date.parse(w.startAt));
-  const key = valid ? JSON.stringify({ windows, capacity: Number(capacity), excludeSessionId: excludeSessionId || null }) : '';
+  const key = valid ? JSON.stringify({ windows, capacity: Number(capacity), excludeSessionId: excludeSessionId || null,
+    ...(excludeSessionIds ? { excludeSessionIds } : {}),
+  }) : '';
   const [result, setResult] = useState(null);
   const [retry, setRetry] = useState(0);
   useEffect(() => {

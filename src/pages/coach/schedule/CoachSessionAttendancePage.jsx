@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 // /coach/schedule/:sessionId/attendance — điểm danh học viên.
 //
 // Mỗi học viên có 2 ô tích: "Có mặt" (PRESENT) hoặc "Vắng" (ABSENT); chỉ chọn
@@ -51,7 +52,7 @@ export default function CoachSessionAttendancePage() {
   // Lựa chọn chưa lưu: { [attendanceId]: 'PRESENT' | 'ABSENT' }.
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useTransientNotice(false);
   // Lỗi theo từng học viên: { [attendanceId]: thông báo }.
   const [failures, setFailures] = useState({});
 
@@ -256,7 +257,7 @@ export default function CoachSessionAttendancePage() {
                               onChange={() => choose(record, 'ABSENT')}
                             />
                           </div>
-                          {record && !record.receptionistCheckedIn && <small className="text-muted">Chưa có lượt check-in hợp lệ cho buổi học.</small>}
+                          {record && !record.receptionistCheckedIn && <small className="text-muted">Học viên cần có lượt check-in đang mở để điểm danh.</small>}
                           {record?.id && failures[record.id] ? (
                             <div className="text-danger small mt-1">
                               {failures[record.id]}

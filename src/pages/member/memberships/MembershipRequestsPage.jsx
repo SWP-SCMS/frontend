@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {Alert,  Button, Card, Form, Modal, Spinner, Table, Tabs, Tab} from 'react-bootstrap';
@@ -76,7 +77,7 @@ export default function MembershipRequestsPage() {
   const [freezeRows, setFreezeRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const [actionError, setActionError] = useState(null);
   const [busyKey, setBusyKey] = useState(null);
   const [withdrawTarget, setWithdrawTarget] = useState(null);

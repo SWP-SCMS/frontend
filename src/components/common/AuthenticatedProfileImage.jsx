@@ -14,6 +14,9 @@ export default function AuthenticatedProfileImage({
   width,
   height,
   fallback = null,
+  errorFallback = fallback,
+  onLoad,
+  onError,
 }) {
   const [resolvedSrc, setResolvedSrc] = useState('');
   const [failed, setFailed] = useState(false);
@@ -49,7 +52,8 @@ export default function AuthenticatedProfileImage({
     };
   }, [src]);
 
-  if (!resolvedSrc || failed) return fallback;
+  if (failed) return errorFallback;
+  if (!resolvedSrc) return fallback;
   return (
     <img
       src={resolvedSrc}
@@ -58,7 +62,11 @@ export default function AuthenticatedProfileImage({
       style={style}
       width={width}
       height={height}
-      onError={() => setFailed(true)}
+      onLoad={onLoad}
+      onError={() => {
+        setFailed(true);
+        onError?.();
+      }}
     />
   );
 }

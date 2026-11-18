@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import Badge from '../../../components/common/SystemBadge';
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
@@ -60,7 +61,7 @@ export default function RefundReviewPage() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const [action, setAction] = useState(null);
   const [approvedAmount, setApprovedAmount] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');

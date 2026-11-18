@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { courseWithdrawalStatusLabel, courseRefundActions, canAcceptCourseTransfer, canRespondToCourseChange, courseAmountText, courseMakeupIds, courseNotificationDestination } from './courseWorkflow.js';
+import { courseWithdrawalStatusLabel, courseRefundActions, canRespondToCourseChange, courseAmountText, courseMakeupIds, courseNotificationDestination } from './courseWorkflow.js';
 import { formatCourseMoney, formatCourseDateTime, getCourseErrorMessage } from './courseUi.js';
-import { courseDecisionSchema, courseTransferDecisionSchema, courseVerificationSchema } from '../schemas/courseWorkflowSchemas.js';
+import { courseDecisionSchema, courseVerificationSchema } from '../schemas/courseWorkflowSchemas.js';
 
 test('refund decisions follow backend transitions and cannot imply a disbursement', () => {
   assert.deepEqual(courseRefundActions('PENDING_REVIEW'), ['approve', 'reject']);
@@ -21,15 +21,6 @@ test('a response is unavailable at its deadline or after any terminal/superseded
   for (const status of ['RESPONDED', 'SUPERSEDED', 'EXPIRED']) assert.equal(canRespondToCourseChange({ ...pending, status }, now - 1), false);
   assert.equal(canRespondToCourseChange({ ...pending, response: 'CONTINUE' }, now - 1), false);
   assert.equal(canRespondToCourseChange({ ...pending, responseDeadline: null }, now - 1), false);
-});
-
-test('only unaccepted, unexpired offers can be accepted', () => {
-  const offer = { status: 'OFFERED', expiresAt: '2026-11-10T10:00:00Z' };
-  const now = Date.parse(offer.expiresAt);
-  assert.equal(canAcceptCourseTransfer(offer, now - 1), true);
-  assert.equal(canAcceptCourseTransfer(offer, now), false);
-  assert.equal(canAcceptCourseTransfer({ ...offer, acceptedAt: '2026-11-01T00:00:00Z' }, now - 1), false);
-  for (const status of ['PENDING_PAYMENT', 'EXPIRED', 'COMPLETED', 'CANCELLED']) assert.equal(canAcceptCourseTransfer({ ...offer, status }, now - 1), false);
 });
 
 test('money distinguishes missing amounts from zero and never silently rounds 19-digit VND', () => {
@@ -63,7 +54,6 @@ test('financial verification requires explicit evidence and preserves exact inte
   assert.equal(courseVerificationSchema.safeParse({ ...value, evidenceReference: ' ' }).success, false);
   assert.equal(courseDecisionSchema.safeParse({ reason: ' ' }).success, false);
   assert.equal(courseDecisionSchema.safeParse({ reason: 'a'.repeat(1001) }).success, false);
-  assert.equal(courseTransferDecisionSchema.safeParse({ reason: 'Đổi lịch', targetRunId: '' }).success, false);
 });
 
 test('notifications route by role and target type without treating offer IDs as request IDs', () => {
@@ -71,8 +61,8 @@ test('notifications route by role and target type without treating offer IDs as 
   assert.equal(courseNotificationDestination(refund, 'manager'), '/manager/course-refunds?id=refund-id');
   assert.equal(courseNotificationDestination(refund, 'member'), '/member/courses/refunds');
   assert.equal(courseNotificationDestination(refund, 'reception'), '/reception/course-refunds');
-  assert.equal(courseNotificationDestination({ notificationType: 'COURSE_TRANSFER_COMPLETED', targetType: 'COURSE_TRANSFER_OFFER', targetId: 'offer-id' }, 'manager'), '/manager/course-transfers');
-  assert.equal(courseNotificationDestination({ notificationType: 'COURSE_TRANSFER_REQUESTED', targetType: 'COURSE_TRANSFER_REQUEST', targetId: 'a&b' }, 'manager'), '/manager/course-transfers?id=a%26b');
+  assert.equal(courseNotificationDestination({ notificationType: 'COURSE_TRANSFER_COMPLETED', targetType: 'COURSE_TRANSFER_OFFER', targetId: 'offer-id' }, 'manager'), '/manager/course-runs');
+  assert.equal(courseNotificationDestination({ notificationType: 'COURSE_TRANSFER_REQUESTED', targetType: 'COURSE_TRANSFER_REQUEST', targetId: 'a&b' }, 'manager'), '/manager/course-runs');
   assert.equal(courseNotificationDestination({ notificationType: 'MEMBERSHIP_REFUND_APPROVED' }, 'manager'), null);
 });
 

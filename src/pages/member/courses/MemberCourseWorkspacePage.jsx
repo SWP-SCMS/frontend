@@ -5,11 +5,10 @@ import MemberCourseEnrollmentDetail from './MemberCourseEnrollmentDetail';
 import MemberCourseRefunds from './MemberCourseRefunds';
 import MemberCourseWithdrawals from './MemberCourseWithdrawals';
 import CourseScheduleChanges from './CourseScheduleChanges';
-import MemberCourseTransfers from './MemberCourseTransfers';
 import './MemberCoursesPage.css';
 
-const titles = { detail: 'Chi tiết khóa đã đăng ký', refunds: 'Hoàn tiền khóa học', withdrawals: 'Rút khóa học', transfers: 'Chuyển đợt học', 'schedule-changes': 'Thay đổi lịch học' };
-const requestSections = ['schedule-changes', 'transfers', 'withdrawals', 'refunds'];
+const titles = { detail: 'Chi tiết khóa đã đăng ký', refunds: 'Hoàn tiền khóa học', withdrawals: 'Rút khóa học', 'schedule-changes': 'Thay đổi lịch học' };
+const requestSections = ['schedule-changes', 'withdrawals', 'refunds'];
 export default function MemberCourseWorkspacePage({ section }) {
   const { enrollmentId } = useParams();
   const [params, setParams] = useSearchParams();
@@ -41,8 +40,7 @@ export default function MemberCourseWorkspacePage({ section }) {
       </>}
       {section === 'withdrawals' && <MemberCourseWithdrawals key={selectedId} enrollments={scope} selectedEnrollmentId={selectedId} onRequested={() => reload()} />}
       {section === 'refunds' && <MemberCourseRefunds key={selectedId} enrollments={enrollments} selectedEnrollmentId={selectedId} />}
-      {section === 'schedule-changes' && <CourseScheduleChanges key={selectedId} enrollments={scope} selectedEnrollmentId={selectedId} onResponded={() => reload()} />}
-      {section === 'transfers' && <MemberCourseTransfers key={selectedId} enrollments={enrollments} selectedEnrollmentId={selectedId} onTransferred={() => reload()} />}
+      {section === 'schedule-changes' && <CourseScheduleChanges key={selectedId} enrollments={scope} selectedEnrollmentId={selectedId} onResponded={() => reload({ background: true })} />}
     </>}
   </div>;
 }

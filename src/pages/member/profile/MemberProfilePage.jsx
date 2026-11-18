@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 // Hồ sơ cá nhân của Hội viên (US03), nằm trong MemberLayout.
 //
 // API:
@@ -262,7 +263,7 @@ export default function MemberProfilePage() {
   const [createdAt, setCreatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useTransientNotice(false);
 
   const {
     register,

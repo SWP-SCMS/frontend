@@ -13,7 +13,7 @@ const TYPE_LABELS = {
   COURSE_REFUND_FAILED: 'Xử lý khoản hoàn khóa học thất bại',
   COURSE_REFUND_RETURNED: 'Khoản chi hoàn khóa học đã được trả lại',
 
-  COURSE_WITHDRAWAL_CANCELLED: 'Yêu cầu rút đã hủy; quyền học được khôi phục theo trạng thái khóa',
+  COURSE_WITHDRAWAL_CANCELLED: 'Đã hủy yêu cầu rút khóa học',
   COURSE_RUN_COMPLETED: 'Đợt học đã hoàn thành; khoản hoàn được xử lý riêng',
   COURSE_WITHDRAWAL_REQUESTED: 'Đã tạo yêu cầu rút khóa học của bạn',
   COURSE_WITHDRAWAL_REVIEW_REQUIRED: 'Có yêu cầu rút khóa học cần duyệt',

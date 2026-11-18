@@ -12,6 +12,7 @@
 // roomName và bookedCount ngoài dữ liệu lịch cơ bản.
 
 import api from './api';
+import { courseTeachingEntries } from '../utils/coachTeachingSchedule';
 
 export async function listCoachSessions(params = {}) {
   const cleaned = {};
@@ -42,4 +43,20 @@ export async function updateAttendance(sessionId, attendanceId, status) {
     { status },
   );
   return data;
+}
+
+async function allSchedulePages(path, range) {
+  const first = (await api.get(path, { params: { ...range, page: 0, size: 100 } })).data;
+  const pages = await Promise.all(Array.from({ length: Math.max(0, (first.totalPages || 1) - 1) }, (_, index) =>
+    api.get(path, { params: { ...range, page: index + 1, size: 100 } }).then(response => response.data)));
+  return [first, ...pages].flatMap(page => page.content || []);
+}
+
+export async function listCoachTeachingSessions({ from, to }) {
+  const [classes, courses] = await Promise.all([
+    allSchedulePages('/coach/class-sessions', { from, to }),
+    allSchedulePages('/coach/course-sessions', { from, to }),
+  ]);
+  return [...classes, ...courseTeachingEntries(courses)].sort((a, b) =>
+    Date.parse(a.startTime) - Date.parse(b.startTime) || a.id.localeCompare(b.id));
 }

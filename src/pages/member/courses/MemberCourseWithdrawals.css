@@ -1,0 +1,32 @@
+.course-withdrawals { margin: 1.5rem 0; scroll-margin-top: 100px; }
+.course-withdrawals-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.course-withdrawals-toolbar h2 { margin: 0; }
+.course-withdrawals-toolbar .btn { white-space: nowrap; }
+.course-withdrawal-card, .course-withdrawal-form { min-width: 0; margin-bottom: 1rem; background: var(--scms-surface); border: 1px solid #e4e7ec; border-radius: 14px; box-shadow: 0 2px 5px rgb(13 28 47 / 3%); }
+.course-withdrawal-form { padding: 1.5rem; }
+.course-withdrawal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf0f3; }
+.member-course-page .course-withdrawal-header h3 { margin: 0 0 .25rem; font-size: 1.1rem; }
+.course-withdrawal-run { font-size: .85rem; color: var(--scms-muted); }
+.course-withdrawal-header > .system-badge { flex-shrink: 0; }
+.course-withdrawal-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .6fr); gap: 2rem; padding: 1.5rem; }
+.course-withdrawal-details { display: grid; align-content: start; gap: 1.1rem; margin: 0; }
+.course-withdrawal-details dt { margin-bottom: .3rem; font-size: .8rem; font-weight: 500; color: var(--scms-muted); }
+.course-withdrawal-details dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.course-withdrawal-refund { display: grid; align-content: start; gap: .6rem; padding: 1.1rem 1.25rem; border: 1px solid #e9ecf0; border-radius: 10px; background: #fafbfc; }
+.course-withdrawal-refund > span { font-size: .8rem; color: var(--scms-muted); }
+.course-withdrawal-refund > strong { font-size: 1.5rem; font-weight: 650; }
+.course-withdrawal-refund small { color: var(--scms-muted); line-height: 1.5; }
+.course-withdrawal-units { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem; margin-top: .2rem; padding-top: .7rem; border-top: 1px solid #e4e7ec; font-size: .85rem; }
+.course-withdrawal-units span { color: var(--scms-muted); }
+.course-withdrawal-footer { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.5rem; border-top: 1px solid #edf0f3; }
+.course-withdrawal-footer p { margin: 0; font-size: .85rem; color: var(--scms-muted); }
+.course-withdrawal-footer > .btn { flex-shrink: 0; }
+@media (max-width: 767.98px) {
+  .course-withdrawal-body { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; padding: 1rem; }
+  .course-withdrawal-header { flex-wrap: wrap; padding: 1rem; }
+  .course-withdrawal-footer { flex-direction: column; align-items: stretch; padding: 1rem; }
+  .course-withdrawal-form { padding: 1rem; }
+  .course-withdrawals-toolbar { align-items: flex-start; }
+  .course-withdrawals-toolbar h2 { font-size: 1.05rem; }
+  .course-withdrawals-toolbar .btn { font-size: .75rem; }
+}

@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import { formatSessionSlot } from '../../../utils/sessionSlots';
 // Member – Đăng ký lớp (đặt / hủy lịch các buổi tập).
 //
@@ -228,7 +229,7 @@ export default function ClassBookingPage({ ptOnly = false }) {
   // Hành động.
   const [busyId, setBusyId] = useState(null);
   const [actionError, setActionError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [notice, setNotice] = useTransientNotice(null);
   const [cancelTarget, setCancelTarget] = useState(null);
 
   // Hộp xác nhận đặt chỗ: buổi tập đang xem + lỗi BE trả về (nếu có).

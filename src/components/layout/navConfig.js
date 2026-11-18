@@ -20,6 +20,7 @@ export const APP_SHELL_NAV_ITEMS = {
       label: 'Quản lý hội viên',
       items: [
         { to: '/reception/members', label: 'Tra cứu hội viên' },
+        { to: '/reception/member-schedule', label: 'Lịch học của hội viên', icon: 'calendar' },
         { to: '/reception/members/new', label: 'Đăng ký hội viên' },
         { to: '/reception/email-verification', label: 'Yêu cầu kích hoạt' },
       ],
@@ -38,6 +39,7 @@ export const APP_SHELL_NAV_ITEMS = {
       label: 'Khóa học',
       items: [
         { to: '/reception/courses', label: 'Đăng ký khóa học' },
+        { to: '/reception/course-requests', label: 'Khóa học của hội viên' },
         { to: '/reception/course-payments/reconcile', label: 'Đối soát khóa học' },
         { to: '/reception/course-refunds', label: 'Hoàn tiền khóa học' },
       ],
@@ -104,7 +106,7 @@ export const APP_SHELL_NAV_ITEMS = {
         { to: '/manager/membership-requests', label: 'Yêu cầu gói tập', activePaths: ['/manager/refunds'] },
         {
           to: '/manager/course-withdrawals', label: 'Yêu cầu khóa học',
-          activePaths: ['/manager/course-transfers', '/manager/course-refunds'],
+          activePaths: ['/manager/course-refunds'],
         },
         { to: '/manager/payments/reconcile', label: 'Đối soát gói tập' },
         { to: '/manager/course-payments/reconcile', label: 'Đối soát khóa học' },
@@ -189,7 +191,7 @@ export const MEMBER_SIDEBAR_ITEMS = [
       { to: '/member/courses/waitlist', label: 'Danh sách chờ', icon: 'clipboard' },
       {
         to: '/member/courses/schedule-changes', label: 'Yêu cầu khóa học', icon: 'clipboard',
-        activePaths: ['/member/courses/transfers', '/member/courses/withdrawals', '/member/courses/refunds'],
+        activePaths: ['/member/courses/withdrawals', '/member/courses/refunds'],
       },
     ],
   },

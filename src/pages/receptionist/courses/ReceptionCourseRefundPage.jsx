@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 import StaffPagination from '../../../components/common/StaffPagination';
 import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
@@ -60,9 +61,11 @@ function DisbursementForm({ item, onDone, onBusy }) {
 
 export default function ReceptionCourseRefundPage() {
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useTransientNotice('');
   const [page, setPage] = useState(0);
   const [eligible, setEligible] = useState('');
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,12 +78,12 @@ export default function ReceptionCourseRefundPage() {
   usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
     if (!background) commitValue(setLoading, true); commitError(setError, ''); if (!background) commitValue(setData, null);
-    track(listReceptionCourseRefunds({ page, eligible: eligible === '' ? undefined : eligible === 'true' })
+    track(listReceptionCourseRefunds({ page, eligible: eligible === '' ? undefined : eligible === 'true', query })
       .then((result) => { if (active) commitValue(setData, result); })
       .catch((err) => { failed(err);  if (active) commitError(setError, getCourseErrorMessage(err, 'Không tải được hàng chờ hoàn tiền khóa học.')); })
       .finally(() => { if (active) if (!background) commitValue(setLoading, false); }));
     return () => { active = false; };
-  }, [page, eligible, revision], !busy);
+  }, [page, eligible, query, revision], !busy);
   usePollingEffect(({ background, track, commitValue, commitError, failed }) => {
     let active = true;
     if (!background) commitValue(setDetail, null); commitError(setDetailError, ''); if (!background) commitValue(setDetailLoading, !!selectedId);
@@ -94,6 +97,12 @@ export default function ReceptionCourseRefundPage() {
     <h1 className="h3">Hoàn tiền khóa học</h1>
     {notice && <Alert variant="success">{notice}</Alert>}
     <div className="d-flex flex-wrap gap-3 mb-3">
+      <Form role="search" className="d-flex flex-wrap gap-2" style={{ flex: '1 1 360px', maxWidth: 620 }} onSubmit={(event) => { event.preventDefault(); setQuery(search.trim()); setPage(0); setRevision(value => value + 1); }}>
+        <Form.Label htmlFor="reception-refund-member-search" className="visually-hidden">Tên, mã hoặc số điện thoại hội viên</Form.Label>
+        <Form.Control id="reception-refund-member-search" type="search" value={search} maxLength={100} disabled={busy} style={{ flex: '1 1 200px', minWidth: 0 }} placeholder="Tên, mã hoặc số điện thoại hội viên, ví dụ MB-100082" onChange={event => setSearch(event.target.value)} />
+        <Button type="submit" disabled={loading || busy}>Tìm</Button>
+        {(query || search) && <Button variant="outline-secondary" disabled={busy} onClick={() => { setSearch(''); setQuery(''); setPage(0); }}>Xóa tìm kiếm</Button>}
+      </Form>
       <Form.Select aria-label="Điều kiện chi" style={{ maxWidth: 320 }} value={eligible} disabled={loading} onChange={(event) => { setEligible(event.target.value); setPage(0); }}><option value="">Tất cả khoản đã duyệt</option><option value="true">Đủ điều kiện chi</option><option value="false">Chưa đủ điều kiện chi</option></Form.Select>
       <Button variant="outline-secondary" disabled={loading} onClick={() => setRevision((value) => value + 1)}>Tải lại</Button>
     </div>

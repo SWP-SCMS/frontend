@@ -1,3 +1,4 @@
+import useTransientNotice from '../../../hooks/useTransientNotice';
 // Manager – Edit Member account (US06).
 //
 // BR-ACC-05: role is fixed for the account's lifetime — there is NO role
@@ -67,8 +68,8 @@ export default function MemberAccountEditPage() {
   const [original, setOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState(null);
-  const [savedSuccess, setSavedSuccess] = useState(false);
-  const [savedNoChange, setSavedNoChange] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useTransientNotice(false);
+  const [savedNoChange, setSavedNoChange] = useTransientNotice(false);
 
   const {
     register,
@@ -103,7 +104,7 @@ export default function MemberAccountEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [accountId, reset]);
+  }, [accountId, reset, setSavedSuccess, setSavedNoChange]);
 
   useEffect(() => {
     load();

@@ -88,6 +88,7 @@ export function formatCourseDateTime(value) {
 }
 
 const COURSE_ERROR_MESSAGES = {
+  CENTER_VISIT_REQUIRED: 'Học viên cần có lượt check-in đang mở cho buổi học để điểm danh.',
   COURSE_APPROVAL_ALREADY_DECIDED: 'Khóa học đã được xử lý. Vui lòng tải lại hàng chờ.',
   COURSE_SCHEDULE_CHANGE_RESPONSE_CLOSED: 'Đã hết thời hạn phản hồi hoặc thay đổi không còn khả dụng.',
   COURSE_SCHEDULE_CHANGE_RESPONSE_CONFLICT: 'Bạn đã gửi phản hồi khác. Vui lòng tải lại dữ liệu.',
@@ -181,6 +182,17 @@ export const COURSE_ENROLLMENT_STATUS_LABELS = {
   ACTIVE: 'Đang theo học', TRANSFERRED: 'Đã chuyển đợt học',
   COMPLETED: 'Đã hoàn thành', WITHDRAWAL_PENDING: 'Chờ xử lý yêu cầu rút', WITHDRAWN: 'Đã rút',
 };
+
+export function courseEnrollmentStatusLabel(enrollment) {
+  const { lifecycleStatus, courseRunStatus } = enrollment;
+  if ((lifecycleStatus === 'ACTIVE' || lifecycleStatus === 'WITHDRAWAL_PENDING') && courseRunStatus === 'CANCELLED') {
+    return getCourseStatusLabel(COURSE_RUN_STATUS_LABELS, courseRunStatus);
+  }
+  if (lifecycleStatus === 'ACTIVE' && courseRunStatus === 'COMPLETED') {
+    return getCourseStatusLabel(COURSE_RUN_STATUS_LABELS, courseRunStatus);
+  }
+  return getCourseStatusLabel(COURSE_ENROLLMENT_STATUS_LABELS, lifecycleStatus);
+}
 export const COURSE_DISPOSITION_LABELS = {
   ENROLLED: 'Có suất học', NOT_ENROLLED: 'Không có suất học', UNRESOLVED: 'Chờ xử lý buổi học',
 };

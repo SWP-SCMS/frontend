@@ -41,6 +41,18 @@ test('CONTROLLED_CLOCK withdrawal refund progress stays consistent across three 
   clock(end); await page.clock.setFixedTime(new Date(end));
   await expect.poll(async () => (await api(request, 'manager', 'GET', `/manager/course-runs/${run.id}`)).status).toBe('COMPLETED');
   await login(page, 'reception', '/reception/course-refunds');
+  const memberCode = env.accounts.member.memberCode;
+  const searchResponse = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith('/reception/course-refunds') && url.searchParams.get('query') === memberCode;
+  });
+  await page.getByLabel('Tên, mã hoặc số điện thoại hội viên').fill(memberCode);
+  await page.getByRole('button', { name: 'Tìm', exact: true }).click();
+  const searched = await searchResponse;
+  expect(searched.status()).toBe(200);
+  const matched = await searched.json();
+  expect(matched.items.some(item => item.refundId === refundId)).toBe(true);
+  expect(matched.items.every(item => item.memberId === env.accounts.member.accountId)).toBe(true);
   await page.getByRole('row').filter({ hasText: run.runCode }).getByRole('button', { name: 'Chi tiết', exact: true }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Mã tham chiếu khoản chi').fill('QA-WITHDRAWAL-REFUND');
@@ -53,6 +65,7 @@ test('CONTROLLED_CLOCK withdrawal refund progress stays consistent across three 
     const current = await api(request, 'member', 'GET', `/members/me/course-withdrawal-requests/${withdrawal.id}`);
     expect(current.status).toBe('APPROVED'); expect(current.refundStatus).toBe(status); expect(current.refundObligationId).toBe(refundId);
     await login(page, 'manager', '/manager/course-withdrawals');
+    await page.getByLabel('Lọc trạng thái').selectOption('APPROVED');
     const row = page.getByRole('row').filter({ hasText: run.runCode });
     await expect(row.locator('.system-badge')).toHaveText(label);
     await row.getByRole('button', { name: 'Xem hồ sơ' }).click();
@@ -65,9 +78,10 @@ test('CONTROLLED_CLOCK withdrawal refund progress stays consistent across three 
     await expect(page.locator('#withdrawals article').filter({ hasText: run.runCode }).locator('.system-badge')).toHaveText(label);
     await page.screenshot({ path: info.outputPath(`member-${status}.png`), fullPage: true, animations: 'disabled' });
     await evidence(info, { withdrawalId: current.id, refundId, withdrawalStatus: current.status, refundStatus: current.refundStatus });
-    await login(page, 'reception', '/reception/courses');
+    await login(page, 'reception', '/reception/course-requests');
     await page.getByLabel('Mã hội viên hoặc số điện thoại').fill(env.accounts.member.memberCode);
     await page.getByRole('button', { name: 'Tra cứu', exact: true }).click();
+    await page.locator('summary').filter({ hasText: 'Lịch sử yêu cầu rút' }).click();
     await expect(page.locator('article').filter({ hasText: run.runCode }).locator('.system-badge')).toHaveText(label);
     await page.screenshot({ path: info.outputPath(`reception-${status}.png`), fullPage: true, animations: 'disabled' });
   };
