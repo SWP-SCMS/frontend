@@ -62,9 +62,14 @@ export function courseMakeupIds(sessions) {
   return new Set(sessions.flatMap((session) => [session.replacementSessionId, session.isMakeup ? session.id : null]).filter(Boolean));
 }
 
-export function courseScheduleEntries(enrollments) {
-  return enrollments.filter((item) => item.lifecycleStatus === 'ACTIVE' && !item.learningSuspended && item.courseRunStatus !== 'CANCELLED')
-    .flatMap((item) => (item.sessions || []).filter((session) => session.disposition === 'ENROLLED' && (!session.sessionStatus || ['SCHEDULED', 'MAKEUP_SCHEDULED', 'COMPLETED'].includes(session.sessionStatus))).map((session) => ({
+export function courseScheduleEntries(enrollments, { includeHistory = false, now = Date.now() } = {}) {
+  return enrollments.flatMap((item) => (item.sessions || []).filter((session) => {
+    const active = item.lifecycleStatus === 'ACTIVE' && !item.learningSuspended && item.courseRunStatus !== 'CANCELLED';
+    // Past enrolled sessions remain readable after completion, withdrawal or transfer.
+    const historical = includeHistory && Date.parse(session.endAt) <= now;
+    return (active || historical) && session.disposition === 'ENROLLED'
+      && (!session.sessionStatus || ['SCHEDULED', 'MAKEUP_SCHEDULED', 'COMPLETED'].includes(session.sessionStatus));
+  }).map((session) => ({
       ...session,
       id: 'course-' + session.enrollmentSessionId,
       bookingId: 'course-' + session.enrollmentSessionId,

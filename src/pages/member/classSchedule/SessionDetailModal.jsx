@@ -1,14 +1,5 @@
 import { formatSessionSlot } from '../../../utils/sessionSlots';
 // Hộp thông tin đầy đủ của một buổi tập trong "Lịch của tôi".
-//
-// Dữ liệu lấy từ phần tử booking của GET /members/me/bookings:
-//   className, classType, disciplineName, coachName, roomName,
-//   startTime, endTime
-// và hai trường DỰ KIẾN (BE chưa trả, đã nhờ BE bổ sung):
-//   attendanceStatus  PRESENT | ABSENT     (BR-ATT-02/03)
-//   coachFeedback     chuỗi nhận xét của coach (BR-FDB-02)
-// Khi BE chưa trả hai trường này thì hiện "Chưa điểm danh" và
-// "Coach chưa gửi nhận xét".
 
 import { Link } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
@@ -16,6 +7,7 @@ import {
   formatGymDayHeading,
 } from '../../../utils/gymTime';
 import { getAttendanceDisplay } from './attendance';
+import SessionTrainingSummary from './SessionTrainingSummary';
 
 const CLASS_TYPE_LABEL = {
   GROUP: 'Nhóm',
@@ -55,9 +47,6 @@ const ICONS = {
       <path d="m8 12 3 3 5-6" />
     </>
   ),
-  message: (
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-  ),
   close: <path d="M18 6 6 18M6 6l12 12" />,
 };
 
@@ -94,8 +83,6 @@ function Row({ icon, label, children }) {
 export default function SessionDetailModal({ session, onClose }) {
   const s = session;
   const att = getAttendanceDisplay(s);
-  const feedback =
-    typeof s?.coachFeedback === 'string' ? s.coachFeedback.trim() : '';
   const isCourse = s?.classType === 'COURSE';
   const subtitle = (isCourse
     ? [s.runCode, s.unitNumber != null && `Buổi ${s.unitNumber}`]
@@ -157,17 +144,7 @@ export default function SessionDetailModal({ session, onClose }) {
           </Row>
         </div>
 
-        {(!isCourse || feedback) && <div className="mcs-mfeedback">
-          <div className="mcs-mfeedback-title">
-            <Icon name="message" />
-            Nhận xét của coach
-          </div>
-          {feedback ? (
-            <p className="mcs-mfeedback-text">{feedback}</p>
-          ) : (
-            <p className="mcs-mfeedback-empty">Coach chưa gửi nhận xét.</p>
-          )}
-        </div>}
+        {s && <SessionTrainingSummary key={`${isCourse}/${s.sessionId}`} sessionId={s.sessionId} course={isCourse} />}
 
         <div className="mcs-mactions">
           {isCourse && <Link className="btn btn-outline-primary mcs-mbtn" to="/member/courses">Xem khóa học của tôi</Link>}

@@ -12,8 +12,7 @@ import useCachedPollingEffect from '../../../hooks/useCachedPollingEffect';
 //
 // Lưới 7 ngày theo giờ phòng tập, từ Thứ Hai đến Chủ Nhật.
 //
-// Mỗi phần tử booking đã có sẵn: className, classType, disciplineName,
-// coachName, roomName, startTime, endTime nên trang không gọi thêm API nào.
+// Chi tiết kết quả và nhận xét chỉ tải khi mở một buổi tập.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -104,7 +103,7 @@ export default function MemberClassSchedulePage() {
       if (background && results.some(result => result.status === 'rejected')) throw results.find(result => result.status === 'rejected').reason;
       const gym = results[0].status === 'fulfilled' ? results[0].value : [];
       const courses = results[1].status === 'fulfilled' ? results[1].value : [];
-      commitValue(setBookings, [...gym, ...courseScheduleEntries(courses)]);
+      commitValue(setBookings, [...gym, ...courseScheduleEntries(courses, { includeHistory: true })]);
       if (results.some((result) => result.status === 'rejected')) {
         commitError(setError, new Error('Một phần lịch chưa tải được. Vui lòng tải lại trang.'));
       }
@@ -117,7 +116,7 @@ export default function MemberClassSchedulePage() {
 
   useCachedPollingEffect(({ background, track, commitValue, commitError, failed }) => {
     track(loadBookings({ background, commitValue, commitError, failed }));
-  }, [loadBookings], { key: ['member-schedule'], setters: [setBookings], setLoading });
+  }, [loadBookings], { key: ['member-schedule-history'], setters: [setBookings], setLoading });
 
   // Các buổi đã đặt nằm trong tuần đang xem.
   const weekSessions = useMemo(() => {
@@ -187,7 +186,7 @@ export default function MemberClassSchedulePage() {
           <MemberBreadcrumb current="Lịch của tôi" />
           <h1 className="mcs-title">Lịch của tôi</h1>
           <p className="mcs-sub">
-            Lịch khóa học, lớp gym và PT đã đăng ký theo từng tuần. Quản lý khóa học trong mục Khóa học của tôi.
+            Chọn một buổi PT, lớp hoặc khóa học để xem điểm danh, kết quả tập luyện và nhận xét của HLV. Chuyển tuần để xem lại các buổi đã học.
           </p>
         </div>
       </header>

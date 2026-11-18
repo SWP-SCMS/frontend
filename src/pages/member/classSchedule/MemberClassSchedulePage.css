@@ -283,16 +283,13 @@
   color: var(--scms-on-surface);
 }
 
-.mcs-mfeedback-title svg {
-  color: var(--scms-red);
-}
-
 .mcs-mfeedback-text {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.55;
   color: #334155;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .mcs-mfeedback-empty {
