@@ -81,9 +81,9 @@ export default function ManagerDashboardPage() {
               to="/manager/members"
             />
             <Metric
-              label="Doanh thu gói tập"
-              value={formatPrice(data.membershipRevenue?.paidRevenue, 'VND')}
-              note={`${data.membershipRevenue?.paidPayments || 0} giao dịch gói tập thành công`}
+              label="Tổng tiền đã thu"
+              value={data.centerRevenue?.total ? formatPrice(data.centerRevenue.total.paidRevenue, 'VND') : '—'}
+              note={data.centerRevenue?.total ? `${data.centerRevenue.total.paidPayments} giao dịch gói tập và khóa học thành công · Toàn bộ thời gian, chưa trừ hoàn tiền` : 'Chưa có dữ liệu tổng thu'}
               to="/manager/reports/revenue"
               actionLabel="Xem báo cáo"
             />

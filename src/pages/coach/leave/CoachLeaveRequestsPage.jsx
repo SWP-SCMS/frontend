@@ -23,6 +23,8 @@ const STATUS = {
   APPROVED: ['Đã duyệt', 'success'],
   REJECTED: ['Từ chối', 'danger'],
   WITHDRAWN: ['Đã rút', 'secondary'],
+  CANCELLED: ['Đã hủy', 'secondary'],
+  EXPIRED: ['Đã hết hạn', 'secondary'],
 };
 
 function leaveInstant(value) {

@@ -1,4 +1,5 @@
 import useTransientNotice from '../../../hooks/useTransientNotice';
+import { courseReasonLabel } from '../../../utils/courseReasonLabels';
 import StaffPagination from '../../../components/common/StaffPagination';
 import './ManagerCourseWorkflowPage.css';
 import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
@@ -189,7 +190,7 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
                 <div>{row.courseName || row.sourceCourseName || 'Chưa có tên khóa học'}</div>
                 <div className="text-muted small mt-1">{row.runCode || row.sourceRunCode || 'Chưa có mã đợt học'}</div>
               </td>
-            {kind === 'withdrawals' && <td>{row.requestReason || row.reason || 'Chưa có lý do'}</td>}
+            {kind === 'withdrawals' && <td>{courseReasonLabel(row.requestReason || row.reason) || 'Chưa có lý do'}</td>}
             {kind === 'refunds' && <>
               <td>{COURSE_REFUND_SOURCE_LABELS[row.source] || 'Hoàn tiền khóa học'}</td>
               <td className="text-end text-nowrap fw-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -221,10 +222,10 @@ export default function ManagerCourseWorkflowPage({ kind = 'refunds' }) {
             <p>{COURSE_REFUND_SOURCE_LABELS[detail.source] || 'Hoàn tiền khóa học'}</p>
             <dl className="row">{[['grossObligationVnd', 'Nghĩa vụ hoàn'], ['approvedAmountVnd', 'Đã duyệt'], ['disbursedAmountVnd', 'Đã ghi nhận chi'], ['verifiedAmountVnd', 'Đã xác minh']].map(([field, label]) => <div key={field} className="col-sm-6"><dt>{label}</dt><dd>{money(detail[field])}</dd></div>)}</dl>
             {detail.disbursedAt && <Card body className="mb-3"><p>Ghi nhận chi: {formatCourseDateTime(detail.disbursedAt)} · {detail.disbursementMethod === 'CASH' ? 'Tiền mặt' : detail.disbursementMethod === 'BANK_TRANSFER' ? 'Chuyển khoản' : '—'}</p><p className="text-break">Tham chiếu: {detail.disbursementReference || '—'}</p><p className="text-break mb-0">Chứng từ: {detail.evidenceReference || '—'}</p></Card>}
-            {[['requestReason', 'Lý do đề nghị'], ['approvalReason', 'Lý do duyệt'], ['rejectionReason', 'Lý do từ chối'], ['verificationReason', 'Kết quả xác minh'], ['terminalReason', 'Kết quả xử lý']].map(([field, label]) => detail[field] && <p key={field}><strong>{label}:</strong> {detail[field]}</p>)}
+            {[['requestReason', 'Lý do đề nghị'], ['approvalReason', 'Lý do duyệt'], ['rejectionReason', 'Lý do từ chối'], ['verificationReason', 'Kết quả xác minh'], ['terminalReason', 'Kết quả xử lý']].map(([field, label]) => detail[field] && <p key={field}><strong>{label}:</strong> {courseReasonLabel(detail[field])}</p>)}
           </> : <>
-            <p>Lý do: {detail.requestReason || detail.reason || 'Chưa có lý do'}</p>
-            {detail.decisionReason && <p>Kết quả: {detail.decisionReason}</p>}
+            <p>Lý do: {courseReasonLabel(detail.requestReason || detail.reason) || 'Chưa có lý do'}</p>
+            {detail.decisionReason && <p>Kết quả: {courseReasonLabel(detail.decisionReason)}</p>}
             {kind === 'withdrawals' && <p>Số tiền hoàn: <strong>{detail.snapshotSource === 'UNAVAILABLE' ? 'Chưa xác định' : money(detail.refundAmountVnd)}</strong>{detail.remainingUnits != null && <> · {detail.remainingUnits}/{detail.totalUnits} buổi còn lại</>}</p>}
           </>}
           {kind === 'refunds' && courseAmountText(detail.grossObligationVnd) == null && <Alert variant="warning">Số tiền chưa thể hiển thị chính xác. Chưa thể duyệt khoản hoàn này; vui lòng kiểm tra lại hồ sơ.</Alert>}

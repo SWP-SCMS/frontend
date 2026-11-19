@@ -31,7 +31,6 @@ const profileSchema = z.object({
   birthDate: birthDateSchema,
   emergencyContactName: optionalPersonNameSchema,
   emergencyContactPhone: z.string().trim().refine((v) => !v || normalizePhone(v) != null, 'Số điện thoại không hợp lệ.').transform((v) => v ? normalizePhone(v) : ''),
-  emergencyContactRelationship: z.string().trim().max(100, 'Mối quan hệ không được vượt quá 100 ký tự.'),
 }).superRefine((data, ctx) => {
   if (Boolean(data.emergencyContactName) !== Boolean(data.emergencyContactPhone)) {
     ctx.addIssue({ code: 'custom', path: [data.emergencyContactName ? 'emergencyContactPhone' : 'emergencyContactName'], message: 'Vui lòng nhập cả tên và số điện thoại người liên hệ.' });
@@ -46,7 +45,6 @@ function profileToForm(profile) {
     birthDate: profile?.birthDate || '',
     emergencyContactName: profile?.emergencyContactName || '',
     emergencyContactPhone: profile?.emergencyContactPhone || '',
-    emergencyContactRelationship: profile?.emergencyContactRelationship || '',
   };
 }
 
@@ -91,7 +89,7 @@ export default function StaffProfilePage() {
     if (data.fullName !== original?.fullName) patch.fullName = data.fullName;
     if (data.phone !== normalizePhone(original?.phone)) patch.phone = data.phone;
     if (data.birthDate !== original?.birthDate) patch.birthDate = data.birthDate;
-    for (const key of ['emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelationship']) {
+    for (const key of ['emergencyContactName', 'emergencyContactPhone']) {
       if (data[key] !== original?.[key]) patch[key] = data[key];
     }
     return patch;
@@ -114,7 +112,7 @@ export default function StaffProfilePage() {
       setUser((current) => ({ ...current, ...updated }));
       setSaveNotice('Đã cập nhật hồ sơ cá nhân.');
     } catch (err) {
-      const handled = applyServerErrors(err, setError, { fields: ['fullName', 'phone', 'birthDate', 'emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelationship'] });
+      const handled = applyServerErrors(err, setError, { fields: ['fullName', 'phone', 'birthDate', 'emergencyContactName', 'emergencyContactPhone'] });
       if (!handled) setSaveError(err);
     }
   }
@@ -189,7 +187,6 @@ export default function StaffProfilePage() {
               <Row className="g-3">
                 <Col md={6}><Form.Group controlId="staff-contact-name"><Form.Label>Tên người liên hệ</Form.Label><Form.Control {...register('emergencyContactName')} maxLength={200} isInvalid={Boolean(errors.emergencyContactName)} /><Form.Control.Feedback type="invalid">{errors.emergencyContactName?.message}</Form.Control.Feedback></Form.Group></Col>
                 <Col md={6}><Form.Group controlId="staff-contact-phone"><Form.Label>Số điện thoại</Form.Label><Form.Control {...register('emergencyContactPhone')} type="tel" maxLength={32} isInvalid={Boolean(errors.emergencyContactPhone)} /><Form.Control.Feedback type="invalid">{errors.emergencyContactPhone?.message}</Form.Control.Feedback></Form.Group></Col>
-                <Col md={6}><Form.Group controlId="staff-contact-relationship"><Form.Label>Mối quan hệ</Form.Label><Form.Control {...register('emergencyContactRelationship')} maxLength={100} isInvalid={Boolean(errors.emergencyContactRelationship)} /><Form.Control.Feedback type="invalid">{errors.emergencyContactRelationship?.message}</Form.Control.Feedback></Form.Group></Col>
               </Row>
             </section>
             <div className="d-flex gap-2 mt-4">

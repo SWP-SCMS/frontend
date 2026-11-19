@@ -104,12 +104,35 @@ test('member receives new training data without closing the expanded version', a
   });
   await page.goto('/member/training-plans');
   await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Phiên bản 1' }).click();
+  await expect(page.getByRole('region', { name: 'Phiên bản đang áp dụng' })).toContainText('Phiên bản 1');
+  await expect(page.getByText('Đang áp dụng', { exact: true })).toHaveClass(/system-badge--green/);
   await expect(page.getByText('Bài tập QA')).toBeVisible();
   await page.clock.pauseAt(new Date(Date.now() + 1000));
   title = 'Giáo án được HLV cập nhật';
   await page.clock.runFor(7000);
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByText('Bài tập QA')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('audit translates detail fields and keeps user text unchanged', async ({ page }) => {
+  const events = [
+    { id: 'a', action: 'COURSE_ATTENDANCE_CHANGED', targetType: 'CourseEnrollmentSession', reason: 'Coach changed Course attendance', beforeData: { status: 'NOT_RECORDED' }, afterData: { status: 'PRESENT' } },
+    { id: 'b', action: 'CENTER_VISIT_CREATED', targetType: 'CENTER_VISIT', afterData: { source: 'MEMBERSHIP', identityVerified: true } },
+    { id: 'c', action: 'TRAINING_PLAN_REPLACED', targetType: 'TRAINING_PLAN', reason: 'MY CUSTOM NOTE', afterData: { title: 'ACTIVE', versionNumber: 2 } },
+    { id: 'd', action: 'COURSE_PAYMENT_PAID', targetType: 'COURSE_ENROLLMENT', afterData: { amountPaidVnd: '2000' } },
+  ].map(event => ({ ...event, createdAt: '2026-11-19T14:00:00Z' }));
+  const errors = await mock(page, 'MANAGER', path => path === '/manager/audit-events' ? pageOf(events) : undefined);
+  await page.goto('/manager/audit-events');
+  await expect(page.locator('summary')).toHaveCount(4);
+  for (const detail of await page.locator('summary').all()) await detail.click();
+  await expect(page.getByText('Trạng thái: Chưa điểm danh', { exact: true })).toBeVisible();
+  await expect(page.getByText('Đã xác minh danh tính: Có', { exact: true })).toBeVisible();
+  await expect(page.getByText('Nguồn: Gói tập', { exact: true })).toBeVisible();
+  await expect(page.getByText('Tiêu đề: ACTIVE', { exact: true })).toBeVisible();
+  await expect(page.getByText('MY CUSTOM NOTE', { exact: false })).toBeVisible();
+  await expect(page.getByText('Số tiền đã thanh toán (VND): 2000', { exact: true })).toBeVisible();
+  await expect(page.getByText('Thông tin khác', { exact: false })).toHaveCount(0);
+  await expect(page.getByText('Giá trị khác', { exact: false })).toHaveCount(0);
   expect(errors).toEqual([]);
 });

@@ -1,7 +1,7 @@
 // Header cho khu vực staff (Manager / Receptionist).
 // Mirror MemberHeader.jsx về mặt visual nhưng:
 //   - Dùng class .scms-app-* (không đụng .scms-app-* của Member).
-//   - Role chip và avatar-fallback lấy từ prop roleLabel
+//   - Role chip lấy từ prop roleLabel
 //     (thay vì hard-code "Hội viên" như Member).
 //   - Không hiển thị UUID tài khoản trong giao diện nghiệp vụ.
 //   - Vùng top-nav render rỗng (không có top-nav cho staff ở phase này).
@@ -66,9 +66,6 @@ export default function StaffHeader({
             <span className="scms-app-user-code">{user.email}</span>
           ) : null}
         </div>
-        <span className="scms-app-avatar" aria-hidden="true">
-          <StaffIcon name="user" size={18} />
-        </span>
         <button
           type="button"
           className="scms-app-logout"

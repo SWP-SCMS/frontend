@@ -233,7 +233,13 @@ export default function StaffAccountDetailPage() {
                 <dd className="col-sm-8 mb-2">{account.phone || '—'}</dd>
 
                 <dt className="col-sm-4 text-muted fw-normal">Email</dt>
-                <dd className="col-sm-8 mb-0 text-break">{account.email || '—'}</dd>
+                <dd className="col-sm-8 mb-2 text-break">{account.email || '—'}</dd>
+
+                <dt className="col-sm-4 text-muted fw-normal">Người liên hệ khẩn cấp</dt>
+                <dd className="col-sm-8 mb-2 text-break">{account.emergencyContactName || 'Chưa cập nhật'}</dd>
+
+                <dt className="col-sm-4 text-muted fw-normal">Số liên hệ khẩn cấp</dt>
+                <dd className="col-sm-8 mb-0">{account.emergencyContactPhone || 'Chưa cập nhật'}</dd>
               </dl>
             </Card.Body>
           </Card>
