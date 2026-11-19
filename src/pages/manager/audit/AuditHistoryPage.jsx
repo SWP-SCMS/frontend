@@ -1,4 +1,6 @@
 import usePollingEffect from '../../../hooks/usePollingEffect';
+import { courseReasonLabel } from '../../../utils/courseReasonLabels';
+import { COURSE_REFUND_SOURCE_LABELS } from '../../../utils/courseWorkflow';
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, Card, Col, Form, Row, Spinner, Table } from 'react-bootstrap';
@@ -11,6 +13,35 @@ import { listAuditEvents } from '../../../services/auditService';
 import { formatGymDate, formatGymTime } from '../../../utils/gymTime';
 
 const ACTION_LABELS = {
+  COURSE_APPROVED: 'Duyệt khóa học',
+  COURSE_REJECTED: 'Từ chối khóa học',
+  COURSE_RUN_SCHEDULE_CHANGED: 'Thay đổi lịch đợt học',
+  MEMBERSHIP_FREEZE_CASH_PAID: 'Thanh toán phí đóng băng bằng tiền mặt',
+  ACCOUNT_EMAIL_CHANGE_CANCELLED: "Hủy yêu cầu đổi email",
+  ACCOUNT_EMAIL_CHANGE_EXPIRED: "Yêu cầu đổi email hết hạn",
+  ACCOUNT_EMAIL_CHANGE_RESENT: "Gửi lại mã xác minh đổi email",
+  ACCOUNT_EMAIL_CHANGE_SUPERSEDED: "Thay thế yêu cầu đổi email",
+  COACH_LEAVE_EXPIRED: "Yêu cầu nghỉ của huấn luyện viên hết hạn",
+  COURSE_ATTENDANCE_CHANGED: "Cập nhật điểm danh khóa học",
+  COURSE_PAYMENT_RECONCILED: "Đối soát thanh toán khóa học",
+  COURSE_RESERVATION_EXPIRED: "Giữ chỗ khóa học hết hạn",
+  COURSE_RUN_COMPLETED: "Hoàn tất đợt học",
+  COURSE_RUN_RESCHEDULED: "Đổi lịch đợt học",
+  COURSE_SCHEDULE_CHANGE_RESPONDED: "Phản hồi thay đổi lịch khóa học",
+  COURSE_TRANSFER_ACCEPTED: "Chấp nhận đề nghị chuyển đợt học",
+  COURSE_WAITLIST_ACCEPTED: "Chấp nhận chỗ học từ hàng chờ",
+  COURSE_WAITLIST_CANCELLED: "Hủy hàng chờ khóa học",
+  COURSE_WAITLIST_JOINED: "Tham gia hàng chờ khóa học",
+  COURSE_WAITLIST_LEFT: "Rời hàng chờ khóa học",
+  COURSE_WITHDRAWAL_CANCELLED: "Hủy yêu cầu rút khóa học",
+  EMAIL_VERIFIED: "Xác minh email thành công",
+  MEMBERSHIP_FREEZE_ACTIVATED: "Bắt đầu đóng băng gói tập",
+  PASSWORD_RESET_OTP_RESENT: "Gửi lại mã xác minh đặt lại mật khẩu",
+  PASSWORD_RESET_OTP_VERIFIED: "Xác minh mã đặt lại mật khẩu",
+  TRAINING_PLAN_ARCHIVED: "Lưu trữ kế hoạch tập luyện",
+  TRAINING_PLAN_REPLACED: "Thay thế kế hoạch tập luyện",
+  WAITLIST_JOINED: "Tham gia hàng chờ buổi tập",
+  WAITLIST_LEFT: "Rời hàng chờ buổi tập",
   COURSE_CREATED: 'Tạo khóa học', COURSE_UPDATED: 'Cập nhật khóa học', COURSE_PUBLISHED: 'Công khai khóa học',
   COURSE_DEACTIVATED: 'Ngừng hoạt động khóa học', COURSE_ARCHIVED: 'Lưu trữ khóa học',
   COURSE_RUN_CREATED: 'Tạo đợt học', COURSE_RUN_UPDATED: 'Cập nhật đợt học', COURSE_RUN_OPENED: 'Mở đăng ký đợt học',
@@ -116,6 +147,11 @@ const ACTION_LABELS = {
 };
 
 const TARGET_LABELS = {
+  COURSE_PAYMENT: "Thanh toán khóa học",
+  COURSE_RESERVATION: "Giữ chỗ khóa học",
+  COURSE_SCHEDULE_CHANGE_RESPONSE: "Phản hồi thay đổi lịch khóa học",
+  COURSE_WAITLIST: "Hàng chờ khóa học",
+  CourseEnrollmentSession: "Điểm danh buổi khóa học",
   COURSE: 'Khóa học', COURSE_RUN: 'Đợt học', COURSE_SESSION: 'Buổi khóa học', COURSE_ORDER: 'Đơn khóa học',
   COURSE_ENROLLMENT: 'Đăng ký khóa học', COURSE_REFUND_OBLIGATION: 'Khoản hoàn khóa học',
   COURSE_WITHDRAWAL_REQUEST: 'Yêu cầu rút khóa học', COURSE_TRANSFER_REQUEST: 'Yêu cầu chuyển đợt học', COURSE_TRANSFER_OFFER: 'Đề nghị chuyển đợt học',
@@ -158,6 +194,69 @@ const ROLE_LABELS = {
 };
 
 const FIELD_LABELS = {
+  imageUrl: 'Đường dẫn hình ảnh', submittedAt: 'Thời điểm gửi duyệt', reviewedAt: 'Thời điểm xét duyệt',
+  reviewReason: 'Lý do xét duyệt', namedCoachCommitment: 'Cam kết huấn luyện viên chỉ định',
+  policyVersionSnapshot: 'Phiên bản chính sách áp dụng',
+  activeEnrollmentCount: "Số học viên đang học",
+  activityAt: "Thời điểm tập luyện",
+  approvedAmount: "Số tiền được duyệt",
+  archivedPlanVersion: "Phiên bản kế hoạch đã lưu trữ",
+  birthDate: "Ngày sinh",
+  cancellationSource: "Nguồn hủy",
+  cancelledFutureBookings: "Số lịch đặt sắp tới đã hủy",
+  cancelledPayments: "Số thanh toán đã hủy",
+  cause: "Nguyên nhân",
+  changedSessionCount: "Số buổi đã thay đổi",
+  classType: "Loại lớp học",
+  coachFullName: "Họ tên huấn luyện viên",
+  content: "Nội dung",
+  createdAt: "Thời điểm tạo",
+  creditedDays: "Số ngày được bù",
+  currencyCode: "Đơn vị tiền tệ",
+  description: "Mô tả",
+  displayName: "Tên hiển thị",
+  durationDays: "Thời hạn (ngày)",
+  emergencyContactName: "Tên người liên hệ khẩn cấp",
+  emergencyContactRelationship: "Quan hệ với người liên hệ",
+  evidence: "Thông tin xác minh",
+  expectedVersion: "Phiên bản dự kiến",
+  feeAmount: "Phí",
+  fullName: "Họ và tên",
+  generation: "Lần phát hành mã xác minh",
+  hasEmergencyContact: "Có thông tin liên hệ khẩn cấp",
+  memberCode: "Mã hội viên",
+  memberFullName: "Họ tên hội viên",
+  method: "Phương thức",
+  mode: "Chế độ",
+  newEmail: "Email mới",
+  notes: "Ghi chú",
+  oldEmail: "Email cũ",
+  passwordReset: "Đã đặt lại mật khẩu",
+  paymentRequired: "Cần thanh toán",
+  pendingEmail: "Email chờ xác minh",
+  planCode: "Mã loại gói tập",
+  priceAmount: "Giá tiền",
+  requestedAmount: "Số tiền yêu cầu",
+  requestedByName: "Người gửi yêu cầu",
+  requestedCapacity: "Sức chứa yêu cầu",
+  requesterRole: "Vai trò người yêu cầu",
+  response: "Phản hồi",
+  securityEvent: "Sự kiện bảo mật",
+  suggestedAmount: "Số tiền đề xuất",
+  targetTuitionVnd: "Học phí đợt học mới (VND)",
+  terminalReason: "Lý do kết thúc",
+  title: "Tiêu đề",
+  unresolvedRefundObligationCount: "Số khoản hoàn tiền chưa xử lý",
+  usageMode: "Hình thức sử dụng",
+  versionNumber: "Số phiên bản",
+  identityVerified: 'Đã xác minh danh tính',
+  checkedOut: 'Đã checkout',
+  checkedOutAt: 'Thời điểm checkout',
+  checkedOutBy: 'Mã tài khoản thực hiện checkout',
+  checkoutSource: 'Nguồn checkout',
+  amountPaidVnd: 'Số tiền đã thanh toán (VND)',
+  orderReference: 'Mã đơn khóa học',
+  expiresAt: 'Thời điểm hết hạn',
   code: 'Mã', runCode: 'Mã đợt học', courseCode: 'Mã khóa học', courseName: 'Tên khóa học',
   startAt: 'Bắt đầu', endAt: 'Kết thúc', plannedStartAt: 'Dự kiến khai giảng', plannedEndAt: 'Dự kiến kết thúc',
   registrationOpensAt: 'Mở đăng ký', registrationClosesAt: 'Đóng đăng ký', unitNumber: 'Buổi số',
@@ -202,6 +301,41 @@ const FIELD_LABELS = {
 };
 
 const VALUE_LABELS = {
+  ...COURSE_REFUND_SOURCE_LABELS,
+  APPROVED_PENDING_PAYMENT: 'Đã duyệt, chờ thanh toán', OBSOLETE: 'Không còn áp dụng',
+  EXCLUSIVE: 'Sử dụng riêng', SHARED: 'Sử dụng chung',
+  ATTEMPT_LIMIT: "Vượt số lần xác minh cho phép",
+  BOOKED: "Đã đặt lịch",
+  FAILED: "Thất bại",
+  RETURNED: "Đã trả lại",
+  WAITING: "Đang chờ",
+  NOT_RECORDED: "Chưa điểm danh",
+  EMAIL_OTP: "Mã xác minh email",
+  OTP_EXPIRED: "Mã xác minh hết hạn",
+  REGISTRATION_EXPIRED: "Đăng ký hết hạn",
+  SELF_REGISTRATION: "Tự đăng ký",
+  SESSION_STARTED: "Buổi tập đã bắt đầu",
+  SESSION_CANCELLED: "Buổi tập đã hủy",
+  MEMBER_SUSPENDED: "Hội viên bị tạm khóa",
+  ENDED: "Đã kết thúc",
+  FIRST_APPROVED: "Đã duyệt bước đầu",
+  CASH_DISBURSED: "Đã chi tiền hoàn",
+  PENDING_APPROVAL: "Chờ phê duyệt",
+  RESOLVED_BY_REFUND: "Đã xử lý bằng hoàn tiền",
+  REMOVED_BY_RUN_CHANGE: "Đã bỏ do thay đổi đợt học",
+  VOLUNTARY: "Tự nguyện",
+  START_DELAY_OVER_7_DAYS: "Khai giảng trễ hơn 7 ngày",
+  MEMBER_SCHEDULE_CONFLICT: "Trùng lịch của hội viên",
+  REDUCED_UNIT_COUNT: "Giảm số buổi học",
+  CENTER_SESSION_RESCHEDULE: "Trung tâm đổi lịch buổi học",
+  VND: "Việt Nam đồng",
+  GROUP: "Lớp nhóm",
+  PT: "Huấn luyện cá nhân",
+  SEPAY: "Chuyển khoản qua SePay",
+  MEMBERSHIP: 'Gói tập', COURSE: 'Khóa học',
+  AUTO_REENTRY: 'Tự động khi check-in lại', MIGRATION: 'Chuyển đổi dữ liệu',
+  MEMBERSHIP_TERMINATION: 'Chấm dứt gói tập', MEMBERSHIP_FREEZE: 'Đóng băng gói tập',
+  PRESENT: 'Có mặt', ABSENT: 'Vắng mặt',
   DRAFT: 'Bản nháp', PUBLISHED: 'Đã công bố', ARCHIVED: 'Đã lưu trữ',
   OPEN_FOR_REGISTRATION: 'Đang mở đăng ký', CONFIRMED: 'Đã xác nhận mở lớp', SETTLEMENT_PENDING: 'Chờ quyết toán',
   CANCELLED_PENDING_MAKEUP: 'Đã hủy, chờ học bù', MAKEUP_SCHEDULED: 'Đã xếp buổi bù', UNRESOLVED: 'Chưa xử lý',
@@ -279,11 +413,43 @@ function actorIdentity(event) {
   };
 }
 
-function displayValue(value) {
+function reasonLabel(event) {
+  if (event.action?.startsWith('COURSE_')) {
+    const translated = courseReasonLabel(event.reason);
+    if (translated !== event.reason) return translated;
+  }
+  const systemReasons = {
+    COACH_LEAVE_WITHDRAWN: { 'Coach withdrew leave request': 'Huấn luyện viên rút yêu cầu nghỉ' },
+    COACH_LEAVE_CANCELLED: { 'Coach cancelled approved leave': 'Huấn luyện viên hủy lịch nghỉ đã duyệt' },
+    SESSION_ASSIGNMENT_CHANGED: { 'Manager changed session assignment': 'Quản lý thay đổi phân công buổi tập' },
+    BOOKING_CANCELLED: { 'Member suspended': 'Hội viên bị tạm khóa', 'MEMBER cancellation': 'Hội viên hủy lịch đặt', 'RECEPTIONIST cancellation': 'Lễ tân hủy lịch đặt' },
+    COURSE_WITHDRAWAL_CANCELLED: { COURSE_RUN_CANCELLED: 'Đợt học đã bị hủy' },
+    PAYMENT_PAID: { 'Cash received by receptionist': 'Lễ tân đã nhận tiền mặt' },
+  };
+  if (systemReasons[event.action]?.[event.reason]) return systemReasons[event.action][event.reason];
+  if ((event.action === 'ATTENDANCE_CHANGED' && event.reason === 'Coach changed attendance')
+    || (event.action === 'COURSE_ATTENDANCE_CHANGED' && event.reason === 'Coach changed Course attendance')) {
+    return 'Huấn luyện viên cập nhật điểm danh';
+  }
+  if (event.action === 'CENTER_VISIT_CHECKED_OUT') {
+    const checkoutReasons = {
+      'MEMBER checkout': 'Hội viên tự checkout',
+      'RECEPTIONIST checkout': 'Lễ tân thực hiện checkout',
+      'AUTO_REENTRY checkout': 'Tự động checkout lượt cũ khi check-in lại',
+      'MIGRATION checkout': 'Checkout khi chuyển đổi dữ liệu',
+      'MEMBERSHIP_TERMINATION checkout': 'Checkout do chấm dứt gói tập',
+      'MEMBERSHIP_FREEZE checkout': 'Checkout do đóng băng gói tập',
+    };
+    return checkoutReasons[event.reason] || event.reason;
+  }
+  return event.reason;
+}
+
+function displayValue(value, key) {
   if (value == null || value === '') return 'Không có';
   if (typeof value === 'boolean') return value ? 'Có' : 'Không';
-  if (VALUE_LABELS[value]) return VALUE_LABELS[value];
-  if (typeof value === 'string' && /^[A-Z][A-Z0-9_]+$/.test(value)) return 'Giá trị khác';
+  const codedFields = ['status', 'paymentStatus', 'role', 'requesterRole', 'source', 'checkoutSource', 'cancellationSource', 'reasonCode', 'terminalReason', 'reason', 'verificationMethod', 'classType', 'usageMode', 'mode', 'method', 'paymentMethod', 'currencyCode', 'planCode', 'cause', 'response', 'securityEvent'];
+  if (codedFields.includes(key) && Object.hasOwn(VALUE_LABELS, value)) return VALUE_LABELS[value];
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
     return `${formatGymDate(value)} · ${formatGymTime(value)}`;
   }
@@ -295,7 +461,7 @@ function visibleDetails(data) {
   return Object.entries(data)
     .filter(([, value]) => value == null || typeof value !== 'object')
     .filter(([key]) => !key.toLocaleLowerCase('en-US').endsWith('id'))
-    .map(([key, value]) => ({ key, label: FIELD_LABELS[key] || 'Thông tin khác', value: displayValue(value) }));
+    .map(([key, value]) => ({ key, label: FIELD_LABELS[key] || `Thông tin (${key})`, value: displayValue(value, key) }));
 }
 
 function DetailList({ title, data }) {
@@ -361,14 +527,18 @@ export default function AuditHistoryPage() {
                 <Form.Label>Hoạt động</Form.Label>
                 <Form.Select {...register('action')}>
                   <option value="">Tất cả hoạt động</option>
-                  {Object.entries(ACTION_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  {Object.entries(ACTION_LABELS)
+                    .sort(([, a], [, b]) => a.localeCompare(b, 'vi'))
+                    .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </Form.Select>
               </Col>
               <Col md={3}>
                 <Form.Label>Đối tượng</Form.Label>
                 <Form.Select {...register('targetType')}>
                   <option value="">Tất cả đối tượng</option>
-                  {Object.entries(TARGET_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  {Object.entries(TARGET_LABELS)
+                    .sort(([, a], [, b]) => a.localeCompare(b, 'vi'))
+                    .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </Form.Select>
               </Col>
               <Col md={2}>
@@ -416,7 +586,7 @@ export default function AuditHistoryPage() {
                       {hasDetails ? (
                         <details>
                           <summary>Xem chi tiết</summary>
-                          {event.reason ? <p className="small mt-2 mb-1"><strong>Lý do:</strong> {event.reason}</p> : null}
+                          {event.reason ? <p className="small mt-2 mb-1"><strong>Lý do:</strong> {reasonLabel(event)}</p> : null}
                           <DetailList title="Trước thay đổi" data={event.beforeData} />
                           <DetailList title="Sau thay đổi" data={event.afterData} />
                         </details>

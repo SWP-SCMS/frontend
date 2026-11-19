@@ -157,9 +157,6 @@ export default function CoachLayout() {
                 {user?.fullName || 'Huấn luyện viên'}
               </span>
             </div>
-            <span className="scms-app-avatar" aria-hidden="true">
-              <Icon name="user" size={18} />
-            </span>
             <button
               type="button"
               className="scms-app-logout"

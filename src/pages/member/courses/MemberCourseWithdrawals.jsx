@@ -1,3 +1,4 @@
+import { courseReasonLabel } from '../../../utils/courseReasonLabels';
 import useTransientNotice from '../../../hooks/useTransientNotice';
 import CourseWorkflowStatusBadge from '../../../components/common/CourseWorkflowStatusBadge';
 import './MemberCourseWithdrawals.css';
@@ -87,8 +88,7 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested, sele
     {loading ? <p>Đang tải yêu cầu…</p> : ready && !requests.some(r => !selectedEnrollmentId || r.enrollmentId === selectedEnrollmentId) && <p>Bạn chưa có yêu cầu rút khóa học.</p>}
     {!loading && requests.filter(r => !selectedEnrollmentId || r.enrollmentId === selectedEnrollmentId).map((request) => {
       const enrollment = enrollmentById.get(request.enrollmentId);
-      const reason = request.requestReason === 'Withdrawal requested after a material schedule change'
-        ? 'Trung tâm thay đổi lịch học.' : request.requestReason || 'Chưa có lý do.';
+      const reason = courseReasonLabel(request.requestReason) || 'Chưa có lý do.';
       const runCode = enrollment?.runCode || request.runCode;
       return <article className="course-withdrawal-card" key={request.id}>
         <header className="course-withdrawal-header">
@@ -101,9 +101,9 @@ export default function MemberCourseWithdrawals({ enrollments, onRequested, sele
           <dl className="course-withdrawal-details">
             <div><dt>Lý do rút khóa học</dt><dd>{reason}</dd></div>
             <div><dt>Ngày gửi yêu cầu</dt><dd>{formatCourseDateTime(request.requestedAt)}</dd></div>
-            {request.decisionReason && <div><dt>Ý kiến của quản lý</dt><dd>{request.decisionReason}</dd></div>}
+            {request.decisionReason && <div><dt>Ý kiến của quản lý</dt><dd>{courseReasonLabel(request.decisionReason)}</dd></div>}
             {request.decidedAt && <div><dt>Ngày xử lý</dt><dd>{formatCourseDateTime(request.decidedAt)}</dd></div>}
-            {request.cancelledAt && <div><dt>Đã hủy yêu cầu</dt><dd>{formatCourseDateTime(request.cancelledAt)}<br />{request.cancellationReason === 'LEGACY_SNAPSHOT_MISSING' ? 'Thiếu thông tin khoản hoàn' : request.cancellationReason === 'COURSE_RUN_CANCELLED' ? 'Đợt học đã hủy' : request.cancellationReason === 'REDUCED_SESSION_COUNT' ? 'Số buổi đã giảm và có khoản hoàn riêng. Vui lòng gửi lại yêu cầu rút theo lịch mới.' : request.cancellationReason}</dd></div>}
+            {request.cancelledAt && <div><dt>Đã hủy yêu cầu</dt><dd>{formatCourseDateTime(request.cancelledAt)}<br />{courseReasonLabel(request.cancellationReason)}</dd></div>}
           </dl>
           <aside className="course-withdrawal-refund">
             <span>{request.status === 'PENDING' ? 'Hoàn tiền dự kiến' : 'Khoản hoàn theo yêu cầu'}</span>

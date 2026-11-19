@@ -66,8 +66,7 @@ import './MemberProfilePage.css';
 //   - fitnessGoal: optional, free text
 //   - emergencyContactName / emergencyContactPhone: optional, must
 //     be both present or both empty (BR-ACC-09 pairing rule).
-const ADDITIONAL_FIELDS = ['gender', 'address', 'physicalConditionNotes',
-  'emergencyContactRelationship', 'emergencyContactTimeNotes'];
+const ADDITIONAL_FIELDS = ['gender', 'address', 'physicalConditionNotes'];
 const optionalText = (limit) => z.string().trim().max(limit, `Tối đa ${limit} ký tự.`);
 
 const memberProfileSchema = z
@@ -88,8 +87,6 @@ const memberProfileSchema = z
     gender: z.enum(['', 'MALE', 'FEMALE'], { error: 'Vui lòng chọn Nam hoặc Nữ, hoặc để trống giới tính.' }),
     address: optionalText(500),
     physicalConditionNotes: optionalText(2000),
-    emergencyContactRelationship: optionalText(100),
-    emergencyContactTimeNotes: optionalText(500),
     emergencyContactName: optionalPersonNameSchema,
     emergencyContactPhone: z.string(),
   })
@@ -727,10 +724,6 @@ export default function MemberProfilePage() {
                   </div>
                 ) : null}
               </Field>
-              <Field id="mp-ecRelation" label="Mối quan hệ" error={errors.emergencyContactRelationship}>
-                <input id="mp-ecRelation" className="form-control" placeholder="Ví dụ: Cha/mẹ, vợ/chồng, anh/chị..." {...register('emergencyContactRelationship')} maxLength={100}
-                  aria-invalid={Boolean(errors.emergencyContactRelationship)} aria-describedby={errors.emergencyContactRelationship ? 'mp-ecRelation-error' : undefined} />
-              </Field>
               <Field id="mp-ecPhone" label="Số điện thoại khẩn cấp">
                 <input
                   id="mp-ecPhone"
@@ -746,15 +739,6 @@ export default function MemberProfilePage() {
                     {errors.emergencyContactPhone.message}
                   </div>
                 ) : null}
-              </Field>
-              <Field id="mp-ecTime" label="Ghi chú khung giờ liên hệ" error={errors.emergencyContactTimeNotes}>
-                <input
-                  id="mp-ecTime"
-                  className="form-control"
-                  placeholder="Khung giờ gọi..."
-                  {...register('emergencyContactTimeNotes')} maxLength={500}
-                  aria-invalid={Boolean(errors.emergencyContactTimeNotes)} aria-describedby={errors.emergencyContactTimeNotes ? 'mp-ecTime-error' : undefined}
-                />
               </Field>
             </div>
           </div>

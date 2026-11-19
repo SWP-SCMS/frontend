@@ -1,22 +1,5 @@
 import Badge from '../../../components/common/SystemBadge';
 import usePollingEffect from '../../../hooks/usePollingEffect';
-// Manager – Revenue / Membership report (US22).
-//
-// BE: GET /api/v1/manager/reports/membership-revenue
-//        ?from&to&includeTestData
-//
-// Business rules surfaced by this page:
-//   - BR-RPT-02 — revenue only counts PAID payments. PENDING/FAILED appear
-//     as counts to give the manager context, but never as money.
-//   - BR-RPT-01 — report is MANAGER-scoped (BE enforces the role).
-//
-// Two caveats the UI makes explicit rather than hiding:
-//   1. The BE treats `to` as an EXCLUSIVE upper bound, so the date picker
-//      offers an inclusive "Đến ngày" and the service shifts it by a day.
-//   2. activeMemberships / expiredMemberships are NOT filtered by the
-//      selected range — the BE counts today's membership state. We label
-//      them as a snapshot so the manager doesn't read them as period totals.
-
 import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
@@ -45,8 +28,9 @@ const EMPTY_REPORT = {
   paidRevenue: 0,
   pendingPayments: 0,
   failedPayments: 0,
-  activeMemberships: 0,
-  expiredMemberships: 0,
+  completedRefundAmount: 0,
+  netRevenue: 0,
+  pendingRefundAmount: 0,
 };
 
 function toDateInputValue(date) {
@@ -74,7 +58,9 @@ export default function RevenueReportPage() {
   const [to, setTo] = useState(() => toDateInputValue(new Date()));
   const [includeTestData, setIncludeTestData] = useState(false);
 
-  const [report, setReport] = useState(EMPTY_REPORT);
+  const [data, setData] = useState(null);
+  const [source, setSource] = useState('total');
+  const report = data?.[source] || EMPTY_REPORT;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -85,8 +71,9 @@ export default function RevenueReportPage() {
     commitError(setError, null);
     try {
       const data = await fetchRevenueReport({ from, to, includeTestData });
-      commitValue(setReport, { ...EMPTY_REPORT, ...data });
+      commitValue(setData, data);
     } catch (err) { failed(err);
+      commitValue(setData, null);
       commitError(setError, err);
     } finally {
       if (!background) commitValue(setLoading, false);
@@ -101,6 +88,7 @@ export default function RevenueReportPage() {
     setFrom(EMPTY);
     setTo(EMPTY);
     setIncludeTestData(false);
+    setSource('total');
   }
 
   function applyPreset(days) {
@@ -112,8 +100,7 @@ export default function RevenueReportPage() {
   const revenue = Number(report.paidRevenue) || 0;
   const pending = Number(report.pendingPayments) || 0;
   const failed = Number(report.failedPayments) || 0;
-  const active = Number(report.activeMemberships) || 0;
-  const expired = Number(report.expiredMemberships) || 0;
+
 
   const totalPayments = paid + pending + failed;
   const successRate = totalPayments > 0 ? (paid / totalPayments) * 100 : null;
@@ -157,7 +144,7 @@ export default function RevenueReportPage() {
       <header className="mb-3">
         <h1 className="h3 fw-bold mb-1">Báo cáo doanh thu</h1>
         <p className="text-muted mb-0">
-          Tổng hợp doanh thu gói tập và tình hình sử dụng gói của hội viên.
+          Tiền thu từ gói tập và khóa học, tiền đã hoàn và thu ròng theo thời gian.
         </p>
       </header>
 
@@ -165,6 +152,14 @@ export default function RevenueReportPage() {
       <Card className="border-0 shadow-sm mb-3">
         <Card.Body>
           <Row className="g-3 align-items-end">
+            <Col xs={12}>
+              <Form.Label htmlFor="report-source">Nguồn thu</Form.Label>
+              <Form.Select id="report-source" value={source} onChange={(event) => setSource(event.target.value)}>
+                <option value="total">Tất cả</option>
+                <option value="membership">Gói tập</option>
+                <option value="course">Khóa học</option>
+              </Form.Select>
+            </Col>
             <Col md={4} lg={3}>
               <Form.Label htmlFor="report-from" className="small mb-1">
                 Từ ngày
@@ -261,7 +256,7 @@ export default function RevenueReportPage() {
         <div className="text-center py-5">
           <Spinner animation="border" variant="danger" />
         </div>
-      ) : (
+      ) : data && !rangeError ? (
         <>
           {/* ---------- KPI cards ---------- */}
           <Row className="g-3 mb-3">
@@ -269,7 +264,7 @@ export default function RevenueReportPage() {
               <Card className="border-0 shadow-sm h-100">
                 <Card.Body>
                   <div className="text-muted small">
-                    Doanh thu gói tập đã thanh toán
+                    Tổng tiền đã thu
                   </div>
                   <div className="h4 fw-bold mb-0">
                     {formatPrice(revenue, 'VND')}
@@ -284,11 +279,11 @@ export default function RevenueReportPage() {
               <Card className="border-0 shadow-sm h-100">
                 <Card.Body>
                   <div className="text-muted small">
-                    Gói hội viên đang hiệu lực
+                    Tiền đã hoàn
                   </div>
-                  <div className="h4 fw-bold mb-0">{active}</div>
+                  <div className="h4 fw-bold mb-0">{formatPrice(report.completedRefundAmount, 'VND')}</div>
                   <div className="text-muted small mt-1">
-                    Số liệu tính đến thời điểm hiện tại.
+                    Theo ngày hoàn tất hoàn tiền trong khoảng đã chọn.
                   </div>
                 </Card.Body>
               </Card>
@@ -297,17 +292,38 @@ export default function RevenueReportPage() {
               <Card className="border-0 shadow-sm h-100">
                 <Card.Body>
                   <div className="text-muted small">
-                    Gói hội viên đã hết hạn
+                    Thu ròng sau hoàn tiền
                   </div>
-                  <div className="h4 fw-bold mb-0">{expired}</div>
+                  <div className="h4 fw-bold mb-0">{formatPrice(report.netRevenue, 'VND')}</div>
                   <div className="text-muted small mt-1">
-                    Số liệu tính đến thời điểm hiện tại.
+                    Tiền đã thu trừ tiền đã hoàn trong khoảng đã chọn.
                   </div>
                 </Card.Body>
               </Card>
             </Col>
           </Row>
 
+          <Card className="border-0 shadow-sm mb-3"><Card.Body>
+            <h2 className="h6">Khoản hoàn đang xử lý</h2>
+            <div className="h5">{formatPrice(report.pendingRefundAmount, 'VND')}</div>
+            <p className="text-muted small mb-0">Số tiền còn chờ hoàn tất tại thời điểm hiện tại, gồm mọi ngày yêu cầu.</p>
+          </Card.Body></Card>
+          {source === 'total' && data && (
+            <Card className="border-0 shadow-sm mb-3"><Card.Body>
+              <h2 className="h6">Thu và hoàn tiền theo nguồn</h2>
+              <Table responsive className="mb-0">
+                <thead><tr><th>Nguồn</th><th className="text-end">Đã thu</th><th className="text-end">Đã hoàn</th><th className="text-end">Thu ròng</th></tr></thead>
+                <tbody>{[['membership', 'Gói tập'], ['course', 'Khóa học'], ['total', 'Tổng cộng']].map(([key, label]) => (
+                  <tr key={key} className={key === 'total' ? 'fw-bold' : ''}>
+                    <td>{label}</td>
+                    <td className="text-end">{formatPrice(data[key].paidRevenue, 'VND')}</td>
+                    <td className="text-end">{formatPrice(data[key].completedRefundAmount, 'VND')}</td>
+                    <td className="text-end">{formatPrice(data[key].netRevenue, 'VND')}</td>
+                  </tr>
+                ))}</tbody>
+              </Table>
+            </Card.Body></Card>
+          )}
           <Row className="g-3 mb-3">
             <Col md={6} lg={4}>
               <Card className="border-0 shadow-sm h-100">
@@ -396,7 +412,7 @@ export default function RevenueReportPage() {
                     <tr>
                       <th>Tổng</th>
                       <th className="text-end">{totalPayments}</th>
-                      <th className="text-end">100%</th>
+                      <th className="text-end">{totalPayments ? '100%' : '—'}</th>
                       <th className="text-muted small">
                         Doanh thu tính trên {paid} giao dịch đã thanh toán.
                       </th>
@@ -416,7 +432,7 @@ export default function RevenueReportPage() {
             hoặc thất bại không được tính.
           </p>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

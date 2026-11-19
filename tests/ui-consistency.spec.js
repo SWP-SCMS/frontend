@@ -578,16 +578,16 @@ for (const [role, profilePath] of [['MANAGER', '/manager/profile'], ['RECEPTIONI
     await expect(page.getByText('Vui lòng nhập cả tên và số điện thoại người liên hệ.')).toBeVisible();
     expect(writes).toHaveLength(0);
     await page.locator('#staff-contact-phone').fill('0909876543');
-    await page.getByLabel('Mối quan hệ', { exact: true }).fill('Anh trai');
+    await expect(page.getByLabel('Mối quan hệ', { exact: true })).toHaveCount(0);
     await page.getByLabel('Tải ảnh từ máy').setInputFiles({ name: 'avatar.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a8e0AAAAASUVORK5CYII=', 'base64') });
     await page.getByRole('button', { name: 'Tải ảnh lên', exact: true }).click();
     await expect(page.getByRole('img', { name: 'Ảnh đại diện Nguyen Van A', exact: true })).toBeVisible();
     await expect(page.getByLabel('Tên người liên hệ', { exact: true })).toHaveValue('Nguyen Van B');
     await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
     await expect(page.getByText('Đã cập nhật hồ sơ cá nhân.', { exact: true })).toBeVisible();
-    expect(writes).toEqual([{ emergencyContactName: 'Nguyen Van B', emergencyContactPhone: '0909876543', emergencyContactRelationship: 'Anh trai' }]);
+    expect(writes).toEqual([{ emergencyContactName: 'Nguyen Van B', emergencyContactPhone: '0909876543' }]);
     await page.reload();
-    await expect(page.getByLabel('Mối quan hệ', { exact: true })).toHaveValue('Anh trai');
+    await expect(page.locator('#staff-contact-phone')).toHaveValue('0909876543');
     await page.screenshot({ path: `test-results/staff-profile-${role}.png` });
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -596,9 +596,9 @@ for (const [role, profilePath] of [['MANAGER', '/manager/profile'], ['RECEPTIONI
     await expect(page.getByRole('button', { name: 'Xóa ảnh', exact: true })).toHaveCount(0);
     await page.getByLabel('Tên người liên hệ', { exact: true }).fill('');
     await page.locator('#staff-contact-phone').fill('');
-    await page.getByLabel('Mối quan hệ', { exact: true }).fill('');
+
     await page.getByRole('button', { name: 'Lưu thay đổi', exact: true }).click();
     await expect(page.getByText('Đã cập nhật hồ sơ cá nhân.', { exact: true })).toBeVisible();
-    expect(writes.at(-1)).toEqual({ emergencyContactName: '', emergencyContactPhone: '', emergencyContactRelationship: '' });
+    expect(writes.at(-1)).toEqual({ emergencyContactName: '', emergencyContactPhone: '' });
   });
 }

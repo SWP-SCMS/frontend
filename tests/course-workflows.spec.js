@@ -609,7 +609,7 @@ test('member withdrawal card localizes system reasons, shows estimated refund, a
   });
   await page.goto('/member/courses/withdrawals?enrollmentId=enrollment-1');
   const card = page.locator('#withdrawals article');
-  await expect(card).toContainText('Trung tâm thay đổi lịch học.');
+  await expect(card).toContainText('Yêu cầu rút khóa học do trung tâm thay đổi đáng kể lịch học');
   await expect(card).not.toContainText('Withdrawal requested');
   await expect(card).toContainText('Hoàn tiền dự kiến');
   await expect(card).toContainText('800.000');

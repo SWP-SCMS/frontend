@@ -47,6 +47,16 @@ export default function CoachMemberProfilePage() {
       <Row className="g-3">
         <Col md={6}><Card className="border-0 shadow-sm h-100"><Card.Body><h2 className="h6">Thông tin liên hệ</h2><dl className="row mb-0 small"><dt className="col-4">Điện thoại</dt><dd className="col-8">{profile.phone || '—'}</dd><dt className="col-4">Email</dt><dd className="col-8">{profile.email || '—'}</dd><dt className="col-4">Ngày sinh</dt><dd className="col-8">{formatDate(profile.birthDate)}</dd></dl></Card.Body></Card></Col>
         <Col md={6}><Card className="border-0 shadow-sm h-100"><Card.Body><h2 className="h6">Huấn luyện</h2><p><strong>Mục tiêu:</strong> {profile.fitnessGoal || 'Chưa cập nhật'}</p><p className="mb-0"><strong>Phân công từ:</strong> {formatGymDate(profile.assignedSince)}</p></Card.Body></Card></Col>
+        <Col xs={12}>
+          <Card className="border-0 shadow-sm">
+            <Card.Body>
+              <h2 className="h6">Ghi chú thể chất & Tiền sử chấn thương</h2>
+              <p className="mb-0 text-break" style={{ whiteSpace: 'pre-wrap' }}>
+                {profile.physicalConditionNotes || 'Hội viên chưa cập nhật'}
+              </p>
+            </Card.Body>
+          </Card>
+        </Col>
         <Col xs={12}><Card className="border-0 shadow-sm"><Card.Body><h2 className="h6">Liên hệ khẩn cấp</h2><p className="mb-0">{profile.emergencyContactName || '—'}{profile.emergencyContactPhone ? ` · ${profile.emergencyContactPhone}` : ''}</p></Card.Body></Card></Col>
       </Row>
     </div>

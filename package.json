@@ -13,7 +13,7 @@
     "test:benefits": "node --test src/utils/membershipBenefits.test.js",
     "preview": "vite preview",
     "test:course-runtime": "node scripts/course-runtime.mjs",
-    "test:ui": "playwright test tests/course-workflows.spec.js tests/t13-t24.spec.js tests/background-polling.spec.js tests/query-cache.spec.js tests/ui-consistency.spec.js tests/member-session-training.spec.js"
+    "test:ui": "playwright test tests/course-workflows.spec.js tests/t13-t24.spec.js tests/background-polling.spec.js tests/query-cache.spec.js tests/ui-consistency.spec.js tests/member-session-training.spec.js tests/center-revenue.spec.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
